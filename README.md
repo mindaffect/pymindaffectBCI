@@ -28,31 +28,31 @@ from minaffectBCI.utopia2output import Utopia2Output
 
 Now we can create an utopia2output object and connect it to a running mindaffect BCI decoder. 
 
-`
+```
 u2o=Utopia2Output()
 u2o.connect()
-`
+```
 
 (Note: For this to succeed you must have a real or simulated mindaffectBCI decoder running somewhere on your network.)
 
 Now we define a function to print hello-world:
-`
+```
 def helloworld():
    print("hello world")
-`
+```
 
 And connect it so it is run when the object with ID=1 is selected.
 
-`
+```
 # set the objectID2Action dictionary to use our helloworld function if 1 is selected 
 u2o.objectID2Action={ 1:helloworld }
-`
+```
 
 Finally, run the main loop
 
-`
+```
 u2o.run()
-`
+```
 
 # Simple *presention* module
 
