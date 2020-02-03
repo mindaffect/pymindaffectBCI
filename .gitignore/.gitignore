@@ -1,1 +1,7 @@
+dist
+build
+*.egg-info
+*.bak
+*~
 *.o
+__pycache__
