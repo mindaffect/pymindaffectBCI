@@ -9,11 +9,11 @@ This repository is organized roughly as follows:
      * utopiaclient.py - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
      * stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
   * `codebooks` - Contains the most common noisetagging codebooks as text files
-  * `examples` - contains python based examples for Presentation and Output parts of the BCI
+  * `examples` - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
+     * output - Example output modules.  An output module translates BCI based selections into actions.
+     * presentation - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.
 
-# Quick-start
-
-##Installing mindaffectBCI
+## Installing mindaffectBCI
 
 That's easy:
 `pip install mindaffectBCI`
