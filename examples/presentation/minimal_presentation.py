@@ -39,6 +39,11 @@ def draw(dt):
         draw_squares(state2color[stimulus_state[0]],
                      state2color[stimulus_state[1]])
 
+# define a trival selection handler
+def selectionHandler(objID):
+    print("Selected: %d"%(objID))    
+nt.addSelectionHandler(selectionHandler)
+
 # tell the noisetag framework to run a full : calibrate->prediction sequence
 nt.startExpt([1,2],nCal=10,nPred=10)
 # run the pyglet main loop

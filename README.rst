@@ -7,12 +7,15 @@ File Structure
 This repository is organized roughly as follows:
 
  - `mindaffectBCI` - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
+ 
    - noisetag.py - This module contains the main API for developing User Interfaces with BCI control
    - utopiaController.py - This module contains the application level APIs for interacting with the MindAffect Decoder.
    - utopiaclient.py - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
    - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
+
  - `codebooks` - Contains the most common noisetagging codebooks as text files
  - `examples` - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
+
    - output - Example output modules.  An output module translates BCI based selections into actions.
    - presentation - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.
 
@@ -27,9 +30,11 @@ That's easy::
 Testing the mindaffectBCI SDK
 -----------------------------
 
-This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware (i.e. EEG) or the brain-signal decoding algorithms (they will be made available later in a mindaffect decoder repository). 
+This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware (i.e. EEG) or the brain-signal decoding algorithms. 
 
-In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules you should start this fake recogniser by running, either ::
+In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules.  You can download the fakerecogniser from our [github page](https://github.com/mindaffect/pymindaffectBCI/tree/master/bin)
+
+You should start this fake recogniser by running, either ::
 
   bin/startFakeRecogniser.bat
   
@@ -48,6 +53,8 @@ Simple *output* module
 ------------------------
 
 An output module listens for selections from the mindaffect decoder and acts on them to create some output.  Here we show how to make a simple output module which print's "Hello World" when the presentation 'button' with ID=1 is selected.
+
+Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/examples/output/minimal_output.py)
 
 
 .. code:: python
@@ -70,7 +77,7 @@ Now we define a function to print hello-world
 
 .. code:: python
 
-  def helloworld():
+  def helloworld(objID):
      print("hello world")
 
 
@@ -102,6 +109,8 @@ Presentation is inherently more complex that output as we must display the corre
 
 The *noisetag* module mindaffectBCI SDK provides a number of tools to hide this complexity from the application developers.  Using the most extreeem of these all the application developer has to do is provide a function to _draw_ the display as instructed by the noisetag module.
 
+Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/examples/presentation/minimal_presentation.py)
+
 To use this.  Import the module and creat the noisetag object.
 
 .. code:: python
@@ -127,12 +136,12 @@ Write a function to draw the screen.  Here we will use the python gaming librar 
     x=100; y=190; w=100; h=100;
     pyglet.graphics.draw(4,pyglet.gl.GL_QUADS,
                          ('v2f',(x,y,x+w,y,x+w,y+h,x,y+h)),
-			 ('c3f',(col1)*4))
+			                   ('c3f',(col1)*4))
     # draw square 2: @440,100
     x=640-100-100
     pyglet.graphics.draw(4,pyglet.gl.GL_QUADS,
                          ('v2f',(x,y,x+w,y,x+w,y+h,x,y+h)),
-			 ('c3f',(col2)*4))    
+			                   ('c3f',(col2)*4))    
 
 
 Now we write a function which,
@@ -146,7 +155,7 @@ Now we write a function which,
   state2color={0:(.2,.2,.2), # off=grey
                1:(1,1,1),    # on=white
                2:(0,1,0),    # cue=green
-  	       3:(0,0,1)}    # feedback=blue
+  	           3:(0,0,1)}    # feedback=blue
   def draw(dt):
     # send info on the *previous* stimulus state.
     # N.B. we do it here as draw is called as soon as the vsync happens
@@ -166,6 +175,15 @@ Now we write a function which,
                      state2color[stimulus_state[1]])
 
 
+As a final step we can attached a **selection** callback which will be called whenever a selection is made by the BCI.
+
+.. code:: python
+
+  # define a trival selection handler
+  def selectionHandler(objID):
+    print("Selected: %d"%(objID))    
+  nt.addSelectionHandler(selectionHandler)
+
 Finally, we tell the `noisetag` module to run a complete BCI 'experiment' with calibration and feedback mode, and start the `pyglet` main loop.
 
 
@@ -178,6 +196,5 @@ Finally, we tell the `noisetag` module to run a complete BCI 'experiment' with c
   pyglet.app.run()
 
 This will then run a full BCI with 10 *cued* calibration trials, and uncued prediction trials.   During the calibration trials a square turning green shows this is the cued direction.  During the prediction phase a square turning blue shows the selection by the BCI.
-
 
 For more complex presentation examples, including a full 6x6 character typing keyboard, and a color-wheel for controlling a [philips Hue light](https://www2.meethue.com/en-us) see the `examples/presentation` directory.

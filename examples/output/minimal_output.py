@@ -2,7 +2,7 @@
 from mindaffectBCI.utopia2output import Utopia2Output
 u2o=Utopia2Output()
 u2o.connect()
-def helloworld():
+def helloworld(objID):
    print("hello world")
 # set the objectID2Action dictionary to use our helloworld function if 1 is selected 
 u2o.objectID2Action={ 1:helloworld }
