@@ -35,7 +35,7 @@ In order to allow you to develop and test your Brain Controlled applications wit
   
 if running on windows, or  ::
 
-  bin/startFakeRecogniser.should
+  bin/startFakeRecogniser.sh
 
 if running on linux/macOS
 
