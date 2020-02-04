@@ -23,6 +23,27 @@ That's easy::
 
   pip3 install mindaffectBCI
 
+
+Testing the mindaffectBCI SDK
+-----------------------------
+
+This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware (i.e. EEG) or the brain-signal decoding algorithms (they will be made available later in a mindaffect decoder repository). 
+
+In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules you should start this fake recogniser by running, either ::
+
+  bin/startFakeRecogniser.bat
+  
+if running on windows, or  ::
+
+  bin/startFakeRecogniser.should
+
+if running on linux/macOS
+
+If successfull, running these scripts should open a terminal window which shows the messages recieved/sent from your example application.
+
+Note: The fakerecogniser is written in [java](https://www.java.com), so you will need a JVM with version >8 for it to run.  If needed download from [here](https://www.java.com/ES/download/)
+
+
 Simple *output* module
 ------------------------
 
