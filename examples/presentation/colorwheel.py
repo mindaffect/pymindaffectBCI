@@ -46,8 +46,6 @@ class DrawWindow(pyglet.window.Window):
         if nsegements is None :
             nsegements = len(self.objIDs)
         winw,winh=self.get_size()
-        w=winw/3 
-        h=winh/3
         cent   =(winw/2,winh/2)
         iradius=min([winw,winh])*iradius
         oradius=min([winw,winh])*oradius
@@ -88,42 +86,41 @@ class DrawWindow(pyglet.window.Window):
 
     def setNoisetag(self,noisetag):
         self.noisetag=noisetag
-            
-    def draw_pie(self):
 
+    # mapping between bci-stimulus-states and on-screen colors
+    state2color={0:(.2,.2,.2), # off=grey
+                 1:(1,1,1),    # on=white
+	             2:(0,1,0)}    # cue=green
+    def draw_pie(self):
+        self.frame=self.frame+1
+        # get the bci-stimulus state
         stimulus_state=None
         if self.noisetag :
             self.noisetag.sendStimulusState()
             self.noisetag.updateStimulusState()
             stimulus_state,target_state,objIDs,sendEvents=self.noisetag.getStimulusState()
+        # do nothing if no bci-stimulus
+        if stimulus_state is None :
+            return
 
-        self.clear()
-        alpha=.5
+
+        self.clear()        
         # modify the blend strength if in cue/feedback mode
-        if stimulus_state :
-            if 3 in stimulus_state :
-                alpha=.9
-            elif 2 in stimulus_state : 
-                alpha=.8
+        alpha=.5 # medium background in flicker mode
+        if 3 in stimulus_state :
+            alpha=.9 # dark background if feedback mode
+        elif 2 in stimulus_state : 
+            alpha=.9 # dark background in cue-mode
+        # draw the segements with correct bci-stim mask blending
         for i,seg in enumerate(self.segements):
-            # apply the noise code -> override with white when on..
-            bs=stimulus_state[i] if stimulus_state else None
             # color depends on the requested stimulus state
-            bg=None
-
-            if bs==0 :    # off
-                bg=(0,0,0)
-            elif bs==1 :  # flash
-                bg=(1,1,1)
-            elif bs==2 :  # cue
-                bg=(0,1,0)
-            elif bs==3 :  # feedback
-                bg=seg.color
-            
+            try:
+                bg=self.state2color[stimulus_state[i]]
+            except KeyError :
+                bg=None # normal color
             seg.draw(maskcolor=bg,alpha=alpha)            
             
     def on_draw(self):
-        self.frame=self.frame+1
         self.draw_pie()
 
     def update(self,dt):
@@ -138,14 +135,15 @@ def selectionHandler(objID):
         # get the matching segment
         segidx = window.objIDs.index(objID)
         seg    = window.segements[segidx]
-        # and it's color
-        color  = seg.color
-        # set the light to this color...
+        # set the light to this color, by matching the hue.
         if hue_bridge : 
-            lights=hue_bridge.lights()
-            for k,v in lights.items():
-                if v['state']['reachable'] :
-                    hue_bridge.lights[k]('state',bri=255,hue=int(65535*seg.theta/(2*math.pi)))
+            try : 
+                lights=hue_bridge.lights()
+                for k,v in lights.items():
+                    if v['state']['reachable'] :
+                        hue_bridge.lights[k]('state',bri=128,hue=int(65535*seg.theta/(2*math.pi)))
+            except :
+                print("couldnt talk to the hue!") 
 
 
 if __name__=='__main__':
@@ -154,7 +152,7 @@ if __name__=='__main__':
     window.init_pie(nsegements=10)
     noisetag=Noisetag()
     noisetag.startExpt(window.objIDs,nCal=1,nPred=100,
-                        cueduration=4,duration=10,feedbackduration=4)
+                       cueduration=4,duration=10,feedbackduration=4)
     window.setNoisetag(noisetag)
 
     # Initialize the connection to the hue light

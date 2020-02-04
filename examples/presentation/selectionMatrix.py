@@ -98,7 +98,7 @@ class SelectionGridScreen(Screen):
     '''Screen which shows a grid of symbols which will be flickered with the noisecode
     and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
-    LOGLEVEL=0
+    LOGLEVEL=1
     
     def __init__(self,window,symbols,noisetag,objIDs=None,
                  bgFraction=.3,clearScreen=True,sendEvents=True,liveFeedback=True):
@@ -170,7 +170,12 @@ class SelectionGridScreen(Screen):
 
     def is_done(self):
         return self.isDone
-    
+
+    # mapping from bci-stimulus-states to display color
+    state2color={0:(60,60,60),   # off=grey
+                 1:(255,255,255),# on=white
+	             2:(0,255,0),    # cue=green
+	             3:(0,0,255)}    # feedback=blue
     def draw(self,t):
         """draw the letter-grid with given stimulus state for each object.
         Note: To maximise timing accuracy we send the info on the grid-stimulus state
@@ -178,7 +183,7 @@ class SelectionGridScreen(Screen):
         the screen 'flip'. """
         if not self.isRunning :
             self.isRunning=True
-        #self.framestart=self.noisetag.getTimeStamp()
+        self.framestart=self.noisetag.getTimeStamp()
         if self.sendEvents:
             self.noisetag.sendStimulusState()
 
@@ -189,55 +194,50 @@ class SelectionGridScreen(Screen):
             # get prediction info if any
             if self.liveFeedback :
                 predMessage=self.noisetag.getLastPrediction()
-        except StopIteration as e :
+        except StopIteration :
             self.isDone=True
             return
         
         if stimulus_state is None :
             return
-            
-        #print((stimulus_state,target_state))
         
         # draw the white background onto the surface
         if self.clearScreen:
-            window.clear() #getColor('idle'))
+            window.clear()
         # update the state
         # TODO[]: iterate over objectIDs and match with those from the
         #         stimulus state!
         for idx in range(min(len(self.objects),len(stimulus_state))): 
-            # get the background state of this cell
-            bs = stimulus_state[idx] if stimulus_state else None
-            # color depends on the requested stimulus state
-            if bs==0 :    # off
-                self.objects[idx].color=(0,0,0)
-            elif bs==1 :  # flash
-                self.objects[idx].color=(255,255,255)
-            elif bs==2 :  # cue
-                self.objects[idx].color=(0,255,0)
-            elif bs==3 :  # feedback
-                self.objects[idx].color=(0,0,255)
-                # disp opto-sensor if targetState is set
-        # show feedback
+            # set background color based on the stimulus state (if set)
+            try :
+                self.objects[idx].color=self.state2color[stimulus_state[idx]]
+            except KeyError :
+                pass
+            
+                
+        # show live-feedback (if wanted)
         if self.liveFeedback and predMessage and predMessage.Yest in objIDs :
             predidx=objIDs.index(predMessage.Yest) # convert from objID -> objects index
             # BODGE: manually mix in the feedback color as blue tint.
             fbcol=self.objects[predidx].color
             fbcol=(fbcol[0]*.6, fbcol[1]*.6, fbcol[2]*.6+255*(1-predMessage.Perr))
             self.objects[predidx].color=fbcol
-            
+
+        # disp opto-sensor if targetState is set    
         if self.opto_sprite is not None and target_state is not None and target_state in (0,1):
             self.opto_sprite.visible=True
             self.opto_sprite.color = (0,0,0) if target_state==0 else (255,255,255)
         else:
             self.opto_sprite.visible=False
+
         # do the draw                
         self.batch.draw()
-        #self.frameend=nt.getTimeStamp()
+        self.frameend=self.noisetag.getTimeStamp()
     
         # frame flip time logging info
-        if self.LOGLEVEL>0 and self.noisetag.client :
+        if self.LOGLEVEL>0 and self.noisetag.isConnected() :
             opto = target_state if target_state is not None else 0
-            logstr="FrameIdx:%d FlipTime:%d FlipLB:%d FlipUB:%d Opto:%d"%(nframe,framestart,framestart,frameend,opto)
+            logstr="FrameIdx:%d FlipTime:%d FlipLB:%d FlipUB:%d Opto:%d"%(nframe,self.framestart,self.framestart,self.frameend,opto)
             self.noisetag.log(logstr)
     
 #------------------------------------------------------------------------
@@ -259,7 +259,8 @@ def initPyglet(fullscreen=False):
 
 def draw(dt):
     '''main window draw function, which redirects to the screen stack'''
-    global ss
+    global ss, nframe
+    nframe=nframe+1
     ss.draw(dt)
     # check for termination
     if ss.is_done() :
@@ -275,6 +276,7 @@ def on_key_press(symbols,modifiers):
 if __name__ == "__main__":
     # init the graphics system
     initPyglet()
+    nframe=0
     # the logical arrangement of the display matrix
     symbols=[['a','b','c','d','e'],
              ['f','g','h','i','j'],

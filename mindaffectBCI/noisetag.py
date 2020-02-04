@@ -4,7 +4,7 @@ from .stimseq import StimSeq
 from .utopiaController import UtopiaController
 import os
 scriptpath=os.path.dirname(os.path.realpath(__file__))
-stimFile=os.path.join(scriptpath,'../codebooks/mgold_61_6521_psk_60hz.txt')
+stimFile=os.path.join(scriptpath,'mgold_61_6521_psk_60hz.txt')
 objIDs=list(range(1,10))
 isi=1/60
 
@@ -27,7 +27,7 @@ class GSM(FSM):
         while self.stack :
             try : 
                 return self.stack[-1].next(t)
-            except StopIteration as e :
+            except StopIteration :
                 # end of this fsm, unwind the fsm stack
                 self.pop()
                 # for pretty printing
@@ -55,8 +55,7 @@ class Flicker(FSM):
                  numframes=4*isi,tgtidx=None,
                  sendEvents=True):
         self.stimSeq=stimSeq
-        if not type(objIDs) is list :
-            objIDs=list(range(1,objIDs+1))
+        self.objIDs=objIDs if hasattr(objIDs, "__len__") else list(range(1,objIDs+1)) 
         self.objIDs=objIDs
         self.numframes=numframes
         self.nframe=0
@@ -88,7 +87,7 @@ class FlickerWithSelection(Flicker):
                  sendEvents=True):
         super().__init__(objIDs,stimSeq,numframes,tgtidx,sendEvents)
         self.utopiaController = utopiaController
-        if self.utopiaController is None : raise RunTimeException()
+        if self.utopiaController is None : raise ValueError("must have utopiaController")
         print(' with selection')
         
     def next(self,t):
@@ -104,14 +103,12 @@ class FlickerWithSelection(Flicker):
 class HighlightObject(Flicker):
     '''Highlight a single object for a number of frames'''
     def __init__(self,objIDs=8,numframes=isi*2,tgtidx=None,tgtState=2,sendEvents=False):
-        # make a target on stim sequence
-        if not type(objIDs) is list :
-            objIDs=list(range(1,objIDs+1))
+        self.objIDs=objIDs if hasattr(objIDs, "__len__") else list(range(1,objIDs+1)) 
         stimSeq = [[0]*len(objIDs)]
         if tgtidx is not None:
             stimSeq[0][tgtidx]=tgtState
         super().__init__(objIDs,stimSeq,numframes,tgtidx,sendEvents=sendEvents)
-        print('highlight: tgt=%d nframes=%d'%(tgtidx if tgtidx is not None else -1,numframes))
+        print('highlight: tgtidx=%d nframes=%d'%(tgtidx if tgtidx is not None else -1,numframes))
 
 class SingleTrial(FSM):
     ''' do a complete single trial with: cue->wait->flicker->feedback '''
@@ -131,7 +128,7 @@ class SingleTrial(FSM):
         self.waitframes=waitframes if waitframes else waitduration/isi
         self.selectionThreshold=selectionThreshold
         self.stage=0
-        print("Cal: tgt=%d"%(self.tgtidx if self.tgtidx is not None else -1))
+        print("Cal: tgtidx=%d"%(self.tgtidx if self.tgtidx is not None else -1))
         
     def next(self,t):
         if self.stage==0 : # trial-start + cue
@@ -197,16 +194,16 @@ class CalibrationPhase(FSM):
     def __init__(self,objIDs=8,stimSeq=None,nTrials=10,
                  utopiaController=None,stimulusStateStack=None,
                  *args,**kwargs):
-        self.objIDs = objIDs
+        self.objIDs=objIDs if hasattr(objIDs, "__len__") else list(range(1,objIDs+1)) 
         self.stimSeq=stimSeq
         self.nTrials=nTrials
         self.utopiaController=utopiaController
         self.isRunning=False
         self.args=args
         self.kwargs=kwargs
-        if self.utopiaController is None : raise RunTimeException
+        if self.utopiaController is None : raise ValueError
         self.stimulusStateStack=stimulusStateStack
-        if self.stimulusStateStack is None : raise RunTimeException
+        if self.stimulusStateStack is None : raise ValueError
         self.trli=0
     def next(self,t):
         if not self.isRunning :
@@ -214,8 +211,8 @@ class CalibrationPhase(FSM):
             self.utopiaController.modeChange("Calibration.supervised")
             self.isRunning=True
         if self.trli<self.nTrials:
-            self.tgtidx = random.randint(0,self.nTrials-1)
-            print("Start Cal: %d/%d tgt=%d"%(self.trli,self.nTrials,self.tgtidx))
+            self.tgtidx = random.randint(0,len(self.objIDs)-1)
+            print("Start Cal: %d/%d tgtidx=%d"%(self.trli,self.nTrials,self.tgtidx))
             self.stimulusStateStack.push(
                 SingleTrial(self.objIDs,self.tgtidx,self.stimSeq,
                             self.utopiaController,
@@ -230,7 +227,7 @@ class PredictionPhase(FSM):
     def __init__(self,objIDs,stimSeq=None,nTrials=10,
                  utopiaController=None,stimulusStateStack=None,
                  selectionThreshold=.1,*args,**kwargs):
-        self.objIDs=objIDs
+        self.objIDs=objIDs if hasattr(objIDs, "__len__") else list(range(1,objIDs+1)) 
         self.stimSeq=stimSeq
         self.nTrials=nTrials
         self.selectionThreshold=selectionThreshold
@@ -239,9 +236,9 @@ class PredictionPhase(FSM):
         self.tgti=0
         self.isRunning=False
         self.utopiaController=utopiaController
-        if self.utopiaController is None : raise RunTimeException
+        if self.utopiaController is None : raise ValueError
         self.stimulusStateStack=stimulusStateStack
-        if self.stimulusStateStack is None : raise RunTimeException
+        if self.stimulusStateStack is None : raise ValueError
         # tell decoder to start cal
     def next(self,t):
         if not self.isRunning :
@@ -264,15 +261,15 @@ class Experiment(FSM):
     def __init__(self,objIDs=8,stimSeq=None,nCal=10,nPred=20,
                  selectionThreshold=.1,
                  utopiaController=None,stimulusStateStack=None,*args,**kwargs):
-        self.objIDs=objIDs
+        self.objIDs=objIDs if hasattr(objIDs, "__len__") else list(range(1,objIDs+1)) 
         self.stimSeq=stimSeq
         self.nCal=nCal
         self.nPred=nPred
         self.selectionThreshold=selectionThreshold
         self.utopiaController=utopiaController
-        if self.utopiaController is None : raise RunTimeException
+        if self.utopiaController is None : raise ValueError
         self.stimulusStateStack=stimulusStateStack
-        if self.stimulusStateStack is None : raise RunTimeException
+        if self.stimulusStateStack is None : raise ValueError
         self.args=args
         self.kwargs=kwargs
         self.stage=0
@@ -377,6 +374,11 @@ class Noisetag:
         
     def getTimeStamp(self,t0=0):
         return self.utopiaController.getTimeStamp(t0)
+    def isConnected(self):
+        return self.utopiaController.isConnected()
+    def log(self,msg):
+        if self.utopiaController:
+            self.utopiaController.log(msg)
 
 
     # methods to define what (meta) stimulus sequence we will play
