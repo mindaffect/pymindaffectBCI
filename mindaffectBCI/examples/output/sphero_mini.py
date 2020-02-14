@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from bluepy.btle import Peripheral
 from bluepy import btle
 from sphero_constants import *

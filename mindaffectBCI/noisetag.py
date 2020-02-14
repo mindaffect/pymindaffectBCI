@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 #  Copyright (c) 2019 MindAffect B.V. 
 #  Author: Jason Farquhar <jason@mindaffect.nl>
 #
