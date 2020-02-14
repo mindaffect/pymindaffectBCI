@@ -48,13 +48,29 @@ If successfull, running these scripts should open a terminal window which shows 
 
 Note: The fakerecogniser is written in [java](https://www.java.com), so you will need a JVM with version >8 for it to run.  If needed download from [here](https://www.java.com/ES/download/)
 
+Quick Installation Test
+-----------------------
+
+You can run a quick test if the installation is correct by running::
+
+  python3 -m mindaffectBCI.noisetag
+
+Essentially, this run the SDK test code which pretends to run a full BCI sequence, with decoder discovery, calibration and prediction.  If you have the fakerecognise running then this should do this in a terminal and generate a lot of text saying things like: `cal 1/10`.
+
+Quick BCI Test
+--------------
+
+If you have installed [pyglet](pyglet.org), e.g. using `pip3 install pyglet`, then you can also try some more advanced fully BCI exmaples with stimulation.  For a simple letter matrix test run::
+
+  python3 -m mindaffectBCI.examples.presentation.selectionMatrix
+
 
 Simple *output* module
 ------------------------
 
 An output module listens for selections from the mindaffect decoder and acts on them to create some output.  Here we show how to make a simple output module which print's "Hello World" when the presentation 'button' with ID=1 is selected.
 
-Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/examples/output/minimal_output.py)
+Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/output/minimal_output.py)
 
 
 .. code:: python
@@ -109,7 +125,7 @@ Presentation is inherently more complex that output as we must display the corre
 
 The *noisetag* module mindaffectBCI SDK provides a number of tools to hide this complexity from the application developers.  Using the most extreeem of these all the application developer has to do is provide a function to _draw_ the display as instructed by the noisetag module.
 
-Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/examples/presentation/minimal_presentation.py)
+Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/presentation/minimal_presentation.py)
 
 To use this.  Import the module and creat the noisetag object.
 

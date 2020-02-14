@@ -1,3 +1,25 @@
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
 import pyglet
 import sys
 import time
@@ -8,7 +30,7 @@ import math
 #import sys
 #sys.path.append(os.path.join(scriptpath,'../../'))
 
-from mindaffectBCI.noisetag import Noisetag
+from mindaffectBCI.noisetag import Noisetag, sumstats
 
 class Quad:
     '''object to hold a single graphics quad'''
@@ -32,12 +54,16 @@ class Quad:
 
 class DrawWindow(pyglet.window.Window):
 
-    def __init__(self,*args,**kwargs):
+    def __init__(self,noisetag,*args,**kwargs):
         super(DrawWindow,self).__init__(*args,**kwargs)
         self.frame=0
         self.segments=[]
         self.objIDs=[]
         self.noisetag=None
+        self.lastfliptime=0
+        self.flipstats=sumstats()
+        self.fliplogtime=self.lastfliptime
+        self.noisetag=noisetag
         
     def init_pie(self,nsegements=12,iradius=1/6,oradius=1/3,objIDs=None):
         self.objIDs = objIDs
@@ -53,6 +79,7 @@ class DrawWindow(pyglet.window.Window):
         # center of the segement
         thetas=[ i*segwidth for i in range(nsegements) ]
 
+        # TODO [] : make a pyglet BATCH...
         self.segements=[]
         for i,theta in enumerate(thetas):
             # inner-top
@@ -90,27 +117,31 @@ class DrawWindow(pyglet.window.Window):
     # mapping between bci-stimulus-states and on-screen colors
     state2color={0:(.2,.2,.2), # off=grey
                  1:(1,1,1),    # on=white
-	             2:(0,1,0)}    # cue=green
+                 2:(1,1,1)}    # cue=flash
     def draw_pie(self):
         self.frame=self.frame+1
         # get the bci-stimulus state
         stimulus_state=None
         if self.noisetag :
-            self.noisetag.sendStimulusState()
+            self.noisetag.sendStimulusState(timestamp=self.lastfliptime)
             self.noisetag.updateStimulusState()
             stimulus_state,target_state,objIDs,sendEvents=self.noisetag.getStimulusState()
         # do nothing if no bci-stimulus
         if stimulus_state is None :
-            return
+            stimulus_state = [0]*len(self.segements)
 
+        if target_state is not None and target_state>0:
+            print("*" if target_state>0 else '.',end='',flush=True)
 
         self.clear()        
         # modify the blend strength if in cue/feedback mode
-        alpha=.5 # medium background in flicker mode
-        if 3 in stimulus_state :
+        alpha=.6
+        if 1 in stimulus_state :
+            alpha=.7 # medium background in flicker mode
+        elif 3 in stimulus_state :
             alpha=.9 # dark background if feedback mode
         elif 2 in stimulus_state : 
-            alpha=.9 # dark background in cue-mode
+            alpha=.6 # medium background in cue-mode
         # draw the segements with correct bci-stim mask blending
         for i,seg in enumerate(self.segements):
             # color depends on the requested stimulus state
@@ -119,14 +150,22 @@ class DrawWindow(pyglet.window.Window):
             except KeyError :
                 bg=None # normal color
             seg.draw(maskcolor=bg,alpha=alpha)            
-            
-    def on_draw(self):
-        self.draw_pie()
 
     def update(self,dt):
         self.draw_pie()
-
-
+        
+    def flip(self):
+        # override window's flip method to send stimulus state as close in
+        # time as possible to when the screen re-freshed
+        super().flip()
+        olft=self.lastfliptime
+        self.lastfliptime=self.noisetag.getTimeStamp()
+        self.flipstats.addpoint(self.lastfliptime-olft)
+        if self.lastfliptime > self.fliplogtime :
+            self.fliplogtime=self.lastfliptime+10000    
+            print("\nFlipTimes:"+str(self.flipstats))
+            print("Hist:\n"+self.flipstats.hist())
+            
 def selectionHandler(objID):
     '''function to map selection to action'''    
     print('Sel: %d'%(objID))
@@ -147,22 +186,33 @@ def selectionHandler(objID):
 
 
 if __name__=='__main__':
-    #config = pyglet.gl.Config(double_buffer=True)
-    window = DrawWindow()#vsync=True,config=config)
-    window.init_pie(nsegements=10)
+    # N.B. init the noisetag first so asks for decoder IP
     noisetag=Noisetag()
-    noisetag.startExpt(window.objIDs,nCal=1,nPred=100,
-                       cueduration=4,duration=10,feedbackduration=4)
-    window.setNoisetag(noisetag)
+    # auto connect to the decoder
+    noisetag.connect()
+
+    config = pyglet.gl.Config(double_buffer=True)
+    window = DrawWindow(noisetag,width=1024,height=768,vsync=True,config=config)
+    window.init_pie(nsegements=10)
+
+    # set the current noise-tagging state
+    noisetag.setActiveObjIDs(window.objIDs)
+    noisetag.startExpt(nCal=10,nPred=20,
+                       cueduration=2,calduration=4,predduration=20,
+                       feedbackduration=4)
 
     # Initialize the connection to the hue light
-    from qhue import Bridge
-    bridgeip="192.168.253.100"
-    username="AlGbD1GTQHxwDVK0j3tKkpdwBUv8Cijtvbkokzxk"
-    hue_bridge = Bridge(bridgeip, username)
-    # register selection handler
-    noisetag.addSelectionHandler(selectionHandler)
-
+    try :
+        from qhue import Bridge
+        bridgeip="192.168.253.100"
+        username="AlGbD1GTQHxwDVK0j3tKkpdwBUv8Cijtvbkokzxk"
+        hue_bridge = Bridge(bridgeip, username)
+        # register selection handler
+        noisetag.addSelectionHandler(selectionHandler)
+    except ImportError :
+        import warnings
+        warnings.warn("You need to install the qhue module to connect to your hue!")
+    
     # run the mainloop
     pyglet.clock.schedule(window.update)
     pyglet.app.run()

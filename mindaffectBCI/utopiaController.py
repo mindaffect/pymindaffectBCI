@@ -1,3 +1,25 @@
+
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from .utopiaclient import *
 
 class UtopiaController:
@@ -7,14 +29,17 @@ class UtopiaController:
     def __init__(self):
         self.client=UtopiaClient()
         self.msgs=[]
-        self.lastPrediction=None
         # callback list for new messages
         self.messageHandlers=[]
         # call back list for new predictions
+        self.lastPrediction=None
         self.predictionHandlers=[]
         # selection stuff
         self.selectionHandlers=[]
         self.selectionThreshold=.1
+        # signal quality stuff
+        self.lastSignalQuality=None
+        self.signalQualityHandlers=[]
 
     def addMessageHandler(self,cb):
         self.messageHandlers.append(cb)
@@ -22,21 +47,21 @@ class UtopiaController:
         self.predictionHandlers.append(cb)
     def addSelectionHandler(self,cb):
         self.selectionHandlers.append(cb)
+    def addSignalQualityHandler(self,cb):
+        self.signalQualityHandlers.append(cb)
         
     def getTimeStamp(self,t0=0):
         '''get a (relative) wall-time stamp *in milliseconds*'''
-        if self.client:
-            return self.client.getTimeStamp()-t0
-        return time.perf_counter()*1000-t0    
+        return getTimeStamp(t0)    
         
-    def autoconnect(self,host=None,port=8400,timeout_ms=5000): 
+    def autoconnect(self,host=None,port=8400,timeout_ms=5000,queryifhostnotfound=True): 
         try : 
             self.client.autoconnect(host,port,timeout_ms=timeout_ms)
-        except :
+        except socket.error as ex:
             pass
 
         # ask user for host
-        if not self.client.isConnected :
+        if not self.client.isConnected and queryifhostnotfound :
             print("Could not auto-connect.  Trying manual")
             hostport=input("Enter the hostname/IP of the Utopia-HUB: ")
             try:
@@ -44,15 +69,17 @@ class UtopiaController:
             except :
                 print("Could not connect to %s. Run in disconnected!"%(hostport))
 
-            if not self.client.isConnected :
-                print("Warning:: couldnt connect to a utopia hub....")
-                self.client=None
+        if not self.client.isConnected :
+            print("Warning:: couldnt connect to a utopia hub....")
+        else :
             # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET messages only
-            if self.client:
-                self.client.sendMessage(
-                    Subscribe(self.getTimeStamp(),"PMSN"))
+            self.subscribe()        
 
-    def isConnected(self): return self.client.isConnected
+    def isConnected(self):  return self.client.isConnected
+    def gethostport(self):  return self.client.gethostport()
+    def subscribe(self):
+        self.client.sendMessage(Subscribe(self.getTimeStamp(),"PMSN"))
+
                 
     def sendStimulusEvent(self,stimulusState,timestamp=None,
                           targetState=None,objIDs=None):
@@ -74,11 +101,11 @@ class UtopiaController:
             raise RunTimeException("ARGH! objIDs and stimulusState not same length!") 
     
         # insert extra 0 object ID if targetState given
-        if not targetState is None :
+        if not targetState is None and targetState>=0 :
             # N.B. copy longer version to new variable, rather than modify in-place with append
             objIDs = objIDs+[0] 
             stimulusState=stimulusState+[targetState]
-    
+        
         return StimulusEvent(timestamp,objIDs,stimulusState)
 
     def modeChange(self,newmode):
@@ -120,8 +147,14 @@ class UtopiaController:
                     # process selection callbacks
                     for h in self.selectionHandlers:
                         h(m.objID)
+
+                elif m.msgID==SignalQuality.msgID:
+                    self.lastSignalQuality=m.signalQuality
+                    # process selection callbacks
+                    for h in self.signalQualityHandlers:
+                        h(self.lastSignalQuality)
                     
-            if newPrediction:
+            if newPrediction and newPrediction.Yest>=0 :
                 self.lastPrediction=newPrediction
         return self.msgs
 
@@ -147,7 +180,11 @@ class UtopiaController:
                 return (self.lastPrediction.Yest,False)
         return (None,False)
 
-def injectERP(amp=1,host="localhost",port=8300):
+    def getLastSignalQuality(self):
+        self.getNewMessages()
+        return self.lastSignalQuality
+
+def injectERP(amp,host="localhost",port=8300):
     """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
     import socket
     try:

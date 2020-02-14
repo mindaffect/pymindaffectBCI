@@ -1,7 +1,26 @@
 #!/usr/bin/python3 
 #
-# Copyright (c) MindAffect B.V. 2018
-# For internal use only.  Distribution prohibited.
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import struct
 import time
 import socket
@@ -17,16 +36,9 @@ class UtopiaMessage:
     def __str__(self):
         return '%i\n'%(self.msgID)
 
-class TimeStampClock:
-    """Wrapper class for giving time-stamps for marking up messages"""
-    def __init__(self):
-        self.t0 = self.getAbsTime()
-    def getAbsTime(self):
-        return time.perf_counter()
-    def getTime(self):
-        '''get the elapsed time on this timer in milliseconds'''
-        return int((self.getAbsTime()-self.t0)*1000)
-    
+def getTimeStamp(t0=0):
+    return time.perf_counter()*1000-t0
+
 class RawMessage(UtopiaMessage) :
     msgName="RAW"
     """Class for a raw utopia message, i.e. decoded header but raw payload"""
@@ -609,31 +621,36 @@ class UtopiaClient:
     DEFAULTHOST='localhost'
     DEFAULTPORT=8400    
     HEARTBEATINTERVAL_ms=1000
-    nextHeartbeatTime=0
+    HEARTBEATINTERVALUDP_ms=200
     
     def __init__(self):
         self.isConnected = False
         self.sock = []
+        self.udpsock=None
         self.recvbuf = b''
-        self.timeStampClock = TimeStampClock()
         self.nextHeartbeatTime=self.getTimeStamp()
+        self.nextHeartbeatTimeUDP=self.getTimeStamp()
 
     def getAbsTime(self):
         """Get the absolute time in seconds"""
-        return self.timeStampClock.getAbsTime()
+        return getTimeStamp()
     def getTimeStamp(self):
         """Get the time-stamp for the current time"""
-        return self.timeStampClock.getTime()
+        return getTimeStamp()
 
     def connect(self, hostname=None, port=None):
         """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
-        if hostname is None: hostname = UtopiaClient.DEFAULTHOST
-        if port is None:     port     = UtopiaClient.DEFAULTPORT
+        if hostname is None:       hostname = UtopiaClient.DEFAULTHOST
+        if port is None or port<0: port     = UtopiaClient.DEFAULTPORT
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((hostname, port))
         self.sock.setblocking(False)
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1) # disable nagle
         self.isConnected = True
+        # make udp socket also
+        self.udpsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
+        # ensure tcp and udp have the same local port number...
+        self.udpsock.bind(self.sock.getsockname())
 
     def autoconnect(self,hostname=None,port=None,timeout_ms=3000):
         if hostname is None :
@@ -644,22 +661,28 @@ class UtopiaClient:
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
 
-        if ":" in hostname :
-            hostname,port=hostname.split(":")
-            port=int(port)
-                            
+                if ":" in hostname :
+                    hostname,port=hostname.split(":")
+                    port=int(port)
+
+        print("Trying to connect to: %s:%d"%(hostname,port))
         for i in range(int(timeout_ms/1000)):
             try:
                 self.connect(hostname, port)
-                print('Connected!');
+                print('Connected!',flush=True)
                 break
             except socket.error as ex:
-                print('Connection refused...  Waiting')
+                print('Connection refused...  Waiting',flush=True)
                 print(ex)
                 time.sleep(1)
         if not self.isConnected:
-            raise Exception('Connection Refused!')
-            
+            raise socket.error('Connection Refused!')
+
+    def gethostport(self):
+        if self.isConnected:
+            hp=self.sock.getpeername()
+            return ":".join(str(i) for i in hp)
+        return None
         
     def disconnect(self):
         """disconnect() -- close a connection."""
@@ -678,6 +701,9 @@ class UtopiaClient:
         while nw<N:
             nw += self.sock.send(request[nw:])
 
+    def sendRawUDP(self,request):
+        self.udpsock.sendto(request,self.sock.getsockname())
+
     def sendMessage(self, msg):
         if not msg is RawMessage : # convert to raw for sending
             if msg.timestamp <= 0 : # insert valid time-stamp, N.B. all messages have timestamp!
@@ -687,10 +713,14 @@ class UtopiaClient:
         self.sendHeartbeatIfTimeout()
 
     def sendHeartbeatIfTimeout(self):
-        if self.getTimeStamp() > self.nextHeartbeatTime :
-           self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(self.getTimeStamp())).serialize())
-           self.nextHeartbeatTime=self.getTimeStamp()+self.HEARTBEATINTERVAL_ms
-
+        curtime = self.getTimeStamp()
+        if curtime > self.nextHeartbeatTime :
+           self.nextHeartbeatTime=curtime+self.HEARTBEATINTERVAL_ms
+           self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
+        if curtime > self.nextHeartbeatTimeUDP :
+           self.nextHeartbeatTimeUDP=curtime+self.HEARTBEATINTERVALUDP_ms
+           self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
+        
     def sendMessages(self, msgs):
         """sends single or multiple utopia-messages to the utopia server
         """
@@ -729,6 +759,7 @@ class UtopiaClient:
         self.recvbuf = self.recvbuf[nconsumed:] # remove the consumed part of the buffer
         # decode the RawMessages to actual messages
         newmessages = decodeRawMessages(newmessages)
+        self.sendHeartbeatIfTimeout()
         return newmessages
 
     def initClockAlign(self, delays_ms=[50]*10):
