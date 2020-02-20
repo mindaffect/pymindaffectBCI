@@ -115,7 +115,7 @@ Finally, run the main loop
 
 For more complex output examples, and examples for controlling a [lego boost](https://www.lego.com/en-gb/themes/boost) robot, or a [philips Hue](https://www2.meethue.com/en-us) controllable light, look in the `examples\output` directory. 
 
-Simple *presention* module
+Simple *presentation* module
 ----------------------------
 
 Presentation is inherently more complex that output as we must display the correct stimuli to the user with precise timing and communicate this timing information to the mindaffect decoder.  Further, for the BCI operation we need to operation in (at least),
