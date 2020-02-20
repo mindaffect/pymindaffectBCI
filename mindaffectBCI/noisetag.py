@@ -114,7 +114,7 @@ class Flicker(FSM):
         #if objIDs is None : objIDs=self.objIDs
         # get the state info for the given set of objectIDs
         #ss =[self.ss[i] for i in objIDs-1]
-        return (self.ss,self.tgtstate,objIDs,self.sendEvents)
+        return (self.ss,self.tgtstate,None,self.sendEvents)
 
     
 class FlickerWithSelection(Flicker):
@@ -402,7 +402,7 @@ class Noisetag:
         self.objIDs=None
 
 
-    def connect(self,host=None,port=-1,queryifhostnotfound=True):
+    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=5000):
         if self.utopiaController is None :
             # use the global controller if none given
             global uc
@@ -413,7 +413,7 @@ class Noisetag:
         if self.utopiaController.isConnected() :
             return True
         self.utopiaController.autoconnect(host,port,
-                                          queryifhostnotfound=queryifhostnotfound)
+                                          queryifhostnotfound=queryifhostnotfound,timeout_ms=timeout_ms)
         return self.utopiaController.isConnected()
     
     def isConnected(self):
@@ -621,6 +621,7 @@ def doFrame(t,stimState,tgtState=-1,objIDs=None,utopiaController=None):
 if __name__ == "__main__":
     # make the noisetag object to manage the tagging selections
     ntexpt = Noisetag()
+    ntexpt.connect()
     # set the subset of active objects being displayed
     ntexpt.setnumActiveObjIDs(10)
     # tell it to play a full experiment sequence

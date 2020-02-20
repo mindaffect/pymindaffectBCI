@@ -77,9 +77,6 @@ class UtopiaController:
 
     def isConnected(self):  return self.client.isConnected
     def gethostport(self):  return self.client.gethostport()
-    def subscribe(self):
-        self.client.sendMessage(Subscribe(self.getTimeStamp(),"PMSN"))
-
                 
     def sendStimulusEvent(self,stimulusState,timestamp=None,
                           targetState=None,objIDs=None):
@@ -112,6 +109,11 @@ class UtopiaController:
         if self.client :
             self.client.sendMessage(
                 ModeChange(self.getTimeStamp(),newmode))
+
+    def subscribe(self,newmode="PSNME"):
+        if self.client :
+            self.client.sendMessage(
+                Subscribe(self.getTimeStamp(),newmode))
 
     def log(self,msg):
         if self.client :

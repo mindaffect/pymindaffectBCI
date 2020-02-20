@@ -115,7 +115,7 @@ Finally, run the main loop
 
 For more complex output examples, and examples for controlling a [lego boost](https://www.lego.com/en-gb/themes/boost) robot, or a [philips Hue](https://www2.meethue.com/en-us) controllable light, look in the `examples\output` directory. 
 
-Simple *presentation* module
+Simple *presention* module
 ----------------------------
 
 Presentation is inherently more complex that output as we must display the correct stimuli to the user with precise timing and communicate this timing information to the mindaffect decoder.  Further, for the BCI operation we need to operation in (at least),
@@ -160,6 +160,21 @@ Write a function to draw the screen.  Here we will use the python gaming librar 
 			                   ('c3f',(col2)*4))    
 
 
+Now, we need a bit of python hacking.  Because our BCI depends on accurate timelock of the brain data (EEG) with the visual display, we need to have accurate time-stamps for when the display changes.  Fortunately, pyglet allows us to get this accuracy as it provides a `flip` method on windows which blocks until the display is actually updated.  Thus we can use this to generate accurate time-stamps.   We do this by adding a time-stamp recording function to the windows normal `flip` method with the following magic:
+
+.. code:: python
+  # override window's flip method to record the exact *time* the
+  # flip happended
+  def timedflip(self):
+    '''pseudo method type which records the timestamp for window flips'''
+    type(self).flip(self) # call the 'real' flip method...
+    self.lastfliptime=nt.getTimeStamp()
+  import types
+  window.flip = types.MethodType(timedflip,window)
+  # ensure the field is already there.
+  window.lastfliptime=nt.getTimeStamp()
+	  
+					   
 Now we write a function which,
 1) asks the `noisetag` framework how the selectable squares should look,
 2) updates the `noisetag` framework with information about how the display was updated.
@@ -171,11 +186,11 @@ Now we write a function which,
   state2color={0:(.2,.2,.2), # off=grey
                1:(1,1,1),    # on=white
                2:(0,1,0),    # cue=green
-  	           3:(0,0,1)}    # feedback=blue
+  	       3:(0,0,1)}    # feedback=blue
   def draw(dt):
     # send info on the *previous* stimulus state.
     # N.B. we do it here as draw is called as soon as the vsync happens
-    nt.sendStimulusState()
+    nt.sendStimulusState(timestamp=window.lastfliptime)
     # update and get the new stimulus state to display
     # N.B. update raises StopIteration when noisetag sequence has finished
     try : 
@@ -206,7 +221,8 @@ Finally, we tell the `noisetag` module to run a complete BCI 'experiment' with c
 .. code:: python
 
   # tell the noisetag framework to run a full : calibrate->prediction sequence
-  nt.startExpt([1,2],nCal=10,nPred=10)
+  nt.setnumActiveObjIDs(2)  # say that we have 2 objects flickering
+  nt.startExpt(nCal=10,nPred=10)
   # run the pyglet main loop
   pyglet.clock.schedule(draw)
   pyglet.app.run()
