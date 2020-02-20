@@ -638,7 +638,7 @@ class UtopiaClient:
         """Get the time-stamp for the current time"""
         return getTimeStamp()
 
-    def connect(self, hostname=None, port=None):
+    def connect(self, hostname=None, port=8400):
         """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
         if hostname is None:       hostname = UtopiaClient.DEFAULTHOST
         if port is None or port<0: port     = UtopiaClient.DEFAULTPORT
@@ -652,7 +652,7 @@ class UtopiaClient:
         # ensure tcp and udp have the same local port number...
         self.udpsock.bind(self.sock.getsockname())
 
-    def autoconnect(self,hostname=None,port=None,timeout_ms=3000):
+    def autoconnect(self,hostname=None,port=8400,timeout_ms=3000):
         if hostname is None :
             print('Trying to auto-discover the utopia-hub server');
             hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE,timeout=5,numretries=int(max(1,timeout_ms/5000)))
@@ -661,9 +661,13 @@ class UtopiaClient:
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
 
-                if ":" in hostname :
-                    hostname,port=hostname.split(":")
-                    port=int(port)
+        if hostname is None :
+            print('Error:: couldnt autodiscover the decoder!\nPlease enter the IP address manually')
+            return
+
+        if ":" in hostname :
+            hostname,port=hostname.split(":")
+            port=int(port)
 
         print("Trying to connect to: %s:%d"%(hostname,port))
         for i in range(int(timeout_ms/1000)):
