@@ -133,6 +133,7 @@ To use this.  Import the module and creat the noisetag object.
 
   from mindaffectBCI.noisetag import Noisetag
   nt = Noisetag()
+  nt.connect()
 
 
 Note\: Creation of the `Noisetag` object will also implictly create a connection to any running mindaffectBCI decoder - so you should have one running somewhere on your network.
