@@ -660,6 +660,7 @@ class UtopiaClient:
             if( len(hosts)>0 ):
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
+        if port is None : port=8400
 
         if hostname is None :
             print('Error:: couldnt autodiscover the decoder!\nPlease enter the IP address manually')

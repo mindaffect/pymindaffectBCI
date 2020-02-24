@@ -43,7 +43,7 @@ class Utopia2Output:
         self.objectID2Action=objectID2Action 
         self.client = UtopiaClient()
 
-    def connect(self,host=None,port=None,timeout_ms=30000):
+    def connect(self,host=None,port=8400,timeout_ms=30000):
         print('Connecting to utopia on',host,":",port,",",timeout_ms)
         self.client.autoconnect(host,port,timeout_ms)
         self.client.initClockAlign()
