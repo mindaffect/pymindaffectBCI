@@ -5,7 +5,7 @@ with open("README.rst", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(name='mindaffectBCI',
-      version='0.9.6',
+      version='0.9.7',
       description='The MindAffect BCI python SDK',
       long_description_content_type='text/x-rst',      
       long_description=long_description,

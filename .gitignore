@@ -1,2 +1,11 @@
-
-mindaffectBCI.egg-info/dependency_links.txt
+resources/logs/*
+*_info.txt
+*.pdf
+*~
+*#
+octave-workspace
+\**\*
+__pycache__
+*.log
+*.res
+.gradle/*

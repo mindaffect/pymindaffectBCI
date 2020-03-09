@@ -133,6 +133,7 @@ To use this.  Import the module and creat the noisetag object.
 
   from mindaffectBCI.noisetag import Noisetag
   nt = Noisetag()
+  nt.connect()
 
 
 Note\: Creation of the `Noisetag` object will also implictly create a connection to any running mindaffectBCI decoder - so you should have one running somewhere on your network.
@@ -163,6 +164,7 @@ Write a function to draw the screen.  Here we will use the python gaming librar 
 Now, we need a bit of python hacking.  Because our BCI depends on accurate timelock of the brain data (EEG) with the visual display, we need to have accurate time-stamps for when the display changes.  Fortunately, pyglet allows us to get this accuracy as it provides a `flip` method on windows which blocks until the display is actually updated.  Thus we can use this to generate accurate time-stamps.   We do this by adding a time-stamp recording function to the windows normal `flip` method with the following magic:
 
 .. code:: python
+
   # override window's flip method to record the exact *time* the
   # flip happended
   def timedflip(self):
