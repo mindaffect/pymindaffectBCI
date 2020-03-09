@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #  Copyright (c) 2019 MindAffect B.V. 
 #  Author: Jason Farquhar <jason@mindaffect.nl>
 #
@@ -220,6 +220,9 @@ class SingleTrial(FSM):
                             sendEvents=True))
                 
         elif self.stage==3 : # wait/feedback
+            # tell decoder end of this trial
+            self.utopiaController.newTarget()
+            
             if self.selectionThreshold is None:
                 print('3.wait')
                 self.stimulusStateStack.push(

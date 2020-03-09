@@ -553,7 +553,7 @@ def decodeRawMessages(msgs):
     """decode utopia RawMessages into actual message objects"""
     return [ decodeRawMessage(msg) for msg in msgs ]
 
-def ssdpDiscover(servicetype=None,timeout=3,numretries=1):
+def ssdpDiscover2(servicetype=None,timeout=3,numretries=1):
     '''auto-discover the utopia-hub using ssdp discover messages'''
     ssdpgroup = ("239.255.255.250", 1900)
     msearchTemplate = "\r\n".join([
@@ -630,6 +630,7 @@ class UtopiaClient:
         self.recvbuf = b''
         self.nextHeartbeatTime=self.getTimeStamp()
         self.nextHeartbeatTimeUDP=self.getTimeStamp()
+        self.ssdpDiscover=None
 
     def getAbsTime(self):
         """Get the absolute time in seconds"""
@@ -654,8 +655,13 @@ class UtopiaClient:
 
     def autoconnect(self,hostname=None,port=8400,timeout_ms=3000):
         if hostname is None :
+            if self.ssdpDiscover is None:
+                print('making discovery object')
+                from ssdpDiscover import ssdpDiscover
+                # create the discovery object
+                self.ssdpDiscover=ssdpDiscover(UtopiaClient.UTOPIA_SSDP_SERVICE)
             print('Trying to auto-discover the utopia-hub server');
-            hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE,timeout=5,numretries=int(max(1,timeout_ms/5000)))
+            hosts=self.ssdpDiscover.discover(timeout=timeout_ms/1000)
             print("Discovery returned %d utopia-hub servers"%len(hosts))
             if( len(hosts)>0 ):
                 hostname=hosts[0].strip()

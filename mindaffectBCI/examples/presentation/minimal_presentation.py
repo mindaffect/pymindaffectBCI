@@ -96,7 +96,7 @@ nt.addSelectionHandler(selectionHandler)
 
 # tell the noisetag framework to run a full : calibrate->prediction sequence
 nt.setnumActiveObjIDs(2)
-nt.startExpt(nCal=4,nPred=10,duration=4)
+nt.startExpt(nCal=40,nPred=10,duration=2,waitduration=5)
 # run the pyglet main loop
 pyglet.clock.schedule(draw)
 pyglet.app.run()
