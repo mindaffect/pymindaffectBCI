@@ -58,6 +58,8 @@ class UtopiaController:
         try : 
             self.client.autoconnect(host,port,timeout_ms=timeout_ms)
         except socket.error as ex:
+            print("Socket error connecting: ")
+            print(ex)
             pass
 
         # ask user for host
@@ -72,7 +74,7 @@ class UtopiaController:
         if not self.client.isConnected :
             print("Warning:: couldnt connect to a utopia hub....")
         else :
-            # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET messages only
+            # set default subscriptions
             self.subscribe()        
 
     def isConnected(self):  return self.client.isConnected
@@ -110,7 +112,8 @@ class UtopiaController:
             self.client.sendMessage(
                 ModeChange(self.getTimeStamp(),newmode))
 
-    def subscribe(self,newmode="PSNME"):
+    def subscribe(self,newmode="PSNMEQ"):
+        # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET, SIGNALQUALITY messages only
         if self.client :
             self.client.sendMessage(
                 Subscribe(self.getTimeStamp(),newmode))

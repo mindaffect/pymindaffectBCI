@@ -60,7 +60,8 @@ def draw(dt):
     # draw the display with the instructed colors
     if target_state is not None and target_state>=0:
         print("*" if target_state>0 else '.',end='',flush=True)
-        pass
+    else:
+        print('.',end='',flush=True)
 
     if stimulus_state : 
         draw_squares(state2color[stimulus_state[0]],

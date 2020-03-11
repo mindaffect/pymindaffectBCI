@@ -1,4 +1,4 @@
-#!/usr/bin/python3 
+#!/usr/bin/env python3
 #
 #  Copyright (c) 2019 MindAffect B.V. 
 #  Author: Jason Farquhar <jason@mindaffect.nl>
@@ -171,6 +171,83 @@ class StimulusEvent(UtopiaMessage):
 
     def __str__(self):
         return "%s %i"%(self.msgName,self.timestamp) + "".join("(%i,%i)"%(x,y) for x,y in zip(self.objIDs,self.objState))
+
+class PredictedTargetProb(UtopiaMessage):    
+    """ the PREDICTEDTARGETPROB utopia message class """
+
+    # Static definitions of the class type constants
+    msgID=ord('P')
+    msgName="PREDICTEDTARGETPROB"
+    
+    def __init__(self, timestamp=None, Yest=0, Perr=1.0):
+        super().__init__(PredictedTargetProb.msgID,PredictedTargetProb.msgName)
+        self.timestamp=timestamp
+        self.Yest     =Yest
+        self.Perr     =Perr
+
+    def serialize(self):
+        """Returns the contents of this event as a string, ready to send over the network,
+           or None in case of conversion problems.
+        """
+        S = struct.pack('<ibf', int(self.timestamp),int(self.Yest),self.Perr)
+        return S
+
+    def deserialize(buf):
+        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        bufsize = len(buf)
+        if bufsize < 4:
+            return (None,0)
+        (timestamp,Yest,Perr) = struct.unpack('<ibf',buf)
+        msg = PredictedTargetProb(timestamp,Yest,Perr)
+        return (msg,4)
+    
+    def __str__(self):
+        return "%c(%d) %s %i Yest=%d Perr=%f"%(self.msgID,self.msgID,self.msgName,self.timestamp,self.Yest,self.Perr)
+
+
+
+class PredictedTargetDist(UtopiaMessage):
+    """ the PredictedTargetDist utopia message class """
+    
+    # Static definitions of the class type constants
+    msgID=ord('F')
+    msgName="PREDICTEDTARGETDIST"
+
+    def __init__(self, timestamp=None, objIDs=None, pTgt=None):
+        super().__init__(PredictedTargetDist.msgID,PredictedTargetDist.msgName)
+        self.timestamp=timestamp
+        self.objIDs=objIDs
+        self.pTgt=pTgt
+
+    def serialize(self):
+        """Converts this message to a string representation to send over the network
+        """
+        S = struct.pack("<i", int(self.timestamp)) # timestamp
+        S = S + struct.pack("<B",len(self.objIDs))  # nObj
+        for objid,pTgt in zip(self.objIDs,self.pTgt):
+            S = S + struct.pack("<Bf",int(objid),float(pTgt)) # [objID,pTgt] pairs
+        return S
+
+    def deserialize(buf):
+        """Static method to create a PREDICTEDTARGETDIST class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
+        bufsize = len(buf)
+        if bufsize < 5:
+            return (None,0)
+        (timestamp,nobj) = struct.unpack("<iB",buf[0:5])
+        if bufsize < 5+nobj*(1+4):
+            return (None,0)
+        objIDs=[]
+        pTgt=[]
+        for i in range(5,len(buf),(1+4)):
+            (objid,ptgt)=struct.unpack("<Bf",buf[i:i+(1+4)])
+            objIDs.append(objid)
+            pTgt.append(ptgt)
+        msg=PredictedTargetDist(timestamp,objIDs,pTgt)
+        return (msg, 5+nobj*2)
+
+    def __str__(self):
+        return "%s %i"%(self.msgName,self.timestamp) + "".join("(%i,%f)"%(x,y) for x,y in zip(self.objIDs,self.pTgt))
+
 
 class DataPacket(UtopiaMessage):
     """ the DATAPACKET utopia message class """
@@ -421,39 +498,6 @@ class Log(UtopiaMessage):
         return "%c(%d) %s %i %s"%(self.msgID,self.msgID,self.msgName,self.timestamp,self.logmsg)
 
 
-class PredictedTargetProb(UtopiaMessage):    
-    """ the PREDICTEDTARGETPROB utopia message class """
-
-    # Static definitions of the class type constants
-    msgID=ord('P')
-    msgName="PREDICTEDTARGETPROB"
-    
-    def __init__(self, timestamp=None, Yest=0, Perr=1.0):
-        super().__init__(PredictedTargetProb.msgID,PredictedTargetProb.msgName)
-        self.timestamp=timestamp
-        self.Yest     =Yest
-        self.Perr     =Perr
-
-    def serialize(self):
-        """Returns the contents of this event as a string, ready to send over the network,
-           or None in case of conversion problems.
-        """
-        S = struct.pack('<ibf', int(self.timestamp),int(self.Yest),self.Perr)
-        return S
-
-    def deserialize(buf):
-        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
-        bufsize = len(buf)
-        if bufsize < 4:
-            return (None,0)
-        (timestamp,Yest,Perr) = struct.unpack('<ibf',buf)
-        msg = PredictedTargetProb(timestamp,Yest,Perr)
-        return (msg,4)
-    
-    def __str__(self):
-        return "%c(%d) %s %i Yest=%d Perr=%f"%(self.msgID,self.msgID,self.msgName,self.timestamp,self.Yest,self.Perr)
-
-
 class SignalQuality(UtopiaMessage):    
     """ the SIGNALQUALITY utopia message class """
 
@@ -480,7 +524,7 @@ class SignalQuality(UtopiaMessage):
         if bufsize < 4:
             return (None,0)
         (timestamp,) = struct.unpack('<i',buf[0:4])
-        signalQuality = [ struct.unpack('<f',buf[i:i+4]) for i in range(4,bufsize,4) ]
+        signalQuality = [ struct.unpack('<f',buf[i:i+4])[0] for i in range(4,bufsize,4) ]
         msg = SignalQuality(timestamp,signalQuality)
         return (msg,bufsize)
     
@@ -533,6 +577,8 @@ def decodeRawMessage(msg):
         (decodedmsg,nconsumed) = Heartbeat.deserialize(msg.payload)
     elif msg.msgID==PredictedTargetProb.msgID:
         (decodedmsg,nconsumed) = PredictedTargetProb.deserialize(msg.payload)
+    elif msg.msgID==PredictedTargetDist.msgID:
+        (decodedmsg,nconsumed) = PredictedTargetDist.deserialize(msg.payload)
     elif msg.msgID==Selection.msgID:
         (decodedmsg,nconsumed) = Selection.deserialize(msg.payload)
     elif msg.msgID==ModeChange.msgID:
@@ -630,6 +676,7 @@ class UtopiaClient:
         self.recvbuf = b''
         self.nextHeartbeatTime=self.getTimeStamp()
         self.nextHeartbeatTimeUDP=self.getTimeStamp()
+        self.ssdpDiscover=None
 
     def getAbsTime(self):
         """Get the absolute time in seconds"""
@@ -642,6 +689,7 @@ class UtopiaClient:
         """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
         if hostname is None:       hostname = UtopiaClient.DEFAULTHOST
         if port is None or port<0: port     = UtopiaClient.DEFAULTPORT
+        print("Trying to connect to: %s:%d"%(hostname,port))
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((hostname, port))
         self.sock.setblocking(False)
@@ -655,12 +703,17 @@ class UtopiaClient:
     def autoconnect(self,hostname=None,port=8400,timeout_ms=3000):
         if hostname is None :
             print('Trying to auto-discover the utopia-hub server');
-            hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE,timeout=5,numretries=int(max(1,timeout_ms/5000)))
+            if self.ssdpDiscover is None:
+                print('making discovery object')
+                from .ssdpDiscover import ssdpDiscover
+                # create the discovery object
+                self.ssdpDiscover=ssdpDiscover(UtopiaClient.UTOPIA_SSDP_SERVICE)
+            hosts=self.ssdpDiscover.discover(timeout=timeout_ms/1000)
+            #hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE,timeout=5,numretries=int(max(1,timeout_ms/5000)))
             print("Discovery returned %d utopia-hub servers"%len(hosts))
             if( len(hosts)>0 ):
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
-        if port is None : port=8400
 
         if hostname is None :
             print('Error:: couldnt autodiscover the decoder!\nPlease enter the IP address manually')
@@ -670,9 +723,9 @@ class UtopiaClient:
             hostname,port=hostname.split(":")
             port=int(port)
 
-        print("Trying to connect to: %s:%d"%(hostname,port))
-        for i in range(int(timeout_ms/1000)):
+        for i in range(max(1,int(timeout_ms/1000))):
             try:
+                print("Tring to connect to: %s:%d"%(hostname,port))
                 self.connect(hostname, port)
                 print('Connected!',flush=True)
                 break
@@ -711,7 +764,7 @@ class UtopiaClient:
 
     def sendMessage(self, msg):
         if not msg is RawMessage : # convert to raw for sending
-            if msg.timestamp <= 0 : # insert valid time-stamp, N.B. all messages have timestamp!
+            if msg.timestamp is None : # insert valid time-stamp, N.B. all messages have timestamp!
                 msg.timestamp = self.getTimeStamp()
             msg = RawMessage.fromUtopiaMessage(msg)
         self.sendRaw(msg.serialize()) # send the raw message directly
@@ -777,6 +830,7 @@ class UtopiaClient:
     
     def messagelogger(self,timeout_ms=1000):
         """Simple message logger, infinite loop waiting for and printing messages from the server"""
+        client.sendMessage(Subscribe(None,"ABCDEFGHIJKLMNOPQRSTUVWXYZ")) # subcribe to everything...
         while True:
             newmessages = client.getNewMessages(timeout_ms)
             print("%d new messages:"%len(newmessages))
@@ -835,6 +889,12 @@ def testSerialization():
     print("PredictedTargetProb : %s"%(pt))
     print("serialized          : %s"%(pt.serialize()))
     print("deserialized : %s"%(PredictedTargetProb.deserialize(pt.serialize())[0]))
+    print()
+
+    pd=PredictedTargetDist(15,[1,2,3],[.5,.3,.2])
+    print("PredictedTargetDist : %s"%(pd))
+    print("serialized          : %s"%(pd.serialize()))
+    print("deserialized : %s"%(PredictedTargetDist.deserialize(pd.serialize())[0]))
     print()
     
     sq=SignalQuality(16,[.1,.2,.3,.4,.5])
@@ -896,9 +956,7 @@ if __name__ == "__main__":
     #hosts=ssdpDiscover(servicetype="ssdp:all",timeout=3)
     #print(hosts)
 
-
     # Just a small logging demo for testing purposes...
-
     hostname = None
     port = None
     
@@ -913,4 +971,3 @@ if __name__ == "__main__":
     client.autoconnect(hostname,port)
     client.messagelogger(30000)
     client.disconnect()
-    

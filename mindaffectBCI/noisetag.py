@@ -353,7 +353,7 @@ class Experiment(FSM):
                                  *self.args,duration=self.calduration,**self.kwargs))
         
         elif self.stage==2:
-            self.stimulusStateStack.push(WaitFor(10/isi))
+            self.stimulusStateStack.push(WaitFor(15/isi))
         
         elif self.stage==3:
             self.stimulusStateStack.push(
@@ -402,7 +402,7 @@ class Noisetag:
         self.objIDs=None
 
 
-    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=5000):
+    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=500):
         if self.utopiaController is None :
             # use the global controller if none given
             global uc
@@ -413,7 +413,8 @@ class Noisetag:
         if self.utopiaController.isConnected() :
             return True
         self.utopiaController.autoconnect(host,port,
-                                          queryifhostnotfound=queryifhostnotfound,timeout_ms=timeout_ms)
+                                          queryifhostnotfound=queryifhostnotfound,
+                                          timeout_ms=timeout_ms)
         return self.utopiaController.isConnected()
     
     def isConnected(self):

@@ -103,9 +103,9 @@ class ResultsScreen(InstructionScreen):
     '''Modified instruction screen with waits for and presents calibration results'''
 
     waiting_text = "Waiting for performance results from decoder\n\nPlease wait"
-    results_text = "Calibration Performance: %d%% Correct"
-    def __init__(self,window,noisetag,duration=5000,waitKey=True):
-        super().__init__(window,self.waiting_text,10000,True)
+    results_text = "Calibration Performance: %5.4f%% Correct"
+    def __init__(self,window,noisetag,duration=10000,waitKey=True):
+        super().__init__(window,self.waiting_text,duration,waitKey)
         self.noisetag=noisetag
         self.pred=None
 
@@ -116,7 +116,7 @@ class ResultsScreen(InstructionScreen):
             pred=self.noisetag.getLastPrediction()
             # update text if got predicted performance
             if pred is not None :
-                self.set_text(self.results_text%(1-pred.Perr))
+                self.set_text(self.results_text%((1.0-pred.Perr)*100.0))
         super().draw(t)
 
 
@@ -128,17 +128,13 @@ class ConnectingScreen(InstructionScreen):
     trying_text   = "Trying to connect to : %s\n Please wait"
     connected_text= "Success!\nconnected to: %s"
     query_text    = "Couldnt auto-discover mindaffect decoder\n\nPlease enter decoder address: %s"
-    def __init__(self,window,noisetag,duration=50000,waitKey=True):
-        super().__init__(window,self.searching_text,5000000,False)
+    def __init__(self,window,noisetag,duration=150000):
+        super().__init__(window,self.searching_text,duration,False)
         self.noisetag=noisetag
         self.host=None
         self.port=-1
         self.usertext=''
         self.stage=0
-        # ensure old key-presses are gone
-        global last_text, last_key_press
-        last_text=None
-        last_key_press=None
 
     def draw(self,t):
         '''check for results from decoder.  show if found..'''
@@ -150,7 +146,7 @@ class ConnectingScreen(InstructionScreen):
             if self.stage==0 : # try-connection
                 print('Not connected yet!!')
                 self.noisetag.connect(self.host,self.port,
-                                      queryifhostnotfound=False)
+                                      queryifhostnotfound=False,timeout_ms=100)
                 if self.noisetag.isConnected() :
                     self.set_text(self.connected_text%(self.noisetag.gethostport()))
                     self.t0=getTimeStamp()
@@ -158,6 +154,10 @@ class ConnectingScreen(InstructionScreen):
                 elif self.elapsed_ms() > 10000 :
                     # waited too long, giveup and ask user
                     self.stage=1
+                    # ensure old key-presses are gone
+                    global last_text, last_key_press
+                    last_text=None
+                    last_key_press=None
                     
             elif self.stage==1 : # query hostname
                 # query the user for host/port
@@ -218,9 +218,10 @@ class QueryDialogScreen(InstructionScreen):
         super().draw(t)
         
 #-----------------------------------------------------------------
+from math import log10
 class SignalQualityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
-    def __init__(self,window,noisetag,nch=4,duration=5000,waitKey=True):
+    def __init__(self,window,noisetag,nch=4,duration=50000,waitKey=True):
         super().__init__(window)
         self.noisetag=noisetag
         self.t0=None # timer for the duration
@@ -292,7 +293,7 @@ class SignalQualityScreen(Screen):
         if not self.isRunning :
             self.isRunning=True # mark that we're running
             self.t0=getTimeStamp()
-            self.noisetag.modeChange("SignalQuality")
+            self.noisetag.modeChange("ElectrodeQuality")
         if self.clearScreen:
             self.window.clear()
         # get the sig qualities
@@ -302,10 +303,18 @@ class SignalQualityScreen(Screen):
 
         if len(signalQualities) != len(self.sprite):
             self.update_nch(len(signalQualities))
+
+        issig2noise = any([s>1.5 for s in signalQualities])
         # update the colors
+        print("Qual:",end=None)
         for i,qual in enumerate(signalQualities):
-            qualcolor = (255*qual,255*(1-qual),0) #red=bad, green=good
+            if issig2noise :
+                qual = log10(qual)/2
+            qual=max(0,min(1,qual))
+            print('%d:%f '%(i,qual),end=None)
+            qualcolor = (int(255*qual),int(255*(1-qual)),0) #red=bad, green=good
             self.sprite[i].color=qualcolor
+        print("")
         # draw the updated batch
         self.batch.draw()
 
@@ -340,6 +349,9 @@ class SelectionGridScreen(Screen):
     def set_noisetag(self,noisetag):
         self.noisetag=noisetag
 
+    def setliveFeedback(self,value):
+        self.liveFeedback=value
+        
     def set_grid(self,symbols,objIDs=None,bgFraction=.3):
         '''set/update the grid of symbols to be selected from'''
         winw,winh=window.get_size()
@@ -535,6 +547,7 @@ class ExptScreenManager(Screen):
             print("calibration")
             self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal,numframes=4.2/isi,waitduration=1)
             self.selectionGrid.reset()
+            self.selectionGrid.liveFeedback=False
             self.screen = self.selectionGrid
             
         elif self.stage==5 : # Calibration Results
@@ -552,6 +565,7 @@ class ExptScreenManager(Screen):
             print("prediction")
             self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred,numframes=10/isi,cuedprediction=True,waitduration=1)
             self.selectionGrid.reset()
+            self.selectionGrid.liveFeedback=True
             self.screen = self.selectionGrid
             
         elif self.stage==8 : # closing instruct
