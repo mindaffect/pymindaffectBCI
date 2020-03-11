@@ -138,6 +138,7 @@ class ConnectingScreen(InstructionScreen):
 
     def draw(self,t):
         '''check for results from decoder.  show if found..'''
+        global last_text, last_key_press
         if not self.isRunning :
             super().draw(t)
             return
@@ -156,13 +157,12 @@ class ConnectingScreen(InstructionScreen):
                     self.stage=1
                     # ensure old key-presses are gone
                     global last_text, last_key_press
-                    last_text=None
+                    last_text=''
                     last_key_press=None
                     
             elif self.stage==1 : # query hostname
                 # query the user for host/port
                 # accumulate user inputs
-                global last_text, last_key_press
                 if last_key_press :
                     if last_key_press == pyglet.window.key.BACKSPACE :
                         # remove last character
@@ -323,7 +323,8 @@ class SelectionGridScreen(Screen):
     '''Screen which shows a grid of symbols which will be flickered with the noisecode
     and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
-    LOGLEVEL=1
+    # level for sending log messages to the server
+    LOGLEVEL=0
     
     def __init__(self,window,symbols,noisetag,objIDs=None,
                  bgFraction=.2,clearScreen=True,sendEvents=True,liveFeedback=True):
@@ -545,7 +546,9 @@ class ExptScreenManager(Screen):
 
         elif self.stage==4 : # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal,numframes=4.2/isi,waitduration=1)
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal,
+                                                         numframes=4.2/isi,
+                                                         waitduration=5)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=False
             self.screen = self.selectionGrid
@@ -563,7 +566,10 @@ class ExptScreenManager(Screen):
             
         elif self.stage==7 : # pred
             print("prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred,numframes=10/isi,cuedprediction=True,waitduration=1)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred,
+                                                        numframes=10/isi,
+                                                        cuedprediction=True,
+                                                        waitduration=5)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
             self.screen = self.selectionGrid
@@ -664,7 +670,7 @@ if __name__ == "__main__":
              ['p','q','r','s','t'],
              ['u','v','w','x','y']]
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window,nt,symbols,nCal=10,nPred=20)
+    ss = ExptScreenManager(window,nt,symbols,nCal=10,nPred=2000)
 
     # set per-frame callback to the draw function    
     if drawrate>0 :
