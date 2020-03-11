@@ -92,7 +92,7 @@ class ssdpDiscover :
         return responses
 
 if __name__=="__main__":
-    disc=ssdpDiscover("utopia/1.1")
+    disc=ssdpDiscover("utopia/1.1");
     while True:
         d0 = time.time()
         resp = disc.discover(timeout=.001)

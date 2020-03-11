@@ -22,7 +22,7 @@
 
 from mindaffectBCI.noisetag import Noisetag, sumstats
 nt = Noisetag()
-nt.connect()
+nt.connect(timeout_ms=5000)
 
 import pyglet
 # make a default window, with fixed size for simplicty
@@ -97,7 +97,7 @@ nt.addSelectionHandler(selectionHandler)
 
 # tell the noisetag framework to run a full : calibrate->prediction sequence
 nt.setnumActiveObjIDs(2)
-nt.startExpt(nCal=40,nPred=10,duration=2,waitduration=5)
+nt.startExpt(nCal=4,nPred=10,duration=4)
 # run the pyglet main loop
 pyglet.clock.schedule(draw)
 pyglet.app.run()

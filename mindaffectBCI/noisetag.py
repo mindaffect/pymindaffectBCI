@@ -220,9 +220,6 @@ class SingleTrial(FSM):
                             sendEvents=True))
                 
         elif self.stage==3 : # wait/feedback
-            # tell decoder end of this trial
-            self.utopiaController.newTarget()
-            
             if self.selectionThreshold is None:
                 print('3.wait')
                 self.stimulusStateStack.push(

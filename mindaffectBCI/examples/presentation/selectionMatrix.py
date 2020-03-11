@@ -55,7 +55,14 @@ class InstructionScreen(Screen):
         self.isDone=False
         self.clearScreen=True
         # initialize the instructions screen
-        self.instructLabel=pyglet.text.Label(x=window.width//2,y=window.height//2,anchor_x='center',anchor_y='center',font_size=24,color=(255,255,255,255),multiline=True,width=int(window.width*.8))
+        self.instructLabel=pyglet.text.Label(x=window.width//2,
+                                             y=window.height//2,
+                                             anchor_x='center',
+                                             anchor_y='center',
+                                             font_size=24,
+                                             color=(255,255,255,255),
+                                             multiline=True,
+                                             width=int(window.width*.8))
         self.set_text(text)
         print("Instruct (%dms): %s"%(duration,text))
 
@@ -128,6 +135,9 @@ class ConnectingScreen(InstructionScreen):
     trying_text   = "Trying to connect to : %s\n Please wait"
     connected_text= "Success!\nconnected to: %s"
     query_text    = "Couldnt auto-discover mindaffect decoder\n\nPlease enter decoder address: %s"
+    drawconnect_timeout_ms=200
+    autoconnect_timeout_ms=5000
+    
     def __init__(self,window,noisetag,duration=150000):
         super().__init__(window,self.searching_text,duration,False)
         self.noisetag=noisetag
@@ -138,7 +148,6 @@ class ConnectingScreen(InstructionScreen):
 
     def draw(self,t):
         '''check for results from decoder.  show if found..'''
-        global last_text, last_key_press
         if not self.isRunning :
             super().draw(t)
             return
@@ -147,22 +156,24 @@ class ConnectingScreen(InstructionScreen):
             if self.stage==0 : # try-connection
                 print('Not connected yet!!')
                 self.noisetag.connect(self.host,self.port,
-                                      queryifhostnotfound=False,timeout_ms=100)
+                                      queryifhostnotfound=False,
+                                      timeout_ms=self.drawconnect_timeout_ms)
                 if self.noisetag.isConnected() :
                     self.set_text(self.connected_text%(self.noisetag.gethostport()))
                     self.t0=getTimeStamp()
                     self.duration=1000
-                elif self.elapsed_ms() > 10000 :
+                elif self.elapsed_ms() > self.autoconnect_timeout_ms :
                     # waited too long, giveup and ask user
                     self.stage=1
                     # ensure old key-presses are gone
                     global last_text, last_key_press
-                    last_text=''
+                    last_text=None
                     last_key_press=None
                     
             elif self.stage==1 : # query hostname
                 # query the user for host/port
                 # accumulate user inputs
+                global last_text, last_key_press
                 if last_key_press :
                     if last_key_press == pyglet.window.key.BACKSPACE :
                         # remove last character
@@ -221,6 +232,8 @@ class QueryDialogScreen(InstructionScreen):
 from math import log10
 class SignalQualityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
+
+    instruct="Signal Quality\n\nAdjust headset until all\nelectrodes are green\n(or noise to signal ratio < 10)"
     def __init__(self,window,noisetag,nch=4,duration=50000,waitKey=True):
         super().__init__(window)
         self.noisetag=noisetag
@@ -264,9 +277,11 @@ class SignalQualityScreen(Screen):
                                             batch=self.batch,
                                             group=self.foreground)
         # title for the screen
-        self.title=pyglet.text.Label("Signal Quality",font_size=32,
+        self.title=pyglet.text.Label(self.instruct,font_size=32,
                                      x=0,y=winh,color=(255,255,255,255),
                                      anchor_y="top",
+                                     width=int(window.width*.7),
+                                     multiline=True,
                                      batch=self.batch,
                                      group=self.foreground)
 
@@ -306,12 +321,13 @@ class SignalQualityScreen(Screen):
 
         issig2noise = any([s>1.5 for s in signalQualities])
         # update the colors
-        print("Qual:",end=None)
+        print("Qual:",end='')
         for i,qual in enumerate(signalQualities):
+            self.label[i].text = "%d: %3.1f"%(i,qual)
+            print(self.label[i].text + " ",end='')
             if issig2noise :
                 qual = log10(qual)/2
             qual=max(0,min(1,qual))
-            print('%d:%f '%(i,qual),end=None)
             qualcolor = (int(255*qual),int(255*(1-qual)),0) #red=bad, green=good
             self.sprite[i].color=qualcolor
         print("")
@@ -323,8 +339,7 @@ class SelectionGridScreen(Screen):
     '''Screen which shows a grid of symbols which will be flickered with the noisecode
     and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
-    # level for sending log messages to the server
-    LOGLEVEL=0
+    LOGLEVEL=1
     
     def __init__(self,window,symbols,noisetag,objIDs=None,
                  bgFraction=.2,clearScreen=True,sendEvents=True,liveFeedback=True):
@@ -492,10 +507,10 @@ class ExptScreenManager(Screen):
     '''class to manage a whole experiment:
        instruct->cal->instruct->predict->instruct'''
 
-    welcomeInstruct="Welcome Message\n\nkey to continue"
-    calibrationInstruct="Calibration Message\n\nkey to continue"
-    predictionInstruct="Prediction Message\n\nkey to continue"
-    closingInstruct="Closing Message\nThankyou\nkey to continue"
+    welcomeInstruct="Welcome to the mindaffectBCI\n\nkey to continue"
+    calibrationInstruct="Calibration\n\nThe next stage is CALIBRATION\nlook at the indicated green target\n\nkey to continue"
+    predictionInstruct="Prediction\n\nThe next stage is PREDICTION\nLook at the letter you want to select\nLive BCI feedback in blue\n\nkey to continue"
+    closingInstruct="Closing\nThankyou\n\nkey to continue"
     def __init__(self,window,noisetag,symbols,nCal=1,nPred=1):
         self.window=window
         self.noisetag=noisetag
@@ -546,9 +561,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==4 : # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal,
-                                                         numframes=4.2/isi,
-                                                         waitduration=5)
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal,numframes=4.2/isi,waitduration=1)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=False
             self.screen = self.selectionGrid
@@ -566,10 +579,7 @@ class ExptScreenManager(Screen):
             
         elif self.stage==7 : # pred
             print("prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred,
-                                                        numframes=10/isi,
-                                                        cuedprediction=True,
-                                                        waitduration=5)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred,numframes=10/isi,cuedprediction=True,waitduration=1)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
             self.screen = self.selectionGrid
@@ -670,7 +680,7 @@ if __name__ == "__main__":
              ['p','q','r','s','t'],
              ['u','v','w','x','y']]
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window,nt,symbols,nCal=10,nPred=2000)
+    ss = ExptScreenManager(window,nt,symbols,nCal=10,nPred=20)
 
     # set per-frame callback to the draw function    
     if drawrate>0 :
