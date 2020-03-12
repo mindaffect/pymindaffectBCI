@@ -29,6 +29,8 @@ from mindaffectBCI.noisetag import Noisetag, getTimeStamp
 import pyglet
 isi=1/60
 drawrate=0 # rate at which draw is called
+last_key_press=None
+last_text=None
 
 class Screen:
     '''Screen abstract-class which draws stuff on the screen until finished'''
@@ -148,6 +150,7 @@ class ConnectingScreen(InstructionScreen):
 
     def draw(self,t):
         '''check for results from decoder.  show if found..'''
+        global last_text, last_key_press
         if not self.isRunning :
             super().draw(t)
             return
@@ -166,14 +169,12 @@ class ConnectingScreen(InstructionScreen):
                     # waited too long, giveup and ask user
                     self.stage=1
                     # ensure old key-presses are gone
-                    global last_text, last_key_press
                     last_text=None
                     last_key_press=None
                     
             elif self.stage==1 : # query hostname
                 # query the user for host/port
                 # accumulate user inputs
-                global last_text, last_key_press
                 if last_key_press :
                     if last_key_press == pyglet.window.key.BACKSPACE :
                         # remove last character
@@ -655,13 +656,12 @@ def draw(dt):
         pyglet.app.exit()
     #print('.',end='',flush=True)
 
-last_key_press=None
 def on_key_press(symbols,modifiers):
     '''main key-press handler, which stores the last key in a global variable'''
     global last_key_press
     last_key_press=symbols
 
-last_text=None
+
 def on_text(text):
     global last_text
     last_text=text
