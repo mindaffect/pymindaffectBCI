@@ -258,6 +258,7 @@ class CalibrationPhase(FSM):
         self.stimulusStateStack=stimulusStateStack
         if self.stimulusStateStack is None : raise ValueError
         self.trli=0
+
     def next(self,t):
         if not self.isRunning :
             # tell decoder to start cal
@@ -297,6 +298,7 @@ class PredictionPhase(FSM):
         self.stimulusStateStack=stimulusStateStack
         if self.stimulusStateStack is None : raise ValueError
         # tell decoder to start cal
+
     def next(self,t):
         if not self.isRunning :
             self.utopiaController.modeChange("Prediction.static")
@@ -341,6 +343,7 @@ class Experiment(FSM):
         self.args=args
         self.kwargs=kwargs
         self.stage=0
+
     def next(self,t):
         if self.stage==0:
             self.stimulusStateStack.push(WaitFor(2/isi))
@@ -401,8 +404,7 @@ class Noisetag:
         self.laststate=(None,None,None,None)
         self.objIDs=None
 
-
-    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=500):
+    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=1500):
         if self.utopiaController is None :
             # use the global controller if none given
             global uc
@@ -431,12 +433,10 @@ class Noisetag:
     def updateStimulusState(self,t=None):
         self.stimulusStateMachineStack.next(t)
 
-    def getStimulusState(self,objIDs):
+    def getStimulusState(self,objIDs=None):
         # update set active objects if a set is given
-        setActiveObjIDs(objIDs)
-        return self.getStimulusState()
-
-    def getStimulusState(self):
+        if objIDs is not None : 
+            self.setActiveObjIDs(objIDs)
         # get the complete stimulus state (for MAXOBIDS objects)
         stimState,tgtstate,objIDs,sendEvents = self.stimulusStateMachineStack.get()
         # subset to the active set, matching objIDs to allobjIDs
@@ -467,18 +467,31 @@ class Noisetag:
                                                     targetState,
                                                     objIDs)
 
+    def getNewMessages(self):
+        if self.utopiaController:
+            return self.utopiaController.msgs
+        return []
     def getLastPrediction(self):
         if self.utopiaController :
             return self.utopiaController.getLastPrediction()
         return None
+    def clearLastPrediction(self):
+        if self.utopiaController:
+            self.utopiaController.clearLastPrediction()
     def getLastSignalQuality(self):
         if self.utopiaController :
             return self.utopiaController.getLastSignalQuality()
         return None
+    def clearLastSignalQuality(self):
+        if self.utopiaController:
+            self.utopiaController.clearLastSignalQuality()
     def getLastSelection(self):
         if self.utopiaController :
             return self.utopiaController.getLastSelection()
         return None
+    def clearLastSelection(self):
+        if self.utopiaController:
+            self.utopiaController.clearLastSelection()
     def addMessageHandler(self,cb):
         if self.utopiaController :
             self.utopiaController.addMessageHandler(cb)
@@ -498,6 +511,15 @@ class Noisetag:
         '''manually change the decoder mode'''
         if self.utopiaController:
             self.utopiaController.modeChange(newmode)
+    def subscribe(self,msgs):
+        if self.utopiaController:
+            self.utopiaController.subscribe(msgs)
+    def addSubscription(self,msgs):
+        if self.utopiaController:
+            self.utopiaController.addSubscription(msgs)
+    def removeSubscription(self,msgs):
+        if self.utopiaController:
+            self.utopiaController.removeSubscription(msgs)
 
     # methods to define what (meta) stimulus sequence we will play
     def startExpt(self,nCal=1,nPred=20,selnThreshold=.1,
@@ -588,6 +610,7 @@ class sumstats:
         self.sigma2=-1
         self.minx=0
         self.maxx=0
+
     def addpoint(self,x):
         self.buf[self.N%len(self.buf)]=x # ring-buffer
         self.N=self.N+1
@@ -595,6 +618,7 @@ class sumstats:
         self.sx2=self.sx2+x*x
         self.minx=x if x<self.minx else self.minx
         self.maxx=x if x>self.maxx else self.maxx
+
     def hist(self):
         buf = self.buf[:min(len(self.buf),self.N)]
         self.minx=min(buf)
@@ -606,6 +630,7 @@ class sumstats:
         pp= " ".join("%5.2f"%((bins[i]+bins[i+1])/2) for i in range(len(bins)-1))
         pp+="\n" + " ".join("%5d"%t for t in hist)
         return pp
+
     def __str__(self):
         buf = self.buf[:min(len(self.buf),self.N)]
         mu = statistics.mean(buf)

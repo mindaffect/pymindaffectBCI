@@ -39,7 +39,7 @@ class UtopiaMessage:
 def getTimeStamp(t0=0):
     return time.perf_counter()*1000-t0
 
-class RawMessage(UtopiaMessage) :
+class RawMessage(UtopiaMessage):
     msgName="RAW"
     """Class for a raw utopia message, i.e. decoded header but raw payload"""
     def __init__(self,msgID,version,payload):
@@ -75,10 +75,10 @@ class RawMessage(UtopiaMessage) :
         (msgID,ver,msgsize) = struct.unpack('<BBH', buf[0:4])
         # read the rest of the message
         if msgsize > 0:
-            if bufsize >= 4+msgsize :
+            if bufsize >= 4+msgsize:
                 payload = buf[4:4+msgsize]
             else:
-                print("Buffer too short for payload")
+                print("Buffer too short for payload: id:{},ver:{},sz:{}".format(chr(msgID),ver,msgsize))
                 return (None,0)
         else:
             payload = None
@@ -92,7 +92,7 @@ class RawMessage(UtopiaMessage) :
         nconsumed=0
         while nconsumed < len(buf):            
             (msg,msgconsumed)=RawMessage.deserialize(buf[nconsumed:])
-            if  msg==None or msgconsumed == 0 :
+            if  msg==None or msgconsumed == 0:
                 break # bug-out if invalid/incomplete message
             msgs.append(msg)
             nconsumed = nconsumed + msgconsumed
@@ -114,15 +114,16 @@ class Heartbeat(UtopiaMessage):
         """Returns the contents of this event as a string, ready to send over the network,
            or None in case of conversion problems.
         """
-        S = struct.pack('<i', int(self.timestamp));
+        S = struct.pack('<i', int(self.timestamp))
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
-        (timestamp,) = struct.unpack('<i',buf[0:4]);
+        (timestamp,) = struct.unpack('<i',buf[0:4])
         msg = Heartbeat(timestamp)
         return (msg,4)
     
@@ -152,6 +153,7 @@ class StimulusEvent(UtopiaMessage):
             S = S + struct.pack("<BB",int(objid),int(objstate)) # [objID,objState] pairs
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -192,12 +194,13 @@ class PredictedTargetProb(UtopiaMessage):
         S = struct.pack('<ibf', int(self.timestamp),int(self.Yest),self.Perr)
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
-        (timestamp,Yest,Perr) = struct.unpack('<ibf',buf)
+        (timestamp,Yest,Perr) = struct.unpack('<ibf',buf[:(4+1+4)])
         msg = PredictedTargetProb(timestamp,Yest,Perr)
         return (msg,4)
     
@@ -228,6 +231,7 @@ class PredictedTargetDist(UtopiaMessage):
             S = S + struct.pack("<Bf",int(objid),float(pTgt)) # [objID,pTgt] pairs
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a PREDICTEDTARGETDIST class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -270,6 +274,7 @@ class DataPacket(UtopiaMessage):
             S = S + struct.pack("<%df"%(len(tp)),*tp)
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -313,11 +318,12 @@ class DataHeader(UtopiaMessage):
         S = struct.pack("<i", int(self.timestamp)) # timestamp
         S = S + struct.pack("<i",self.nchannels)
         S = S + struct.pack("<f",self.fsample)
-        if self.labels : 
+        if self.labels: 
             # comma separated list of channel names
             S = S + bytes(",".join(self.labels),'utf-8')
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a HEADER class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -325,16 +331,14 @@ class DataHeader(UtopiaMessage):
             return (None,0)
         timestamp,nchannels,fsample = struct.unpack("<iif",buf[0:8])
         labels = buf[4:].decode('utf-8')
-        labels = split(",",labels)
+        labels = labels.split(",")
         msg=DataHeader(timestamp,nchannels,fsample,labels)
         return (msg, bufsize)
 
     def __str__(self):
         ss="%c(%d) %s %i "%(self.msgID,self.msgID,self.msgName,self.timestamp)
-        ss= ss+ "[%dx%d]"%(len(self.samples),len(self.samples[0]))
-        for chs in self.samples:
-            chstr = "".join(["%f,"%(c) for c in chs])
-            ss = ss + "["+chstr+"]"
+        ss= ss+ "%dch @ %gHz"%(self.nchannels,self.fsample)
+        ss= ss+ ",".join(self.labels)
         return  ss
 
 class NewTarget(UtopiaMessage):    
@@ -352,15 +356,16 @@ class NewTarget(UtopiaMessage):
         """Returns the contents of this event as a string, ready to send over the network,
            or None in case of conversion problems.
         """
-        S = struct.pack('<i', int(self.timestamp));
+        S = struct.pack('<i', int(self.timestamp))
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
-        (timestamp,) = struct.unpack('<i',buf[0:4]);
+        (timestamp,) = struct.unpack('<i',buf[0:4])
         msg = NewTarget(timestamp)
         return (msg,4)
     
@@ -387,6 +392,7 @@ class Selection(UtopiaMessage):
         S = S + struct.pack('<B', self.objID)
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a SELECTION class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -414,15 +420,16 @@ class Reset(UtopiaMessage):
         """Returns the contents of this event as a string, ready to send over the network,
            or None in case of conversion problems.
         """
-        S = struct.pack('<i', int(self.timestamp));
+        S = struct.pack('<i', int(self.timestamp))
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
-        (timestamp,) = struct.unpack('<i',buf[0:4]);
+        (timestamp,) = struct.unpack('<i',buf[0:4])
         msg = Reset(timestamp)
         return (msg,4)
     
@@ -451,6 +458,7 @@ class ModeChange(UtopiaMessage):
         S = S + bytes(self.newmode,'utf-8')
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -484,6 +492,7 @@ class Log(UtopiaMessage):
         S = S + bytes(self.logmsg,'utf-8')
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
@@ -518,13 +527,15 @@ class SignalQuality(UtopiaMessage):
         S = S + b''.join([ struct.pack('<f',q) for q in self.signalQuality ])
         return S
 
+    @staticmethod
     def deserialize(buf):
         """Static method to create a SIGNALQUALIYT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
         (timestamp,) = struct.unpack('<i',buf[0:4])
-        signalQuality = [ struct.unpack('<f',buf[i:i+4])[0] for i in range(4,bufsize,4) ]
+        signalQuality = struct.unpack_from('<%df'%((bufsize-4)//4),buf,4)
+        #                  ,buf[i:i+4])[0] for i in range(4,bufsize,4) ]
         msg = SignalQuality(timestamp,signalQuality)
         return (msg,bufsize)
     
@@ -548,19 +559,21 @@ class Subscribe(UtopiaMessage):
            or None in case of conversion problems.
         """
         S = struct.pack('<i', int(self.timestamp))
-        if type(self.messageIDs) is str :#str
+        if type(self.messageIDs) is str:#str
             S = S + bytes(self.messageIDs,'utf-8')
         else:# int->byte
             S = S + b''.join([ struct.pack('<b',q) for q in self.messageIDs ])
         return S
 
+    @staticmethod
     def deserialize(buf):
-        """Static method to create a SIGNALQUALIYT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a SIGNALQUALITY class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
         bufsize = len(buf)
         if bufsize < 4:
             return (None,0)
         (timestamp,) = struct.unpack('<i',buf[0:4])
-        messageIDs = [ struct.unpack('<i',buf[i:i+4]) for i in range(4,bufsize,4) ]
+        #messageIDs = [ struct.unpack('<i',buf[i:i+4]) for i in range(4,bufsize,4) ]
+        messageIDs = struct.unpack_from('<%di'%((bufsize-4)//4),buf,4)
         msg = Subscribe(timestamp,messageIDs)
         return (msg,bufsize)
     
@@ -572,25 +585,25 @@ class Subscribe(UtopiaMessage):
 def decodeRawMessage(msg):
     """decode utopia RawMessages into actual message objects"""
     if msg.msgID==StimulusEvent.msgID:
-        (decodedmsg,nconsumed)= StimulusEvent.deserialize(msg.payload)
+        decodedmsg,_= StimulusEvent.deserialize(msg.payload)
     elif msg.msgID==Heartbeat.msgID:
-        (decodedmsg,nconsumed) = Heartbeat.deserialize(msg.payload)
+        decodedmsg,_ = Heartbeat.deserialize(msg.payload)
     elif msg.msgID==PredictedTargetProb.msgID:
-        (decodedmsg,nconsumed) = PredictedTargetProb.deserialize(msg.payload)
+        decodedmsg,_ = PredictedTargetProb.deserialize(msg.payload)
     elif msg.msgID==PredictedTargetDist.msgID:
-        (decodedmsg,nconsumed) = PredictedTargetDist.deserialize(msg.payload)
+        decodedmsg,_ = PredictedTargetDist.deserialize(msg.payload)
     elif msg.msgID==Selection.msgID:
-        (decodedmsg,nconsumed) = Selection.deserialize(msg.payload)
+        decodedmsg,_ = Selection.deserialize(msg.payload)
     elif msg.msgID==ModeChange.msgID:
-        (decodedmsg,nconsumed) = ModeChange.deserialize(msg.payload)
+        decodedmsg,_ = ModeChange.deserialize(msg.payload)
     elif msg.msgID==NewTarget.msgID:
-        (decodedmsg,nconsumed) = NewTarget.deserialize(msg.payload)
+        decodedmsg,_ = NewTarget.deserialize(msg.payload)
     elif msg.msgID==SignalQuality.msgID:
-        (decodedmsg,nconsumed) = SignalQuality.deserialize(msg.payload)
+        decodedmsg,_ = SignalQuality.deserialize(msg.payload)
     elif msg.msgID==Reset.msgID:
-        (decodedmsg,nconsumed) = Reset.deserialize(msg.payload)
+        decodedmsg,_ = Reset.deserialize(msg.payload)
     elif msg.msgID==DataPacket.msgID:
-        (decodedmsg,nconsumed) = DataPacket.deserialize(msg.payload)
+        decodedmsg,_ = DataPacket.deserialize(msg.payload)
     else:
         decodedmsg = msg
     return decodedmsg
@@ -621,7 +634,7 @@ def ssdpDiscover(servicetype=None,timeout=3,numretries=1):
     except: # abort if cant setup socket
         return () 
     responses=[]
-    for retry in range(numretries):
+    for _ in range(numretries):
         print("Sending query message:\n%s"%(msearchMessage))
         try:
             sock.sendto(msearchMessage, ssdpgroup)
@@ -632,10 +645,10 @@ def ssdpDiscover(servicetype=None,timeout=3,numretries=1):
         try:
             rsp,addr=sock.recvfrom(8192)
             rsp=rsp.decode('utf-8')
-            print("Got response from : %s\n%s\n"%(addr,rsp))
+            print("Got response from: %s\n%s\n"%(addr,rsp))
             # does the response contain servertype, if so then we match
             location=None
-            if servicetype is None or servicetype in rsp :
+            if servicetype is None or servicetype in rsp:
                 print("Response matches server type: %s"%(servicetype))
                 # use the message source address as default location
                 location=addr 
@@ -643,12 +656,12 @@ def ssdpDiscover(servicetype=None,timeout=3,numretries=1):
                 for line in rsp.split("\r\n"): # cut into lines
                     tmp=line.split(":",1) # cut line into key/val
                     # is this the key we care about -> then record the value
-                    if len(tmp)>1 and tmp[0].lower()=="LOCATION".lower() :
+                    if len(tmp)>1 and tmp[0].lower()=="LOCATION".lower():
                         location=tmp[1].strip()
                         # strip http:// xxxx /stuff
                         if location.startswith("http://"):
                             location=location[7:] # strip http
-                        if '/' in location :
+                        if '/' in location:
                             location=location[:location.index('/')] # strip desc.xml
                         print("Got location: %s"%(location))
                         break # done with this response
@@ -657,7 +670,7 @@ def ssdpDiscover(servicetype=None,timeout=3,numretries=1):
                 responses.append(location)
         except socket.timeout:
             print("Socket timeout")
-        if len(responses)>0 : break
+        if len(responses)>0: break
     return responses
 
 class UtopiaClient:
@@ -701,11 +714,11 @@ class UtopiaClient:
         self.udpsock.bind(self.sock.getsockname())
 
     def autoconnect(self,hostname=None,port=8400,timeout_ms=3000):
-        if hostname is None :
-            print('Trying to auto-discover the utopia-hub server');
+        if hostname is None:
+            print('Trying to auto-discover the utopia-hub server')
             if self.ssdpDiscover is None:
                 print('making discovery object')
-                from .ssdpDiscover import ssdpDiscover
+                from mindaffectBCI.ssdpDiscover import ssdpDiscover
                 # create the discovery object
                 self.ssdpDiscover=ssdpDiscover(UtopiaClient.UTOPIA_SSDP_SERVICE)
             hosts=self.ssdpDiscover.discover(timeout=timeout_ms/1000)
@@ -715,11 +728,11 @@ class UtopiaClient:
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
 
-        if hostname is None :
-            print('Error:: couldnt autodiscover the decoder!\nPlease enter the IP address manually')
-            return
+        if hostname is None:
+            print('Error:: couldnt autodiscover the decoder!\nTrying localhost\nIf this fails enter hostname manually')
+            hostname='127.0.0.1'
 
-        if ":" in hostname :
+        if ":" in hostname:
             hostname,port=hostname.split(":")
             port=int(port)
 
@@ -754,7 +767,7 @@ class UtopiaClient:
         if not(self.isConnected):
             raise IOError('Not connected to utopia server')
 
-        N = len(request);
+        N = len(request)
         nw = self.sock.send(request)
         while nw<N:
             nw += self.sock.send(request[nw:])
@@ -763,8 +776,8 @@ class UtopiaClient:
         self.udpsock.sendto(request,self.sock.getsockname())
 
     def sendMessage(self, msg):
-        if not msg is RawMessage : # convert to raw for sending
-            if msg.timestamp is None : # insert valid time-stamp, N.B. all messages have timestamp!
+        if not msg is RawMessage: # convert to raw for sending
+            if msg.timestamp is None: # insert valid time-stamp, N.B. all messages have timestamp!
                 msg.timestamp = self.getTimeStamp()
             msg = RawMessage.fromUtopiaMessage(msg)
         self.sendRaw(msg.serialize()) # send the raw message directly
@@ -772,10 +785,10 @@ class UtopiaClient:
 
     def sendHeartbeatIfTimeout(self):
         curtime = self.getTimeStamp()
-        if curtime > self.nextHeartbeatTime :
+        if curtime > self.nextHeartbeatTime:
            self.nextHeartbeatTime=curtime+self.HEARTBEATINTERVAL_ms
            self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
-        if curtime > self.nextHeartbeatTimeUDP :
+        if curtime > self.nextHeartbeatTimeUDP:
            self.nextHeartbeatTimeUDP=curtime+self.HEARTBEATINTERVALUDP_ms
            self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
         
@@ -783,7 +796,7 @@ class UtopiaClient:
         """sends single or multiple utopia-messages to the utopia server
         """
         for msg in msgs:
-            sendMessage(msg)
+            self.sendMessage(msg)
             
     def recvall(self, timeout_ms=0):
         """Read all the data from the socket or block for timeout_ms if nothing to do."""
@@ -793,14 +806,14 @@ class UtopiaClient:
         while True: # guarantee at least once through recv
             try:
                 part = self.sock.recv(1024) # non-blocking read what the socket has at this point
-            except socket.error as ex:
+            except socket.error:
                 part =[]
-            if len(part)>0 : # read data add to the store
+            if len(part)>0: # read data add to the store
                 data += part
-            elif len(data)>0 :
+            elif len(data)>0:
                 break  # stop if had some data and read it all
             else: # no data yet
-                if self.getAbsTime() > endtime :
+                if self.getAbsTime() > endtime:
                     break # quit if timeout 
                 else: # poll again in 1ms
                     time.sleep(.001)  
@@ -852,60 +865,60 @@ def testSerialization():
     rm=RawMessage(1,0,"payload")
     print("RawMessage: %s"%(rm))
     print("serialized: %s"%(rm.serialize()))
-    print("deserialized : %s"%(RawMessage.deserialize(rm.serialize())[0]))
+    print("deserialized: %s"%(RawMessage.deserialize(rm.serialize())[0]))
     print()
 
     hb=Heartbeat(10)
     print("Heartbeat: %s"%(hb))
     print("serialized: %s"%(hb.serialize()))
-    print("deserialized : %s"%(Heartbeat.deserialize(hb.serialize())[0]))
+    print("deserialized: %s"%(Heartbeat.deserialize(hb.serialize())[0]))
     print()
     
     se=StimulusEvent(11,[0,1,2],[0,1,0])
     print("StimulusEvent: %s"%(se))
     print("serialized: %s"%(se.serialize()))
-    print("deserialized : %s"%(StimulusEvent.deserialize(se.serialize())[0]))
+    print("deserialized: %s"%(StimulusEvent.deserialize(se.serialize())[0]))
     print()
 
     mc=ModeChange(12,"hello")
-    print("ModeChange : %s"%(mc))
-    print("serialized : %s"%(mc.serialize()))
-    print("deserialized : %s"%(ModeChange.deserialize(mc.serialize())[0]))
+    print("ModeChange: %s"%(mc))
+    print("serialized: %s"%(mc.serialize()))
+    print("deserialized: %s"%(ModeChange.deserialize(mc.serialize())[0]))
     print()
 
     nt=NewTarget(13)
-    print("NewTarget : %s"%(nt))
-    print("serialized : %s"%(nt.serialize()))
-    print("deserialized : %s"%(NewTarget.deserialize(nt.serialize())[0]))
+    print("NewTarget: %s"%(nt))
+    print("serialized: %s"%(nt.serialize()))
+    print("deserialized: %s"%(NewTarget.deserialize(nt.serialize())[0]))
     print()
   
     rs=Reset(14)
-    print("Reset : %s"%(rs))
-    print("serialized : %s"%(rs.serialize()))
-    print("deserialized : %s"%(Reset.deserialize(rs.serialize())[0]))
+    print("Reset: %s"%(rs))
+    print("serialized: %s"%(rs.serialize()))
+    print("deserialized: %s"%(Reset.deserialize(rs.serialize())[0]))
     print()
 
     pt=PredictedTargetProb(15,10,.5)
-    print("PredictedTargetProb : %s"%(pt))
-    print("serialized          : %s"%(pt.serialize()))
-    print("deserialized : %s"%(PredictedTargetProb.deserialize(pt.serialize())[0]))
+    print("PredictedTargetProb: %s"%(pt))
+    print("serialized         : %s"%(pt.serialize()))
+    print("deserialized: %s"%(PredictedTargetProb.deserialize(pt.serialize())[0]))
     print()
 
     pd=PredictedTargetDist(15,[1,2,3],[.5,.3,.2])
-    print("PredictedTargetDist : %s"%(pd))
-    print("serialized          : %s"%(pd.serialize()))
-    print("deserialized : %s"%(PredictedTargetDist.deserialize(pd.serialize())[0]))
+    print("PredictedTargetDist: %s"%(pd))
+    print("serialized         : %s"%(pd.serialize()))
+    print("deserialized: %s"%(PredictedTargetDist.deserialize(pd.serialize())[0]))
     print()
     
     sq=SignalQuality(16,[.1,.2,.3,.4,.5])
-    print("SignalQuality : %s"%(sq))
-    print("serialized    : %s"%(sq.serialize()))
-    print("deserialized : %s"%(SignalQuality.deserialize(sq.serialize())[0]))
+    print("SignalQuality: %s"%(sq))
+    print("serialized   : %s"%(sq.serialize()))
+    print("deserialized: %s"%(SignalQuality.deserialize(sq.serialize())[0]))
     print()
     
     dp=DataPacket(16,[[.1,.2,.3],[.4,.5,.6]])
-    print("DataPacket  : %s"%(dp))
-    print("serialized  : %s"%(dp.serialize()))
+    print("DataPacket : %s"%(dp))
+    print("serialized : %s"%(dp.serialize()))
     print("deserialized: %s"%(DataPacket.deserialize(dp.serialize())[0]))
     print()
     
@@ -914,27 +927,27 @@ def testSerialization():
     print("Raw(Heartbeat): %s"%(rhb))
 
     srhb=rhb.serialize()
-    print("serialized    : %s"%(srhb))
-    (dsrhb,nconsumed)=RawMessage.deserialize(srhb)
-    print("Deserialized serialized Raw(Heartbeat) : %s"%(dsrhb))
+    print("serialized   : %s"%(srhb))
+    dsrhb,=RawMessage.deserialize(srhb)
+    print("Deserialized serialized Raw(Heartbeat): %s"%(dsrhb))
     sedsrhb=decodeRawMessage(dsrhb)
     print("Decoded deserialized Raw(Heartbeat): %s"%(sedsrhb))
 
     rse=RawMessage.fromUtopiaMessage(se)
     print("Raw(StimulusEvent): %s"%(rse))
     srse=rse.serialize()
-    print("serialized        : %s"%(srse))    
+    print("serialized       : %s"%(srse))    
     #deserialize
     (dsrse,nconsumed)=RawMessage.deserialize(srse)
-    print("Deserialized serialized Raw(StimulusEvent) : %s"%(dsrse))
+    print("Deserialized serialized Raw(StimulusEvent): %s"%(dsrse))
     sedsrse=decodeRawMessage(dsrse)
     print("Decoded deserialized Raw(StimulusEvent): %s"%(sedsrse))
 
     #deserialize multiple
     (msgs,nconsumed)=RawMessage.deserializeMany(srse+srse+srhb)
-    print("Deserialized Multiple : %s"%("\n".join([str(msg) for msg in msgs])))
+    print("Deserialized Multiple: %s"%("\n".join([str(msg) for msg in msgs])))
     msgs=decodeRawMessages(msgs)
-    print("Decoded Multiple : %s"%("\n".join([str(msg) for msg in msgs])))
+    print("Decoded Multiple: %s"%("\n".join([str(msg) for msg in msgs])))
 
 
 
@@ -964,7 +977,7 @@ if __name__ == "__main__":
         hostname = sys.argv[1]
         tmp=[hostname.split(":")]
         if len(tmp)>1:
-            hostname=tmp[0];
+            hostname=tmp[0]
             port    =int(tmp[1])
 
     client = UtopiaClient()        

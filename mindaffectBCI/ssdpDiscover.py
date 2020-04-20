@@ -2,6 +2,23 @@
 import socket
 import sys
 import time
+import re
+
+def ip_is_local(ip_string):
+    """
+    Uses a regex to determine if the input ip is on a local network. Returns a boolean. 
+    It's safe here, but never use a regex for IP verification if from a potentially dangerous source.
+    """
+    combined_regex = "(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)"
+    return re.match(combined_regex, ip_string) is not None # is not None is just a sneaky way of converting to a boolean
+
+def get_local_ip():
+    # socket.getaddrinfo returns a bunch of info, so we just get the IPs it returns with this list comprehension.
+    local_ips = [ x[4][0] for x in socket.getaddrinfo(socket.gethostname(), 80)
+                  if ip_is_local(x[4][0]) ]
+    # select the first IP, if there is one.
+    local_ip = local_ips[0] if len(local_ips) > 0 else '127.0.0.1'
+    return local_ip
 
 class ssdpDiscover :
     ssdpgroup = ("239.255.255.250", 1900)
@@ -21,13 +38,17 @@ class ssdpDiscover :
         if sys.version_info[0] == 3:
             msearchMessage = msearchMessage.encode("utf-8")
         return msearchMessage
-
+    
     def initSocket(self):
         # make the UDP socket to the multicast group with timeout
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP,1)
+        local_ip=get_local_ip()
+        membership_request = socket.inet_aton(self.ssdpgroup[0]) + socket.inet_aton(local_ip)
+        # Send add membership request to socket
+        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership_request)
         
     def discover(self,timeout=.001,querytimeout=5):
         '''auto-discover the utopia-hub using ssdp discover messages,

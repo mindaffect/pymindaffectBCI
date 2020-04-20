@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 
-from .utopiaclient import *
+from .utopiaclient import UtopiaClient,Subscribe,PredictedTargetProb,Selection
 class Utopia2Output:    
     """Example class for a utopia OUTPUT module.  Connects to the utopia server
     and then either, depending on mode:
@@ -77,7 +77,8 @@ class Utopia2Output:
             Basically generate output if the messages objectID is one of the ones
             we are tasked with generating output for"""
         for msg in msgs:
-            if not msg.msgID==Selection.msgID: continue;
+            if not msg.msgID==Selection.msgID: 
+                continue
             print('SelnMode:',msg)
             self.doOutput(msg.objID) # call function to make output happen
 
@@ -127,7 +128,7 @@ if __name__ == "__main__":
         hostname = sys.argv[1]
         tmp=[hostname.split(":")]
         if len(tmp)>1:
-            hostname=tmp[0];
+            hostname=tmp[0]
             port    =tmp[1]
 
     outputthreshold=None
