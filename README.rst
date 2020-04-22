@@ -1,23 +1,23 @@
 mindaffectBCI
 =============
-This repository contains the python SDK code for the Brain Computer Interface (BCI) developed by the company [Mindaffect](https://mindaffect.nl).
+This repository contains the python SDK code for the Brain Computer Interface (BCI) developed by the company `Mindaffect <https://mindaffect.nl>`_.
 
 File Structure
 --------------
 This repository is organized roughly as follows:
 
- - `mindaffectBCI` - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
+ - `mindaffectBCI <mindaffectBCI>`_ - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
  
-   - noisetag.py - This module contains the main API for developing User Interfaces with BCI control
-   - utopiaController.py - This module contains the application level APIs for interacting with the MindAffect Decoder.
-   - utopiaclient.py - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
+   - `noisetag.py <mindaffectBCI/noisetag.py>`_ - This module contains the main API for developing User Interfaces with BCI control
+   - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
+   - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
    - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
 
- - `codebooks` - Contains the most common noisetagging codebooks as text files
- - `examples` - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
+ - `examples <examples>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
-   - output - Example output modules.  An output module translates BCI based selections into actions.
-   - presentation - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.
+   - `output <examples/output>`_ - Example output modules.  An output module translates BCI based selections into actions.
+   - `presentation <examples/presentation>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.
+   - `utilities <examples/utilities>`_ - Useful utilities, such as a simple *raw* signal viewer
 
 Installing mindaffectBCI
 ------------------------
@@ -32,7 +32,7 @@ Testing the mindaffectBCI SDK
 
 This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware (i.e. EEG) or the brain-signal decoding algorithms. 
 
-In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules.  You can download the fakerecogniser from our [github page](https://github.com/mindaffect/pymindaffectBCI/tree/master/bin)
+In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules.  You can download the fakerecogniser from our `github page <https://github.com/mindaffect/pymindaffectBCI/tree/master/bin>`_
 
 You should start this fake recogniser by running, either ::
 
@@ -46,7 +46,7 @@ if running on linux/macOS
 
 If successfull, running these scripts should open a terminal window which shows the messages recieved/sent from your example application.
 
-Note: The fakerecogniser is written in [java](https://www.java.com), so you will need a JVM with version >8 for it to run.  If needed download from [here](https://www.java.com/ES/download/)
+Note: The fakerecogniser is written in `java <https://www.java.com>`_, so you will need a JVM with version >8 for it to run.  If needed download from `here <https://www.java.com/ES/download/>`_
 
 Quick Installation Test
 -----------------------
@@ -70,7 +70,7 @@ Simple *output* module
 
 An output module listens for selections from the mindaffect decoder and acts on them to create some output.  Here we show how to make a simple output module which print's "Hello World" when the presentation 'button' with ID=1 is selected.
 
-Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/output/minimal_output.py)
+Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our `github <https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/output/minimal_output.py>`_
 
 
 .. code:: python
@@ -113,7 +113,7 @@ Finally, run the main loop
   u2o.run()
 
 
-For more complex output examples, and examples for controlling a [lego boost](https://www.lego.com/en-gb/themes/boost) robot, or a [philips Hue](https://www2.meethue.com/en-us) controllable light, look in the `examples\output` directory. 
+For more complex output examples, and examples for controlling a `lego boost <https://www.lego.com/en-gb/themes/boost>`_ robot, or a `philips Hue <https://www2.meethue.com/en-us>`_ controllable light, look in the `examples\output` directory. 
 
 Simple *presention* module
 ----------------------------
@@ -125,7 +125,7 @@ Presentation is inherently more complex that output as we must display the corre
 
 The *noisetag* module mindaffectBCI SDK provides a number of tools to hide this complexity from the application developers.  Using the most extreeem of these all the application developer has to do is provide a function to _draw_ the display as instructed by the noisetag module.
 
-Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our [github](https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/presentation/minimal_presentation.py)
+Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our `github <https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/presentation/minimal_presentation.py>`_
 
 To use this.  Import the module and creat the noisetag object.
 
@@ -133,7 +133,6 @@ To use this.  Import the module and creat the noisetag object.
 
   from mindaffectBCI.noisetag import Noisetag
   nt = Noisetag()
-  nt.connect()
 
 
 Note\: Creation of the `Noisetag` object will also implictly create a connection to any running mindaffectBCI decoder - so you should have one running somewhere on your network.
@@ -164,7 +163,6 @@ Write a function to draw the screen.  Here we will use the python gaming librar 
 Now, we need a bit of python hacking.  Because our BCI depends on accurate timelock of the brain data (EEG) with the visual display, we need to have accurate time-stamps for when the display changes.  Fortunately, pyglet allows us to get this accuracy as it provides a `flip` method on windows which blocks until the display is actually updated.  Thus we can use this to generate accurate time-stamps.   We do this by adding a time-stamp recording function to the windows normal `flip` method with the following magic:
 
 .. code:: python
-
   # override window's flip method to record the exact *time* the
   # flip happended
   def timedflip(self):
@@ -231,4 +229,4 @@ Finally, we tell the `noisetag` module to run a complete BCI 'experiment' with c
 
 This will then run a full BCI with 10 *cued* calibration trials, and uncued prediction trials.   During the calibration trials a square turning green shows this is the cued direction.  During the prediction phase a square turning blue shows the selection by the BCI.
 
-For more complex presentation examples, including a full 6x6 character typing keyboard, and a color-wheel for controlling a [philips Hue light](https://www2.meethue.com/en-us) see the `examples/presentation` directory.
+For more complex presentation examples, including a full 6x6 character typing keyboard, and a color-wheel for controlling a `philips Hue light <https://www2.meethue.com/en-us>`_ see the `examples/presentation` directory.
