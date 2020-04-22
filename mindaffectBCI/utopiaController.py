@@ -43,20 +43,20 @@ class UtopiaController:
         # our set message subscriptions
         self.subscriptions = "PSNMEQ"
 
-    def addMessageHandler(self,cb):
+    def addMessageHandler(self, cb):
         self.messageHandlers.append(cb)
-    def addPredictionHandler(self,cb):
+    def addPredictionHandler(self, cb):
         self.predictionHandlers.append(cb)
-    def addSelectionHandler(self,cb):
+    def addSelectionHandler(self, cb):
         self.selectionHandlers.append(cb)
-    def addSignalQualityHandler(self,cb):
+    def addSignalQualityHandler(self, cb):
         self.signalQualityHandlers.append(cb)
         
-    def getTimeStamp(self,t0=0):
+    def getTimeStamp(self, t0=0):
         '''get a (relative) wall-time stamp *in milliseconds*'''
         return getTimeStamp(t0)
         
-    def autoconnect(self,host=None, port=8400, timeout_ms=5000, queryifhostnotfound=True):
+    def autoconnect(self, host=None, port=8400, timeout_ms=5000, queryifhostnotfound=True):
         try:
             self.client.autoconnect(host, port, timeout_ms=timeout_ms)
         except socket.error as ex:
@@ -73,32 +73,32 @@ class UtopiaController:
             except:
                 print("Could not connect to %s. Run in disconnected!"%(hostport))
 
-        if not self.client.isConnected :
+        if not self.client.isConnected:
             print("Warning:: couldnt connect to a utopia hub....")
-        else :
+        else:
             # set default subscriptions
             self.subscribe()        
 
     def isConnected(self):  return self.client.isConnected
     def gethostport(self):  return self.client.gethostport()
                 
-    def sendStimulusEvent(self, stimulusState, timestamp=None,
+    def sendStimulusEvent(self, stimulusState, timestamp=None, 
                           targetState=None, objIDs=None):
         """Send a message to the Utopia-HUB informing of the current stimulus state"""
         stimEvent = self.mkStimulusEvent(stimulusState, timestamp, targetState, objIDs)
-        if self.client : self.client.sendMessage(stimEvent)
+        if self.client: self.client.sendMessage(stimEvent)
         # erp injection for debugging with fakedata
         if targetState in (0, 1): # TODO []: inject to the same host as the utopia connection
             injectERP(targetState)# , self.gethostport())
         return stimEvent
         
-    def mkStimulusEvent(self,stimulusState, timestamp=None,
+    def mkStimulusEvent(self, stimulusState, timestamp=None, 
                         targetState=None, objIDs=None):
         """make a valid stimulus event for the given stimulus state"""
         if timestamp is None:
             timestamp = self.getTimeStamp()
-        if objIDs is None :
-            objIDs = list(range(1,len(stimulusState)+1))
+        if objIDs is None:
+            objIDs = list(range(1, len(stimulusState)+1))
         elif len(objIDs) != len(stimulusState):
             raise ValueError("ARGH! objIDs and stimulusState not same length!")
     
@@ -108,21 +108,22 @@ class UtopiaController:
             objIDs = objIDs+[0] 
             stimulusState = stimulusState+[targetState]
         
-        return StimulusEvent(timestamp,objIDs,stimulusState)
+        return StimulusEvent(timestamp, objIDs, stimulusState)
 
-    def modeChange(self,newmode):
+    def modeChange(self, newmode):
         if self.client:
             self.client.sendMessage(
-                ModeChange(self.getTimeStamp(),newmode))
+                ModeChange(self.getTimeStamp(), newmode))
 
-    def subscribe(self,msgs=None):
+    def subscribe(self, msgs=None):
         # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET, SIGNALQUALITY messages only
         if msgs:
             self.subscriptions = msgs
-        if self.client :
+        if self.client:
+            print("NewSubscriptions: {}".format(self.subscriptions))
             self.client.sendMessage(
-                Subscribe(self.getTimeStamp(),self.subscriptions))
-    def addSubscription(self,msgs):
+                Subscribe(self.getTimeStamp(), self.subscriptions))
+    def addSubscription(self, msgs):
         # N.B. we allow multiple subscribe to same message type so can remove without worrying about breaking
         # for another user
         for m in msgs:
@@ -131,25 +132,25 @@ class UtopiaController:
     def removeSubscription(self, msgs):
         # remove msgs from the list of subscribed messages
         for m in msgs:
-            self.subscriptions.replace(m, "", 1) # remove single subscription
+            self.subscriptions = self.subscriptions.replace(m, "", 1) # remove single subscription
         self.subscribe()
 
 
-    def log(self,msg):
+    def log(self, msg):
         if self.client:
-            self.client.sendMessage(Log(self.getTimeStamp(),msg))
+            self.client.sendMessage(Log(self.getTimeStamp(), msg))
 
     def newTarget(self):
         if self.client:
             self.client.sendMessage(NewTarget(self.getTimeStamp()))
 
-    def selection(self,objID):
+    def selection(self, objID):
         if self.client:
-            self.client.sendMessage(Selection(self.getTimeStamp(),objID))
+            self.client.sendMessage(Selection(self.getTimeStamp(), objID))
         for h in self.selectionHandlers:
             h(objID)         # do selection callbacks
             
-    def getNewMessages(self,timeout_ms=0):
+    def getNewMessages(self, timeout_ms=0):
         '''get new messages from the utopia-hub, and store the list of new'''
         if not self.client: return None
         # get any messages with predictions

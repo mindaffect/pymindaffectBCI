@@ -25,11 +25,11 @@ from mindaffectBCI.utopiaclient import UtopiaClient,Subscribe,DataPacket,SignalQ
 from collections import deque
 
 # rate at which to update the display
-updatet_ms=100
+updatet_ms=50
 # amout of data to display
 datawindow_ms=5000
 # gap in data units between channel lines
-linespace_uv=10
+linespace_uv=20
 
 def makeLines(ax, nch):
   line = [None]*nch
@@ -59,9 +59,9 @@ fig.show()
 
 # connect to the mindaffectDecoder
 U=UtopiaClient()
-U.autoconnect(timeout_ms=5000)
+U.autoconnect(timeout_ms=5000, queryifhostnotfound=True)
 # subscribe to the raw-data messages
-U.sendMessage(Subscribe(None,"D"))
+U.sendMessage(Subscribe(None, "D"))
 
 # render loop
 qual=[]

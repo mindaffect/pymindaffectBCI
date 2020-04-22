@@ -169,7 +169,7 @@ class ConnectingScreen(InstructionScreen):
                     self.set_text(self.connected_text%(self.noisetag.gethostport()))
                     self.t0=getTimeStamp()
                     self.duration=1000
-                    self.noisetag.subscribe("MSPQD")
+                    self.noisetag.subscribe("MSPQ")
                 elif self.elapsed_ms() > self.autoconnect_timeout_ms:
                     # waited too long, giveup and ask user
                     self.stage=1
@@ -252,7 +252,7 @@ class ElectrodequalityScreen(Screen):
         self.update_nch(nch)
         self.dataringbuffer=deque() # deque so efficient sliding data window
         self.datawindow_ms=5000 # 5seconds data plotted
-        self.datascale_uv=10 # scale of gap between ch plots
+        self.datascale_uv=20 # scale of gap between ch plots
         print("Electrode Quality (%dms)"%(duration))
 
     def update_nch(self, nch):
