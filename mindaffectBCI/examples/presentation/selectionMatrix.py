@@ -688,6 +688,7 @@ def initPyglet(fullscreen=False):
     window.flip = types.MethodType(timedflip, window)
     window.lastfliptime=getTimeStamp()
     global fliplogtime; fliplogtime=window.lastfliptime
+    return window
 
 def draw(dt):
     '''main window draw function, which redirects to the screen stack'''
