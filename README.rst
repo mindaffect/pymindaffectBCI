@@ -60,10 +60,16 @@ Essentially, this run the SDK test code which pretends to run a full BCI sequenc
 Quick BCI Test
 --------------
 
-If you have installed [pyglet](pyglet.org), e.g. using `pip3 install pyglet`, then you can also try some more advanced fully BCI exmaples with stimulation.  For a simple letter matrix test run::
+If you have installed [pyglet](pyglet.org), e.g. using `pip3 install pyglet`, then you can also try some more advanced full BCI exmaples with stimulation.  For a simple letter matrix test run::
 
   python3 -m mindaffectBCI.examples.presentation.selectionMatrix
 
+*NOTE*: For this type of rapid visual stimulation BCI, it is *very* important that the visual flicker be displayed *accurately*.  However, as the graphics performance of computers varies widely it is hard to know in advance if a particular configuration is accurate enough.  To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.  You can run this with::
+
+  python3 -m mindaffectBCI.examples.presentation.framerate_check
+
+As this runs  it will show in a window your current graphics frame-rate and, more importantly, the variability in the frame times.  For good BCI performance this jitter should be <1ms.  If you see jitter greater than this you should probably adjust your graphics card settings.  The most important setting to consider is to be sure that you  have `_vsync_ <https://en.wikipedia.org/wiki/Screen_tearing#Vertical_synchronization>` *turned-on*.  Many graphics cards turn this off by default, as it (in theory) gives higher frame rates for gaming.  However, for our system, frame-rate is less important than *exact*  timing, hence always turn vsync on for visual Brain-Compuber-Interfaces!
+  
 
 Simple *output* module
 ------------------------
