@@ -167,8 +167,8 @@ class UtopiaController:
                     for h in self.predictionHandlers:
                         h(m)
                     # record as last prediction
-                    if m.Yest < 0:
-                        m.Perr = 1
+                    #if m.Yest < 0:
+                    #    m.Perr = 1
                     self.lastPrediction = m
                         
                 elif m.msgID == Selection.msgID:
