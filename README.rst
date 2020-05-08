@@ -31,8 +31,8 @@ Getting Support
 ---------------
 
 If you run into and issue you can either directly raise an issue on the projects `github page <https://github.com/mindaffect/pymindaffectBCI>`_ or directly contact the developers on gitter -- to complain, complement, or just chat:
-.. image::https://badges.gitter.im/mindaffect/unitymindaffectBCI.svg
-   :target::https://gitter.im/mindaffect/pymindaffectBCI?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+.. image:: https://badges.gitter.im/mindaffect/unitymindaffectBCI.svg
+   :target: https://gitter.im/mindaffect/pymindaffectBCI?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 Testing the mindaffectBCI SDK
 -----------------------------
