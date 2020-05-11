@@ -89,7 +89,7 @@ The mindaffectBCI consists of 3 main pieces:
 
  - *output* : This piece, normally runs on the same location as the  presentation, but may be somewhere else, and also connects to the decoder.  It listens from 'selections' from the decoder, which indicate that the decoder has decided the user want's to pick a particular option,  and makes that  selection happen -- for example by adding a letter to the current sentence, or moving a robot-arm,  or turning on or off a light.
 
-The  detailed  system architeture of the mindaffecBCI is explained in more detail in `this document <https://github.com/mindaffect/pymindaffectBCI/blob/master/doc/Utopia _ Guide for Implementation of new Presentation and Output components.pdf>`_, and is illustrated in this figure:
+The  detailed  system architeture of the mindaffecBCI is explained in more detail in `doc/Utopia _ Guide for Implementation of new Presentation and Output Components.pdf <https://github.com/mindaffect/pymindaffectBCI/blob/master/doc/Utopia%20_%20Guide%20for%20Implementation%20of%20new%20Presentation%20and%20Output%20components.pdf>`_, and is illustrated in this figure:
 
 .. image:: https://github.com/mindaffect/pymindaffectBCI/blob/master/doc/SystemArchitecture.png
 
