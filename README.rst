@@ -17,9 +17,11 @@ This repository is organized roughly as follows:
 
    - `output <mindaffectBCI/examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
    - `presentation <mindaffectBCI/examples/presentation/>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.  In particular here we have:
+
      - `framerate_check.py <mindaffectBCI/examples/presentation/framerate_check.py>`_ - Which you can run to test if your display settings (particularly vsync) are correct for accurate flicker presentation.
      - `selectionMatrix.py <mindaffectBCI/examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
-   - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
+
+ - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
 
 Installing mindaffectBCI
 ------------------------
