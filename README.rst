@@ -13,13 +13,13 @@ This repository is organized roughly as follows:
    - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
    - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
 
- - `examples <examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
+ - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
-   - `output <examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
-   - `presentation <examples/presentation/>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.  In particular here we have:
-     - `framerate_check.py <examples/presentation/framerate_check.py>`_ - Which you can run to test if your display settings (particularly vsync) are correct for accurate flicker presentation.
-     - `selectionMatrix.py <examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
-   - `utilities <examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
+   - `output <mindaffectBCI/examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
+   - `presentation <mindaffectBCI/examples/presentation/>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.  In particular here we have:
+     - `framerate_check.py <mindaffectBCI/examples/presentation/framerate_check.py>`_ - Which you can run to test if your display settings (particularly vsync) are correct for accurate flicker presentation.
+     - `selectionMatrix.py <mindaffectBCI/examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
+   - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
 
 Installing mindaffectBCI
 ------------------------
