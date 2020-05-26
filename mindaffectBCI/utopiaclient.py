@@ -713,7 +713,8 @@ class UtopiaClient:
         # ensure tcp and udp have the same local port number...
         self.udpsock.bind(self.sock.getsockname())
 
-    def autoconnect(self, hostname=None, port=8400, timeout_ms=3000, queryifhostnotfound=False):
+    def autoconnect(self, hostname=None, port=None, timeout_ms=3000, queryifhostnotfound=False, scanifhostnotfound=False):
+        if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname is None:
             print('Trying to auto-discover the utopia-hub server')
             if self.ssdpDiscover is None:
@@ -734,6 +735,14 @@ class UtopiaClient:
                 # ask user for host
                 print("Could not auto-connect.  Trying manual")
                 hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
+            elif scanifhostnotfound:
+                print("Could not auto-discover.  Trying IP scan.")
+                from mindaffectBCI.ssdpDiscover import ipscanDiscover
+                hosts = ipscanDiscover(port)
+                if  len(hosts)>0:
+                    hostname=hosts[0].strip()
+                    print('Discovered utopia-hub on %s ...'%(hostname))
+                    
             else:
                 # fall back on local host
                 print("Trying localhost\nIf this fails enter hostname manually")

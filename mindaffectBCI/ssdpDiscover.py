@@ -112,6 +112,27 @@ class ssdpDiscover :
             responses.append(location)
         return responses
 
+
+def ipscanDiscover(port:int, ip:str=None):
+    ''' scan for service by trying all 255 possible final ip-addresses'''
+    if ip is None:
+        ip = get_local_ip()
+    ipprefix = ".".join(ip.split('.')[:3])
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    hosts = []
+    for postfix in range(255):
+        ip = "{}.{:d}".format(ipprefix,postfix)
+        try:
+            print("Trying: {}:{}".format(ip,port))
+            sock.connect((ip,port))
+            if sock.isConnected:
+                print("Connected")
+                hosts.append(ip)
+                sock.disconnect()
+        except socket.error as ex:
+            pass
+    return hosts
+    
 if __name__=="__main__":
     disc=ssdpDiscover("utopia/1.1");
     while True:

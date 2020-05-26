@@ -24,7 +24,7 @@ from mindaffectBCI.utopiaclient import UtopiaClient
 # connect to the mindaffectDecoder
 U=UtopiaClient()
 try:
-  U.autoconnect(timeout_ms=5000, queryifhostnotfound=False)
+  U.autoconnect(timeout_ms=5000, queryifhostnotfound=False, scanifhostnotfound=True)
 except Exception as ex:
   print("Connection error: {}".format(ex))
 
