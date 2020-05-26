@@ -21,7 +21,7 @@ This repository is organized roughly as follows:
      - `framerate_check.py <mindaffectBCI/examples/presentation/framerate_check.py>`_ - Which you can run to test if your display settings (particularly vsync) are correct for accurate flicker presentation.
      - `selectionMatrix.py <mindaffectBCI/examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
 
- - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
+   - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
 
 Installing mindaffectBCI
 ------------------------
@@ -33,6 +33,8 @@ That's easy::
 
 Getting Support
 ---------------
+
+For a general overview of how to use the mindaffectBCI, hardware, software and how to use it, see the `system wiki <https://github.com/mindaffect/General/wiki>`_.
 
 If you run into and issue you can either directly raise an issue on the projects `github page <https://github.com/mindaffect/pymindaffectBCI>`_ or directly contact the developers on `gitter <https://gitter.im/mindaffect>`_ -- to complain, complement, or just chat:
 
