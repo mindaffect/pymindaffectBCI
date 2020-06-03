@@ -5,7 +5,7 @@ This repository contains the python SDK code for the Brain Computer Interface (B
 Quick Start
 -----------
 
-If you have just got your mindaffectBCI and are looking for general information on how to use it, checkout our `Wiki <github.com/mindaffect/General/wiki/First-time-use`_.  
+If you have just got your mindaffectBCI and are looking for general information on how to use it, checkout our `Wiki <github.com/mindaffect/General/wiki/First-time-use>`_.  
 
 
 File Structure
