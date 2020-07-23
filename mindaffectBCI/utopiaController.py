@@ -51,10 +51,12 @@ class UtopiaController:
         self.selectionHandlers.append(cb)
     def addSignalQualityHandler(self, cb):
         self.signalQualityHandlers.append(cb)
-        
-    def getTimeStamp(self, t0=0):
+    
+    def setTimeStampClock(self,tsclock):
+        return self.client.setTimeStampClock(tsclock)
+    def getTimeStamp(self):
         '''get a (relative) wall-time stamp *in milliseconds*'''
-        return getTimeStamp(t0)
+        return self.client.getTimeStamp()
         
     def autoconnect(self, host=None, port=8400, timeout_ms=5000, queryifhostnotfound=True):
         try:
@@ -170,6 +172,7 @@ class UtopiaController:
                     #if m.Yest < 0:
                     #    m.Perr = 1
                     self.lastPrediction = m
+                    print("Pred:{}".format(m))
                         
                 elif m.msgID == Selection.msgID:
                     # process selection callbacks

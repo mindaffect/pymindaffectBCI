@@ -23,10 +23,10 @@
 import time
 import random
 from .stimseq import StimSeq
-from .utopiaController import UtopiaController, getTimeStamp
+from .utopiaController import UtopiaController, TimeStampClock
 import os
 scriptpath=os.path.dirname(os.path.realpath(__file__))
-stimFile=os.path.join(scriptpath,'mgold_61_6521_psk_60hz.txt')
+default_stimFile=os.path.join(scriptpath,'mgold_61_6521_psk_60hz.txt')
 objIDs=list(range(1,10))
 isi=1/60
 MAXOBJID=64
@@ -80,14 +80,17 @@ class WaitFor(FSM):
 class Flicker(FSM):
     ''' do a normal flicker sequence'''
     def __init__(self,stimSeq=None,
-                 numframes=4*isi,tgtidx=-1,
-                 sendEvents=True):
+                 numframes=4*isi, # number for frames to flicker for
+                 tgtidx=-1, # target output for this flicker
+                 sendEvents=True, # send stimulus events
+                 framesperbit=1): # number of video-frames per codebook bit 
         self.stimSeq=stimSeq
         self.numframes=numframes
         self.nframe=0
         self.tgtidx=tgtidx
         self.tgtstate=-1
         self.sendEvents=sendEvents
+        self.framesperbit=framesperbit if framesperbit is not None else 1
 
         # ensure right length
         self.ss=None
@@ -103,9 +106,14 @@ class Flicker(FSM):
 
     def update_ss(self):
         # extract the current frames stimulus state, loop if past end
-        self.ss       = self.stimSeq[self.nframe % len(self.stimSeq)]
-        # extract the current target state, for these objects
-        self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
+        if self.nframe >= self.numframes:
+            # final frame is blank screen
+            self.ss[:] = [0]*len(self.stimSeq[0])
+            self.tgtState = -1
+        else:            
+            self.ss       = self.stimSeq[self.nframe//self.framesperbit % len(self.stimSeq)]
+            # extract the current target state, for these objects
+            self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
         
     def get(self):
         # update the curent stimulus state info
@@ -119,10 +127,14 @@ class Flicker(FSM):
     
 class FlickerWithSelection(Flicker):
     ''' do a normal flicker sequence, with early stopping selection'''
-    def __init__(self,stimSeq=None,numframes=4*isi,tgtidx=-1,
+    def __init__(self,
+                 stimSeq=None,
+                 numframes=4*isi,
+                 tgtidx=-1,
                  utopiaController=None,
+                 framesperbit=1,
                  sendEvents=True):
-        super().__init__(stimSeq,numframes,tgtidx,sendEvents)
+        super().__init__(stimSeq,numframes,tgtidx,sendEvents,framesperbit)
         self.utopiaController = utopiaController
         if self.utopiaController is None : raise ValueError("must have utopiaController")
         # ensure old predictions are gone..
@@ -163,7 +175,7 @@ class SingleTrial(FSM):
     ''' do a complete single trial with: cue->wait->flicker->feedback '''
     def __init__(self,stimSeq,tgtidx,
                  utopiaController,stimulusStateStack,
-                 numframes=None,
+                 numframes=None,framesperbit=1,
                  selectionThreshold=None,
                  duration=4,cueduration=1,feedbackduration=1,waitduration=1,
                  cueframes=None,feedbackframes=None,waitframes=None):
@@ -173,13 +185,16 @@ class SingleTrial(FSM):
         self.stimulusStateStack=stimulusStateStack
         self.numframes=numframes if numframes else duration/isi
         self.cueframes=cueframes if cueframes else cueduration/isi
+        self.framesperbit=framesperbit if  framesperbit is not None else 1
         self.feedbackframes=feedbackframes if feedbackframes else feedbackduration/isi
         self.waitframes=waitframes if waitframes else waitduration/isi
         self.selectionThreshold=selectionThreshold
         self.stage=0
+        self.stagestart = self.utopiaController.getTimeStamp()
         print("tgtidx=%d"%(self.tgtidx if self.tgtidx>=0 else -1))
         
     def next(self,t):
+        last_stage_dur = self.utopiaController.getTimeStamp()-self.stagestart
         if self.stage==0 : # trial-start + cue
             # tell decoder to start trial
             self.utopiaController.newTarget()
@@ -211,12 +226,14 @@ class SingleTrial(FSM):
                                          self.numframes,
                                          self.tgtidx,
                                          self.utopiaController,
+                                         framesperbit=self.framesperbit,
                                          sendEvents=True))
             else: # no selection based stopping
                 self.stimulusStateStack.push(
                     Flicker(self.stimSeq,
                             self.numframes,
                             self.tgtidx,
+                            framesperbit=self.framesperbit,
                             sendEvents=True))
                 
         elif self.stage==3 : # wait/feedback
@@ -227,7 +244,9 @@ class SingleTrial(FSM):
             else :
                 print('3.feedback') # solid on 
                 predObjId,selected=self.utopiaController.getLastSelection()
-                print(' pred:%d sel:%d'%(predObjId if predObjId else -1,selected))
+                print('%dms pred:%d sel:%d  %c'%(int(last_stage_dur),
+                                                 predObjId-1 if predObjId else -1,selected,
+                                                 "*" if predObjId and self.tgtidx==predObjId-1 else "x"))
                 if selected :
                     #tgtidx = self.objIDs.index(predObjId) if predObjId in self.objIDs else -1
                     tgtidx = predObjId-1
@@ -240,6 +259,7 @@ class SingleTrial(FSM):
                     
         else :
             raise StopIteration
+        self.stagestart = self.utopiaController.getTimeStamp()
         self.stage=self.stage+1
         
 class CalibrationPhase(FSM):
@@ -379,16 +399,17 @@ class Noisetag:
     '''noisetag abstraction layer to handle *both* the sequencing of the stimulus
     flicker, *and* the communications with the Mindaffect decoder.  Clients can
     use this class to implement BCI control by:
-     0) setting the flicker sequence to use (method: startFlicker, startFlickerWithSelection, startCalibration, startPrediction
+     0) setting the flicker sequence to use (method: startFlicker, startFlickerWithSelection, startCalibration, startPrediction, startExpt)
      1) getting the current stimulus state (method: getStimulusState), and using that to draw the display
      2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
      3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
      '''
-    def __init__(self,stimFile=stimFile,utopiaController=None,stimulusStateMachineStack=None):
+    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack=None):
         # global flicker stimulus sequence
+        if stimFile is None:  stimFile = default_stimFile
         noisecode = StimSeq.fromFile(stimFile)
+        # binarize the result
         noisecode.convertstimSeq2int()
-        noisecode.setStimRate(2)
         self.noisecode=noisecode
 
         # utopiaController
@@ -501,9 +522,12 @@ class Noisetag:
     def addSelectionHandler(self,cb):
         if self.utopiaController :
             self.utopiaController.addSelectionHandler(cb)
-        
-    def getTimeStamp(self,t0=0):
-        return getTimeStamp(t0)
+    
+    def setTimeStampClock(self, tsclock):
+        self.utopiaController.setTimeStampClock(tsclock)
+    def getTimeStamp(self):
+        return self.utopiaController.getTimeStamp() if self.utopiaController is not None else -1
+
     def log(self,msg):
         if self.utopiaController:
             self.utopiaController.log(msg)
@@ -598,7 +622,6 @@ class Noisetag:
                                  *args,**kwargs))
 
 
-import math, statistics, numpy
 class sumstats:
     '''Utility class to record summary stastics for, e.g. frame flip timing'''
     def __init__(self):
@@ -620,18 +643,23 @@ class sumstats:
         self.maxx=x if x>self.maxx else self.maxx
 
     def hist(self):
-        buf = self.buf[:min(len(self.buf),self.N)]
-        self.minx=min(buf)
-        self.maxx=max(buf)
-        bstart=self.minx + (self.maxx-self.minx)*0
-        bw    =(self.maxx-self.minx)*(.6-0)
-        bins=[bstart+bw*(x/15.0) for x in range(0,15)]
-        [hist,bins]=numpy.histogram(buf,bins)
-        pp= " ".join("%5.2f"%((bins[i]+bins[i+1])/2) for i in range(len(bins)-1))
-        pp+="\n" + " ".join("%5d"%t for t in hist)
+        try:
+            import numpy
+            buf = self.buf[:min(len(self.buf),self.N)]
+            self.minx=min(buf)
+            self.maxx=max(buf)
+            bstart=self.minx + (self.maxx-self.minx)*0
+            bw    =(self.maxx-self.minx)*(.6-0)
+            bins=[bstart+bw*(x/15.0) for x in range(0,15)]
+            [hist,bins]=numpy.histogram(buf,bins)
+            pp= " ".join("%5.2f"%((bins[i]+bins[i+1])/2) for i in range(len(bins)-1))
+            pp+="\n" + " ".join("%5d"%t for t in hist)
+        except:
+            pp=''
         return pp
 
     def __str__(self):
+        import statistics
         buf = self.buf[:min(len(self.buf),self.N)]
         mu = statistics.mean(buf)
         med= statistics.median(buf)
@@ -651,7 +679,7 @@ if __name__ == "__main__":
     # set the subset of active objects being displayed
     ntexpt.setnumActiveObjIDs(10)
     # tell it to play a full experiment sequence
-    ntexpt.startExpt()
+    ntexpt.startExpt(framesperbit=4)
     # mainloop
     nframe=0
     while True:

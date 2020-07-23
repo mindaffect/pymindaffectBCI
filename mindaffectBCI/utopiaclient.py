@@ -36,8 +36,11 @@ class UtopiaMessage:
     def __str__(self):
         return '%i\n'%(self.msgID)
 
-def getTimeStamp(t0=0):
-    return time.perf_counter()*1000-t0
+class TimeStampClock:
+    """ Base class for time-stamp sources.  Match this prototype to replace the default timestamp source """
+    def getTimeStamp(self):
+        ''' get the time-stamp in milliseconds ! N.B. **must** fit in an int32! '''
+        return (int(time.perf_counter()*1000) % (1<<31))
 
 class RawMessage(UtopiaMessage):
     msgName="RAW"
@@ -524,7 +527,7 @@ class SignalQuality(UtopiaMessage):
            or None in case of conversion problems.
         """
         S = struct.pack('<i', int(self.timestamp))
-        S = S + b''.join([ struct.pack('<f', q) for q in self.signalQuality ])
+        S = S + b''.join([ struct.pack('<f', float(q)) for q in self.signalQuality ])
         return S
 
     @staticmethod
@@ -562,7 +565,7 @@ class Subscribe(UtopiaMessage):
         if type(self.messageIDs) is str:#str
             S = S + bytes(self.messageIDs, 'utf-8')
         else:# int->byte
-            S = S + b''.join([ struct.pack('<b', q) for q in self.messageIDs ])
+            S = S + b''.join([ struct.pack('<b', byte(q)) for q in self.messageIDs ])
         return S
 
     @staticmethod
@@ -578,7 +581,7 @@ class Subscribe(UtopiaMessage):
         return (msg, bufsize)
     
     def __str__(self):
-        return "%c(%d) %s %i [%s]"%(self.msgID, self.msgID, self.msgName, self.timestamp, ", ".join(["%i"%q for q in self.messageIDs]))
+        return "%c(%d) %s %i [%s]"%(self.msgID, self.msgID, self.msgName, self.timestamp, "{}".format(self.messageIDs))
 
     
 # Helper functions for dealing with raw-messages -> classes    
@@ -687,16 +690,19 @@ class UtopiaClient:
         self.sock = []
         self.udpsock=None
         self.recvbuf = b''
+        self.tsClock = TimeStampClock()
         self.nextHeartbeatTime=self.getTimeStamp()
         self.nextHeartbeatTimeUDP=self.getTimeStamp()
         self.ssdpDiscover=None
 
-    def getAbsTime(self):
-        """Get the absolute time in seconds"""
-        return getTimeStamp()
+    # time-stamp management
+    def setTimeStampClock(self, tsClock):
+        if not hasattr(tsClock,'getTimeStamp'):
+            raise ValueError("Time Stamp clock must have getTimeStamp method")
+        self.tsClock = tsClock
     def getTimeStamp(self):
         """Get the time-stamp for the current time"""
-        return getTimeStamp()
+        return self.tsClock.getTimeStamp()
 
     def connect(self, hostname=None, port=8400):
         """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
@@ -712,18 +718,21 @@ class UtopiaClient:
         self.udpsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0)
         # ensure tcp and udp have the same local port number...
         self.udpsock.bind(self.sock.getsockname())
+        return self.isConnected
 
     def autoconnect(self, hostname=None, port=None, timeout_ms=3000, queryifhostnotfound=False, scanifhostnotfound=False):
         if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname is None:
             print('Trying to auto-discover the utopia-hub server')
-            if self.ssdpDiscover is None:
-                print('making discovery object')
-                from mindaffectBCI.ssdpDiscover import ssdpDiscover
-                # create the discovery object
-                self.ssdpDiscover=ssdpDiscover(UtopiaClient.UTOPIA_SSDP_SERVICE)
-            hosts=self.ssdpDiscover.discover(timeout=timeout_ms/1000)
-            #hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE, timeout=5, numretries=int(max(1, timeout_ms/5000)))
+            if True:
+                if self.ssdpDiscover is None:
+                    print('making discovery object')
+                    from mindaffectBCI.ssdpDiscover import ssdpDiscover
+                    # create the discovery object
+                    self.ssdpDiscover=ssdpDiscover(UtopiaClient.UTOPIA_SSDP_SERVICE)
+                hosts=self.ssdpDiscover.discover(timeout=timeout_ms/1000.0)
+            else:
+                hosts=ssdpDiscover(servicetype=UtopiaClient.UTOPIA_SSDP_SERVICE, timeout=5, numretries=int(max(1, timeout_ms/5000)))
             print("Discovery returned %d utopia-hub servers"%len(hosts))
             if( len(hosts)>0 ):
                 hostname=hosts[0].strip()
@@ -762,7 +771,17 @@ class UtopiaClient:
                 print('Connection refused...  Waiting', flush=True)
                 print(ex)
                 time.sleep(1)
-        if not self.isConnected:
+                
+        if not self.isConnected and queryifhostnotfound:
+            # last ditch attempt ask user for host
+            print("Could not auto-connect.  Trying manual")
+            hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
+            try:
+                self.connect(hostname,port)
+            except socket.error:
+                pass
+            
+        if not self.isConnected:            
             raise socket.error('Connection Refused!')
 
     def gethostport(self):
@@ -815,24 +834,20 @@ class UtopiaClient:
             self.sendMessage(msg)
             
     def recvall(self, timeout_ms=0):
-        """Read all the data from the socket or block for timeout_ms if nothing to do."""
-        self.sock.setblocking(0)        
-        data=[] 
-        endtime=self.getAbsTime() + timeout_ms/1000
-        while True: # guarantee at least once through recv
-            try:
-                part = self.sock.recv(1024) # non-blocking read what the socket has at this point
-            except socket.error:
-                part =[]
-            if len(part)>0: # read data add to the store
-                data += part
-            elif len(data)>0:
-                break  # stop if had some data and read it all
-            else: # no data yet
-                if self.getAbsTime() > endtime:
-                    break # quit if timeout 
-                else: # poll again in 1ms
-                    time.sleep(.001)  
+        """Read all the data from the socket immeaditely or block for timeout_ms if nothing to do."""
+        if timeout_ms>0:
+            self.sock.setblocking(1)
+            self.sock.settimeout(timeout_ms/1000.0)
+        else:
+            self.sock.setblocking(0)
+        data=[]
+        try:
+            data = self.sock.recv(8192)
+        except socket.timeout:
+            pass
+        except socket.error as ex:
+            if not ( ex.errno == 11 or ex.errno == 10035 ): # 11 is raised when no-data to read
+                print("Socket error" + str(ex) + "#" + str(ex.errno) ) 
         return bytes(data)
     
     def getNewMessages(self, timeout_ms=250):

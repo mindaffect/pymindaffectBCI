@@ -21,12 +21,9 @@
 # SOFTWARE.
 
 from mindaffectBCI.noisetag import Noisetag, sumstats
-nt = Noisetag()
-nt.connect(timeout_ms=5000)
+
 
 import pyglet
-# make a default window, with fixed size for simplicty
-window=pyglet.window.Window(width=640,height=480)
 # define a simple 2-squares drawing function
 def draw_squares(col1,col2):
     # draw square 1: @100,190 , width=100, height=100
@@ -47,9 +44,9 @@ state2color={0:(.2,.2,.2), # off=grey
              3:(0,0,1)}    # feedback=blue
 def draw(dt):
     '''draw the display with colors from noisetag'''
-    # send info on the *previous* stimulus state.
-    # N.B. we do it here as draw is called as soon as the vsync happens
-    nt.sendStimulusState(timestamp=window.lastfliptime)
+    # send info on the *previous* stimulus state, with the recorded vsync time (if available)
+    fliptime = window.lastfliptime if window.lastfliptime else nt.getTimeStamp()
+    nt.sendStimulusState(timestamp=fliptime)
     # update and get the new stimulus state to display
     try : 
         nt.updateStimulusState()
@@ -57,47 +54,49 @@ def draw(dt):
     except StopIteration :
         pyglet.app.exit() # terminate app when noisetag is done
         return
+
     # draw the display with the instructed colors
+    if stimulus_state : 
+        draw_squares(state2color[stimulus_state[0]],
+                     state2color[stimulus_state[1]])
+
+    # some textual logging of what's happening
     if target_state is not None and target_state>=0:
         print("*" if target_state>0 else '.',end='',flush=True)
     else:
         print('.',end='',flush=True)
 
-    if stimulus_state : 
-        draw_squares(state2color[stimulus_state[0]],
-                     state2color[stimulus_state[1]])
-
-# used to record statistics about the flip timing -- for debugging
-logTime=0
-ss=sumstats()
-
+# WARNING: Hacking ahead!!!
 # override window's flip method to record the exact *time* the
 # flip happended
 import types
 def timedflip(self):
     '''pseudo method type which records the timestamp for window flips'''
     type(self).flip(self) # call the 'real' flip method...
-    oft=self.lastfliptime
     self.lastfliptime=nt.getTimeStamp()
-    ss.addpoint(self.lastfliptime-oft)
-    global logTime
-    if self.lastfliptime > logTime :
-        print("\nFlipTimes:"+str(ss))
-        print("Hist:\n"+ss.hist())
-        logTime=self.lastfliptime+5000
-        
-window.flip = types.MethodType(timedflip,window)
-# ensure the field is already there.
-window.lastfliptime=nt.getTimeStamp()
 
 # define a trival selection handler
 def selectionHandler(objID):
     print("Selected: %d"%(objID))    
-nt.addSelectionHandler(selectionHandler)
 
+
+# Initialize the noise-tagging connection
+nt = Noisetag()
+nt.connect(timeout_ms=5000)
+nt.addSelectionHandler(selectionHandler)
 # tell the noisetag framework to run a full : calibrate->prediction sequence
 nt.setnumActiveObjIDs(2)
-nt.startExpt(nCal=10,nPred=10,duration=4)
+nt.startExpt(nCal=2,nPred=10,duration=4)
+
+# Initialize the drawing window
+# make a default window, with fixed size for simplicty, and vsync for timing
+config = pyglet.gl.Config(double_buffer=True)
+window = pyglet.window.Window(width=640,height=480, vsync=True, config=config)
+
+# Setup the flip-time recording for this window
+window.flip = types.MethodType(timedflip,window)
+window.lastfliptime=None
+    
 # run the pyglet main loop
 pyglet.clock.schedule(draw)
 pyglet.app.run()
