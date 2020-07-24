@@ -457,11 +457,11 @@ class SelectionGridScreen(Screen):
 
     def getSymb(self,idx):
         ii=0
-        for i in range(len(symbols)): # rows
-            for j in range(len(symbols[i])): # cols
-                if symbols[i][j] is None: continue
+        for i in range(len(self.symbols)): # rows
+            for j in range(len(self.symbols[i])): # cols
+                if self.symbols[i][j] is None: continue
                 if ii==idx:
-                    return symbols[i][j]
+                    return self.symbols[i][j]
                 ii = ii + 1
         return None
 
