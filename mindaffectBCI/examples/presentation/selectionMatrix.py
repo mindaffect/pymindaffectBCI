@@ -870,7 +870,82 @@ def on_key_press(symbols, modifiers):
 def on_text(text):
     global last_text
     last_text=text
-    
+
+def load_symbols(fn):
+    """load a screen layout from a text file
+
+    Args:
+        fn (str): file name to load from
+
+    Returns:
+        symbols [list of lists of str]: list of list of the symbols strings
+    """    
+    symbols = []
+
+    # look relative to the py-file dir if can't find
+    import os.path
+    if not os.path.isfile(fn):
+        pydir = os.path.dirname(os.path.abspath(__file__))
+        fn = os.path.join(pydir, fn)
+
+    with open(fn,'r') as f:
+        for line in f:
+            # skip comment lines
+            if line.startswith('#'): continue
+            # delim is ,
+            line = line.split(',')
+            # strip whitespace
+            line = [ l.strip() for l in line if l is not None ]
+            # add
+            symbols.append(line)
+
+    return symbols
+
+def run(symbols=None, ncal=10, npred=10, stimfile=None, framesperbit =1, fullscreen=False, host=None):
+    """ run the selection Matrix with default settings
+
+    Args:
+        nCal (int, optional): number of calibration trials. Defaults to 10.
+        nPred (int, optional): number of prediction trials at a time. Defaults to 10.
+        stimFile ([type], optional): the stimulus file to use for the codes. Defaults to None.
+        framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
+        fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
+    """
+    global nt, ss 
+    # N.B. init the noise-tag first, so asks for the IP
+    nt=Noisetag(stimFile=stimfile)
+    if host is not None:
+        nt.connect(host, queryifhostnotfound=False)
+
+    # init the graphics system
+    initPyglet(fullscreen=fullscreen)
+
+    # the logical arrangement of the display matrix
+    if symbols is None:
+        symbols=[['a', 'b', 'c', 'd', 'e'], 
+                 ['f', 'g', 'h', 'i', 'j'], 
+                 ['k', 'l', 'm', 'n', 'o'], 
+                 ['p', 'q', 'r', 's', 't'], 
+                 ['u', 'v', 'w', 'x', 'y']]
+
+    elif isinstance(symbols,str):
+        # load the layout from a file
+        symbols = load_symbols(symbols)
+        
+    # make the screen manager object which manages the app state
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit)
+
+    # set per-frame callback to the draw function    
+    if drawrate > 0:
+        # slow down for debugging
+        pyglet.clock.schedule_interval(draw, drawrate)
+    else:
+        # call the draw method as fast as possible, i.e. at video frame rate!
+        pyglet.clock.schedule(draw)
+    # mainloop
+    pyglet.app.run()
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -883,36 +958,7 @@ if __name__ == "__main__":
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
 
-    nCal = args.ncal
-    nPred = args.npred
-    stimFile = args.stimfile
-    framesperbit = args.framesperbit
-    fullscreen = args.fullscreen
+    load_symbols('symbols.txt')
 
-    # N.B. init the noise-tag first, so asks for the IP
-    nt=Noisetag(stimFile=stimFile)
-    if args.host is not None:
-        nt.connect(args.host, queryifhostnotfound=False)
+    run(**vars(args))
 
-
-    # init the graphics system
-    initPyglet(fullscreen=fullscreen)
-
-    # the logical arrangement of the display matrix
-    symbols=[['a', 'b', 'c', 'd', 'e'], 
-             ['f', 'g', 'h', 'i', 'j'], 
-             ['k', 'l', 'm', 'n', 'o'], 
-             ['p', 'q', 'r', 's', 't'], 
-             ['u', 'v', 'w', 'x', 'y']]
-    # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=nCal, nPred=nPred, framesperbit=framesperbit)
-
-    # set per-frame callback to the draw function    
-    if drawrate > 0:
-        # slow down for debugging
-        pyglet.clock.schedule_interval(draw, drawrate)
-    else:
-        # call the draw method as fast as possible, i.e. at video frame rate!
-        pyglet.clock.schedule(draw)
-    # mainloop
-    pyglet.app.run()
