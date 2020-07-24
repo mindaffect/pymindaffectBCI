@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-from UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
+from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
 def sigViewer(ui: UtopiaDataInterface, timeout_ms:float=np.inf, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
     ''' simple sig-viewer using the ring-buffer for testing '''

@@ -21,7 +21,7 @@
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
 from collections import deque
-from .utils import RingBuffer, extract_ringbuffer_segment
+from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment
 from time import sleep
 import numpy as np
 

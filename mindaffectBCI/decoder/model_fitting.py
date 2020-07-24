@@ -1,13 +1,13 @@
 import numpy as np
-from .updateSummaryStatistics import updateSummaryStatistics, zero_outliers, crossautocov, updateCyy, updateCxy, autocov, updateCxx
-from .multipleCCA import multipleCCA
-from .scoreOutput import scoreOutput, dedupY0
-from .utils import window_axis
-from .scoreStimulus import scoreStimulus, scoreStimulusCont, factored2full
-from .decodingCurveSupervised import decodingCurveSupervised
-from .decodingSupervised import decodingSupervised
-from .stim2event import stim2event
-from .normalizeOutputScores import estimate_Fy_noise_variance
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, zero_outliers, crossautocov, updateCyy, updateCxy, autocov, updateCxx
+from mindaffectBCI.decoder.multipleCCA import multipleCCA
+from mindaffectBCI.decoder.scoreOutput import scoreOutput, dedupY0
+from mindaffectBCI.decoder.utils import window_axis
+from mindaffectBCI.decoder.scoreStimulus import scoreStimulus, scoreStimulusCont, factored2full
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
+from mindaffectBCI.decoder.stim2event import stim2event
+from mindaffectBCI.decoder.normalizeOutputScores import estimate_Fy_noise_variance
 
 #try:
 #    from sklearn.model_selection import StratifiedKFold

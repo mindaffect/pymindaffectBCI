@@ -1,17 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from datasets import get_dataset
-from model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
+from mindaffectBCI.decoder.datasets import get_dataset
+from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.svm import LinearSVR, LinearSVC
 from sklearn.model_selection import cross_val_score
-from updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics
-from scoreStimulus import factored2full, plot_Fe
-from decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
-from utils import lab2ind, butter_sosfilt, extract_envelope
-from scoreOutput import plot_Fy
-from multipleCCA import robust_whitener
-from updateSummaryStatistics import updateCxx, idOutliers
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics
+from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
+from mindaffectBCI.decoder.utils import lab2ind, butter_sosfilt, extract_envelope
+from mindaffectBCI.decoder.scoreOutput import plot_Fy
+from mindaffectBCI.decoder.multipleCCA import robust_whitener
+from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx, idOutliers
 from scipy.signal import welch
 
 l,f,_=get_dataset('openBMI_MI')

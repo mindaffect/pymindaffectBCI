@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import window_axis
+from mindaffectBCI.decoder.utils import window_axis
 #@function
 def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=0, outputscore='ip'):
     '''

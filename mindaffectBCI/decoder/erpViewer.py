@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-from UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
+from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
 def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
               offset_ms=(-15,0), evtlabs=None, nstimulus_events: int=600, center=True):

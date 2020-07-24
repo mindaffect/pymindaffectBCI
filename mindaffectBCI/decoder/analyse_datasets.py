@@ -1,13 +1,13 @@
 import numpy as np
-from datasets import get_dataset
-from model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
+from mindaffectBCI.decoder.datasets import get_dataset
+from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
 from sklearn.linear_model import Ridge, LogisticRegression
 from sklearn.svm import LinearSVR, LinearSVC
-from updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, plot_factoredmodel
-from scoreStimulus import factored2full, plot_Fe
-from decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
-from scoreOutput import plot_Fy
-from preprocess import preprocess
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, plot_factoredmodel
+from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
+from mindaffectBCI.decoder.scoreOutput import plot_Fy
+from mindaffectBCI.decoder.preprocess import preprocess
 import matplotlib.pyplot as plt
 import gc
 import re

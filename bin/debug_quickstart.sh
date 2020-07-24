@@ -3,7 +3,7 @@ cd `dirname ${BASH_SOURCE[0]}`
 buffdir=`dirname $0`
 
 echo Starting the utopia-hub
-./startUtopiaHub.sh &
+bash startUtopiaHub.sh &
 utopia2ftpid=$!
 echo utopia2ftpid=$utopia2ftpid
 sleep 5

@@ -1,6 +1,6 @@
 import numpy as np
-from analyse_datasets import debug_test_dataset, analyse_dataset, analyse_datasets
-from offline.load_mindaffectBCI  import load_mindaffectBCI
+from mindaffectBCI.decoder.analyse_datasets import debug_test_dataset, analyse_dataset, analyse_datasets
+from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
 import matplotlib.pyplot as plt
 
 savefile = '~/Downloads/mindaffectBCI_200701_1617[1].txt'

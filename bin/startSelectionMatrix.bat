@@ -5,4 +5,4 @@ cd %batdir%
 rem search for the right python
 for %%i in (python.exe, python3.exe) do set pyexe=%%~$PATH:i
 
-%pyexe% -m mindaffectBCI.decoder.decoder %1 %2 %3 %4 %5
+%pyexe% -m mindaffectBCI.examples.presentation.selectionMatrix %*

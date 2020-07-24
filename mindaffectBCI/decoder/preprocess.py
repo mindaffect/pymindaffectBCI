@@ -1,6 +1,6 @@
 from utils import idOutliers
-from updateSummaryStatistics import updateCxx
-from multipleCCA import robust_whitener
+from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
+from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
 

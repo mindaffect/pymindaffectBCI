@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import window_axis
+from mindaffectBCI.decoder.utils import window_axis
 
 #@function
 def scoreStimulus(X, W, R=None, b=None, offset=0, isepoched=None):

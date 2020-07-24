@@ -1,16 +1,16 @@
 import os
 from glob import glob
 import re
-from offline.load_mark_EMG import load_mark_EMG
-from offline.load_brainstream import load_brainstream
-from offline.load_p300_prn import load_p300_prn
-from offline.load_openBMI import load_openBMI
-from offline.load_cocktail import load_cocktail
-from offline.load_mTRF_audio import load_mTRF_audio
-from offline.load_twofinger import load_twofinger
-from offline.load_brainsonfire import load_brainsonfire
-from offline.load_ninapro_db2 import load_ninapro_db2
-from utils import testSignal
+from mindaffectBCI.decoder.offline.load_mark_EMG import load_mark_EMG
+from mindaffectBCI.decoder.offline.load_brainstream import load_brainstream
+from mindaffectBCI.decoder.offline.load_p300_prn import load_p300_prn
+from mindaffectBCI.decoder.offline.load_openBMI import load_openBMI
+from mindaffectBCI.decoder.offline.load_cocktail import load_cocktail
+from mindaffectBCI.decoder.offline.load_mTRF_audio import load_mTRF_audio
+from mindaffectBCI.decoder.offline.load_twofinger import load_twofinger
+from mindaffectBCI.decoder.offline.load_brainsonfire import load_brainsonfire
+from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
+from mindaffectBCI.decoder.utils import testSignal
 
 def plos_one():
     '''generate the directory+filename info for the plos_one noisetagging dataset'''

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import numpy as np
-from .UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
+from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
 from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb
-from .devent2stimsequence import devent2stimSequence, upsample_stimseq
-from .model_fitting import BaseSequence2Sequence, MultiCCA
-from .decodingSupervised import decodingSupervised
-from .decodingCurveSupervised import decodingCurveSupervised
-from .scoreOutput import dedupY0
+from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
+from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
+from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+from mindaffectBCI.decoder.scoreOutput import dedupY0
 
 PREDICTIONPLOTS=False
 CALIBRATIONPLOTS=False

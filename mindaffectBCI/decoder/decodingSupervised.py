@@ -1,6 +1,6 @@
 import numpy as np
-from .normalizeOutputScores import normalizeOutputScores
-from .zscore2Ptgt_softmax import zscore2Ptgt_softmax
+from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
 #@function
 def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
                        centFy=True, detrendFy=True, 

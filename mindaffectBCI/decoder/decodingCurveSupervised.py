@@ -1,5 +1,5 @@
 import numpy as np
-from .decodingSupervised import decodingSupervised
+from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     '''
     Compute a decoding curve, i.e. mistake-probability over time for various stopping rules, from the per-epoch output scores

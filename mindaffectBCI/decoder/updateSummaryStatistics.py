@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import window_axis, idOutliers, zero_outliers
+from mindaffectBCI.decoder.utils import window_axis, idOutliers, zero_outliers
 #@function
 def updateSummaryStatistics(X, Y, stimTimes=None, 
                             Cxx=None, Cxy=None, Cyy=None, 
