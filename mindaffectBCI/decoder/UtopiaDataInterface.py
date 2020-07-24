@@ -414,7 +414,7 @@ except:
         def transform(self,X):
             pass
 
-from .utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
+from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
 class butterfilt_and_downsample(TransformerMixin):
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60):
         self.stopband = stopband
@@ -499,7 +499,7 @@ class butterfilt_and_downsample(TransformerMixin):
         print("diff: {}".format(np.max(np.abs(m0-m1))))
 
 
-from .stim2event import stim2event
+from mindaffectBCI.decoder.stim2event import stim2event
 class stim2eventfilt(TransformerMixin):
     ''' transformer to transform a sequence of stimulus states to a brain event sequence '''
     def __init__(self, evtlabs=None, histlen=20):
