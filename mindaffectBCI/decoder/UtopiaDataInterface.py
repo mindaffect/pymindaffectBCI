@@ -115,7 +115,7 @@ class UtopiaDataInterface:
         nsamp = sum([len(m.samples) for m in databuf]) - len(databuf[0].samples)
         dur = (databuf[-1].timestamp - databuf[0].timestamp)/1000.0 #[-1, -1]-databuf[0][-1, -1])/1000.0
         self.raw_fs = nsamp/dur # fs = nSamp/time
-        print('Estimated sample rate={}'.format(self.raw_fs))
+        print('Estimated sample rate {} samp in {} s ={}'.format(nsamp,dur,self.raw_fs))
 
         # init the pre-processor (if one)
         if self.data_preprocessor:
@@ -250,7 +250,7 @@ class UtopiaDataInterface:
         #d_raw = d_raw.copy() - np.mean(np.mean(d_raw, axis=0, keepdims=True),keepdims=True) 
         d_raw = d_raw.copy() - np.mean(d_raw, axis=0, keepdims=True) 
         d_preproc = d_preproc.copy() - np.mean(d_preproc, axis=0, keepdims=True)
-        resamprate=(d_raw.shape[0]/d_preproc.shape[0]) #N.B. corrected for missing downsampled samples.
+        resamprate=(d_raw.shape[0]/max(1,d_preproc.shape[0])) #N.B. corrected for missing downsampled samples.
         raw_power =  np.sum(d_raw**2, axis=0)/resamprate
         # smoothed per-channel preprocessed power
         preproc_power = np.sum(d_preproc**2, axis=0)
@@ -340,7 +340,7 @@ class UtopiaDataInterface:
                         self.stimulus_ringbuffer.append(d)
                         self.stimulus_timestamp= m.timestamp
                     
-                    if m.timestamp > self.msg_ringbuffer[0].timestamp + self.msgwindow_ms: # slide msg buffer
+                    if len(self.msg_ringbuffer)>0 and m.timestamp > self.msg_ringbuffer[0].timestamp + self.msgwindow_ms: # slide msg buffer
                         self.msg_ringbuffer.popleft()
                     self.msg_ringbuffer.append(m)
                     newmsgs.append(m)
@@ -431,8 +431,13 @@ class butterfilt_and_downsample(TransformerMixin):
         # preprocess -> spectral filter
         if isinstance(self.stopband, str):
             import pickle
+            import os
             # load coefficients from file -- when scipy isn't available
-            with open(self.stopband,'rb') as f:
+            if os.path.isfile(self.stopband):
+                fn = self.stopband 
+            else: # try relative to our py file
+                fn = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.stopband)
+            with open(fn,'rb') as f:
                 self.sos_ = pickle.load(f)
                 self.zi_ = pickle.load(f)
                 f.close()
