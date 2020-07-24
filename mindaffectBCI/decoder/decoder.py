@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import numpy as np
-from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
+from UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
 from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb
-from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
-from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
-from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
-from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
-from mindaffectBCI.decoder.scoreOutput import dedupY0
+from devent2stimsequence import devent2stimSequence, upsample_stimseq
+from model_fitting import BaseSequence2Sequence, MultiCCA
+from decodingSupervised import decodingSupervised
+from decodingCurveSupervised import decodingCurveSupervised
+from scoreOutput import dedupY0
 
 PREDICTIONPLOTS=False
 CALIBRATIONPLOTS=False
@@ -312,6 +312,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
             print("Extract block: {}->{} = {}ms".format(block_start_ts, block_end_ts, block_end_ts-block_start_ts))
             data = ui.extract_data_segment(block_start_ts, block_end_ts)
             stimulus = ui.extract_stimulus_segment(block_start_ts, block_end_ts)
+            # skip if no data/stimulus to process
+            if data.size==0 or stimulus.size==0:
+                continue
+
             print('got: data {}->{}   stimulus {}->{}'.format(data[0,-1],data[-1,-1],stimulus[0,-1],stimulus[-1,-1]))
             if model_apply_type == 'block':
                 # update the start point for the next block
@@ -362,29 +366,26 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
 
+def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, host:str=None, tau_ms:float=400, out_fs:float=80, calplots:bool=False, predplots:bool=False):
+    """ run the main decoder processing loop
 
-
-def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100):
-    ''' run the main mode-switching loop for the  BCI'''
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
-    parser.add_argument('--out_fs',type=int, help='output sample rate', default=80)
-    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=400)
-    parser.add_argument('--predplots',action='store_true', help='flag make decoding plots are prediction time')
-    parser.add_argument('--calplots',action='store_true', help='flag make model and decoding plots after calibration')
-    args = parser.parse_args()
-    host = args.host
-    tau_ms = args.tau_ms
-    out_fs = args.out_fs
+    Args:
+        ui (UtopiaDataInterface, optional): The utopia data interface class. Defaults to None.
+        clsfr (BaseSequence2Sequence, optional): the classifer to use when model fitting. Defaults to None.
+        msg_timeout_ms (float, optional): timeout for getting new messages from the data-interface. Defaults to 100.
+        host (str, optional): hostname for the utopia hub. Defaults to None.
+        tau_ms (float, optional): length of the stimulus response. Defaults to 400.
+        out_fs (float, optional): sample rate after the pre-processor. Defaults to 80.
+        calplots (bool, optional): flag if we make plots after calibration. Defaults to False.
+        predplots (bool, optional): flag if we make plots after each prediction trial. Defaults to False.
+    """
     global CALIBRATIONPLOTS, PREDICTIONPLOTS
-    CALIBRATIONPLOTS = args.calplots
-    PREDICTIONPLOTS = args.predplots
-
+    CALIBRATIONPLOTS = calplots
+    PREDICTIONPLOTS = predplots
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        ppfn = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=out_fs)
-        #ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
+        #ppfn = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=out_fs)
+        ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
@@ -427,12 +428,23 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
 
             
 if  __name__ == "__main__":
+    print("called as main?")
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=80)
+    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=400)
+    parser.add_argument('--predplots',action='store_true', help='flag make decoding plots are prediction time')
+    parser.add_argument('--calplots',action='store_true', help='flag make model and decoding plots after calibration')
+    args = parser.parse_args()
+
     running=True
     nCrash = 0
-    mainloop()
+    mainloop(**vars(args))
     while running and nCrash < 10:
         try:
-            mainloop()
+            mainloop(**vars(args))
             # stop restarting if normal terminate
             running=False
         except KeyboardInterrupt:
