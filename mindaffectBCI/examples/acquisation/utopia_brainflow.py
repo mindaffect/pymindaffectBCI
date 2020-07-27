@@ -80,6 +80,9 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
 
     board.start_stream (45000, streamer_params)
+    # N.B. we force a sleep here to allow the board to startup correctly
+    sleep(1)
+
     nSamp=0
     nBlock=0
     data=None

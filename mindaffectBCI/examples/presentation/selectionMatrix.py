@@ -28,37 +28,43 @@ from mindaffectBCI.utopiaclient import DataPacket
 
 # graphic library
 import pyglet
-isi=1/60
-drawrate=0 # rate at which draw is called
-last_key_press=None
-last_text=None
+isi = 1/60
+drawrate = 0  # rate at which draw is called
+last_key_press = None
+last_text = None
+
 
 class Screen:
+
     '''Screen abstract-class which draws stuff on the screen until finished'''
-    def __init__(self,window):
-        self.window=window
+    def __init__(self, window):
+        self.window = window
+
     def reset(self):
         '''reset this screen to clean state'''
         pass
-    def draw(self,t):
+
+    def draw(self, t):
         '''draw the display, N.B. NOT including flip!'''
         pass
+
     def is_done(self):
         '''test if this screen wants to quit'''
         return False
-            
+
+
 class InstructionScreen(Screen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
-    def __init__(self,window, text, duration=5000, waitKey=True):
+    def __init__(self, window, text, duration=5000, waitKey=True):
         super().__init__(window)
-        self.t0=None # timer for the duration
-        self.duration=duration
-        self.waitKey=waitKey
-        self.isRunning=False
-        self.isDone=False
-        self.clearScreen=True
+        self.t0 = None # timer for the duration
+        self.duration = duration
+        self.waitKey = waitKey
+        self.isRunning = False
+        self.isDone = False
+        self.clearScreen = True
         # initialize the instructions screen
-        self.instructLabel=pyglet.text.Label(x=window.width//2, 
+        self.instructLabel = pyglet.text.Label(x=window.width//2, 
                                              y=window.height//2, 
                                              anchor_x='center', 
                                              anchor_y='center', 
@@ -70,8 +76,8 @@ class InstructionScreen(Screen):
         print("Instruct (%dms): %s"%(duration, text))
 
     def reset(self):
-        self.isRunning=False
-        self.isDone=False
+        self.isRunning = False
+        self.isDone = False
         
     def set_text(self, text):
         '''set/update the text to show in the instruction screen'''
@@ -84,16 +90,16 @@ class InstructionScreen(Screen):
     def is_done(self):
         # check termination conditions
         if not self.isRunning:
-            self.isDone=False
+            self.isDone = False
             return self.isDone
         if self.waitKey:
             global last_key_press
             if last_key_press:
-                self.key_press=last_key_press
-                self.isDone=True
-                last_key_press=None
+                self.key_press = last_key_press
+                self.isDone = True
+                last_key_press = None
         if self.elapsed_ms() > self.duration:
-            self.isDone=True
+            self.isDone = True
         return self.isDone
 
     def elapsed_ms(self):
@@ -102,33 +108,34 @@ class InstructionScreen(Screen):
     def draw(self, t):
         '''Show a block of text to the user for a given duration on a blank screen'''
         if not self.isRunning:
-            self.isRunning=True # mark that we're running
-            self.t0=getTimeStamp()
+            self.isRunning = True  # mark that we're running
+            self.t0 = getTimeStamp()
         if self.clearScreen:
             self.window.clear()
         self.instructLabel.draw()
 
+
 #-----------------------------------------------------------------
 class MenuScreen(InstructionScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
-    def __init__(self,window, text, valid_keys):
-        super().__init__(window,text,999999,True)
+    def __init__(self, window, text, valid_keys):
+        super().__init__(window, text, 999999, True)
         self.valid_keys = valid_keys
         print("Menu")
 
     def is_done(self):
         # check termination conditions
         if not self.isRunning:
-            self.isDone=False
+            self.isDone = False
             return self.isDone
         global last_key_press
         if last_key_press:
-            self.key_press=last_key_press
+            self.key_press = last_key_press
             if self.key_press in self.valid_keys:
-                self.isDone=True
-            last_key_press=None
+                self.isDone = True
+            last_key_press = None
         if self.elapsed_ms() > self.duration:
-            self.isDone=True
+            self.isDone = True
         return self.isDone
 
 #-----------------------------------------------------------------
@@ -139,20 +146,20 @@ class ResultsScreen(InstructionScreen):
     results_text = "Calibration Performance: %3.0f%% Correct\n\nKey to continue"
     def __init__(self, window, noisetag, duration=20000, waitKey=False):
         super().__init__(window, self.waiting_text, duration, waitKey)
-        self.noisetag=noisetag
-        self.pred=None
+        self.noisetag = noisetag
+        self.pred = None
 
     def draw(self, t):
         '''check for results from decoder.  show if found..'''
         if not self.isRunning:
             self.noisetag.clearLastPrediction()
         # check for new predictions
-        pred=self.noisetag.getLastPrediction()
+        pred = self.noisetag.getLastPrediction()
         # update text if got predicted performance
         if pred is not None and (self.pred is None or pred.timestamp > self.pred.timestamp) :
             self.pred = pred
             print("Prediction:{}".format(self.pred))
-            self.waitKey=True
+            self.waitKey = True
             self.set_text(self.results_text%((1.0-self.pred.Perr)*100.0))
         super().draw(t)
 
@@ -161,21 +168,21 @@ class ResultsScreen(InstructionScreen):
 class ConnectingScreen(InstructionScreen):
     '''Modified instruction screen with waits for the noisetag to connect to the decoder'''
 
-    prefix_text   = "Welcome to the mindaffectBCI\n\n"
-    searching_text  = "Searching for the mindaffect decoder\n\nPlease wait"
-    trying_text   = "Trying to connect to: %s\n Please wait"
-    connected_text= "Success!\nconnected to: %s"
-    query_text    = "Couldnt auto-discover mindaffect decoder\n\nPlease enter decoder address: %s"
-    drawconnect_timeout_ms=50
-    autoconnect_timeout_ms=5000
+    prefix_text = "Welcome to the mindaffectBCI\n\n"
+    searching_text = "Searching for the mindaffect decoder\n\nPlease wait"
+    trying_text = "Trying to connect to: %s\n Please wait"
+    connected_text = "Success!\nconnected to: %s"
+    query_text = "Couldnt auto-discover mindaffect decoder\n\nPlease enter decoder address: %s"
+    drawconnect_timeout_ms = 50
+    autoconnect_timeout_ms = 5000
     
     def __init__(self, window, noisetag, duration=150000):
         super().__init__(window, self.prefix_text + self.searching_text, duration, False)
-        self.noisetag=noisetag
-        self.host=None
-        self.port=-1
-        self.usertext=''
-        self.stage=0
+        self.noisetag = noisetag
+        self.host = None
+        self.port = -1
+        self.usertext = ''
+        self.stage = 0
 
     def draw(self, t):
         '''check for results from decoder.  show if found..'''
@@ -185,44 +192,44 @@ class ConnectingScreen(InstructionScreen):
             return
         
         if not self.noisetag.isConnected():
-            if self.stage==0: # try-connection
+            if self.stage == 0: # try-connection
                 print('Not connected yet!!')
                 self.noisetag.connect(self.host, self.port, 
                                       queryifhostnotfound=False, 
                                       timeout_ms=self.drawconnect_timeout_ms)
                 if self.noisetag.isConnected():
                     self.set_text(self.prefix_text + self.connected_text%(self.noisetag.gethostport()))
-                    self.t0=getTimeStamp()
-                    self.duration=1000
+                    self.t0 = getTimeStamp()
+                    self.duration = 1000
                     self.noisetag.subscribe("MSPQ")
                 elif self.elapsed_ms() > self.autoconnect_timeout_ms:
                     # waited too long, giveup and ask user
-                    self.stage=1
+                    self.stage = 1
                     # ensure old key-presses are gone
-                    last_text=None
-                    last_key_press=None
+                    last_text = None
+                    last_key_press = None
                     
-            elif self.stage==1: # query hostname
+            elif self.stage == 1:  # query hostname
                 # query the user for host/port
                 # accumulate user inputs
                 if last_key_press:
                     if last_key_press == pyglet.window.key.BACKSPACE:
                         # remove last character
                         self.usertext = self.usertext[:-1]
-                    last_key_press=None
+                    last_key_press = None
                 if last_text:
                     print(last_text + ":" + str(ord(last_text)))
-                    if last_text == '\n' or last_text=='\r':
+                    if last_text == '\n' or last_text == '\r':
                         # set as new host to try
-                        self.host=self.usertext
-                        self.usertext=''
+                        self.host = self.usertext
+                        self.usertext = ''
                         self.set_text(self.prefix_text + self.trying_text%(self.host))
-                        self.stage=0 # back to try-connection stage
+                        self.stage = 0 # back to try-connection stage
                     elif last_text: 
                         # add to the host string
-                        self.usertext +=last_text
-                    last_text=None
-                if self.stage==1: # in same stage
+                        self.usertext += last_text
+                    last_text = None
+                if self.stage == 1: # in same stage
                     # update display with user input
                     self.set_text(self.prefix_text + self.query_text%(self.usertext))
         super().draw(t)
@@ -234,8 +241,8 @@ class QueryDialogScreen(InstructionScreen):
 
     def __init__(self, window, text, duration=50000, waitKey=True):
         super().__init__(window, text, 50000, False)
-        self.query=text
-        self.usertext=''
+        self.query = text
+        self.usertext = ''
 
     def draw(self, t):
         '''check for results from decoder.  show if found..'''
@@ -247,10 +254,10 @@ class QueryDialogScreen(InstructionScreen):
             if last_key_press == pyglet.window.key.BACKSPACE:
                 self.usertext = self.usertext[:-1]
                 self.set_text(self.query +self.usertext)
-            last_key_press=None
+            last_key_press = None
         if last_text:
-            if last_text == '\r' or last_text=='\n':
-                self.isDone=True
+            if last_text == '\r' or last_text == '\n':
+                self.isDone = True
             elif last_text: 
                 # add to the host string
                 self.usertext += last_text
@@ -265,48 +272,48 @@ from collections import deque
 class ElectrodequalityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
 
-    instruct="Electrode Quality\n\nAdjust headset until all\nelectrodes are green\n(or noise to signal ratio < 5)"
+    instruct = "Electrode Quality\n\nAdjust headset until all\nelectrodes are green\n(or noise to signal ratio < 5)"
     def __init__(self, window, noisetag, nch=4, duration=200000, waitKey=True):
         super().__init__(window)
-        self.noisetag=noisetag
-        self.t0=None # timer for the duration
-        self.duration=duration
-        self.waitKey=waitKey
-        self.clearScreen=True
-        self.isRunning=False
+        self.noisetag = noisetag
+        self.t0 = None  # timer for the duration
+        self.duration = duration
+        self.waitKey = waitKey
+        self.clearScreen = True
+        self.isRunning = False
         self.update_nch(nch)
-        self.dataringbuffer=deque() # deque so efficient sliding data window
-        self.datawindow_ms=4000 # 5seconds data plotted
-        self.datascale_uv=20 # scale of gap between ch plots
+        self.dataringbuffer = deque()  # deque so efficient sliding data window
+        self.datawindow_ms = 4000  # 5seconds data plotted
+        self.datascale_uv = 20  # scale of gap between ch plots
         print("Electrode Quality (%dms)"%(duration))
 
     def update_nch(self, nch):
         self.batch      = pyglet.graphics.Batch()
         self.background = pyglet.graphics.OrderedGroup(0)
         self.foreground = pyglet.graphics.OrderedGroup(1)
-        winw, winh=window.get_size()
-        r=(winh*.8)/(nch+1)
+        winw, winh = window.get_size()
+        r = (winh*.8)/(nch+1)
         # TODO[] use bounding box
-        self.chrect=(int(winw*.1), 0, r, r) # bbox for each signal, (x, y, w, h)
+        self.chrect = (int(winw*.1), 0, r, r) # bbox for each signal, (x, y, w, h)
         # make a sprite to draw the electrode qualities
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
         # anchor in the center to make drawing easier
-        img.anchor_x=1
-        img.anchor_y=1        
-        self.sprite=[None]*nch
-        self.label =[None]*nch
-        self.linebbox=[None]*nch # bounding box for the channel line
+        img.anchor_x = 1
+        img.anchor_y = 1        
+        self.sprite = [None]*nch
+        self.label  = [None]*nch
+        self.linebbox = [None]*nch # bounding box for the channel line
         for i in range(nch):
-            x=self.chrect[0]
-            y=self.chrect[1]+(i+1)*self.chrect[3]
+            x = self.chrect[0]
+            y = self.chrect[1]+(i+1)*self.chrect[3]
             # convert to a sprite and make the right size
-            self.sprite[i]=pyglet.sprite.Sprite(img, x=x, y=y, 
+            self.sprite[i] = pyglet.sprite.Sprite(img, x=x, y=y, 
                                                 batch=self.batch, 
                                                 group=self.background)
             # make the desired size
             self.sprite[i].update(scale_x=r*.6/img.width, scale_y=r*.6/img.height)
             # and a text label object
-            self.label[i]=pyglet.text.Label("%d"%(i), font_size=32, 
+            self.label[i] = pyglet.text.Label("%d"%(i), font_size=32, 
                                             x=x, y=y, 
                                             color=(255, 255, 255, 255), 
                                             anchor_x='center', 
@@ -314,7 +321,7 @@ class ElectrodequalityScreen(Screen):
                                             batch=self.batch, 
                                             group=self.foreground)
             # bounding box for the datalines
-            self.linebbox[i]= (x+r, y, winh*.9-x+r, self.chrect[3])
+            self.linebbox[i] = (x+r, y, winh*.9-x+r, self.chrect[3])
         # title for the screen
         self.title=pyglet.text.Label(self.instruct, font_size=32, 
                                      x=0, y=winh, color=(255, 255, 255, 255), 
@@ -325,7 +332,7 @@ class ElectrodequalityScreen(Screen):
                                      group=self.foreground)
 
     def reset(self):
-        self.isRunning=False
+        self.isRunning = False
         
     def is_done(self):
         # check termination conditions
@@ -335,9 +342,9 @@ class ElectrodequalityScreen(Screen):
         if self.waitKey:
             global last_key_press
             if last_key_press:
-                self.key_press=last_key_press
-                isDone=True
-                last_key_press=None
+                self.key_press = last_key_press
+                isDone = True
+                last_key_press = None
         if getTimeStamp() > self.t0+self.duration:
             isDone=True
         if isDone:
@@ -348,8 +355,8 @@ class ElectrodequalityScreen(Screen):
     def draw(self, t):
         '''Show a set of colored circles based on the lastSigQuality'''
         if not self.isRunning:
-            self.isRunning=True # mark that we're running
-            self.t0=getTimeStamp()
+            self.isRunning = True # mark that we're running
+            self.t0 = getTimeStamp()
             self.noisetag.addSubscription("D") # subscribe to "DataPacket" messages
             self.noisetag.modeChange("ElectrodeQuality")
         if self.clearScreen:
@@ -357,7 +364,7 @@ class ElectrodequalityScreen(Screen):
         # get the sig qualities
         electrodeQualities = self.noisetag.getLastSignalQuality()
         if not electrodeQualities: # default to 4 off qualities
-            electrodeQualities=[.5]*len(self.sprite)
+            electrodeQualities = [.5]*len(self.sprite)
 
         if len(electrodeQualities) != len(self.sprite):
             self.update_nch(len(electrodeQualities))
@@ -370,7 +377,7 @@ class ElectrodequalityScreen(Screen):
             #print(self.label[i].text + " ", end='')
             if issig2noise:
                 qual = log10(qual)/2 # n2s=50->1 n2s=10->.5 n2s=1->0
-            qual=max(0, min(1, qual))
+            qual = max(0, min(1, qual))
             qualcolor = (int(255*qual), int(255*(1-qual)), 0) #red=bad, green=good
             self.sprite[i].color=qualcolor
         #print("")
@@ -380,7 +387,7 @@ class ElectrodequalityScreen(Screen):
         # get the raw signals
         msgs=self.noisetag.getNewMessages()
         for m in msgs:
-            if m.msgID==DataPacket.msgID:
+            if m.msgID == DataPacket.msgID:
                 print('D', end='', flush=True)
                 if getTimeStamp() > self.t0+self.datawindow_ms: # slide buffer
                     self.dataringbuffer.popleft()
@@ -537,7 +544,7 @@ class SelectionGridScreen(Screen):
 
         # add the sentence box
         y = (gridheight-1)/gridheight*winh # top-edge cell
-        x = 1/gridwidth*winw # left-edge cell
+        x = winw*.2 # left-edge cell
         self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, 
                                         color=(255, 255, 255, 255), 
                                         anchor_x='left', anchor_y='center', 
