@@ -98,29 +98,34 @@ class StimSeq :
         if len(st) > 1:
             raise Exception
         else:
-            st=st[0] # un-nest
-        ss=StimSeq.readArray(f,len(st)) # read stim-seq - check same length
+            st = st[0]  # un-nest
+        ss = StimSeq.readArray(f, len(st))  # read stim-seq - check same length
         # transpose ss to have time in the major dimension
-        ss=transpose(ss)
-        return StimSeq(st,ss)
+        ss = transpose(ss)
+        return StimSeq(st, ss)
 
     @staticmethod
     def fromFile(fname):
         """read a stimulus-sequence from a file on disk"""
+        import os.path
+        if not os.path.isfile(fname):
+            pydir = os.path.dirname(os.path.abspath(__file__))
+            print('pydir={}'.format(pydir))
+            fname = os.path.join(pydir, fname) if os.path.isfile(os.path.join(pydir, fname)) else fname
         if '.png' in fname:
             try:
                 # try to load from the png
                 from matplotlib.pyplot import imread
                 array = imread(fname)
                 if array.ndim > 2:
-                    array = array[:,:,:3].mean(-1)
+                    array = array[:, :, :3].mean(-1)
                 array = array.tolist()
-                ss = StimSeq(None,array,None)
+                ss = StimSeq(None, array, None)
                 return ss
             except:
                 pass
         
-        f = open(fname,'r')        
+        f = open(fname, 'r')
         ss = StimSeq.fromString(f)
         return ss
 
