@@ -29,8 +29,9 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 client = None
-def run(host=None, nch:int=4, fs:float=200, packet_size:int=10):
+def run(host=None, nch: int=4, fs: float=200, packet_size: int=10):
     """run a simple fake-data stream with gaussian noise channels
 
     Args:
@@ -48,23 +49,46 @@ def run(host=None, nch:int=4, fs:float=200, packet_size:int=10):
     print("Putting header. {} ch @ {} Hz".format(nch,fs))
     client.sendMessage(utopiaclient.DataHeader(None, nch, fs, ""))
 
+    # setup the ERP injection trigger listener
+    import socket
+    import struct
+    # Create a TCP/IP socket
+    trigger_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    trigger_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    trigger_sock.bind(("0.0.0.0", 8300))
+    trigger_sock.setblocking(False)  # set into non-blocking mode
+
     nSamp = 0
     nPacket = 0
     t0 = client.getTimeStamp()
-    packet_interval = packet_size * 1000 / fs
+    sample_interval = 1000 / fs
+    data = np.zeros((packet_size, nch), dtype=np.float32)
     while True:
 
-        # limit the packet sending rate..
-        sleep( (t0 + nPacket*packet_interval - client.getTimeStamp()) / 1000)
-        # generate random data
-        data = np.random.standard_normal((packet_size, nch))
+        # generate a packets worth of data in 'real-time' so attach triggers
+        for si in range(packet_size):
+            # limit the sample rate..
+            sleep(max(0, (t0 + nSamp*sample_interval - client.getTimeStamp()) / 1000))
+            # generate random data 
+            data[si, :] = np.random.standard_normal((nch,))
+            nSamp = nSamp + 1
+            # check for trigger input
+            try:
+                trig, addr = trigger_sock.recvfrom(1024)
+                # decode the payload
+                trig = struct.unpack('f', trig[:4]) if len(trig) == 4 else int(trig[0]*5)
+                # add to the raw data
+                data[si, -1] = data[si, -1] + trig
+                print('t', end='', flush=True)
+            except socket.error as ex:
+                pass
 
         # forward to the utopia client
-        nSamp = nSamp + data.shape[1]
         nPacket = nPacket + 1
         client.sendMessage(utopiaclient.DataPacket(client.getTimeStamp(), data))
 
         printLog(nSamp, nPacket)        
+
 
 if __name__ == "__main__":
     args = parse_args()
