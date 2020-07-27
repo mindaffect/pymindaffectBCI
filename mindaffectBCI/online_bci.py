@@ -83,6 +83,7 @@ def p300():
     from mindaffectBCI.decoder.model_fitting import MultiCCA
     clsfr = MultiCCA(tau=int(fs_out*tau_ms/1000), rank=rank, evtlabs=evtlabs)
 
+    # run the decoder with this preprocessor and classifier
     from mindaffectBCI.decoder import decoder
     decoder = Process(target=decoder.mainloop, kwargs=dict(ui=ui, clsfr=clsfr, calplots=True), daemon=True)
     decoder.start()
