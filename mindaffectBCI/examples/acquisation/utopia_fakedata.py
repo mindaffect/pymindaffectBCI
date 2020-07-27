@@ -45,7 +45,7 @@ def run(host=None, nch:int=4, fs:float=200, packet_size:int=10):
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
-    print("Putting header.")
+    print("Putting header. {} ch @ {} Hz".format(nch,fs))
     client.sendMessage(utopiaclient.DataHeader(None, nch, fs, ""))
 
     nSamp = 0
@@ -57,7 +57,7 @@ def run(host=None, nch:int=4, fs:float=200, packet_size:int=10):
         # limit the packet sending rate..
         sleep( (t0 + nPacket*packet_interval - client.getTimeStamp()) / 1000)
         # generate random data
-        data = np.random.standard_normal((nch, packet_size))
+        data = np.random.standard_normal((packet_size, nch))
 
         # forward to the utopia client
         nSamp = nSamp + data.shape[1]

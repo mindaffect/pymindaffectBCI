@@ -2,8 +2,7 @@ import mindaffectBCI.decoder
 from multiprocessing import Process
 from time import sleep
 
-
-def noisetag():
+def noisetag(fakedata=False):
     #--------------------------- HUB ------------------------------
     # start the utopia-hub process
     from mindaffectBCI.decoder import startUtopiaHub
@@ -15,12 +14,18 @@ def noisetag():
     # Using brainflow for the acquisation driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
     #  so change the board_id and other args to use other boards
-    from mindaffectBCI.examples.acquisation import utopia_brainflow
-    acq_args =dict(board_id=1, serial_port='com3') # connect to the ganglion
-    acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
-    acquisation.start()
-    # wait for driver to startup -- N.B. NEEDED!!
-    sleep(1)
+    if fakedata:
+        from mindaffectBCI.examples.acquisation import utopia_fakedata
+        acq_args=dict(host='localhost', nch=4, fs=200)
+        acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+    else:
+        from mindaffectBCI.examples.acquisation import utopia_brainflow
+        acq_args =dict(board_id=1, serial_port='com3') # connect to the ganglion
+        acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+        # wait for driver to startup -- N.B. NEEDED!!
+        sleep(1)
 
     #---------------------------DECODER ------------------------------
     # start the decoder process - with default settings for a noise-tag
@@ -43,7 +48,7 @@ def noisetag():
     acquisation.kill()
 
 
-def p300():
+def p300(fakedata=False):
     #--------------------------- HUB ------------------------------
     # start the utopia-hub process
     from mindaffectBCI.decoder import startUtopiaHub
@@ -53,11 +58,18 @@ def p300():
     #---------------------------ACQUISATION ------------------------------
     # start a fake-data stream
     # with 4-channels running at 200Hz
-    from mindaffectBCI.examples.acquisation import utopia_fakedata
-    acq_args=dict(host='localhost', nch=4, fs=200)
-    acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
-    acquisation.start()
-
+    if fakedata:
+        from mindaffectBCI.examples.acquisation import utopia_fakedata
+        acq_args=dict(host='localhost', nch=4, fs=200)
+        acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+    else:
+        from mindaffectBCI.examples.acquisation import utopia_brainflow
+        acq_args =dict(board_id=1, serial_port='com3') # connect to the ganglion
+        acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+        # wait for driver to startup -- N.B. NEEDED!!
+        sleep(1)
 
     #---------------------------DECODER ------------------------------
     # start the decoder process - with settings for p300 data.
@@ -106,8 +118,20 @@ def p300():
     hub.kill()
 
 
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--fakedata', action='store_true', help='run with fake-data simulation')
+    parser.add_argument('--bcitype', type=str, help='set the type of BCI to run, one-of: noisetag, p300', default='noisetag')
+    args = parser.parse_args()
+    return args
+
 # N.B. we need this guard for multiprocessing on Windows!
 if __name__ == '__main__':
-    p300()
-
-    #noisetag()
+    args = parse_args()
+    if args.bcitype == 'noisetag':
+        noisetag(fakedata=args.fakedata)
+    elif args.bcitype == 'p300':
+        p300(fakedata=args.fakedata)
+    else:
+        raise ValueError("Unknown BCItype")
