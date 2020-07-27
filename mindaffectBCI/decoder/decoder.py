@@ -5,11 +5,13 @@ from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, Predict
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
 from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
-from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import dedupY0
 
-PREDICTIONPLOTS=False
-CALIBRATIONPLOTS=False
+PREDICTIONPLOTS = False
+CALIBRATIONPLOTS = False
+
+
 def get_trial_start_end(msgs, start_ts=None):
     '''get the start+end times of the trials in a utopia message stream'''
     trials = []
@@ -53,6 +55,7 @@ def get_trial_start_end(msgs, start_ts=None):
     # N.B. start_ts is not None if trail start without end..
     return (trials, start_ts, msgs)
 
+
 def getCalibration_dataset(ui):
     ''' extract a labelled dataset from the utopiaInterface, which are trilas between modechange messages '''
     # run until we get a mode change gathering training data in trials
@@ -62,8 +65,8 @@ def getCalibration_dataset(ui):
     while isCalibrating:
 
         # get new messages from utopia-hub
-        newmsgs,_,_ = ui.update()
-        #print("Extact_msgs:"); print("{}".format(newmsgs))
+        newmsgs, _, _ = ui.update()
+        #  print("Extact_msgs:"); print("{}".format(newmsgs))
 
         # incremental extract trial limits
         trials, start_ts, newmsgs = get_trial_start_end(newmsgs, start_ts)
@@ -76,11 +79,11 @@ def getCalibration_dataset(ui):
             dataset.append((data, stimulus))
 
         # check for end-calibration messages
-        for i,m in enumerate(newmsgs):
+        for i, m in enumerate(newmsgs):
             if m.msgID == ModeChange.msgID:
                 isCalibrating = False
                 # return unprocessed messages including the mode change
-                #print('cal pushback: {}'.format(newmsgs[i:]))
+                #  print('cal pushback: {}'.format(newmsgs[i:]))
                 ui.push_back_newmsgs(newmsgs[i:])
                 break
 
@@ -94,28 +97,28 @@ def dataset_to_XY_ndarrays(dataset):
     print("Trlen: {}".format(trlen))
     print("Trstim: {}".format(trstim))
     # set array trial length to 90th percential length
-    trlen = int(np.percentile(trlen,90))
-    trstim = max(20,int(np.percentile(trstim,90)))
+    trlen = int(np.percentile(trlen, 90))
+    trstim = max(20, int(np.percentile(trstim, 90)))
     # filter the trials to only be the  ones long enough to be worth processing
-    dataset = [ d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2 ]
-    if trlen == 0 or len(dataset) == 0 :
+    dataset = [d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2]
+    if trlen == 0 or len(dataset) == 0:
         return None, None
 
     # map to single fixed size matrix + upsample stimulus to he EEG sample rate
     Y = np.zeros((len(dataset), trlen, 256), dtype=dataset[0][1].dtype)
-    X = np.zeros((len(dataset), trlen, dataset[0][0].shape[-1]-1), dtype=dataset[0][0].dtype) # zero-padded data, w/o time-stamps
+    X = np.zeros((len(dataset), trlen, dataset[0][0].shape[-1]-1), dtype=dataset[0][0].dtype)  # zero-padded data, w/o time-stamps
     for ti, (data, stimulus) in enumerate(dataset):
         # extract the data & remove the timestamp channel and insert into the ndarray
         # guard for slightly different sizes..
         if X.shape[1] <= data.shape[0]:
             X[ti, :, :] = data[:X.shape[1], :-1]
-        else: # pad end with final value
+        else:  # pad end with final value
             X[ti, :data.shape[0], :] = data[:, :-1]
             X[ti, data.shape[0]:, :] = data[-1, :-1]
 
         # upsample stimulus to the data-sample rate and insert into ndarray
-        data_ts = data[:, -1] # data timestamp per sample
-        stimulus_ts = stimulus[:, -1] # stimulus timestamp per stimulus event
+        data_ts = data[:, -1]  # data timestamp per sample
+        stimulus_ts = stimulus[:, -1]  # stimulus timestamp per stimulus event
         stimulus, _ = upsample_stimseq(data_ts, stimulus[:, :-1], stimulus_ts)
         # store -- compensating for any variable trial lengths.
         if Y.shape[1] < stimulus.shape[0]:
@@ -125,12 +128,14 @@ def dataset_to_XY_ndarrays(dataset):
 
     return X, Y
 
+
 def strip_unused(Y):
     # strip unused outputs
-    used_y = np.any(Y.reshape((-1,Y.shape[-1])),0)
+    used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
-    Y = Y[...,used_y]
+    Y = Y[..., used_y]
     return Y, used_y
+
 
 def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, calfn="calibration_data.pk", fitfn="fit_data.pk"):
     ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
@@ -150,23 +155,24 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         cvscores = clsfr.cv_fit(X, Y)
         score = np.mean(cvscores['test_score'])
         print("clsfr={} => {}".format(clsfr, score))
-        (_) = decodingCurveSupervised(cvscores['estimator'],nInt=(10,10),priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+        decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10), 
+                                      priorsigma=(clsfr.sigma0_, clsfr.priorweight))
         try:
             from scipy.io import savemat
-            savemat('calibration_data',dict(X=X,Y=Y,fs=ui.fs))
+            savemat('calibration_data', dict(X=X, Y=Y, fs=ui.fs))
         except:
             pass
         if CALIBRATIONPLOTS:
             try:
                 import matplotlib.pyplot as plt
-                from multipleCCA import plot_multicca_solution
-                plt.ion()
                 plt.figure(1)
-                plot_multicca_solution(clsfr.W_,clsfr.R_)
+                clsfr.plot_model()
+                plt.figure(2)
+                plot_decoding_curve(*decoding_curve)
                 plt.pause(.01)
 
-                #from analyse_datasets import debug_test_dataset
-                #debug_test_dataset(X,Y,None,fs=ui.fs)
+                #  from analyse_datasets import debug_test_dataset
+                #  debug_test_dataset(X,Y,None,fs=ui.fs)
             except:
                 pass
 
@@ -178,7 +184,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
 def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=None):
     ''' given the current trials data, apply the classifier and decoder to make target predictions '''
-    X = data[:,:-1]
+    X = data[:, :-1]
     X_ts = data[:, -1]
     Y = stimulus[:, :-1]
     Y_ts = stimulus[:, -1]
@@ -195,39 +201,41 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
     Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus)
     # map-back to 256
     Fy = np.zeros(Fy_1.shape[:-1]+(256,),dtype=Fy_1.dtype)
-    Fy[...,used_idx]=Fy_1
+    Fy[..., used_idx] = Fy_1
     return Fy
 
 
 def combine_Ptgt(pvals_objIDs):
     pvals = [p[0] for p in pvals_objIDs] 
     objIDs = [p[1] for p in pvals_objIDs]
-    if not all(isequal(objIDs[0],oi) for oi in objIDs):
+    if not all(np.isequal(objIDs[0], oi) for oi in objIDs):
         print("Warning combination only supported for fixed output set currently!")
         return pvals[-1], objIDs[-1]
-    pvals = np.hstack(pvals) # (nBlk,nObj)
+    pvals = np.hstack(pvals)  # (nBlk,nObj)
     # coorected combination
-    Ptgt = softmax( np.sum(np.log(pvals))/np.sqrt(pvals.shape[0]) )
-    return Ptgt,objIDs
+    Ptgt = softmax(np.sum(np.log(pvals))/np.sqrt(pvals.shape[0]))
+    return Ptgt, objIDs
+
 
 def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # N.B. for network efficiency, only send for non-zero probability outputs
     nonzero_idx = np.flatnonzero(Ptgt)
     # ensure a least one entry
-    if nonzero_idx.size == 0: nonzero_idx = [0]
+    if nonzero_idx.size == 0: 
+        nonzero_idx = [0]
     Ptgt = Ptgt[nonzero_idx]
     if used_idx is None:
         used_idx = nonzero_idx
     else:
-        if np.issubdtype(used_idx.dtype,np.bool): # logical->index
+        if np.issubdtype(used_idx.dtype, np.bool): # logical->index
             used_idx = np.flatnonzero(used_idx)
         used_idx = used_idx[nonzero_idx]
-    #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
+    #  print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # send the prediction messages, PredictedTargetProb, PredictedTargetDist
     y_est_idx = np.argmax(Ptgt, axis=-1)
     # most likely target and the chance that it is wrong
-    ptp=PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
+    ptp = PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
     print(" Pred= {}".format(ptp))
     ui.sendMessage(ptp)
     # distribution over all *non-zero* targets
@@ -256,7 +264,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         newmsgs, ndata, nstim = ui.update(timeout_ms=timeout_ms,mintime_ms=timeout_ms//2)
 
         # TODO[]: Fix to not re-process the same data if no new stim to be processed..
-        if len(newmsgs)==0 and nstim==0 and ndata==0:
+        if len(newmsgs) == 0 and nstim == 0 and ndata == 0:
             continue
 
         # get the timestamp for the last data which it is valid to apply the model to,
@@ -313,49 +321,50 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
             data = ui.extract_data_segment(block_start_ts, block_end_ts)
             stimulus = ui.extract_stimulus_segment(block_start_ts, block_end_ts)
             # skip if no data/stimulus to process
-            if data.size==0 or stimulus.size==0:
+            if data.size == 0 or stimulus.size == 0:
                 continue
 
-            print('got: data {}->{}   stimulus {}->{}'.format(data[0,-1],data[-1,-1],stimulus[0,-1],stimulus[-1,-1]))
+            print('got: data {}->{}   stimulus {}->{}'.format(data[0, -1], data[-1, -1],
+                                                              stimulus[0, -1], stimulus[-1, -1]))
             if model_apply_type == 'block':
                 # update the start point for the next block
                 # start next block at overlap before the end of this blocks data
                 # so have sample accurate predictions, with no missing data, and no overlaps
-                block_start_ts =  data[-overlap_samp+1, -1] # ~= block_end_ts - overlap_ms +1-sample
-                bend=block_start_ts + block_step_ms + overlap_ms
+                block_start_ts = data[-overlap_samp+1, -1]  # ~= block_end_ts - overlap_ms +1-sample
+                bend = block_start_ts + block_step_ms + overlap_ms
                 print("next block {}->{}: in {}ms".format(block_start_ts, bend, bend - ui.data_timestamp))
 
             # get predictions for this data block
             block_Fy = doPrediction(clsfr, data, stimulus)
             # strip predictions from the overlap period
-            block_Fy = block_Fy[...,:-overlap_samp,:]
+            block_Fy = block_Fy[..., :-overlap_samp, :]
 
             # if got valid predictions...
             if block_Fy is not None:
                 # accumulate or store the predictions
                 if model_apply_type == 'trial':
                     Fy = block_Fy
-                elif model_apply_type == 'block':                    # accumulate blocks in the trial
-                    if Fy is None: # restart accumulation
+                elif model_apply_type == 'block':  # accumulate blocks in the trial
+                    if Fy is None:  # restart accumulation
                         Fy = block_Fy
                     else:
-                        Fy = np.append(Fy,block_Fy,-2)
+                        Fy = np.append(Fy, block_Fy, -2)
                 # limit the trial length
                 if maxDecisLen_ms > 0 and Fy.shape[-2] > maxDecisLen_samp:
-                    print("limit trial length {} -> {}".format(Fy.shape[-2],maxDecisLen_samp))
+                    print("limit trial length {} -> {}".format(Fy.shape[-2], maxDecisLen_samp))
                     Fy = Fy[..., -maxDecisLen_samp:, :]
 
                 # send prediction event
                 # only process the used-subset
-                used_idx = np.any(Fy.reshape((-1,Fy.shape[-1])),0)
+                used_idx = np.any(Fy.reshape((-1, Fy.shape[-1])), 0)
                 used_idx[0] = True # force include 0
                 # map to probabilities, including the prior over sigma!
                 Ptgt = clsfr.decode_proba(Fy[...,used_idx])
-                #_, _, Ptgt, _, _ = decodingSupervised(Fy[...,used_idx])
+                #  _, _, Ptgt, _, _ = decodingSupervised(Fy[...,used_idx])
                 # BODGE: only  use the last (most data?) prediction...
-                Ptgt = Ptgt[-1,-1,:]
+                Ptgt = Ptgt[-1, -1, :]
                 # send prediction with last recieved stimulus_event timestamp
-                print("Fy={} Yest={} Perr={}".format(Fy.shape,np.argmax(Ptgt),1-np.max(Ptgt)))
+                print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
 
                 send_prediction(ui, Ptgt, used_idx=used_idx, timestamp=ui.stimulus_timestamp)
             
@@ -438,6 +447,8 @@ if  __name__ == "__main__":
     parser.add_argument('--predplots',action='store_true', help='flag make decoding plots are prediction time')
     parser.add_argument('--calplots',action='store_true', help='flag make model and decoding plots after calibration')
     args = parser.parse_args()
+
+    args.calplots=True
 
     running=True
     nCrash = 0

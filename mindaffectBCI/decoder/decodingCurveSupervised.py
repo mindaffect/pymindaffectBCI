@@ -195,8 +195,6 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     plt.ylabel('Perr')
     plt.legend()
     plt.grid(True)
-    plt.show()
-
 
 def testcase():
     import numpy as np

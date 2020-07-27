@@ -1,5 +1,5 @@
 import numpy as np
-from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, zero_outliers, crossautocov, updateCyy, updateCxy, autocov, updateCxx
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, zero_outliers, crossautocov, updateCyy, updateCxy, autocov, updateCxx, plot_erp, plot_summary_statistics, plot_factoredmodel
 from mindaffectBCI.decoder.multipleCCA import multipleCCA
 from mindaffectBCI.decoder.scoreOutput import scoreOutput, dedupY0
 from mindaffectBCI.decoder.utils import window_axis
@@ -9,33 +9,39 @@ from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
 from mindaffectBCI.decoder.normalizeOutputScores import estimate_Fy_noise_variance
 
-#try:
-#    from sklearn.model_selection import StratifiedKFold
-#    from sklearn.base import BaseEstimator, ClassifierMixin
-#except:
-if True:
+try:
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.base import BaseEstimator, ClassifierMixin
+except:
+#  if True:
     # placeholder classes for when sklearn isn't available
     class StratifiedKFold:
-        def __init__(self,n_splits):
+        def __init__(self, n_splits):
             self.n_splits = n_splits
-        def split(self,X,Y):
+
+        def split(self, X, Y):
             shape = X.shape
-            self.splits = np.linspace(0,shape[0],self.n_splits+1,dtype=int,endpoint=True).tolist()
+            self.splits = np.linspace(0, shape[0], self.n_splits+1, dtype=int, endpoint=True).tolist()
             self._index = 0
             return self
+
         def __iter__(self):
             return self
+
         def __next__(self):
             if self._index < len(self.splits)-1:
-                train_idx = list(range(self.splits[self._index]))+list(range(self.splits[self._index+1],self.splits[-1]))
-                val_idx = list(range(self.splits[self._index],self.splits[self._index+1]))
+                train_idx = list(range(self.splits[self._index]))+list(range(self.splits[self._index+1], self.splits[-1]))
+                val_idx = list(range(self.splits[self._index], self.splits[self._index+1]))
                 self._index = self._index + 1
             else:
                 raise StopIteration
-            return (train_idx,val_idx)
+            return (train_idx, val_idx)
+
 
     class BaseEstimator:
         pass
+
+
     class ClassifierMixin:
         pass
     
@@ -156,12 +162,22 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
             #print('Fy={}'.format(Fy.shape))
             # N.B. need to match the filter used in the decoder..
-            self.sigma0_, _ = estimate_Fy_noise_variance(Fy,priorsigma=None) # per-trial
+            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)  # per-trial
             #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
-            self.sigma0_ = np.median(self.sigma0_.ravel()) # ave
-            print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
+            self.sigma0_ = np.median(self.sigma0_.ravel())  # ave
+            print('Sigma0{} = {}'.format(self.sigma0_.shape, self.sigma0_))
 
-        return {'estimator':Fy, 'test_score':scores}
+        return {'estimator': Fy, 'test_score': scores}
+    
+    def plot_model(self, **kwargs):
+        if not self.R_ is None:
+            print("Plot Factored Model")
+            if hasattr(self, 'A_'):
+                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, **kwargs)
+            else:
+                plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
+        else:
+            plot_erp(self.W_, evtlabs=self.evtlabs, **kwargs)
 
     
 class MultiCCA(BaseSequence2Sequence):
