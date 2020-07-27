@@ -47,11 +47,11 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
     '''
     rank = int(max(1, rank))
     if not hasattr(reg, '__iter__'):
-        reg = (reg, reg) # ensure 2 element list
+        reg = (reg, reg)  # ensure 2 element list
     if not hasattr(CCA, '__iter__'):
-        CCA = (CCA, CCA) # ensure 2 element list
+        CCA = (CCA, CCA)  # ensure 2 element list
     if not hasattr(rcond, '__iter__'):
-        rcond = (rcond, rcond) # ensure 2 element list
+        rcond = (rcond, rcond)  # ensure 2 element list
         
     # 3d Cxy, Cyy for linear alg stuff, (nM,feat,feat) - N.B. add model dim if needed
     nM = Cxy.shape[0] if Cxy.ndim > 3 else 1
@@ -61,16 +61,16 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
         Cxx2d = np.reshape(Cxx, (nM, Cxx.shape[-2], Cxx.shape[-1]))
 
     if Cxx.ndim < 4 and Cyy.ndim >= 4:
-        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3]*Cxy.shape[-2], Cxy.shape[-1])) # (nM,(nE*tau),d)
+        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3]*Cxy.shape[-2], Cxy.shape[-1]))  # (nM,(nE*tau),d)
     elif Cxx.ndim >= 4 and Cyy.ndim < 4:
-        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3], Cxy.shape[-2]*Cxy.shape[-1])) # (nM,nE,(tau*d))
-    elif Cxx.ndim >=4 and Cyy.ndim >= 4:
+        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3], Cxy.shape[-2]*Cxy.shape[-1]))  # (nM,nE,(tau*d))
+    elif Cxx.ndim >= 4 and Cyy.ndim >= 4:
         raise NotImplementedError("Not immplemented yet for double temporally embedded inputs")
         
     if Cyy.ndim > 2:
-        Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-4]*Cyy.shape[-3], Cyy.shape[-2]*Cyy.shape[-1])) # (nM,(nE*tau),(nE*tau))
+        Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-4]*Cyy.shape[-3], Cyy.shape[-2] * Cyy.shape[-1]))  # (nM,(nE*tau),(nE*tau))
     else:
-        Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-2], Cyy.shape[-1])) # (nM,e,e)    
+        Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-2], Cyy.shape[-1]))  # (nM,e,e)    
     rank = min(min(rank, Cxy2d.shape[-1]), Cyy2d.shape[-1])
 
     
@@ -86,7 +86,7 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
     J = np.zeros((Cxy2d.shape[0]))  # [ nM ]
     W = np.zeros((Cxy2d.shape[0], rank, Cxy2d.shape[2]))  # (nM,rank,d)
     R = np.zeros((Cxy2d.shape[0], rank, Cxy2d.shape[1]))  # (nM,rank,(nE*tau)) 
-    for mi in range(Cxy2d.shape[0]): # loop over posible models
+    for mi in range(Cxy2d.shape[0]):  # loop over posible models
         # get output specific ERPs
         Cxym = Cxy2d[mi, :, :]  # ((tau*nE),d)
 
@@ -110,11 +110,11 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
             isqrtCxxCxymisqrtCyy = isqrtCxxCxym
 
         # SVD for the double  whitened cross covariance
-        Rm, lm, Wm = np.linalg.svd(isqrtCxxCxymisqrtCyy, full_matrices=False) # N.B. Rm=((nE*tau),rank),lm=(rank),Wm=(rank,d)
-        Wm = Wm.T # (d,rank) [ (nE*tau) x rank ]
+        Rm, lm, Wm = np.linalg.svd(isqrtCxxCxymisqrtCyy, full_matrices=False)  #N.B. Rm=((nE*tau),rank),lm=(rank),Wm=(rank,d)
+        Wm = Wm.T  # (d,rank)
 
         # include relative component weighting directly in the  Left/Right singular values
-        nlm = lm / np.max(lm) # normalize so predictions have unit average norm
+        nlm = lm / np.max(lm)  # normalize so predictions have unit average norm
         Wm = Wm * np.sqrt(nlm[np.newaxis, :])
         Rm = Rm * np.sqrt(nlm[np.newaxis, :])
 
@@ -125,12 +125,12 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
             Rm = np.dot(isqrtCyy, Rm)
 
         # extract the desired parts of the solution information, largest singular values first
-        slmidx = np.argsort(lm) # N.B. ASCENDING order
-        slmidx = slmidx[::-1] # N.B. DESCENDING order
-        r = min(len(lm), rank) # guard rank>effective dim
-        W[mi, :r, :] = Wm[:, slmidx[:r]].T #(nM,rank,d)
-        J[mi] = lm[slmidx[-1]] # N.B. this is *wrong* for rank>1
-        R[mi, :r, :] = Rm[:, slmidx[:r]].T #(nM,rank,(nE*tau))
+        slmidx = np.argsort(lm)  # N.B. ASCENDING order
+        slmidx = slmidx[::-1]  # N.B. DESCENDING order
+        r = min(len(lm), rank)  # guard rank>effective dim
+        W[mi, :r, :] = Wm[:, slmidx[:r]].T  #(nM,rank,d)
+        J[mi] = lm[slmidx[-1]]  # N.B. this is *wrong* for rank>1
+        R[mi, :r, :] = Rm[:, slmidx[:r]].T  #(nM,rank,(nE*tau))
         
     # Map back to input shape
     if Cyy.ndim > 2:
@@ -166,24 +166,24 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
 
     # include the regularisor if needed
     # TODO[]: include the ridge later, i.e. after the eigendecomp?
-    if not reg is None and not reg == 0 :
+    if not reg is None and not reg == 0:
         # TODO[]: Optimal shrinkage?
-        if np.ndim(reg) == 0 or len(reg) == 1: # weight w.r.t. same amplitude identity
+        if np.ndim(reg) == 0 or len(reg) == 1:  # weight w.r.t. same amplitude identity
             C = (1-reg)*C + reg*np.eye(C.shape[0], dtype=C.dtype)*np.mean(C.diagonal())
-        elif len(reg) == C.shape[0]: # diag entries
+        elif len(reg) == C.shape[0]:  # diag entries
             np.fill_diagonal(C, C.diagonal()+reg)
-        else: # full reg matrix
+        else:  # full reg matrix
             C = C + reg
 
     # eigen decomp
-    sigma, U = np.linalg.eig(C) # sigma=(r,) U=(d,k)
+    sigma, U = np.linalg.eig(C)  # sigma=(r,) U=(d,k)
     U = U.real
     
     # identify bad/degenerate eigen-values, complex, negative, inf, nan or too small
-    bad = np.any(np.vstack((np.abs(sigma.imag > np.finfo(sigma.dtype).eps), # complex
-                            np.isinf(sigma), # inf
-                            np.isnan(sigma), # nan
-                            np.abs(sigma)<np.finfo(sigma.dtype).eps)),0) # too-small
+    bad = np.any(np.vstack((np.abs(sigma.imag > np.finfo(sigma.dtype).eps),  # complex
+                            np.isinf(sigma),  # inf
+                            np.isnan(sigma),  # nan
+                            np.abs(sigma)<np.finfo(sigma.dtype).eps)), 0)  # too-small
     if verb:
         print("{} bad eig".format(sum(bad)))
     # zero these bad ones
@@ -192,14 +192,14 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
     # additional badness conditions based on eigen-spectrum
     if not rcond is None:
         # identify eigen-values we want to remove due to rcond
-        if 0 <= rcond: # value threshold
+        if 0 <= rcond:  # value threshold
             bad = np.logical_or(bad, sigma.real < rcond*max(np.abs(sigma)))
-        elif -1 < rcond and rcond < 0: # fraction
-            si = np.argsort(sigma) # N.B. Ascending
-            bad[si[:int(len(si)*abs(rcond))]] = True # up to this fraction are bad
-        elif rcond < -1: # number to discard
+        elif -1 < rcond and rcond < 0:  # fraction
+            si = np.argsort(sigma)  # N.B. Ascending
+            bad[si[:int(len(si)*abs(rcond))]] = True  # up to this fraction are bad
+        elif rcond < -1:  # number to discard
             si = np.argsort(sigma)
-            bad[si[:abs(rcond)]] = True # this many are bad
+            bad[si[:abs(rcond)]] = True  # this many are bad
 
     if verb:
         print("{} rcond+bad eig".format(sum(bad)))
@@ -207,8 +207,8 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
     # compute the whitener (and it's inverse)
     if not all(bad):
         keep = np.logical_not(bad)
-        Ukeep = U[:, keep] # (d,r)
-        sqrtsigmakeep = np.sqrt(np.abs(sigma[keep])) #(r,)
+        Ukeep = U[:, keep]  # (d,r)
+        sqrtsigmakeep = np.sqrt(np.abs(sigma[keep]))  #(r,)
         # non-symetric (and rank  reducing) version
         sqrtC = Ukeep * sqrtsigmakeep[np.newaxis, :]
         isqrtC= Ukeep * (1.0/sqrtsigmakeep[np.newaxis, :])
@@ -224,26 +224,25 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
     return (isqrtC, isqrtC)
 
 
-
 def plot_multicca_solution(w, r):
     # plot the solutions, spatial-filter / temporal-impulse-response
     import matplotlib.pyplot as plt
     plt.clf()
-    plt.subplot(211);plt.plot(np.squeeze(w));plt.title("Spatial")
-    plt.subplot(212);plt.plot(np.squeeze(r).T);plt.title("Temporal")
+    plt.subplot(211); plt.plot(np.squeeze(w)); plt.title("Spatial")
+    plt.subplot(212); plt.plot(np.squeeze(r).T); plt.title("Temporal")
     plt.show()
 
 
 def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
-    from updateSummaryStatistics import updateSummaryStatistics, crossautocov, updateCyy, updateCxy, autocov, updateCxx
-    from multipleCCA import multipleCCA
-    from scoreOutput import scoreOutput, dedupY0
-    from scoreStimulus import scoreStimulus, scoreStimulusCont
-    from decodingCurveSupervised import decodingCurveSupervised
-    from decodingSupervised import decodingSupervised
-    from stim2event import stim2event
-    from sklearn.model_selection import StratifiedKFold
     ''' do a cross-validated training of a multicca model using sklearn'''
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, crossautocov, updateCyy, updateCxy, autocov, updateCxx
+    from mindaffectBCI.decoder.multipleCCA import multipleCCA
+    from mindaffectBCI.decoder.scoreOutput import scoreOutput, dedupY0
+    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus, scoreStimulusCont
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+    from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
+    from mindaffectBCI.decoder.stim2event import stim2event
+    from sklearn.model_selection import StratifiedKFold
     print("Xe = {}\nMe = {}".format(Xe.shape, Me.shape))
     # convert from stimulus coding to brain response coding
     Ye = stim2event(Me, evtlabs, axis=1) # (nTrl, nEp, nY, nE) [ nE x y x ep x trl ]
@@ -277,7 +276,7 @@ def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     
 
 def testcase():
-    from utils import testNoSignal, testSignal, sliceData, sliceY
+    from mindffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
     #from multipleCCA import *
     if False:
         X, Y, st = testNoSignal()
@@ -285,13 +284,13 @@ def testcase():
         X, Y, st, A, B = testSignal(tau=10, noise2signal=10)
     # TODO[]: summary stats directly without first slicing
     Y_true = Y[:, :, 0:1, :] if Y.ndim > 3 else Y[:, 0:1, :] # N.B. hack with [0] to stop removal of dim...
-    from updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, tau=10)
 
     #plot_summary_statistics(Cxx,Cxy,Cyy)
 
     # single supervised training
-    from multipleCCA import multipleCCA, plot_multicca_solution
+    from mindaffectBCI.decoder.multipleCCA import multipleCCA, plot_multicca_solution
     J, w, r = multipleCCA(Cxx, Cxy, Cyy, rcond=-.3, symetric=True) # 50% rank reduction
     
     plot_multicca_solution(w, r)
