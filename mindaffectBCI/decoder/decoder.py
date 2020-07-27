@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import numpy as np
-from UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
+from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
 from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb
-from devent2stimsequence import devent2stimSequence, upsample_stimseq
-from model_fitting import BaseSequence2Sequence, MultiCCA
-from decodingSupervised import decodingSupervised
-from decodingCurveSupervised import decodingCurveSupervised
-from scoreOutput import dedupY0
+from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
+from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
+from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+from mindaffectBCI.decoder.scoreOutput import dedupY0
 
 PREDICTIONPLOTS=False
 CALIBRATIONPLOTS=False
@@ -390,7 +390,7 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
                                  timeout_ms=100, mintime_ms=55) # 20hz updates
-        ui.connect(host=host, queryifhostnotfound=False)
+    ui.connect(host=host, queryifhostnotfound=False)
     # use a multi-cca for the model-fitting
     if clsfr is None:
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000))
