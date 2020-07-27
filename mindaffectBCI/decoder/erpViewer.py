@@ -125,7 +125,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
                     irf[cursor, data.shape[0]:, :] = data[-1, :-1]  # held with last value
                 else:
                     irf[cursor, :, :] = data[:irf.shape[1], :-1]
-                print("seglen={}".format(data.shape[0]))
+                #print("seglen={}".format(data.shape[0]))
                 irf_lab[cursor, ...] = stimulus
                 # move the cursor
                 cursor = (cursor + 1) % irf.shape[0]
