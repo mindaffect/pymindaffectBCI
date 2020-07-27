@@ -537,7 +537,7 @@ class SelectionGridScreen(Screen):
 
         # add opto-sensor block - as last object
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
-        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh-h/2, 
+        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9, 
                                               batch=self.batch, group=self.background)
         self.opto_sprite.update(scale_x=int(winw*.1), scale_y=int(winh*.1))
         self.opto_sprite.visible=False
