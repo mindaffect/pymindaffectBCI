@@ -18,8 +18,12 @@ This repository is organized roughly as follows:
    - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
    - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
    - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
+   - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
+   - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
 
- - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
+ - `decoder <decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. 
+
+- `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
    - `output <mindaffectBCI/examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
    - `presentation <mindaffectBCI/examples/presentation/>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.  In particular here we have:
