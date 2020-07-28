@@ -21,7 +21,7 @@ This repository is organized roughly as follows:
    - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
    - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
 
- - `decoder <decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. 
+- `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. 
 
 - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
