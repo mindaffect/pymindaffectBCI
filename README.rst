@@ -12,7 +12,7 @@ File Structure
 --------------
 This repository is organized roughly as follows:
 
- - `mindaffectBCI <mindaffectBCI>`_ - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
+- `mindaffectBCI <mindaffectBCI>`_ - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
  
    - `noisetag.py <mindaffectBCI/noisetag.py>`_ - This module contains the main API for developing User Interfaces with BCI control
    - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
@@ -21,8 +21,10 @@ This repository is organized roughly as follows:
    - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
    - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
 
-- `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. 
-
+- `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. Important modules within this package are:
+   - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
+   - `offline_analysis.ipynb <minaffectBCI/decoder/offline_analysis.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains to run an off-line analysis of previously saved data from the mindaffectBCI or other publically available BCI datasets. 
+   
 - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
    - `output <mindaffectBCI/examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
