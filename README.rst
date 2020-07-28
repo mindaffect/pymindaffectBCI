@@ -23,7 +23,7 @@ This repository is organized roughly as follows:
 
 - `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. Important modules within this package are:
    - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
-   - `offline_analysis.ipynb <minaffectBCI/decoder/offline_analysis.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains to run an off-line analysis of previously saved data from the mindaffectBCI or other publically available BCI datasets. 
+   - `offline_analysis.ipynb <mindaffectBCI/decoder/offline_analysis.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains to run an off-line analysis of previously saved data from the mindaffectBCI or other publically available BCI datasets. 
    
 - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
 
