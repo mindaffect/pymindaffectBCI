@@ -5,6 +5,12 @@ def run():
     pydir = os.path.dirname(os.path.abspath(__file__)) # mindaffectBCI/decoder/startUtopiaHub.py
     bindir = os.path.join(pydir,'..','..','bin') # ../../bin/
 
+    # make the logs directory if not already there
+    try: 
+        os.mkdir(os.path.join(pydir,'..','..','logs'))
+    except:
+        pass
+
     # command to run the java hub
     cmd = ("java","-jar","UtopiaServer.jar")
     # args to pass to the java hub
