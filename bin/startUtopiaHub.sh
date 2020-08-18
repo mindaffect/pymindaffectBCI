@@ -2,6 +2,8 @@
 cd `dirname ${BASH_SOURCE[0]}`
 uid=`date +%y%m%d_%H%M`
 
+mkdir ../logs
+
 # start up the utopia-hub
 echo Starting the Utopia-HUB
 if [ ! -z `which xterm`]; then
