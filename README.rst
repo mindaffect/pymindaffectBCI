@@ -35,12 +35,19 @@ This repository is organized roughly as follows:
 
    - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
 
+   - `acquisation <mindaffectBCI/examples/acquisation/>`_ - Example data acquisation modules.  An acquisation module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
+
+
 Installing mindaffectBCI
 ------------------------
 
 That's easy::
 
   pip3 install mindaffectBCI
+
+To update an already installed version do::
+
+  pip3 install --update mindaffectBCI
 
 
 Getting Support
@@ -56,23 +63,7 @@ If you run into and issue you can either directly raise an issue on the projects
 Testing the mindaffectBCI SDK
 -----------------------------
 
-This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware (i.e. EEG) or the brain-signal decoding algorithms. 
-
-In order to allow you to develop and test your Brain Controlled applications without connecting to a real mindaffect Decoder, we provide a so called "fake recogniser".  This fake recogniser simulates the operation of the true mindaffect decoder to allow easy development and debugging.  Before starting with the example output and presentation modules.  You can download the fakerecogniser from our github page `bin directory <https://github.com/mindaffect/pymindaffectBCI/tree/master/bin>`_
-
-You should start this fake recogniser by running, either ::
-
-  bin/startFakeRecogniser.bat
-  
-if running on windows, or  ::
-
-  bin/startFakeRecogniser.sh
-
-if running on linux/macOS
-
-If successfull, running these scripts should open a terminal window which shows the messages recieved/sent from your example application.
-
-Note: The fakerecogniser is written in `java <https://www.java.com>`_, so you will need a JVM with version >8 for it to run.  If needed download from `here <https://www.java.com/ES/download/>`_
+This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware. 
 
 Quick Installation Test
 -----------------------
@@ -86,9 +77,17 @@ Essentially, this run the SDK test code which pretends to run a full BCI sequenc
 Quick BCI Test
 --------------
 
-If you have installed [pyglet](pyglet.org), e.g. using `pip3 install pyglet`, then you can also try some more advanced full BCI exmaples with stimulation.  For a simple letter matrix test run::
+If you have:
+  1. installed `pyglet <pyglet.org>`_ , e.g. using `pip3 install pyglet`
+  2. installed `brainflow <brainflow.org>`_ , e.g. using `pip3 install brainflow`
+  3. have connected an `openBCI ganglion <shop.openbci.com>`_ ,
+  4. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
 
-  python3 -m mindaffectBCI.examples.presentation.selectionMatrix
+For more information on how to run an on-line BCI see this document: `OnlineBCI_quickstart.md <OnlineBCI_quickstart.md>`_
+
+Then you can jump directly to trying a fully functional simple letter matrix BCI using::
+
+  python3 -m mindaffectBCI.online_bci
 
 *NOTE*: For this type of rapid visual stimulation BCI, it is *very* important that the visual flicker be displayed *accurately*.  However, as the graphics performance of computers varies widely it is hard to know in advance if a particular configuration is accurate enough.  To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.  You can run this with::
 
