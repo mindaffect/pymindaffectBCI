@@ -99,9 +99,9 @@ class FrameRateTestScreen(selectionMatrix.InstructionScreen):
 def doFrameRateTest():
     window = selectionMatrix.initPyglet(fullscreen=False)
     
-    selectionMatrix.ss = FrameRateTestScreen(window)
+    frts = FrameRateTestScreen(window)
     # call the draw method as fast as possible, i.e. at video frame rate!
-    pyglet.clock.schedule(selectionMatrix.draw)
+    pyglet.clock.schedule(frts.draw)
     # mainloop
     pyglet.app.run()
 

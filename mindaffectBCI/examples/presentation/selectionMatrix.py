@@ -811,8 +811,12 @@ class ExptScreenManager(Screen):
 # Initialization: display, utopia-connection
 # use noisetag object as time-stamp provider
 def getTimeStamp():
-    global nt
-    return nt.getTimeStamp()
+    if 'nt' in globals():
+        global nt
+        return nt.getTimeStamp()
+    else: # fall back if not connected to utopia client
+        import time
+        return (int(time.perf_counter()*1000) % (1<<31))
 
 import types
 from mindaffectBCI.noisetag import sumstats
