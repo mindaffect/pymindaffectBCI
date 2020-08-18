@@ -32,9 +32,10 @@ class FrameRateTestScreen(selectionMatrix.InstructionScreen):
     success_text = "SUCCESS:\nsufficient accuracy frame timing detected\n"
     statistics_text = "\n{:3.0f} +/-{:3.1f} [{:2.0f},{:2.0f}]\n mean +/-std [min,max]"
     
-    def __init__(self, window, testduration=2000, duration=20000, waitKey=False):
+    def __init__(self, window, testduration=2000, warmup_duration=1000, duration=20000, waitKey=False):
         super().__init__(window, self.testing_text, duration, waitKey)
         self.testduration = testduration
+        self.warmup_duration = warmup_duration
         self.ftimes = []
         self.logtime = None
         self.log_interval = 2000
@@ -48,9 +49,10 @@ class FrameRateTestScreen(selectionMatrix.InstructionScreen):
                     
         # record the  flip timing info
         # TODO[]: use a deque to make sliding window...
-        self.ftimes.append(self.window.lastfliptime)
+        if self.elapsed_ms() > self.warmup_duration:
+            self.ftimes.append(self.window.lastfliptime)
 
-        if self.elapsed_ms() > self.testduration:
+        if self.elapsed_ms() > self.warmup_duration + self.testduration:
             if self.elapsed_ms() > self.logtime:
                 self.logtime=self.elapsed_ms() + self.log_interval
                 log=True
