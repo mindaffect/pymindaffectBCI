@@ -58,7 +58,7 @@ To launch all these components at once:
 
 If all is installed it should start the selection matrix with all the other components in the background.
 
-When the blue light on the ganglion does not turn solid after starting the BCI you most likely have to change the com port for your bluetooth dongle. You can specify the correct serial port to use in the acq_args section of the `online_bci.json` system configuration file.  You can find the used com port as follows:
+When the blue light on the ganglion does not turn solid after starting the BCI you most likely have to change the com port for your bluetooth dongle. You can specify the correct serial port to use in the acq_args section of the [`online_bci.json`](mindaffectBCI/online_bci.json) system configuration file.  You can find the used com port as follows:
 
 ## On Mac:
 
@@ -72,7 +72,7 @@ When the blue light on the ganglion does not turn solid after starting the BCI y
     /dev/cu.usbmodem1
     ```
 
-    Then, in the online_bci configuration file `online_bci.json` you should be defined as  `"serial_port":"dev/cu.your_com_name"`
+    Then, in the online_bci configuration file [`online_bci.json`](mindaffectBCI/online_bci.json) you should be defined as  `"serial_port":"dev/cu.your_com_name"`
 
 
 ## On Windows:
@@ -81,7 +81,7 @@ When the blue light on the ganglion does not turn solid after starting the BCI y
 
     ![alt_text](images/image2.png "image_tooltip")
 
-    Then, in the online_bci file your configuration file `online_bci.json` you should have: `"serial_port":"COM_X_"`
+    Then, in the online_bci file your configuration file [`online_bci.json`](mindaffectBCI/online_bci.json) you should have: `"serial_port":"COM_X_"`
 
 
 
@@ -121,10 +121,23 @@ You can run the BCI in different modes by specifying different arguments on the 
 
 This online_bci uses [brainflow](http://brainflow.org) by default for interfacing with the EEG amplifier.  Specificially the file in [examples\acquisation\utopia_brainflow.py](mindaffectBCI/examples/acquisation/utopia_brainflow.py) is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the [brainflow documentation](https://brainflow.readthedocs.io/en/stable/SupportedBoards.html).
 
+You can specify the configuration for your amplifer in the `acq_args` section of the configuration file [online_bci.json](mindaffectBCI/online_bci.json).  For example to specify to use a simulated board use:
+
+```
+   "acq_args":{ "board_id":-1}
+```
+
+Or to use the openBCI Cyton on com-port 4:
+```
+   "acq_args":{ 
+       "board_id":0,
+       "serial_port":"COM4"
+    }
+```
 
 ## Alternative BCI types / Stimulus
 
-By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol letter matrix for presentation.  You can easily try different types of stimulus and selection matrices by modifying the `symbols` and `stimfile` in the configuration file `online_bci.json`.  Where:
+By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol letter matrix for presentation.  You can easily try different types of stimulus and selection matrices by modifying the `symbols` and `stimfile` in `presentation_args` section of the configuration file [`online_bci.json`](mindaffectBCI/online_bci.json).  Where:
  * _symbols_ : can either by a list-of-lists of the actual text to show, for example:
 
     ```
@@ -133,4 +146,6 @@ By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol le
 
     or a file from which to load the set of symbols as a *comma-separated* list of strings like the file [symbols.txt](mindaffectBCI/examples/presentation/symbols.txt).
 
-* _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like: [rc5x5.png](mindaffectBCI/rc5x5.png)
+* _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like: 
+
+![rc5x5.png](mindaffectBCI/rc5x5.png)
