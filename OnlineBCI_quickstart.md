@@ -27,7 +27,7 @@ If you are missing one or more of the packages listed above, install them as fol
 
 
 1. Open the (anaconda) command prompt
-2. **<code>pip install "package name"</code></strong>
+2. `pip install "package name"`
 
 Then, to install the MindAffect BCI: (For now we use a local pip install)
 
@@ -37,10 +37,10 @@ Then, to install the MindAffect BCI: (For now we use a local pip install)
 2. Open (or navigate to) the pymindaffectBCI folder in the (anaconda) command prompt.
 3. Install the pymindaffectBCI package by typing (including the dot!):
 
-    For anaconda users: **<code>pip install -e . </code></strong>
+    For anaconda users: `pip install -e .`
 
 
-    For others:<code> <strong>pip3 install -e .</strong></code>
+    For others:`pip3 install -e .`
 
 
 
@@ -49,11 +49,10 @@ Then, to install the MindAffect BCI: (For now we use a local pip install)
 The system consists of 4 main components as illustrated here:
 
 
-
 <p id="gdcalert1" ><span style="color: red; font-weight: bold">>>>>>  gd2md-html alert: inline image link here (to images/image1.png). Store image on your image server and adjust path/filename/extension if necessary. </span><br>(<a href="#">Back to top</a>)(<a href="#gdcalert2">Next alert</a>)<br><span style="color: red; font-weight: bold">>>>>> </span></p>
 
 
-![alt_text](images/image1.png "image_tooltip")
+![mindaffect BCI system architecture](../docs/SystemArchitecture.png "mindaffectBCI system architecture")
 
 
 To actually run the BCI we need to start each of these components:
@@ -71,7 +70,7 @@ To launch all these components at once:
 
 1.  Power on the  OpenBCI Ganglion. (toggle on/off button)
 2.  Open a command prompt / your Anaconda virtual python environment
-3.  Run the BCI by typing: **<code>python -m mindaffectBCI.online_bci</code></strong>
+3.  Run the BCI by typing: `python -m mindaffectBCI.online_bci`
 
 If all is installed it should start the selection matrix with all the other components in the background.
 
@@ -82,10 +81,9 @@ On Mac:
 
 
 1. Open a Terminal session
-2. Type:<code> <strong>ls</strong> /dev/cu.*</code>, and look for something like /dev/cu.usbmodem1(or similar): \
+2. Type: `ls /dev/cu.*`, and look for something like /dev/cu.usbmodem1(or similar): \
 
-
-    ```
+```
 $ ls /dev/cu.*
 /dev/cu.Bluetooth-Modem		/dev/cu.iPhone-WirelessiAP
 /dev/cu.Bluetooth-PDA-Sync	/dev/cu.usbserial
@@ -94,7 +92,7 @@ $ ls /dev/cu.*
 
 
 
-    Then, in the online_bci file your  serial port should be defined as  <code>serial_port='dev/cu.your_com_name'</code>
+    Then, in the online_bci file your  serial port should be defined as  `serial_port='dev/cu.your_com_name'`
 
 
 On Windows:
@@ -112,7 +110,7 @@ On Windows:
 
 
 
-    Then, in the online_bci file your  serial port should be defined as  <code>serial_port='COM<em>X</em>'</code>
+    Then, in the online_bci file your  serial port should be defined as  `serial_port='COM<em>X</em>'`
 
 
 
@@ -124,7 +122,7 @@ Now that the system is up and running, you can go through the following steps to
 
 1. EEG headset Setup
 
-    Prepare a headset such that it follows the `'MindAffect headset layout.pdf' `in our Headset repository or prepare the headset delivered with your kit by following <code>'MindAffect headset setup.pdf'. ([headset_setup.pdf](https://github.com/mindaffect/Headset/raw/master/MindAffect%20Headset%20Set%20up%20instructions.pdf))</code>
+    Prepare a headset such that it follows the [MindAffect headset layout.pdf](https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf)) in our Headset repository or prepare the headset delivered with your kit by following [MindAffect headset setup.pdf](https://github.com/mindaffect/Headset/raw/master/MindAffect%20Headset%20Set%20up%20instructions.pdf))
 
 2. Signal Quality
 
