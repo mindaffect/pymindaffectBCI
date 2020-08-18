@@ -138,10 +138,14 @@ Or to use the openBCI Cyton on com-port 4:
 ## Alternative BCI types / Stimulus
 
 By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol letter matrix for presentation.  You can easily try different types of stimulus and selection matrices by modifying the `symbols` and `stimfile` in `presentation_args` section of the configuration file [`online_bci.json`](mindaffectBCI/online_bci.json).  Where:
- * _symbols_ : can either by a list-of-lists of the actual text to show, for example:
+ * _symbols_ : can either by a list-of-lists of the actual text to show, for example for a 2x2 grid of sentences:
 
     ```
-    symbols=[['one','two'],['three','four']]
+    "presentation_args":{
+        "symbols":[ ["I'm happy","I'm sad"], ["I want to play","I want to sleep"] ],
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "framesperbit":1
+    }
     ```
 
     or a file from which to load the set of symbols as a *comma-separated* list of strings like the file [symbols.txt](mindaffectBCI/examples/presentation/symbols.txt).
