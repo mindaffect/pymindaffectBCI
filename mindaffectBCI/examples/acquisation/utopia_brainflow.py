@@ -122,7 +122,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.release_session ()
 
 if __name__ == "__main__":
-    run(board_id=1,serial_port='com3')
+    #run(board_id=1,serial_port='com3')
 
     args=parse_args()    
     run(**vars(args))
