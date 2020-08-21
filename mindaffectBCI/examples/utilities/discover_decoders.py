@@ -22,15 +22,19 @@
 from mindaffectBCI.utopiaclient import UtopiaClient
 
 # connect to the mindaffectDecoder
-U=UtopiaClient()
-try:
-  U.autoconnect(timeout_ms=5000, queryifhostnotfound=False, scanifhostnotfound=True)
-except Exception as ex:
-  print("Connection error: {}".format(ex))
+def discover_decoders():
+  U=UtopiaClient()
+  try:
+    U.autoconnect(timeout_ms=5000, queryifhostnotfound=False, scanifhostnotfound=True)
+  except Exception as ex:
+    print("Connection error: {}".format(ex))
 
-print("\n\n\n\n---------------------------------------------\n")
-if U.isConnected:
-  print("Connected to decoder@ \n      *****               {}                     ****\n".format(U.gethostport()))
-else:
-  print("Could not connect to decoder.. is it turned on? is it on the same wifi network?")
-print("\n---------------------------------------------\n\n\n")
+  print("\n\n\n\n---------------------------------------------\n")
+  if U.isConnected:
+    print("Connected to decoder@ \n      *****               {}                     ****\n".format(U.gethostport()))
+  else:
+    print("Could not connect to decoder.. is it turned on? is it on the same wifi network?")
+  print("\n---------------------------------------------\n\n\n")
+
+if __name__=="__main__":
+  run()

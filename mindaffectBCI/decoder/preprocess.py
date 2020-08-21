@@ -1,26 +1,26 @@
-from utils import idOutliers
+from utils import idOutliers, butter_sosfilt
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-
-def preprocess(X, Y, coords, whiten=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False):
+def preprocess(X, Y, coords, whiten=False, whiten_spectrum=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None):
     """apply simple pre-processing to an input dataset
 
     Args:
-        X ([type]): [description]
-        Y ([type]): [description]
+        X ([type]): the EEG data (tr,samp,d)
+        Y ([type]): the stimulus (tr,samp,e)
         coords ([type]): [description]
         whiten (float, optional): if >0 then strength of the spatially regularized whitener. Defaults to False.
+        whiten_spectrum (float, optional): if >0 then strength of the spectrally regularized whitener. Defaults to False.
         badChannelThresh ([type], optional): threshold in standard deviations for detection and removal of bad channels. Defaults to None.
         badTrialThresh ([type], optional): threshold in standard deviations for detection and removal of bad trials. Defaults to None.
         center (bool, optional): flag if we should temporally center the data. Defaults to False.
         car (bool, optional): flag if we should spatially common-average-reference the data. Defaults to False.
 
     Returns:
-        X ([type]): [description]
-        Y ([type]): [description]
-        coords ([type]): [description]
+        X ([type]): the EEG data (tr,samp,d)
+        Y ([type]): the stimulus (tr,samp,e)
+        coords ([type]): meta-info for the data
     """    
     if center:
         X = X - np.mean(X, axis=-2, keepdims=True)
@@ -38,6 +38,13 @@ def preprocess(X, Y, coords, whiten=False, badChannelThresh=None, badTrialThresh
     if whiten>0:
         print("whiten:{}".format(whiten))
         X, W = spatially_whiten(X,reg=whiten)
+
+    if stopband is not None:
+        X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
+
+    if whiten_spectrum > 0:
+        print("Spectral whiten:{}".format(whiten_spectrum))
+        X, W = spectrally_whiten(X, axis=-2, reg=whiten_spectrum)
 
     return X, Y, coords
 
@@ -61,17 +68,18 @@ def rmBadChannels(X:np.ndarray, Y:np.ndarray, coords, thresh=3.5):
     X=X[...,keep]
 
     #print("power={}".format(pow))
-    if 'coords' in coords[-1]:
+    if 'coords' in coords[-1] and coords[-1]['coords'] is not None:
         rmd = coords[-1]['coords'][isbad[0,0,...]]
         print("Bad Channels Removed: {} = {}={}".format(np.sum(isbad),np.flatnonzero(isbad[0,0,...]),rmd))
 
         coords[-1]['coords']=coords[-1]['coords'][keep]
-    if 'pos2d' in coords[-1]:  coords[-1]['pos2d'] = coords[-1]['pos2d'][keep]
+    else:
+        print("Bad Channels Removed: {} = {}".format(np.sum(isbad),np.flatnonzero(isbad[0,0,...])))
+
+    if 'pos2d' in coords[-1] and coords[-1]['pos2d'] is not None:  
+        coords[-1]['pos2d'] = coords[-1]['pos2d'][keep]
+
     return X,Y,coords
-
-
-
-
 
 def rmBadTrial(X, Y, coords, thresh=3.5, verb=1):
     """[summary]
@@ -113,6 +121,46 @@ def spatially_whiten(X:np.ndarray, *args, **kwargs):
     X = X @ W #np.einsum("...d,dw->...w",X,W)
     return (X,W)
 
+def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
+    """spatially whiten the nd-array X
+
+    Args:
+        X (np.ndarray): the data to be whitened, with channels/space in the *last* axis
+
+    Returns:
+        X (np.ndarray): the whitened X
+        W (np.ndarray): the whitening matrix used to whiten X
+    """    
+    from scipy.fft import fft, ifft
+
+    # TODO[]: add hanning window to reduce spectral leakage
+
+    Fx = fft(X,axis=axis)
+    H=np.abs(Fx)
+    if Fx.ndim+axis > 0:
+        H = np.mean(H, axis=tuple(range(Fx.ndim+axis))) # grand average spectrum (freq,d)
+
+    # compute *regularized* whitener (so don't amplify low power noise components)
+    W = 1./(H+np.max(H)*reg)
+
+    # apply the whitener
+    Fx = Fx * W 
+
+    # map back to time-domain
+    X = np.real(ifft(Fx,axis=axis))
+    return (X,W)
+
+def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None):
+    import matplotlib.pyplot as plt
+    from scipy.signal import welch
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
+    freqs, FX = welch(X, axis=axis, fs=fs, nperseg=fs//2, return_onesided=True, detrend=False) # FX = (nFreq, nch)
+    print('FX={}'.format(FX.shape))
+    plt.figure(18);plt.clf()
+    muFX = np.median(FX,axis=0,keepdims=True)
+    ylim = (0,2*np.median(np.max(muFX,axis=-2),axis=-1))
+    plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)
+    plt.suptitle("Grand average spectrum")
 
 def extract_envelope(X,fs,
                      stopband=None,whiten=True,filterbank=None,log=True,env_stopband=(10,-1),
@@ -182,3 +230,4 @@ def extract_envelope(X,fs,
         X, _, _ = butter_sosfilt(X,env_stopband,fs) # low-pass = envelope extraction
         if plot:plt.figure(104);plt.clf();plt.plot(X[:int(fs*10),:]);plt.title("+env")
     return X
+
