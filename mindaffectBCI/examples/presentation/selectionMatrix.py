@@ -925,7 +925,7 @@ def run(symbols=None, ncal=10, npred=10, stimfile=None, framesperbit =1, fullscr
     global nt, ss 
     # N.B. init the noise-tag first, so asks for the IP
     nt=Noisetag(stimFile=stimfile)
-    if host is not None:
+    if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 
     # init the graphics system
@@ -968,8 +968,6 @@ if __name__ == "__main__":
     parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
-
-    load_symbols('symbols.txt')
 
     run(**vars(args))
 

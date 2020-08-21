@@ -772,14 +772,23 @@ class UtopiaClient:
                 print(ex)
                 time.sleep(1)
                 
-        if not self.isConnected and queryifhostnotfound:
-            # last ditch attempt ask user for host
-            print("Could not auto-connect.  Trying manual")
-            hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
-            try:
-                self.connect(hostname,port)
-            except socket.error:
-                pass
+        if not self.isConnected:
+            print("Could not discover utopia-hub")
+            if queryifhostnotfound:
+                # last ditch attempt ask user for host
+                print("Trying manual")
+                hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
+                try:
+                    self.connect(hostname,port)
+                except socket.error:
+                    pass
+            elif scanifhostnotfound:
+                print("Trying IP scan.")
+                from mindaffectBCI.ssdpDiscover import ipscanDiscover
+                hosts = ipscanDiscover(port)
+                if  len(hosts)>0:
+                    hostname=hosts[0].strip()
+                    print('Discovered utopia-hub on %s ...'%(hostname))
             
         if not self.isConnected:            
             raise socket.error('Connection Refused!')

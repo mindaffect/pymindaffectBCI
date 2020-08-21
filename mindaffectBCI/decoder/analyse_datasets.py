@@ -7,7 +7,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistic
 from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import plot_Fy
-from mindaffectBCI.decoder.preprocess import preprocess
+from mindaffectBCI.decoder.preprocess import preprocess, plot_grand_average_spectrum
 import matplotlib.pyplot as plt
 import gc
 import re
@@ -209,14 +209,7 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.show()
 
     print('Plot global spectral properties')
-    from scipy.signal import welch
-    freqs, FX = welch(X, axis=-2, fs=fs, nperseg=fs//2, return_onesided=True, detrend=False) # FX = (nFreq, nch)
-    print('FX={}'.format(FX.shape))
-    plt.figure(18);plt.clf()
-    muFX = np.median(FX,axis=0,keepdims=True)
-    ylim = (0,2*np.median(np.max(muFX,axis=-2),axis=-1))
-    plot_erp(np.median(FX,axis=0,keepdims=True), ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)
-    plt.suptitle("Grand average spectrum")
+    plot_grand_average_spectrum(X,axis=-2,fs=fs, ch_names=ch_names)
     plt.show()
 
     print("Plot ERP")
@@ -358,7 +351,7 @@ def run_analysis():
     #analyse_datasets("cocktail",tau_ms=500, evtlabs=None, rank=15,ofs=60, subtriallen=10, stopband=((0,1),(25,-1)) : ave-score:.80 (6-subtrials)
     # C: longer analysis window + higher rank is better.  Sample rate isn't too important
 
-    analyse_datasets("openBMI_ERP",clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5),loader_args=dict(ofs=30,stopband=((0,1),(12,-1)),offset_ms=(-500,1000)))
+    #analyse_datasets("openBMI_ERP",clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5),loader_args=dict(ofs=30,stopband=((0,1),(12,-1)),offset_ms=(-500,1000)))
     # "openBMI_ERP",tau_ms=700,evtlabs=('re'),rank=1,loader_args=dict(offset_ms=(-500,1000) Ave-score=0.758
     # "openBMI_ERP",tau_ms=700,evtlabs=('re','ntre'),rank=1,loader_args={'offset_ms':(-500,1000)}) Ave-score=0.822
     # "openBMI_ERP",tau_ms=700,evtlabs=('re','ntre'),rank=5,loader_args={'offset_ms':(-500,1000)}) Ave-score=0.894
@@ -419,7 +412,7 @@ def run_analysis():
     #"ninapro_db2",loader_args=dict(subtrllen=10, stopband=((0,15), (45,55), (95,105), (250,-1)), ofs=60, nvirt=40, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),model='ridge',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=20)): ave-score=26 (but dont' believe it)
 
     #analyse_datasets("openBMI_MI",clsfr_args=dict(tau_ms=350,evtlabs=None,rank=6),loader_args=dict(offset_ms=(-500,1000)))
-
+    pass
 
 
 if __name__=="__main__":
@@ -434,8 +427,9 @@ if __name__=="__main__":
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2128_master.txt'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2116_testing_gdx.txt'
-    savefile = "/Users/Developer/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
+    #savefile = "/Users/Developer/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
     X, Y, coords = load_mindaffectBCI(savefile, stopband=((0,3),(25,-1)), ofs=80)
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', reg=.02)
+    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', reg=.02)
+    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()

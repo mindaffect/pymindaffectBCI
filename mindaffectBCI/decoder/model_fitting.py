@@ -216,11 +216,6 @@ class MultiCCA(BaseSequence2Sequence):
         else:
             self.b_ = None
 
-        # TODO[]: fix this! why doesn't it run?
-        # estimate prior for Fy score variance
-        #Fy = self.predict(X,Y)
-        #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
-
         return self
     
 class FwdLinearRegression(BaseSequence2Sequence):
@@ -283,10 +278,6 @@ class FwdLinearRegression(BaseSequence2Sequence):
         else:
             self.b_ = None
 
-        # estimate prior for Fy score variance
-        Fy = self.predict(X,Y)
-        self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
-
         return self
 
 class BwdLinearRegression(BaseSequence2Sequence):
@@ -342,10 +333,6 @@ class BwdLinearRegression(BaseSequence2Sequence):
             self.b_ = -np.einsum("etd,d->e",self.W_,muX) #(e,)
         else:
             self.b_ = None
-
-        # estimate prior for Fy score variance
-        Fy = self.predict(X,Y)
-        self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
 
         return self
 
@@ -434,10 +421,6 @@ class LinearSklearn(BaseSequence2Sequence):
         self.R_ = None
         self.b_ = b
         #print("b={}".format(b))
-
-        # estimate prior for Fy score variance
-        Fy = self.predict(X,Y)
-        self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
 
         return self
     
