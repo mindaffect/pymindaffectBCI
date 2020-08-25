@@ -48,7 +48,7 @@ except:
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip'):
-        self.evtlabs = evtlabs
+        self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
         self.tau = tau
         self.offset = offset
         self.outputscore = outputscore
