@@ -46,9 +46,9 @@ def run(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None
 
     #--------------------------- SHUTDOWN ------------------------------
     # shutdown the background processes
-    decoder.kill()
-    hub.kill()
-    acquisation.kill()
+    decoder.terminate()
+    hub.terminate()
+    acquisation.terminate()
 
 def noisetag(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None):
     run(fakedata=fakedata, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
