@@ -21,9 +21,9 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
                or (2,1) <-1 keep this many eigenvalues
       symetric = [bool] us symetric whitener?
     Outputs:
-      J     = [nY x 1] optimisation objective scores
-      W     = [d x rank x nY] spatial filters for each output
-      R     = [tau x nE x rank x nY] responses for each stimulus event for each output
+      J     = (nY,) optimisation objective scores
+      W     = (nM,rank,d) spatial filters for each output
+      R     = (nM,rank,nE,tau) responses for each stimulus event for each output
     Examples:
       # Supervised CCA
       Y = (nEp/nSamp,nY,nE) indicator for each event-type and output of it's type in each epoch
@@ -315,8 +315,9 @@ def testcase():
 
     from decodingSupervised import decodingSupervised
     decodingSupervised(Fy)
-    from decodingCurveSupervised import decodingCurveSupervised
-    decodingCurveSupervised(Fy)
+    from decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
+    dc=decodingCurveSupervised(Fy)
+    plot_decoding_curve(*dc)
 
 if __name__=="__main__":
     testcase()
