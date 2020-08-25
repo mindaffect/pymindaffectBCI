@@ -2,8 +2,7 @@ import numpy as np
 import warnings
 
 def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
-                reg=0, regy=0,
-                rank=1, CCA=True, rcond=1e-6, symetric=False):
+                reg=0, rank=1, CCA=True, rcond=1e-6, symetric=False):
     '''
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cxy,Cyy,regx,regy,rank,CCA)
@@ -21,7 +20,7 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
                or (2,1) <-1 keep this many eigenvalues
       symetric = [bool] us symetric whitener?
     Outputs:
-      J     = (nY,) optimisation objective scores
+      J     = (nM,) optimisation objective scores
       W     = (nM,rank,d) spatial filters for each output
       R     = (nM,rank,nE,tau) responses for each stimulus event for each output
     Examples:
@@ -115,8 +114,8 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
 
         # include relative component weighting directly in the  Left/Right singular values
         nlm = lm / np.max(lm)  # normalize so predictions have unit average norm
-        Wm = Wm * np.sqrt(nlm[np.newaxis, :])
-        Rm = Rm * np.sqrt(nlm[np.newaxis, :])
+        Wm = Wm #* np.sqrt(nlm[np.newaxis, :])
+        Rm = Rm * nlm[np.newaxis, :] #* np.sqrt(nlm[np.newaxis, :])
 
         # pre-apply the pre-whitener so can apply the result directly on input data
         if CCA[0]:
