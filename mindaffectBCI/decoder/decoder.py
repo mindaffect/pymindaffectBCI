@@ -375,7 +375,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
 
-def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, host:str=None, tau_ms:float=400, out_fs:float=80, calplots:bool=False, predplots:bool=False):
+def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
+            host:str=None, 
+            tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
+            calplots:bool=False, predplots:bool=False):
     """ run the main decoder processing loop
 
     Args:
@@ -393,7 +396,7 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
     PREDICTIONPLOTS = predplots
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        ppfn = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=out_fs)
+        ppfn = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)
         #ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
@@ -402,7 +405,9 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
     ui.connect(host=host, queryifhostnotfound=False)
     # use a multi-cca for the model-fitting
     if clsfr is None:
-        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000))
+        if isinstance(evtlabs,str): # decode string coded spec
+            evtlabs = evtlabs.split(',')
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs)
         print('clsfr={}'.format(clsfr))
     
     current_mode = "idle"
@@ -444,11 +449,10 @@ if  __name__ == "__main__":
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=80)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=400)
+    parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--predplots',action='store_true', help='flag make decoding plots are prediction time')
-    parser.add_argument('--calplots',action='store_true', help='flag make model and decoding plots after calibration')
+    parser.add_argument('--calplots',action='store_false', help='turn OFF model and decoding plots after calibration')
     args = parser.parse_args()
-
-    args.calplots=True
 
     running=True
     nCrash = 0
