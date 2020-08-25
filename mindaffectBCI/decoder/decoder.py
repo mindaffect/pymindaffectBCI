@@ -393,8 +393,8 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
     PREDICTIONPLOTS = predplots
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        #ppfn = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=out_fs)
-        ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
+        ppfn = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=out_fs)
+        #ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
