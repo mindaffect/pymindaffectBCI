@@ -90,12 +90,12 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     X_ts = X[:, -1] # last channel is timestamps
     # TODO: binary-search to make these searches more efficient!
     # search backwards for trial-start time-stamp
-    bgn_samp = np.flatnonzero(np.logical_and(X_ts <= bgn_ts, X_ts != 0))
+    bgn_samp = np.flatnonzero(np.logical_and(bgn_ts <= X_ts, X_ts != 0))
     # get the index of this timestamp, guarding for after last sample
-    bgn_samp = bgn_samp[-1] if len(bgn_samp) > 0 else len(X_ts)+1
+    bgn_samp = bgn_samp[0] if len(bgn_samp) > 0 else len(X_ts)+1
     # and just to be sure the trial-end timestamp
     if  end_ts is not None:
-        end_samp = np.flatnonzero(np.logical_and(X_ts <= end_ts, X_ts != 0))
+        end_samp = np.flatnonzero(np.logical_and(X_ts < end_ts, X_ts != 0))
         # get index of this timestamp, guarding for after last data sample
         end_samp = end_samp[-1] if len(end_samp) > 0 else len(X_ts)
     else: # until now
