@@ -54,12 +54,12 @@ def getPosInfo(chnames=None,capFile='1010',overridechnms=0,prefixMatch=False,ver
                         cfmatched[j]=True
                         break
         else:
-            if (isnumeric(chnamei) and i < len(cfnames)):
+            if (isinstance(chnamei,np.ndarray) and i < len(cfnames)):
                 ti=chnamei
                 cfmatched[chnamei]=True
             else:
                 ti=None
-                warning('Channel names are difficult')
+                print('WARNING:: Channel names are difficult')
 
         # got the match, so update the info
         if (not ti is None and ti >= 0 and ti < len(cfnames)):

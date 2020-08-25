@@ -350,7 +350,7 @@ def crossautocov(X, Y, tau, offset=0):
         
     return Ctdtd
 
-def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=None):
+def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=None, fs=None):
     '''
     Cxx =(d, d) updated data covariance
     Cxy = (nY, nE, tau, d)  updated per output ERPs
@@ -359,6 +359,8 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     import matplotlib.pyplot as plt
     if times is None:
         times = np.arange(Cxy.shape[-2])
+        if fs is not None:
+            times = times / fs
     if ch_names is None:
         ch_names = ["{}".format(i) for i in range(Cxy.shape[-1])]
     if evtlabs is None:
@@ -469,7 +471,7 @@ def plot_erp(erp, evtlabs=None, times=None, ch_names=None, axis=-1, plottype='pl
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None):
+def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None):
     '''
     Make a multi-plot of a factored model
     A = (k,d)
@@ -490,8 +492,20 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
 
     if times is None:
         times = np.arange(R.shape[-1])
+        if fs is not None:
+            times = times / fs
     if ch_names is None:
         ch_names = np.arange(A.shape[-1])
+    if ch_pos is None and len(ch_names) > 0:
+        # try to load position info from capfile
+        try: 
+            print("trying to get pos from cap file!")
+            from readCapInf import getPosInfo
+            cnames, xy, xyz, iseeg =getPosInfo(ch_names)
+            if all(iseeg):
+                ch_pos = xy
+        except:
+            pass
     if evtlabs is None:
         evtlabs = np.arange(R.shape[-2])
         
@@ -510,7 +524,7 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             axR = plt.subplot(nrows, ncols, subploti+2) # share limits
             axA = plt.subplot(nrows, ncols, subploti+1) # share limits
             axA.set_xlabel("Space")
-            axR.set_xlabel("time (ms)")
+            axR.set_xlabel("time (s)")
             pA = axA
             pR = axR
         else: # normal plot
@@ -538,6 +552,7 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             pR.legend()
             # rotate the ticks to be readable?
             if ch_pos is None:
+                # TODO[]: get and only set for the tick locations!
                 pA.set_xticklabels(ch_names,rotation=65)
             
 def testSlicedvsContinuous():

@@ -175,7 +175,7 @@ def read_mindaffectBCI_data_messages( fn:str ):
 def testcase(fn=None):
     ''' testcase, load reference datafile '''
     if fn is None:
-        fn = '../../resources/example_data/mindaffectBCI.txt'
+        fn = 'mindaffectBCI.txt'
 
     print("read messages")
     msgs = read_mindaffectBCI_messages(fn)
