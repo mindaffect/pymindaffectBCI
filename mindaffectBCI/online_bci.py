@@ -1,4 +1,3 @@
-import mindaffectBCI.decoder
 from multiprocessing import Process
 from time import sleep
 
