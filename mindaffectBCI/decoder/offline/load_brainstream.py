@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from utils import butter_sosfilt
 
-def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=None, passband=None, stopband=((0,5),(25,-1)), verb=0):
+def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=None, passband=None, stopband=((0,5),(25,-1)), verb=0, ch_names=None):
 
     # load the data file
     Xfn = datadir
@@ -16,8 +16,6 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=No
     if 'v' in data.keys(): # silly mat struct stuff..
         data = data['v'] # [d x samp x trl ]
     #print("data.keys={}".format(data.keys()))
-
-    ch_names = None
 
     if 'X' in data: # all in 1 file, raw plos_one format
         X  = data['X'] # (d x samp x trl)
