@@ -43,7 +43,7 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
     outer_grid = fig.add_gridspec(nrows=2, ncols=2, height_ratios=[1,6])
 
     # right-sub-spec for the ERPs
-    plt.figtext(.25,.9,'ERPs')
+    plt.figtext(.25,.9,'ERPs',ha='center')
     # get grid-spec to layout the plots, 1 for spatial, 1 for temporal
     gs = outer_grid[-1,0].subgridspec(nrows=len(evtlabs), ncols=1)
     erp_ax = [None for j in range(len(evtlabs))]
@@ -54,7 +54,6 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
             ax = erp_ax[ei]
             ax.set_xlabel("Time (ms)")
             ax.set_ylabel("Space")
-            #ax.set_xticklabels(irf_times)
         else:
             ax = fig.add_subplot(gs[ei,0], sharex=erp_ax[-1], sharey=erp_ax[-1])
             ax.tick_params(labelbottom=False)
@@ -63,7 +62,7 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         erp_ax[ei] = ax
 
     # left-sub-spec for the decomposition
-    plt.figtext(.75,.9,'Decomposition')
+    plt.figtext(.75,.9,'Decomposition',ha='center')
     # get grid-spec to layout the plots, 1 for spatial, 1 for temporal
     gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[3,1])
     spatial_ax = [ None for i in range(rank)]
