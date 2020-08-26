@@ -30,24 +30,49 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
     # initialize the plot window
     fig = plt.figure(1)
     fig.clear()
+
+    # main spec, inc titles
+    outer_grid = fig.add_gridspec(nrows=2, ncols=2, height_ratios=[1,8])
+
+    # right-sub-spec for the ERPs
+    plt.figtext(.25,.9,'ERPs',ha='center')
     # get grid-spec to layout the plots, 1 for spatial, 1 for temporal
-    gs = fig.add_gridspec(len(evtlabs),2*rank+1)
+    gs = outer_grid[-1,0].subgridspec(nrows=len(evtlabs), ncols=1)
+    erp_ax = [None for j in range(len(evtlabs))]
+    erp_lines = [None for j in range(len(evtlabs))]
+    erp_ax[-1] = fig.add_subplot(gs[-1,0])
+    for ei,lab in enumerate(evtlabs):
+        if ei==len(evtlabs)-1:
+            ax = erp_ax[ei]
+            ax.set_xlabel("Time (ms)")
+            ax.set_ylabel("Space")
+        else:
+            ax = fig.add_subplot(gs[ei,0], sharex=erp_ax[-1], sharey=erp_ax[-1])
+            ax.tick_params(labelbottom=False)
+        erp_lines[ei] = ax.imshow(irf[ei,:,:].T,aspect='auto',extent=(irf_times[0],irf_times[-1],0,irf.shape[-1]))
+        ax.set_title(lab)
+        erp_ax[ei] = ax
+
+    # left-sub-spec for the decomposition
+    plt.figtext(.75,.9,'Decomposition',ha='center')
+
+    # get grid-spec to layout the plots, 1 for temporal, rank for spatial
+    gs =  outer_grid[-1,1].subgridspec(nrows=len(evtlabs), ncols=rank+1, width_ratios=(4,)+(1,)*rank)
     spatial_ax = [[ None for i in range(rank)] for j in range(len(evtlabs))]
     spatial_lines = [[ None for i in range(rank)] for j in range(len(evtlabs))]
     temporal_ax = [None for j in range(len(evtlabs))]
     temporal_lines = [None for j in range(len(evtlabs))]
     # make the bottom 2 axs already so can share their limits.
-    temporal_ax[-1] = fig.add_subplot(gs[-1, :rank])
-    spatial_ax[-1][0] = fig.add_subplot(gs[-1, rank])
+    temporal_ax[-1] = fig.add_subplot(gs[-1, 0])
+    spatial_ax[-1][0] = fig.add_subplot(gs[-1, 1])
     for ei, lab in enumerate(evtlabs):
         # single temporal plot for all ranks
         if ei == len(evtlabs)-1 and ri==0: # tick-plot
             ax = temporal_ax[ei]
-            ax.set_xticklabels('on')
             ax.set_xlabel("Time (ms)")
         else:
-            ax = fig.add_subplot(gs[ei, :rank], sharex=temporal_ax[-1], sharey=temporal_ax[-1])
-            ax.tick_params(labelbottom=False, labelleft=False)
+            ax = fig.add_subplot(gs[ei, 0], sharex=temporal_ax[-1], sharey=temporal_ax[-1])
+            ax.tick_params(labelbottom=False)
         ax.set_title("{}".format(lab))
         ax.grid(True)
         ax.autoscale(axis='y')
@@ -64,7 +89,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
                 ax = spatial_ax[ei][ri]
                 ax.set_xlabel("Space")
             else:
-                ax = fig.add_subplot(gs[ei, rank+ri], sharex=spatial_ax[-1][0], sharey=spatial_ax[-1][0])
+                ax = fig.add_subplot(gs[ei, 1+ri], sharex=spatial_ax[-1][0], sharey=spatial_ax[-1][0])
                 ax.tick_params(labelbottom=False, labelleft=False)
 
             ax.set_title("{}".format(lab))
@@ -78,7 +103,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         irf_lab.fill(0)
         cursor=0 
     from matplotlib.widgets import Button
-    butax = fig.add_subplot(gs[0, -1])
+    butax = fig.add_axes([.05,.85,.1,.1])
     breset = Button(butax,'Reset')
     breset.on_clicked(reset)
 
@@ -165,6 +190,12 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
 
             # compute ERP            
             erp = np.mean(data, 0)  # (nsamp,d)
+            # plot ERP
+            erp_lim = (np.min(erp.ravel()),np.max(erp.ravel()))
+            erp_lines[ei].set_data(erp.T)
+            erp_lines[ei].set_clim(vmin=erp_lim[0],vmax=erp_lim[1])
+            erp_ax[ei].set_title("{} (n={})".format(lab,data.shape[0]))
+
             #print("erp={}".format(erp))
             # decompose into spatial and temporal components
             if True:
