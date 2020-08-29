@@ -123,8 +123,11 @@ class UtopiaDataInterface:
 
         # apply the data packet pre-processing
         databuf = [self.processDataPacket(m) for m in databuf]
+        # strip empty packets (which may happen because of downsampling in the pre-processor)
+        databuf = [m for m in databuf if m.size > 0]
         # estimate the sample rate of the pre-processed data
         pp_nsamp = sum([d.shape[0] for d in databuf]) - databuf[0].shape[0]
+        # TODO []: fix if empty datapacket?
         pp_dur = (databuf[-1][-1,-1] - databuf[0][-1,-1])/1000.0 #[-1, -1]-databuf[0][-1, -1])/1000.0
         self.fs = pp_nsamp/pp_dur # fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
