@@ -110,7 +110,7 @@ def ssvep(fakedata=False, acq_args=None, decoder_args=None, presentation_args=No
         #   * response length 30ms (as the VEP is short)
         tau_ms = 300
         #   * simple stimulus intensity based coding
-        evtlabs = ('0','1')
+        evtlabs = ('0', '1')
         #   * rank-1 decomposition, as we tend to get multiple component, e.g. perceptual, P3a, P3b
         rank = 3
         #  CCA classifier

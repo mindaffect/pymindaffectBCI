@@ -54,7 +54,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         erp_ax[ei] = ax
 
     # left-sub-spec for the decomposition
-    plt.figtext(.75,.9,'Decomposition',ha='center')
+    plt.figtext(.75,.9,'SVD Decomposition',ha='center')
 
     # get grid-spec to layout the plots, 1 for temporal, rank for spatial
     gs =  outer_grid[-1,1].subgridspec(nrows=len(evtlabs), ncols=rank+1, width_ratios=(4,)+(1,)*rank)
