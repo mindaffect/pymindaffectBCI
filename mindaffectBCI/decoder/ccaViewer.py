@@ -62,7 +62,7 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         erp_ax[ei] = ax
 
     # left-sub-spec for the decomposition
-    plt.figtext(.75,.9,'Decomposition',ha='center')
+    plt.figtext(.75,.9,'CCA Decomposition',ha='center')
     # get grid-spec to layout the plots, 1 for spatial, 1 for temporal
     gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[3,1])
     spatial_ax = [ None for i in range(rank)]
@@ -234,7 +234,7 @@ if __name__=='__main__':
 
     data_preprocessor = None
     #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((0, 4), (25, -1)), fs_out=60)
+    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((0, 4), (25, -1)), fs_out=80)
     ui=UtopiaDataInterface(data_preprocessor=data_preprocessor)
     ui.connect(hostname)
 
