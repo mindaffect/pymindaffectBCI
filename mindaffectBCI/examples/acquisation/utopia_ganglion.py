@@ -1,4 +1,4 @@
-from ganglion import OpenBCIGanglion
+from .ganglion import OpenBCIGanglion
 import asyncore # needed for the openBCI server
 import numpy as np
 from time import time,sleep
