@@ -1,4 +1,4 @@
-from wifi import OpenBCIWiFi
+from .wifi import OpenBCIWiFi
 import asyncore # needed for the openBCI server
 import numpy as np
 from time import time,sleep
