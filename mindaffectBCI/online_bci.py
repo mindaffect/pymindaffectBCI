@@ -1,7 +1,10 @@
 from multiprocessing import Process
 from time import sleep
 
-def run(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None):
+def run(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=None):
+    if acq_driver is None: 
+        acq_driver = 'brainflow'
+
     #--------------------------- HUB ------------------------------
     # start the utopia-hub process
     from mindaffectBCI.decoder import startUtopiaHub
@@ -13,12 +16,12 @@ def run(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None
     # Using brainflow for the acquisation driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
     #  so change the board_id and other args to use other boards
-    if fakedata:
+    if acq_driver == 'fakedata':
         from mindaffectBCI.examples.acquisation import utopia_fakedata
         acq_args=dict(host='localhost', nch=4, fs=200)
         acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
         acquisation.start()
-    else:
+    elif acq_driver == 'brainflow':
         from mindaffectBCI.examples.acquisation import utopia_brainflow
         if acq_args is None:
             acq_args = dict(board_id=1, serial_port='com3') # connect to the ganglion
@@ -26,6 +29,15 @@ def run(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None
         acquisation.start()
         # wait for driver to startup -- N.B. NEEDED!!
         sleep(1)
+    elif acq_driver == 'ganglion': # pyOpenBCI ganglion driver
+        from mindaffectBCI.examples.acquisation import utopia_ganglion
+        acquisation = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+    elif acq_driver == 'eego': # ANT-neuro EEGO
+        from mindaffectBCI.examples.acquisation import utopia_eego
+        acquisation = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+
 
     #---------------------------DECODER ------------------------------
     # start the decoder process - with default settings for a noise-tag
@@ -50,10 +62,10 @@ def run(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None
     hub.terminate()
     acquisation.terminate()
 
-def noisetag(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None):
-    run(fakedata=fakedata, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
+def noisetag(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=None):
+    run(acq_driver=acq_driver, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
 
-def p300(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None):
+def p300(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=None):
     #---------------------------DECODER ------------------------------
     # start the decoder process - with settings for p300 data.
 
@@ -92,9 +104,9 @@ def p300(fakedata=False, acq_args=None, decoder_args=None, presentation_args=Non
         framesperbit = 4
         presentation_args = dict(symbol_file=symbol_file, stimulus_file=stimulus_file, frameperbits=framesperbit)
 
-    run(fakedata=fakedata, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
+    run(acq_driver=acq_driver, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
 
-def ssvep(fakedata=False, acq_args=None, decoder_args=None, presentation_args=None):
+def ssvep(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=None):
     #---------------------------DECODER ------------------------------
     if decoder_args is None:
         # Pre-processing:
@@ -134,13 +146,13 @@ def ssvep(fakedata=False, acq_args=None, decoder_args=None, presentation_args=No
         # setup the runtime arguments
         presentation_args = dict(symbols=symbol_file, stimfile=stimulus_file, framesperbit=framesperbit)
 
-    run(fakedata=fakedata, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
+    run(acq_driver=acq_driver, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)
 
 def parse_args():
     import argparse
     import json
     parser = argparse.ArgumentParser()
-    parser.add_argument('--fakedata', action='store_true', help='run with fake-data simulation')
+    parser.add_argument('--acq_driver', type=str, help='set the acquisation driver type: one-of: "brainflow","fakedata"', default=None)
     parser.add_argument('--bcitype', type=str, help='set the type of BCI to run, one-of: noisetag, p300, ssvep', default='noisetag')
     parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default='online_bci.json')
     parser.add_argument('--acq_args', type=json.loads, help='a JSON dictionary of keyword arguments to pass to the acquisation system', default=None)
@@ -160,6 +172,9 @@ def parse_args():
             config = json.load(f)
 
         # insert into the parser args -- overriding with command line bits if needed
+        if 'acq_driver' in config:
+            if args.acq_driver is None:
+                args.acq_driver = config['acq_driver']                
         if 'acq_args' in config:
             if args.acq_args is not None:
                 config['acq_args'].update(args.acq_args)
@@ -178,10 +193,10 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     if args.bcitype == 'noisetag':
-        noisetag(fakedata=args.fakedata, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args )
+        noisetag(acq_driver=args.acq_driver, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args )
     elif args.bcitype == 'p300':
-        p300(fakedata=args.fakedata, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args)
+        p300(acq_driver=args.acq_driver, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args)
     elif args.bcitype == 'ssvep':
-        ssvep(fakedata=args.fakedata, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args)
+        ssvep(acq_driver=args.acq_driver, acq_args=args.acq_args, decoder_args=args.decoder_args, presentation_args=args.presentation_args)
     else:
         raise ValueError("Unknown BCItype")

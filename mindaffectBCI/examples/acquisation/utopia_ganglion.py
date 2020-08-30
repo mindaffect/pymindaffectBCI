@@ -209,22 +209,7 @@ def readConfigFile(fname):
                 config[key.strip()]=val.strip()
     return config
 
-def main(argv):    
-    host=None;
-    obcimac=None
-    print("Arguments:",*argv)
-    # N.B. argv0 is the script name
-    if len(argv)>2 :
-        host=argv[1] if len(argv)>1 else None
-        obcimac=argv[2] if len(argv)>2 else None
-    elif len(argv)==2 : # single argument, read from config file
-        try:
-            print("Reading config from file : {}".format(argv[1]))
-            config=readConfigFile(argv[1])
-            obcimac=config['ganglionmac'] if 'ganglionmac' in config else None
-        except FileNotFoundError :
-            host=argv[2]
-
+def run(host=None, obcimac=None):    
     print("ftbuffer hostname:  %s"%(host))
     print("Ganglion MACadress: %s"%(obcimac))
     initConnections(host=host,obcimac=obcimac)
@@ -241,6 +226,24 @@ def main(argv):
     print("Starting the data forwarder")
     board.start_stream(utopia_putsamples)
 
+
+def parse_arguments():
+    import sys
+    argv = sys.argv
+    print("Arguments:",*argv)
+    # N.B. argv0 is the script name
+    if len(argv)>2 :
+        host=argv[1] if len(argv)>1 else None
+        obcimac=argv[2] if len(argv)>2 else None
+    elif len(argv)==2 : # single argument, read from config file
+        try:
+            print("Reading config from file : {}".format(argv[1]))
+            config=readConfigFile(argv[1])
+            obcimac=config['ganglionmac'] if 'ganglionmac' in config else None
+        except FileNotFoundError :
+            host=argv[2]
+    return dict(host=host, obcimac=obcimac)
+
 if __name__=="__main__":
-    import sys 
-    main(sys.argv)
+    args = parse_arguments()
+    run(*args)
