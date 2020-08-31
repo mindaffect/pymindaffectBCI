@@ -69,12 +69,14 @@ nt.connect(timeout_ms=5000)
 nt.addSelectionHandler(selectionHandler)
 # tell the noisetag framework to run a full : calibrate->prediction sequence
 nt.setnumActiveObjIDs(2)
-nt.startExpt(nCal=5,nPred=50,duration=4,framesperbit=1,cuedprediction=True)
+nt.startExpt(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True)
 
 # Initialize the drawing window
 # make a default window, with fixed size for simplicty, and vsync for timing
-window = visual.Window(size=(640,480),color=(-1,-1,-1))
-#window.callOnFlip(timedflip) # needs to be set every flip!
+if False:
+    window = visual.Window(size=(640,480),color=(-1,-1,-1))
+else:
+    window = visual.Window(fullscr=True,color=(-1,-1,-1))
 
 # grid
 squares = [visual.Rect(window,pos=(-.5,0),size=(.4,.4),autoDraw=True),
