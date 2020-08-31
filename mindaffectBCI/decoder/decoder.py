@@ -169,7 +169,6 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 clsfr.plot_model()
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
-                plt.pause(.01)
 
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
@@ -235,9 +234,12 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     # send the prediction messages, PredictedTargetProb, PredictedTargetDist
     y_est_idx = np.argmax(Ptgt, axis=-1)
     # most likely target and the chance that it is wrong
-    ptp = PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
-    print(" Pred= {}".format(ptp))
-    ui.sendMessage(ptp)
+    if Ptgt[y_est_idx] == 1.0 :
+        print("P==1?") 
+    else:
+        ptp = PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
+        print(" Pred= {}".format(ptp))
+        ui.sendMessage(ptp)
     # distribution over all *non-zero* targets
     ui.sendMessage(PredictedTargetDist(timestamp, used_idx, Ptgt))
     
@@ -287,7 +289,6 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                     plt.cla()
                     print("Fy={}".format(Fy.shape))
                     plt.plot(np.cumsum(Fy[0,...],-2))
-                    plt.pause(.01)
                 except:
                     pass
             Fy = None
@@ -324,8 +325,8 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
             if data.size == 0 or stimulus.size == 0:
                 continue
 
-            print('got: data {}->{}   stimulus {}->{}'.format(data[0, -1], data[-1, -1],
-                                                              stimulus[0, -1], stimulus[-1, -1]))
+            print('got: data {}->{} ({})  stimulus {}->{} ({}>0)'.format(data[0, -1], data[-1, -1], data.shape[0],
+                                                              stimulus[0, -1], stimulus[-1, -1], np.sum(stimulus[:,0])))
             if model_apply_type == 'block':
                 # update the start point for the next block
                 # start next block at overlap before the end of this blocks data
@@ -394,6 +395,11 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
     global CALIBRATIONPLOTS, PREDICTIONPLOTS
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
+    try :
+        import matplotlib.pyplot as plt
+        guiplots=True
+    except:
+        guiplots=False
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
         ppfn = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)
@@ -433,13 +439,10 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
                 # stop processing messages
                 break
         
-        # BODGE: re-draw plots
-        try:
-            import matplotlib
-            matplotlib.pyplot.pause(0.01)
-        except:
-            pass
-
+        # BODGE: re-draw plots so they are interactive.
+        if guiplots:
+            for i in plt.get_fignums():
+                plt.figure(i).canvas.flush_events()
             
 if  __name__ == "__main__":
     print("called as main?")

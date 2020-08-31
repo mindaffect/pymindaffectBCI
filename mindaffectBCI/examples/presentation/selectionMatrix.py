@@ -440,6 +440,8 @@ class SelectionGridScreen(Screen):
         self.isDone=False
         self.sendEvents=sendEvents
         self.liveFeedback=liveFeedback
+        self.framestart = getTimeStamp()
+        self.frameend = getTimeStamp()
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
@@ -566,9 +568,12 @@ class SelectionGridScreen(Screen):
         if not self.isRunning:
             self.isRunning=True
         self.framestart=self.noisetag.getTimeStamp()
+        winflip = window.lastfliptime
+        if winflip > self.framestart or winflip < self.frameend:
+            print("Error: frameend={} winflip={} framestart={}".format(self.frameend,winflip,self.framestart))
         self.nframe = self.nframe+1
         if self.sendEvents:
-            self.noisetag.sendStimulusState(timestamp=window.lastfliptime)
+            self.noisetag.sendStimulusState(timestamp=winflip)#self.frameend)#window.lastfliptime)
 
         # get the current stimulus state to show
         try:
@@ -670,7 +675,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key._3:ExptPhases.PredInstruct,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal=1, nPred=1, framesperbit=None):
+    def __init__(self, window, noisetag, symbols, nCal=1, nPred=1, framesperbit=None, simple_calibration=False):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -686,6 +691,7 @@ class ExptScreenManager(Screen):
         self.nCal = nCal
         self.nPred = nPred
         self.framesperbit = framesperbit
+        self.simple_calibration = simple_calibration
         self.screen = None
         self.transitionNextPhase()
         
@@ -912,18 +918,22 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal=10, npred=10, stimfile=None, framesperbit =1, fullscreen=False, host=None):
+def run(symbols=None, ncal=10, npred=10, stimfile=None, 
+        framesperbit =1, fullscreen=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
         nCal (int, optional): number of calibration trials. Defaults to 10.
         nPred (int, optional): number of prediction trials at a time. Defaults to 10.
+        simple_calibration (bool, optional): flag if we show only a single target during calibration, Defaults to False.
         stimFile ([type], optional): the stimulus file to use for the codes. Defaults to None.
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
     """
     global nt, ss 
     # N.B. init the noise-tag first, so asks for the IP
+    if stimfile is None:
+        stimfile = 'mgold_61_6521_psk_60hz.txt'
     nt=Noisetag(stimFile=stimfile)
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
@@ -944,7 +954,7 @@ def run(symbols=None, ncal=10, npred=10, stimfile=None, framesperbit =1, fullscr
         symbols = load_symbols(symbols)
         
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, simple_calibration=simple_calibration)
 
     # set per-frame callback to the draw function    
     if drawrate > 0:
@@ -965,7 +975,9 @@ if __name__ == "__main__":
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
-    parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
+    #parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
+    parser.add_argument('--windowed',action='store_false',help='run in fullscreen mode')
+    #parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
 
