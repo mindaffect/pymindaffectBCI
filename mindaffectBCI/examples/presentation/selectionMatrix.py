@@ -919,7 +919,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal=10, npred=10, stimfile=None, 
-        framesperbit =1, fullscreen=True, simple_calibration=False, host=None):
+        framesperbit =1, fullscreen=None, windowed=None, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -934,6 +934,8 @@ def run(symbols=None, ncal=10, npred=10, stimfile=None,
     # N.B. init the noise-tag first, so asks for the IP
     if stimfile is None:
         stimfile = 'mgold_61_6521_psk_60hz.txt'
+    if fullscreen is None and windowed is not None:
+        fullscreen = not windowed
     nt=Noisetag(stimFile=stimfile)
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
@@ -976,7 +978,7 @@ if __name__ == "__main__":
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
     #parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
-    parser.add_argument('--windowed',action='store_false',help='run in fullscreen mode')
+    parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
     #parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
