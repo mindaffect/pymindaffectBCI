@@ -57,7 +57,7 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         else:
             ax = fig.add_subplot(gs[ei,0], sharex=erp_ax[-1], sharey=erp_ax[-1])
             ax.tick_params(labelbottom=False)
-        erp_lines[ei] = ax.imshow(irf[ei,:,:].T,aspect='auto',extent=(irf_times[0],irf_times[-1],0,irf.shape[-1]))
+        erp_lines[ei] = ax.imshow(irf[ei,:,:].T,aspect='auto',origin='lower',extent=(irf_times[0],irf_times[-1],0,irf.shape[-1]))
         ax.set_title(lab)
         erp_ax[ei] = ax
 
