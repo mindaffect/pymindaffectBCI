@@ -84,7 +84,8 @@ def softmax(f,validTgt=None):
 
 def softmax_nout_corr(n):
     ''' approximate correction factor for probabilities out of soft-max to correct for number of outputs'''
-    return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
+    #return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
+    return np.ones(n.shape) #np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
 
 #@function
 def testcase():

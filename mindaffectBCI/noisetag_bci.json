@@ -1,0 +1,28 @@
+{
+    "acq_driver":"eego",
+
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder_args":{
+        "stopband" : [[0,3],[25,-1]],
+        "out_fs" : 80,
+        "evtlabs" : ["re","fe"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation_args":{
+        "ncal":4,
+        "npred":10,
+        "symbols":"symbols.txt",
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "host":"-"
+    }
+}
