@@ -12,6 +12,7 @@ from mindaffectBCI.decoder.normalizeOutputScores import estimate_Fy_noise_varian
 try:
     from sklearn.model_selection import StratifiedKFold
     from sklearn.base import BaseEstimator, ClassifierMixin
+    from sklearn.exceptions import NotFittedError
 except:
 #  if True:
     # placeholder classes for when sklearn isn't available
@@ -44,6 +45,9 @@ except:
 
     class ClassifierMixin:
         pass
+
+    class NotFittedError(Exception):
+        pass
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
@@ -72,13 +76,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         '''fit model mapping 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)'''
         raise NotImplemented
 
+    def is_fitted(self):
+        return hasattr(self,"W_")
+
     def predict(self, X, Y, dedup0=None, prevY=None):
         '''make predictions on multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)
         
         N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)'''
         if not hasattr(self,"W_"):
             # only if we've been fitted!
-            return None
+            raise NotFittedError
         # convert from stimulus coding to brain response coding
         Y = self.stim2event(Y, prevY)
         # valid performance
@@ -198,7 +205,9 @@ class MultiCCA(BaseSequence2Sequence):
         # extract the true target to fit to, using horible slicing trick
         Y_true = Y[..., 0:1, :] #  (tr,samp,1,e)
         # get summary statistics
+        #print("X={} |X|={}".format(X.shape,np.sum(X**2,axis=(0,1))))
         Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, stimTimes, tau=self.tau, offset=self.offset, badEpThresh=self.badEpThresh, center=self.center)
+        #print("diag(Cxx)={}".format(np.diag(Cxx)))
         # do the CCA fit
         J, W, R = multipleCCA(Cxx, Cxy, Cyy, reg=self.reg, rank=self.rank, rcond=self.rcond, CCA=self.CCA)
         # maintain type compatiability

@@ -122,7 +122,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         # re-draw the display
         fig.canvas.draw()
         fig.canvas.flush_events()
-        plt.pause(.05)
+        plt.pause(.001)
 
         # Update the records
         nmsgs, ndata, nstim = ui.update(timeout_ms=100)

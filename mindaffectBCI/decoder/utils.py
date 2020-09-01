@@ -328,7 +328,7 @@ def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
             
             
     # Remove bad individual channels next
-    if badEpChThresh is None: badEpChThresh = badEpThresh 
+    if badEpChThresh is None: badEpChThresh = badEpThresh*2 
     if badEpChThresh > 0:
         bad_epch, _ = idOutliers(X, badEpChThresh, axis=-2) # ave over time
         if np.any(bad_epch):
