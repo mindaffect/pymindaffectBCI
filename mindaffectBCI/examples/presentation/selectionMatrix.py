@@ -442,6 +442,8 @@ class SelectionGridScreen(Screen):
         self.liveFeedback=liveFeedback
         self.framestart = getTimeStamp()
         self.frameend = getTimeStamp()
+        self.symbols = symbols
+        self.objIDs = objIDs
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
@@ -450,6 +452,7 @@ class SelectionGridScreen(Screen):
         self.isRunning=False
         self.isDone=False
         self.nframe=0
+        self.set_grid()
 
     def set_noisetag(self, noisetag):
         self.noisetag=noisetag
@@ -487,19 +490,28 @@ class SelectionGridScreen(Screen):
         self.sentence.text=text
         self.sentence.end_update()
 
-    def set_grid(self, symbols, objIDs=None, bgFraction=.3, sentence="What you type goes here"):
+    def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here"):
         '''set/update the grid of symbols to be selected from'''
         winw, winh=window.get_size()
-        # get size of the matrix
+        # tell noisetag which objIDs we are using
+        if symbols is not None:
+            self.symbols = symbols
+        else:
+            symbols = self.symbols
         # Number of non-None symbols
         nsymb      = sum([sum([(s is not None) for s in x ]) for x in symbols])
+
+        if objIDs is not None:
+            self.objIDs = objIDs
+        else:
+            if self.objIDs is None:
+                self.objIDs = list(range(1,nsymb+1))
+            objIDs = self.objIDs 
+        # get size of the matrix
         gridheight  = len(symbols) + 1 # extra row for sentence
         gridwidth = max([len(s) for s in symbols])
         ngrid      = gridwidth * gridheight     
 
-        # tell noisetag which objIDs we are using
-        self.symbols = symbols
-        self.objIDs = objIDs if not objIDs is None else list(range(1,nsymb+1))
         self.noisetag.setActiveObjIDs(self.objIDs)
     
         # add a background sprite with the right color
@@ -653,6 +665,7 @@ class ExptScreenManager(Screen):
         Closing=10
         Quit=100
         Welcome=99
+        Minimize=101
 
     welcomeInstruct="Welcome to the mindaffectBCI\n\nkey to continue"
     calibrationInstruct="Calibration\n\nThe next stage is CALIBRATION\nlook at the indicated green target\n\nkey to continue"
@@ -692,6 +705,7 @@ class ExptScreenManager(Screen):
         self.nPred = nPred
         self.framesperbit = framesperbit
         self.simple_calibration = simple_calibration
+        self.fullscreen_stimulus = False
         self.screen = None
         self.transitionNextPhase()
         
@@ -717,6 +731,8 @@ class ExptScreenManager(Screen):
             self.next_stage = None
 
         if self.stage==self.ExptPhases.MainMenu: # main menu
+            if self.fullscreen_stimulus==True :
+                self.window.set_fullscreen(fullscreen=False)
             print("main menu")
             self.menu.reset()
             self.screen = self.menu
@@ -743,6 +759,8 @@ class ExptScreenManager(Screen):
             
         elif self.stage==self.ExptPhases.CalInstruct: # calibration instruct
             print("Calibration instruct")
+            if self.fullscreen_stimulus==True :
+                self.window.set_fullscreen(fullscreen=True)
             self.instruct.set_text(self.calibrationInstruct)
             self.instruct.reset()
             self.screen=self.instruct
@@ -759,12 +777,16 @@ class ExptScreenManager(Screen):
                     
         elif self.stage==self.ExptPhases.CalResults: # Calibration Results
             print("Calibration Results")
+            if self.fullscreen_stimulus==True :
+                self.window.set_fullscreen(fullscreen=True)
             self.results.reset()
             self.screen=self.results
             self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.CuedPredInstruct: # pred instruct
             print("cued pred instruct")
+            if self.fullscreen_stimulus==True :
+                self.window.set_fullscreen(fullscreen=True)
             self.instruct.set_text(self.cuedpredictionInstruct)
             self.instruct.reset()
             self.screen=self.instruct
@@ -782,6 +804,8 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.PredInstruct: # pred instruct
             print("pred instruct")
+            if self.fullscreen_stimulus==True :
+                self.window.set_fullscreen(fullscreen=True)
             self.instruct.set_text(self.predictionInstruct)
             self.instruct.reset()
             self.screen=self.instruct
@@ -803,6 +827,11 @@ class ExptScreenManager(Screen):
             self.instruct.reset()
             self.screen=self.instruct
             self.next_stage = self.ExptPhases.Quit
+
+        elif self.stage==self.ExptPhases.Minimize: # closing instruct
+            print("minimize")
+            self.window.minimize()
+            self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==None: # testing stages..
             #print("flicker with selection")
@@ -867,7 +896,14 @@ def initPyglet(fullscreen=False):
     window.flip = types.MethodType(timedflip, window)
     window.lastfliptime=getTimeStamp()
     global fliplogtime; fliplogtime=window.lastfliptime
+
+    # minimize on tab away:
+    @window.event
+    def on_deactivate():
+        window.minimize()
     return window
+
+
 
 def draw(dt):
     '''main window draw function, which redirects to the screen stack'''
@@ -919,7 +955,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal=10, npred=10, stimfile=None, 
-        framesperbit =1, fullscreen=None, windowed=None, simple_calibration=False, host=None):
+        framesperbit =1, fullscreen=None, windowed=False, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
