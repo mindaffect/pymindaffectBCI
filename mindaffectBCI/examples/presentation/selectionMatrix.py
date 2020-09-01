@@ -689,7 +689,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key._3:ExptPhases.PredInstruct,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal=1, nPred=1, framesperbit=None, simple_calibration=False):
+    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, simple_calibration=False):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -706,7 +706,7 @@ class ExptScreenManager(Screen):
         self.nPred = nPred
         self.framesperbit = framesperbit
         self.simple_calibration = simple_calibration
-        self.fullscreen_stimulus = False
+        self.fullscreen_stimulus = fullscreen_stimulus
         self.screen = None
         self.transitionNextPhase()
         
@@ -847,6 +847,7 @@ class ExptScreenManager(Screen):
             self.screen = self.selectionGrid
 
         else: # end
+            print('quit')
             self.screen=None
 
             
@@ -882,10 +883,11 @@ def initPyglet(fullscreen=False):
     # set up the window
     if fullscreen: 
         # N.B. accurate video timing only guaranteed with fullscreen
-        config = pyglet.gl.Config(double_buffer=True,sample_buffers=1, samples=4)
+        # N.B. over-sampling seems to introduce frame lagging on windows+Intell
+        config = pyglet.gl.Config(double_buffer=True) #double_buffer=False,sample_buffers=1, samples=4)
         window = pyglet.window.Window(fullscreen=True, vsync=True, config=config)
     else:
-        config = pyglet.gl.Config(double_buffer=True,sample_buffers=1, samples=4)
+        config = pyglet.gl.Config(double_buffer=True)#,sample_buffers=1, samples=4)
         window = pyglet.window.Window(width=1024, height=768, vsync=True, resizable=True, config=config)
 
     # setup a key press handler, just store key-press in global variable
@@ -898,13 +900,15 @@ def initPyglet(fullscreen=False):
     window.lastfliptime=getTimeStamp()
     global fliplogtime; fliplogtime=window.lastfliptime
 
-    # minimize on tab away:
+    # minimize on tab away, when in fullscreen mode:
     @window.event
     def on_deactivate():
-        window.minimize()
+        # TODO []: stop minimise when switch to/from full-screen mode
+        if fullscreen:
+            window.minimize()
+    
+    # TODO[]: handle resize events correctly.
     return window
-
-
 
 def draw(dt):
     '''main window draw function, which redirects to the screen stack'''
@@ -913,6 +917,7 @@ def draw(dt):
     ss.draw(dt)
     # check for termination
     if ss.is_done():
+        print('app exit')
         pyglet.app.exit()
     #print('.', end='', flush=True)
 
@@ -955,8 +960,8 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal=10, npred=10, stimfile=None, 
-        framesperbit =1, fullscreen=None, windowed=False, simple_calibration=False, host=None):
+def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, 
+        framesperbit:int=1, fullscreen:bool=None, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -993,7 +998,7 @@ def run(symbols=None, ncal=10, npred=10, stimfile=None,
         symbols = load_symbols(symbols)
         
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, simple_calibration=simple_calibration)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, simple_calibration=simple_calibration)
 
     # set per-frame callback to the draw function    
     if drawrate > 0:
