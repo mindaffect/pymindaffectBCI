@@ -10,6 +10,8 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
         "nt"+evtname : non-target event, i.e. evtname occured for any other target
         "any"+evtname: any event, i.e. evtname occured for *any* target
         "rest" - not any of the other event types, N.B. must be *last* in event list
+        "raw" - unchanged input intensity coding
+        "grad" - 1st temporal derivative of the raw intensity
      axis - (-1) the axis of M which runs along 'time'
      oM - (...osamp) or (...,osamp,nY) prefix stimulus values of M, used to incrementally compute the  stimulus features
     Outputs:
@@ -87,6 +89,11 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
             F = np.append(np.zeros(padshape, dtype=F.dtype), F, axis)
         elif etype == "rest":
             F = np.logical_not(np.any(E, axis=-1))
+
+        elif etype == 'raw':
+            F = E
+        elif etype == 'grad':
+            F = np.diff(M,axis=axis)
 
         else:
             raise ValueError("Unrecognised evttype:{}".format(etype))
