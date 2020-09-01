@@ -8,11 +8,11 @@
 
     "decoder_args":{
         "stopband" : [[0,3],[25,-1]],
-        "out_fs" : 60,
+        "out_fs" : 90,
         "evtlabs" : ["re"],
         "tau_ms" : 450,
         "calplots" : true,
-        "predplots" : true
+        "predplots" : false
     },
 
     "presentation_args":{

@@ -161,7 +161,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
             from scipy.io import savemat
             savemat('calibration_data', dict(X=X, Y=Y, fs=ui.fs))
         except:
-            pass
+            print('Error saving cal data')
         if CALIBRATIONPLOTS:
             try:
                 import matplotlib.pyplot as plt
