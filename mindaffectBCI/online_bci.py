@@ -59,8 +59,9 @@ def run(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=Non
     #--------------------------- SHUTDOWN ------------------------------
     # shutdown the background processes
     decoder.terminate()
-    hub.terminate()
     acquisation.terminate()
+    hub.terminate()
+    print('exit online_bci')
 
 def noisetag(acq_driver=None, acq_args=None, decoder_args=None, presentation_args=None):
     run(acq_driver=acq_driver, acq_args=acq_args, decoder_args=decoder_args, presentation_args=presentation_args)

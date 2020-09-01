@@ -7,10 +7,10 @@ from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import dedupY0
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
 
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
-
 
 def get_trial_start_end(msgs, start_ts=None):
     '''get the start+end times of the trials in a utopia message stream'''
@@ -169,9 +169,14 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 clsfr.plot_model()
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
-                plt.show(block=False)
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
+                plt.figure(3) # plot the CCA info
+                Y_true = clsfr.stim2event(Y)
+                Y_true = Y_true[...,0:1,:]
+                Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
+                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
+                plt.show(block=False)
             except:
                 pass
 
@@ -247,8 +252,11 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
 def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type='trial', timeout_ms=None, block_step_ms=100, maxDecisLen_ms=8000):
     ''' do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
 
-    # TODO []: Block based prediction is slightly slower?  Why?
+    if not clsfr.is_fitted():
+        print("Warning: trying to predict without training classifier!")
+        return
 
+    # TODO []: Block based prediction is slightly slower?  Why?
     if timeout_ms is None:
         timeout_ms = block_step_ms
     
