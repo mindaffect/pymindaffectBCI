@@ -447,6 +447,7 @@ class SelectionGridScreen(Screen):
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
+        self.liveSelections = None
 
     def reset(self):
         self.isRunning=False
@@ -461,11 +462,9 @@ class SelectionGridScreen(Screen):
         self.liveFeedback=value
     
     def setliveSelections(self, value):
-        if value:
+        if self.liveSelections is None :
             self.noisetag.addSelectionHandler(self.doSelection)
-        else:
-            print("Warning: handler removal not supported yet!")
-            self.noisetag.removeSelectionHandler(self.doSelection)
+        self.liveSelections = value
 
     def getSymb(self,idx):
         ii=0
@@ -478,9 +477,11 @@ class SelectionGridScreen(Screen):
         return None
 
     def doSelection(self, objID):
-        if objID in self.objIDs:
-            symbIdx = self.objIDs.index(objID)
-            self.set_sentence(self.sentence.text + self.getSymb(symbIdx) )
+        if self.liveSelections == True:
+            if objID in self.objIDs:
+                print("doSelection: {}".format(objID))
+                symbIdx = self.objIDs.index(objID)
+                self.set_sentence(self.sentence.text + self.getSymb(symbIdx) )
 
     def set_sentence(self, text):
         '''set/update the text to show in the instruction screen'''
@@ -1008,7 +1009,7 @@ def run(symbols=None, ncal=10, npred=10, stimfile=None,
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=10)
+    parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=4)
     parser.add_argument('npred',type=int, help='number prediction trials', nargs='?', default=10)
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
