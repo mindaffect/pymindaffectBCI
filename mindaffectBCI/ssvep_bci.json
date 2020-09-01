@@ -1,0 +1,28 @@
+{
+    "acq_driver":"eego",
+
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder_args":{
+        "stopband" : [[0,3],[25,-1]],
+        "out_fs" : 60,
+        "evtlabs" : ["re"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : true
+    },
+
+    "presentation_args":{
+        "ncal":10,
+        "npred":10,
+        "symbols":"symbols.txt",
+        "stimfile":"ssvep.png",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "host":"-"
+    }
+}
