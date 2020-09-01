@@ -169,7 +169,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 clsfr.plot_model()
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
-
+                plt.show(block=False)
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
             except:
@@ -289,6 +289,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                     plt.cla()
                     print("Fy={}".format(Fy.shape))
                     plt.plot(np.cumsum(Fy[0,...],-2))
+                    plt.show(block=False)
                 except:
                     pass
             Fy = None
