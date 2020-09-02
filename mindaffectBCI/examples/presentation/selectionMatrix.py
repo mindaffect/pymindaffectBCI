@@ -393,32 +393,59 @@ class ElectrodequalityScreen(Screen):
                     self.dataringbuffer.popleft()
                 self.dataringbuffer.append(m.samples)
         # draw the lines
-        # try to turn on anti-aliasing..
-        pyglet.gl.glBlendFunc (pyglet.gl.GL_SRC_ALPHA, pyglet.gl.GL_ONE_MINUS_SRC_ALPHA)                             
-        pyglet.gl.glEnable (pyglet.gl.GL_BLEND)                                                            
-        pyglet.gl.glEnable (pyglet.gl.GL_LINE_SMOOTH);                                                     
-        pyglet.gl.glHint (pyglet.gl.GL_LINE_SMOOTH_HINT, pyglet.gl.GL_NICEST)  
-        pyglet.gl.glLineWidth(1)
+
 
         if self.dataringbuffer:
+            # transpose and flatten the data
+            # and estimate it's summary statistics
+            data = []
+            mu = [] # mean
+            mad = [] # mean-absolute-difference
             nch=len(self.linebbox)
             for ci in range(nch):
-                # flatten into list samples for each channel
                 d = [ t[ci] for m in self.dataringbuffer for t in m ]
+                # mean last samples
+                tmp = d[-int(len(d)*.2):]
+                mui = sum(tmp)/len(tmp)
+                # center
+                d = [ t-mui for t in d ]
+                # scale estimate
+                madi = sum([abs(t-mui) for t in tmp])/len(tmp)
+                data.append(d)
+                mu.append(mui)
+                mad.append(madi)
+            datascale_uv = max(5,sum(mad)/len(mad)*4)
+
+            for ci in range(nch):
+                d = data[ci]
                 # map to screen coordinates
                 bbox=self.linebbox[ci]
-                yscale = bbox[3]/self.datascale_uv # 10 uV between lines
-                # mean last samples
-                mu = d[-int(len(d)*.2):]
-                mu = sum(mu)/len(mu)
-                # plot - centered on last samples
-                y = [ bbox[1] + (s-mu)*yscale for s in d ]
-                x = [ bbox[0] + bbox[2]*i/len(y) for i in range(len(d)) ]
+
+                # downsample if needed to avoid visual aliasing
+                #if len(d) > (bbox[2]-bbox[1])*2:
+                #    subsampratio = int(len(d)//(bbox[2]-bbox[1]))
+                #    d = [d[i] for i in range(0,len(d),subsampratio)]
+
+                # map to screen coordinates
+                xscale = bbox[2]/len(d)
+                yscale = bbox[3]/datascale_uv #datascale_uv # 10 uV between lines
+                y = [ bbox[1] + s*yscale for s in d ]
+                x = [ bbox[0] + i*xscale for i in range(len(d)) ]
                 # interleave x, y to make gl happy
                 coords = tuple( c for xy in zip(x, y) for c in xy )
                 # draw this line
-                pyglet.graphics.draw(len(d), pyglet.gl.GL_LINES, ('v2f', coords))
-
+                col = [0,0,0]; col[ci%3]=1
+                pyglet.graphics.glColor3d(*col)
+                pyglet.gl.glLineWidth(1)
+                pyglet.graphics.draw(len(d), pyglet.gl.GL_LINE_STRIP, ('v2f', coords))
+            
+                # axes scale
+                x = bbox[0]+bbox[2]+20 # at *right* side of the line box
+                y = bbox[1]
+                pyglet.graphics.glColor3f(1,1,1)
+                pyglet.gl.glLineWidth(10)
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES, 
+                                        ('v2f', (x,y-10/2*yscale, x,y+10/2*yscale)))
 
 #-------------------------------------------------------------
 class SelectionGridScreen(Screen):
@@ -961,7 +988,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, 
-        framesperbit:int=1, fullscreen:bool=None, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        framesperbit:int=1, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -971,6 +998,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None,
         stimFile ([type], optional): the stimulus file to use for the codes. Defaults to None.
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
+        fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
     """
     global nt, ss 
     # N.B. init the noise-tag first, so asks for the IP
