@@ -74,7 +74,9 @@ class UtopiaDataInterface:
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
         self.noise2sig_halflife = 2000 # noise2sig estimate halflife
         self.raw_power = 0
+        self.raw_N = 0 
         self.preproc_power = 0
+        self.preproc_N = 0
 
     def connect(self, host=None, port=-1, queryifhostnotfound=True):
         '''make a connection to the utopia host'''
@@ -107,7 +109,10 @@ class UtopiaDataInterface:
             for m in msgs:
                 m = self.preprocess_message(m)
                 if m.msgID == DataPacket.msgID: # data-packets are special
-                    databuf.append(m) # append raw data
+                    if len(m.samples) > 0:
+                        databuf.append(m) # append raw data
+                    else:
+                        print("Huh? got empty data packet: {}".format(m))
                 else:
                     self.msg_ringbuffer.append(m)
                     self.msg_timestamp = m.timestamp
@@ -227,18 +232,26 @@ class UtopiaDataInterface:
         # BODGE []: estimate the noise2signal ratio as raw:preprocessed power
         # compute the sliding window weight for the old data
         alpha = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife / 1000.0))
-        self.raw_power = self.raw_power*alpha + raw_power * ( 1 - alpha )
-        self.preproc_power = self.preproc_power*alpha + preproc_power *(1-alpha)
+        # compute weighted summed power and weighted summed weight (so works for different sample rates)
+        self.raw_power = self.raw_power*alpha + raw_power
+        self.raw_N     = self.raw_N*alpha + d_raw.shape[0]
+        self.preproc_power = self.preproc_power*alpha + preproc_power
+        self.preproc_N = self.preproc_N*alpha + d_preproc.shape[0]
 
         # noise2signal estimated as removed raw power (assumed=noise) to preprocessed power (assumed=signal)
-        noise2sig = np.maximum(float(1e-6), (self.raw_power - self.preproc_power)) /  np.maximum(float(1e-8),self.preproc_power)
+        raw_avepower = np.sqrt(self.raw_power / self.raw_N)
+        preproc_avepower = np.sqrt(self.preproc_power / self.preproc_N)
+        noise2sig = np.maximum(float(1e-6), (raw_avepower - preproc_avepower)) /  np.maximum(float(1e-8),preproc_avepower)
 
         # hack - detect disconnected channels
-        noise2sig[ self.raw_power < 1e-8] = 100
+        noise2sig[ self.raw_power/self.raw_N < 1e-8] = 100
 
         # rate limit sending of signal-quality messages
         if self.last_sigquality_ts is None or ts > self.last_sigquality_ts + self.send_sigquality_interval:
-            #print("SigQ:\nraw_power={}\npp_power={}\nnoise2sig={}".format(self.raw_power,self.preproc_power,noise2sig))
+            print("SigQ:\nraw_power={} ({}/{})\npp_power={} ({}/{})\nnoise2sig={}".format(
+                   raw_avepower,raw_power,d_raw.shape[0],
+                   preproc_avepower,preproc_power,d_preproc.shape[0],
+                   noise2sig))
             print("Q",end='')
             self.U.sendMessage(SignalQuality(ts, noise2sig))
             self.last_sigquality_ts = ts
@@ -250,12 +263,10 @@ class UtopiaDataInterface:
         # BODGE: center over time+space to correct for arbitary offsets over all channels
         # TODO []: use a separate baseline removal filter for the raw-version?
         #          or leave it non-centered?  so it's an indirect measure of the offset?
-        #d_raw = d_raw.copy() - np.mean(np.mean(d_raw, axis=0, keepdims=True),keepdims=True) 
         d_raw = d_raw.copy() - np.mean(d_raw, axis=0, keepdims=True) 
-        d_preproc = d_preproc.copy() - np.mean(d_preproc, axis=0, keepdims=True)
-        resamprate=(d_raw.shape[0]/max(1,d_preproc.shape[0])) #N.B. corrected for missing downsampled samples.
-        raw_power =  np.sum(d_raw**2, axis=0)/resamprate
-        # smoothed per-channel preprocessed power
+        if d_preproc.shape[0]>3:
+            d_preproc = d_preproc.copy() - np.mean(d_preproc, axis=0, keepdims=True)
+        raw_power =  np.sum(d_raw**2, axis=0)
         preproc_power = np.sum(d_preproc**2, axis=0)
         return (raw_power, preproc_power)
 
@@ -574,8 +585,8 @@ def testRaw():
 def testPP():
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    #ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=60)
-    ppfn= butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=80)    
+    ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=60)
+    #ppfn= butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=80)     
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None)
     ui.connect()
     sigViewer(ui)
