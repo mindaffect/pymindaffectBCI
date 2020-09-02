@@ -1,5 +1,5 @@
 {
-    "acq_driver":"brainflow",
+    "acq_driver":"eego",
 
     "acq_args":{
         "board_id":1,
@@ -22,6 +22,7 @@
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
+        "fullscreen_stimulus":true,
         "host":"-"
     }
 }
