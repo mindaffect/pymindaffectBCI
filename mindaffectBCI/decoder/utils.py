@@ -401,7 +401,7 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
     zi = zi * X[tuple(idx)] 
 
     # run the filter on the rest of the warmup values
-    if not sos is None: 
+    if not sos is None and warmupidx>3: 
         idx[axis] = slice(warmupidx,1,-1)
         _, zi  = sosfilt(sos, X[tuple(idx)], axis=axis, zi=zi)
         

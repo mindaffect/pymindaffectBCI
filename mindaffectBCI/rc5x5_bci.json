@@ -1,5 +1,5 @@
 {
-    "acq_driver":"eego",
+    "acq_driver":"brainflow",
 
     "acq_args":{
         "board_id":1,
@@ -16,11 +16,11 @@
     },
 
     "presentation_args":{
-        "ncal":4,
+        "ncal":20,
         "npred":10,
         "symbols":"symbols.txt",
         "stimfile":"rc5x5.png",
-        "framesperbit":2,
+        "framesperbit":3,
         "fullscreen":false,
         "fullscreen_stimulus":true,
         "host":"-"
