@@ -1,5 +1,5 @@
 {
-    "acq_driver":"eego",
+    "acq_driver":"brainflow",
 
     "acq_args":{
         "board_id":1,
@@ -8,7 +8,7 @@
 
     "decoder_args":{
         "stopband" : [[0,3],[25,-1]],
-        "out_fs" : 90,
+        "out_fs" : 80,
         "evtlabs" : ["re"],
         "tau_ms" : 450,
         "calplots" : true,
@@ -16,7 +16,7 @@
     },
 
     "presentation_args":{
-        "ncal":10,
+        "ncal":20,
         "npred":10,
         "symbols":"symbols.txt",
         "stimfile":"ssvep.png",

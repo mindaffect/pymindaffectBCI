@@ -278,6 +278,7 @@ class CalibrationPhase(FSM):
         self.stimulusStateStack=stimulusStateStack
         if self.stimulusStateStack is None : raise ValueError
         self.trli=0
+        self.tgtidx = -1
 
     def next(self,t):
         if not self.isRunning :
@@ -286,7 +287,8 @@ class CalibrationPhase(FSM):
             self.isRunning=True
         if self.trli<self.nTrials:
             # TODO []: should choose from set active objIDs?
-            self.tgtidx = random.randint(0,len(self.objIDs)-1)
+            tgtidx = random.randint(0,len(self.objIDs)-1)
+            self.tgtidx = tgtidx if not tgtidx == self.tgtidx else tgtidx+1%len(self.objIDs)
             print("Start Cal: %d/%d tgtidx=%d"%(self.trli,self.nTrials,self.tgtidx))
             self.stimulusStateStack.push(
                 SingleTrial(self.stimSeq,
@@ -312,6 +314,7 @@ class PredictionPhase(FSM):
         self.args=args
         self.kwargs=kwargs
         self.tgti=0
+        self.tgtidx = -1
         self.isRunning=False
         self.utopiaController=utopiaController
         if self.utopiaController is None : raise ValueError
@@ -325,7 +328,8 @@ class PredictionPhase(FSM):
             self.isRunning=True
         if self.tgti<self.nTrials:
             if self.cuedprediction :
-                self.tgtidx = random.randint(0,len(self.objIDs)-1)
+                tgtidx = random.randint(0,len(self.objIDs)-1)
+                self.tgtidx = tgtidx if not tgtidx == self.tgtidx else tgtidx+1%len(self.objIDs)
             else:
                 self.tgtidx = -1
             print("Start Pred: %d/%d"%(self.tgti,self.nTrials))
