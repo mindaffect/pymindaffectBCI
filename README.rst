@@ -6,15 +6,12 @@ Installation
 ------------
 
 To install the code:
-
   1. Clone or download this repository::
 
        git clone https://github.com/mindaffect/pymindaffectBCI
 
   #. Install the necessary bits to your local python path:
-
     1. change to the directory where you cloned the repository.
-
     #. Add this module to the python path, and install dependencies::
    
          pip install -e .
@@ -48,7 +45,7 @@ If you have:
   #. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
 
   #. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
-  
+
   #. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
 
 Then you can jump directly to trying a fully functional simple letter matrix BCI using::
@@ -75,41 +72,34 @@ File Structure
 --------------
 This repository is organized roughly as follows:
 
-- `mindaffectBCI <mindaffectBCI>`_ - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are:
- 
-   - `noisetag.py <mindaffectBCI/noisetag.py>`_ - This module contains the main API for developing User Interfaces with BCI control
-   - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
-   - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
-   - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
-   - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
-   - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
-   - `online_bci.json <mindaffectBCI/online_bci.json>`_ - This JSON file contains the configuration information to run a full noisetagging BCI.
+- `mindaffectBCI <mindaffectBCI>`_ - contains the python package containing the mindaffectBCI SDK.  Important modules within this package are: 
+  - `noisetag.py <mindaffectBCI/noisetag.py>`_ - This module contains the main API for developing User Interfaces with BCI control
+  - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
+  - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
+  - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
+  - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
+  - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
+  - `online_bci.json <mindaffectBCI/online_bci.json>`_ - This JSON file contains the configuration information to run a full noisetagging BCI.
 
 - `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. Important modules within this package are:
-   - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
-   - `offline_analysis.ipynb <mindaffectBCI/decoder/offline_analysis.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains to run an off-line analysis of previously saved data from the mindaffectBCI or other publically available BCI datasets. 
+  - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
+  - `offline_analysis.ipynb <mindaffectBCI/decoder/offline_analysis.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains to run an off-line analysis of previously saved data from the mindaffectBCI or other publically available BCI datasets. 
    
 - `examples <mindaffectBCI/examples/>`_ - contains python based examples for Presentation and Output parts of the BCI. Important sub-directories
-
    - `output <mindaffectBCI/examples/output/>`_ - Example output modules.  An output module translates BCI based selections into actions.
    - `presentation <mindaffectBCI/examples/presentation/>`_ - Example presentation modules.  A presentation module, presents the BCI stimulus to the user, and is normally the main UI.  In particular here we have:
-
      - `framerate_check.py <mindaffectBCI/examples/presentation/framerate_check.py>`_ - Which you can run to test if your display settings (particularly vsync) are correct for accurate flicker presentation.
      - `selectionMatrix.py <mindaffectBCI/examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
 
    - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
-
    - `acquisation <mindaffectBCI/examples/acquisation/>`_ - Example data acquisation modules.  An acquisation module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
 
 System Overview
 ---------------
 
 The mindaffectBCI consists of 3 main pieces:
-
  - *decoder* : This piece runs on a compute module (the raspberry PI in the dev-kit), connects to the EEG amplifer and the presentation system, and runs the machine learning algorithms to decode a users intended output from the measured EEG.
-
  - *presentation* : This piece runs on the display (normally the developers laptop, or tablet)), connects to the decoder, and shows the user interface to the user,  with the possible flickering options to pick from.
-
  - *output* : This piece, normally runs on the same location as the  presentation, but may be somewhere else, and also connects to the decoder.  It listens from 'selections' from the decoder, which indicate that the decoder has decided the user want's to pick a particular option,  and makes that  selection happen -- for example by adding a letter to the current sentence, or moving a robot-arm,  or turning on or off a light.
 
 The  detailed  system architeture of the mindaffecBCI is explained in more detail in `doc/Utopia _ Guide for Implementation of new Presentation and Output Components.pdf <https://github.com/mindaffect/pymindaffectBCI/blob/master/doc/Utopia%20_%20Guide%20for%20Implementation%20of%20new%20Presentation%20and%20Output%20components.pdf>`_, and is illustrated in this figure:
