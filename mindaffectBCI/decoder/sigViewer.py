@@ -9,7 +9,7 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
     if ui is None:
         data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=60)
         #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
         ui.connect(hostname)
 
     ui.update()
