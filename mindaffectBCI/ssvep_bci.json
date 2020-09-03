@@ -1,11 +1,11 @@
 {
-    "acq_driver":"brainflow",
-
+    "acquisation":"brainflow",
     "acq_args":{
         "board_id":1,
         "serial_port":"com3"
     },
 
+    "decoder":"decoder",
     "decoder_args":{
         "stopband" : [[0,3],[25,-1]],
         "out_fs" : 80,
@@ -15,6 +15,7 @@
         "predplots" : false
     },
 
+    "presentation":"selectionMatrix",
     "presentation_args":{
         "ncal":20,
         "npred":10,

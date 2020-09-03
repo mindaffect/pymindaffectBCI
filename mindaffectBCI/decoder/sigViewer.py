@@ -2,9 +2,16 @@
 import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
-def sigViewer(ui: UtopiaDataInterface, timeout_ms:float=np.inf, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
+def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.inf, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
+
+    if ui is None:
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=60)
+        #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor)
+        ui.connect(hostname)
+
     ui.update()
 
     # initialize the plot window
@@ -80,14 +87,9 @@ if __name__=='__main__':
     else:
         hostname=None
 
-    #data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,5),(25,-1)), fs_out=60)
-    data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-    ui=UtopiaDataInterface(data_preprocessor=data_preprocessor)
-    ui.connect(hostname)
-
     try:
         matplotlib.use('Qt4Cairo')
     except:
         pass
 
-    sigViewer(ui)
+    sigViewer()
