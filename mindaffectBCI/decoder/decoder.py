@@ -385,10 +385,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
 
-def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
-            host:str=None, 
-            tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
-            calplots:bool=False, predplots:bool=False):
+def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
+        host:str=None, 
+        tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
+        calplots:bool=False, predplots:bool=False):
     """ run the main decoder processing loop
 
     Args:
@@ -452,7 +452,10 @@ def mainloop(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, ms
         if guiplots:
             for i in plt.get_fignums():
                 plt.figure(i).canvas.flush_events()
-            
+
+def mainloop(*args,**kwargs):
+    run(*args,**kwargs)
+
 if  __name__ == "__main__":
     print("called as main?")
 
@@ -471,7 +474,7 @@ if  __name__ == "__main__":
     mainloop(**vars(args))
     while running and nCrash < 10:
         try:
-            mainloop(**vars(args))
+            run(**vars(args))
             # stop restarting if normal terminate
             running=False
         except KeyboardInterrupt:
