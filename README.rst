@@ -39,13 +39,9 @@ Brain Computer Interface Test
 -----------------------------
 
 If you have:
-
   1. installed `pyglet <https://pyglet.org>`_ , e.g. using `pip3 install pyglet`
-
   #. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
-
   #. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
-
   #. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
 
 Then you can jump directly to trying a fully functional simple letter matrix BCI using::
