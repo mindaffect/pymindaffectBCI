@@ -5,15 +5,15 @@ This repository contains the python SDK code for the Brain Computer Interface (B
 Installation
 ------------
 
- 1. Clone or download this repository::
+  1. Clone or download this repository::
 
     git clone https://github.com/mindaffect/pymindaffectBCI
 
- 2. Install the necessary bits to your local python path:
-   1. change to the directory where you cloned the repository.
-   2. Add this module to the python path, and install dependencies::
+  2. Install the necessary bits to your local python path:
+    1. change to the directory where you cloned the repository.
+    2. Add this module to the python path, and install dependencies::
    
-     pip install -e .
+      pip install -e .
 
 Installation Test
 -----------------
