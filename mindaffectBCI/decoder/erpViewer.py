@@ -122,7 +122,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         # re-draw the display
         fig.canvas.draw()
         fig.canvas.flush_events()
-        plt.pause(.001)
+        #plt.pause(.001)
 
         # Update the records
         nmsgs, ndata, nstim = ui.update(timeout_ms=100)
@@ -247,8 +247,8 @@ if __name__=='__main__':
 
     data_preprocessor = None
     #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((0, 4), (25, -1)), fs_out=60)
-    ui=UtopiaDataInterface(data_preprocessor=data_preprocessor)
+    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((0, 4), (25, -1)), fs_out=80)
+    ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
     ui.connect(hostname)
 
     try:

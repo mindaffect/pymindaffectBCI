@@ -190,6 +190,7 @@ def initConnections(host=None,obcimac=None):
     print("Opening ftBuffer connection") 
 
     client=utopiaclient.UtopiaClient()
+    client.disableHeartbeats() # disabled for data sources
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(getTime_ms(),""));
