@@ -34,7 +34,7 @@ class UtopiaDataInterface:
     
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
-                 timeout_ms=100, mintime_ms=50):
+                 timeout_ms=100, mintime_ms=50, fs=None, U=None):
         # rate control
         self.timeout_ms = timeout_ms
         self.mintime_ms = mintime_ms # minimum time to spend in update => max processing rate
@@ -44,7 +44,7 @@ class UtopiaDataInterface:
         # connect to the mindaffectDecoder
         self.host = None
         self.port = -1
-        self.U = UtopiaClient()
+        self.U = UtopiaClient() if U is None else U
         self.t0 = self.getTimeStamp()
         # init the buffers
 
@@ -63,7 +63,7 @@ class UtopiaDataInterface:
         self.stimulus_preprocessor = stimulus_preprocessor # function to pre-process the incomming data
 
         # Info about the data sample rate -- estimated from packet rates..
-        self.raw_fs = None
+        self.raw_fs = fs
         self.fs = None
         self.newmsgs = [] # list new unprocssed messages since last update call
 
@@ -90,6 +90,9 @@ class UtopiaDataInterface:
             # subscribe to messages: data, stim, mode, selection
             self.U.sendMessage(Subscribe(None, "DEMSN"))
         return self.U.isConnected
+    
+    def isConnected(self):
+        return self.U.isConnected if self.U is not None else False
 
     def getTimeStamp(self):
         '''get the current timeStamp'''
@@ -99,6 +102,10 @@ class UtopiaDataInterface:
         ''' send a UtopiaMessage to the utopia hub'''
         self.U.sendMessage(msg)
 
+    def getNewMessages(self, timeout_ms=0):
+        ''' get new messages from the UtopiaHub '''
+        return self.U.getNewMessages(timeout_ms)
+
     def initDataRingBuffer(self):
         '''initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.'''
         print("geting some initial data to setup the ring buffer")
@@ -106,7 +113,7 @@ class UtopiaDataInterface:
         databuf = []
         nmsg = 0
         while len(databuf) < 30:
-            msgs = self.U.getNewMessages(500)
+            msgs = self.getNewMessages(500)
             for m in msgs:
                 m = self.preprocess_message(m)
                 if m.msgID == DataPacket.msgID: # data-packets are special
@@ -120,7 +127,8 @@ class UtopiaDataInterface:
                     nmsg = nmsg+1
         nsamp = sum([len(m.samples) for m in databuf]) - len(databuf[0].samples)
         dur = (databuf[-1].timestamp - databuf[0].timestamp)/1000.0 #[-1, -1]-databuf[0][-1, -1])/1000.0
-        self.raw_fs = nsamp/dur # fs = nSamp/time
+        if self.raw_fs is None:
+            self.raw_fs = nsamp/dur # fs = nSamp/time
         print('Estimated sample rate {} samp in {} s ={}'.format(nsamp,dur,self.raw_fs))
 
         # init the pre-processor (if one)
@@ -258,7 +266,7 @@ class UtopiaDataInterface:
                    preproc_avepower,preproc_power,d_preproc.shape[0],
                    noise2sig))
             print("Q",end='')
-            self.U.sendMessage(SignalQuality(ts, noise2sig))
+            self.sendMessage(SignalQuality(ts, noise2sig))
             self.last_sigquality_ts = ts
 
     @staticmethod
@@ -301,13 +309,12 @@ class UtopiaDataInterface:
             timeout_ms = self.timeout_ms
         if mintime_ms is None:
             mintime_ms = self.mintime_ms
-        t0 = self.getTimeStamp()
         nsamp = 0
         nmsg = 0
         nstimulus = 0
-        if not self.U.isConnected:
-            self.U.connect()
-        if not self.U.isConnected:
+        if not self.isConnected():
+            self.connect()
+        if not self.isConnected():
             return
         if self.data_ringbuffer is None: # do special init stuff if not done
             nsamp, nmsg = self.initDataRingBuffer()
@@ -315,6 +322,7 @@ class UtopiaDataInterface:
             self.initStimulusRingBuffer()
         if self.last_log_ts is None:
             self.last_log_ts = self.getTimeStamp()
+        t0 = self.getTimeStamp()
 
         # record the list of new messages from this call
         newmsgs = self.newmsgs # start with any left-overs from old calls 
@@ -329,7 +337,7 @@ class UtopiaDataInterface:
                 ttg = timeout_ms - (self.getTimeStamp() - t0) # udate time-to-go
                 
             # get the new messages
-            msgs = self.U.getNewMessages(ttg)
+            msgs = self.getNewMessages(ttg)
 
             # process the messages - basically to split datapackets from the rest
             print(".",end='')
@@ -596,6 +604,17 @@ def testPP():
     ui.connect()
     sigViewer(ui)
 
+def testFileProxy():
+    from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
+    U = FileProxyHub()
+    fs = 200
+    from sigViewer import sigViewer
+    # test with a filter + downsampler
+    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=60)
+    ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
+    ui.connect()
+    sigViewer(ui)
+
 def testERP():
     ui = UtopiaDataInterface()
     ui.connect()
@@ -625,5 +644,6 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
     
 if __name__ == "__main__":
     #testRaw()
-    testPP()
+    #testPP()
     #testERP()
+    testFileProxy()
