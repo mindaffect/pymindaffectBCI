@@ -386,9 +386,9 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 ui.push_back_newmsgs(newmsgs[i:])
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
-        host:str=None, 
+        host:str=None, datafile:str=None,
         tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
-        calplots:bool=False, predplots:bool=False):
+        calplots:bool=False, predplots:bool=False, **kwargs):
     """ run the main decoder processing loop
 
     Args:
@@ -411,8 +411,8 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         guiplots=False
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        ppfn = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)
-        #ppfn = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
+        ppfn = butterfilt_and_downsample(order=4, stopband=stopband, fs_out=out_fs)
+        #ppfn = butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
@@ -460,18 +460,33 @@ if  __name__ == "__main__":
     print("called as main?")
 
     import argparse
+    import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=80)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=400)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
-    parser.add_argument('--predplots',action='store_true', help='flag make decoding plots are prediction time')
-    parser.add_argument('--calplots',action='store_false', help='turn OFF model and decoding plots after calibration')
+    parser.add_argument('--stopband',type=json.loads, help='output sample rate', default=((0,3),(25,-1)))
+    parser.add_argument('--predplots', action='store_true', help='flag make decoding plots are prediction time')
+    parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
+    parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
+    parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
+
     args = parser.parse_args()
 
+    if args.savefile is not None:
+        from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
+        U = FileProxyHub(args.savefile)
+        ppfn = butterfilt_and_downsample(order=4, stopband=args.stopband, fs_out=args.out_fs)
+        ui = UtopiaDataInterface(data_preprocessor=ppfn,
+                                 stimulus_preprocessor=None,
+                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs) # 20hz updates
+        # add the file-proxy ui as input argument
+        setattr(args,'ui',ui)
+    
     running=True
     nCrash = 0
-    mainloop(**vars(args))
+    run(**vars(args))
     while running and nCrash < 10:
         try:
             run(**vars(args))
