@@ -153,3 +153,33 @@ By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol le
 * _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like: 
 
 ![rc5x5.png](mindaffectBCI/rc5x5.png)
+
+## Change Decoder parameters
+
+The decoder is the core of the BCI at it takes in the raw EEG and stimulus information and generates predictions about which stimulus the user is attending to.  Generating these predictions relies on signal processing and machine learning techniques to learn the best decoding parameters for each user.   However, ensuring best performance means the settings for the decoder should be appropriate for the particular BCI being used.  The default decoder parameters are found in the configuration file [`online_bci.json`](mindaffectBCI/online_bci.json) in the `decoder_args` section, and are setup for a noisetagging BCI.
+
+The default settings for noisetagging are:
+```
+    "decoder_args":{
+        "stopband" : [[0,3],[25,-1]],
+        "out_fs" : 80,
+        "evtlabs" : ["re","fe"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+```
+
+The key parameters here are:
+  * `stopband`: this is a [temporal filter](https://en.wikipedia.org/wiki/Filter_(signal_processing)) which is applied as a pre-processing step to the incomming data.  This is important to remove external noise so the decoder can focus on the target brain signals.   Here the filter is specified as a list of [band stop](https://en.wikipedia.org/wiki/Band-stop_filter) filters, which specify which signal frequencies should be suppressed, (where, in classic python fashion -1 indicates the max-possible frequency).  Thus, in this example all frequencies below 3Hz and above 25Hz are removed.
+  * `out_fs`: this specifies the post-filtering sampling rate of the data.  This reduces the amount of data which will be processed by the rest of the decoder.  Thus, in this example after filtering the data is re-sampled to 80Hz.  (Note: to avoid []() out_fs should be greater than 2x the maximum frequency passed by the stop-band).
+  * `evtlabs`: this specifies the stimulus properties (or event labels) the decoder will try to predict from the brain responses.  The input to the decoder (and the brain) is the raw-stimulus intensity (i.e. it's brightness, or loudness).  However, depending on the task the user is performing, the brain may *not* respond directly to the brightness, but some other property of the stimulus.  For example, in the classic [P300 'odd-ball' BCI](https://en.wikipedia.org/wiki/P300_(neuroscience)#Applications), the brain responds not to the raw intensity, but to the start of *surprising* stimuli.  The design of the P300 matrix-speller BCI means this response happens when the users choosen output 'flashes', or gets bright.  Thus, in the P300 BCI the brain responses to the [rising-edge](https://en.wikipedia.org/wiki/Signal_edge) of the stimulus intensity.   Knowing, exactly what stimulus property the brain is responding to is a well studied neuroscientific research question, with examples including, stimulus-onset (a.k.a. rising-edge, or 're'), stimulus-offset (a.k.a. falling-edge, or 'fe'), stimulus intensity ('flash'), stimulus-duration etc.  Getting the right stimulus-coding is critical for BCI peformance, see [`stim2event.py`](mindaffectBCI/decoder/stim2event.py) for more information on supported event types.
+  * `tau_ms`: this specifies the maximum duration of the expected brain response to a triggering event in *milliseconds*.  As with the trigger type, the length of the brian response to a triggering event depends on the type of response expected.  For example for the P300 the response is between 300 and 600 ms after the trigger, whereas for a VEP the response is between 100 and 400 ms.   Ideally, the response window should be as small as possible, so the learning system only gets the brain response, and not a lot of non-response containing noise which could lead the machine learning component to [overfitt](https://en.wikipedia.org/wiki/Overfitting).
+
+# Other BCI types.
+
+We provide exmaple configuration files for 3 basic types of visual BCIs:
+ * [`noisetag.json`](mindaffectBCI/noisetag_bci.json) : example for a [noise-tagging](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0133797) (or c-VEP) BCI
+ * [`rc5x5.json`](mindaffectBCI/rc5x5_bci.json) : example for a classic visual P300 odd-ball type BCI with row-column stimulus.
+ * [`ssvep.json`](mindaffectBCI/ssvep_bci.json) : example for a classic [steady-state-visual-response](https://arxiv.org/abs/2002.01171) BCI.
+
