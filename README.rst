@@ -5,15 +5,19 @@ This repository contains the python SDK code for the Brain Computer Interface (B
 Installation
 ------------
 
-  1. Clone or download this repository::
+To install the code:
 
-    git clone https://github.com/mindaffect/pymindaffectBCI
+ 1. Clone or download this repository::
 
-  2. Install the necessary bits to your local python path:
-    1. change to the directory where you cloned the repository.
-    2. Add this module to the python path, and install dependencies::
+  git clone https://github.com/mindaffect/pymindaffectBCI
+
+ 1. Install the necessary bits to your local python path:
+
+  1. change to the directory where you cloned the repository.
+
+  1. Add this module to the python path, and install dependencies::
    
-      pip install -e .
+    pip install -e .
 
 Installation Test
 -----------------
@@ -38,10 +42,10 @@ Brain Computer Interface Test
 -----------------------------
 
 If you have:
-  1. installed `pyglet <https://pyglet.org>`_ , e.g. using `pip3 install pyglet`
-  2. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
-  3. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
-  4. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
+ 1. installed `pyglet <https://pyglet.org>`_ , e.g. using `pip3 install pyglet`
+ 1. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
+ 1. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
+ 1. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
 
 Then you can jump directly to trying a fully functional simple letter matrix BCI using::
 
