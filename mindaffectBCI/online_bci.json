@@ -1,5 +1,5 @@
 {
-    "acq_driver":"eego",
+    "acquisation":"eego",
 
     "acq_args":{
         "board_id":1,
