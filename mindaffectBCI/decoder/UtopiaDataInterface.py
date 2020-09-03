@@ -33,7 +33,7 @@ class UtopiaDataInterface:
     # TODO [X] : rate limit waiting to reduce computational load
     
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
-                 data_preprocessor=None, stimulus_preprocessor=None,
+                 data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
                  timeout_ms=100, mintime_ms=50):
         # rate control
         self.timeout_ms = timeout_ms
@@ -69,6 +69,7 @@ class UtopiaDataInterface:
 
         # BODGE: running statistics for sig2noise estimation
         # TODO: move into it's own Sig2Noise computation class
+        self.send_signalquality = send_signalquality
         self.last_sigquality_ts = None
         self.last_log_ts = None
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
@@ -177,7 +178,8 @@ class UtopiaDataInterface:
             d = self.data_preprocessor.transform(d)
 
             # BODGE: running estimate of the electrode-quality
-            self.update_and_send_ElectrodeQualities(d_raw, d, m.timestamp)
+            if self.send_signalquality:
+                self.update_and_send_ElectrodeQualities(d_raw, d, m.timestamp)
 
         if d.size > 0 :
             # If have data to add to the ring-buffer, guarding for time-stamp wrap-around
@@ -241,10 +243,13 @@ class UtopiaDataInterface:
         # noise2signal estimated as removed raw power (assumed=noise) to preprocessed power (assumed=signal)
         raw_avepower = np.sqrt(self.raw_power / self.raw_N)
         preproc_avepower = np.sqrt(self.preproc_power / self.preproc_N)
-        noise2sig = np.maximum(float(1e-6), (raw_avepower - preproc_avepower)) /  np.maximum(float(1e-8),preproc_avepower)
+        noise2sig = np.maximum(float(1e-6), np.abs(raw_avepower - preproc_avepower)) /  np.maximum(float(1e-8),preproc_avepower)
 
         # hack - detect disconnected channels
         noise2sig[ self.raw_power/self.raw_N < 1e-8] = 100
+
+        # hack - cap to 100
+        noise2sig = np.minimum(noise2sig,100)
 
         # rate limit sending of signal-quality messages
         if self.last_sigquality_ts is None or ts > self.last_sigquality_ts + self.send_sigquality_interval:
