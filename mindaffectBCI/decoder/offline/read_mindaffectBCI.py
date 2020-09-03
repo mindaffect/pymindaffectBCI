@@ -1,10 +1,11 @@
 import os
 import numpy as np
 import re
-from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange
+from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
 
 # named reg-exp to parse the different messages types log lines
 serverts_re = re.compile(r'^sts:(?P<sts>[-0-9]*)\W')
+clientts_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W')
 clientip_re = re.compile(r'.*<-\W(?P<ip>[0-9.:]*)$')
 stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-/.*$')
 datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<samples>.*) <-/.*$')
@@ -48,6 +49,20 @@ def read_ModeChange(line:str):
     newmode = res['newmode']
     return ModeChange(ts,newmode)
 
+def read_NewTarget(line:str):
+    ts = read_clientts(line)
+    return NewTarget(ts)
+
+def read_Selection(line:str):
+    # TODO[]: read the actual selection info
+    ts = read_clientts(line)
+    return Selection(ts,-1)
+
+def read_clientts(line:str):
+    ts = clientts_re.match(line)
+    ts = int(ts['ts']) if ts is not None else None
+    return ts
+
 def read_serverts(line:str):
     sts = serverts_re.match(line)
     sts = int(sts['sts']) if sts is not None else None
@@ -65,6 +80,10 @@ def read_mindaffectBCI_message(line):
         msg = read_DataPacket(line)
     elif ModeChange.msgName in line:
         msg = read_ModeChange(line)
+    elif NewTarget.msgName in line:
+        msg = read_NewTarget(line)
+    elif Selection.msgName in line:
+        msg = read_Selection(line)
     else:
         msg = None
     # add the server time-stamp
