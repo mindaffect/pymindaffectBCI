@@ -2,10 +2,60 @@ mindaffectBCI
 =============
 This repository contains the python SDK code for the Brain Computer Interface (BCI) developed by the company `Mindaffect <https://mindaffect.nl>`_.
 
-Quick Start
------------
+Installation
+------------
 
-If you have just got your mindaffectBCI and are looking for general information on how to use it, checkout our `Wiki <https://github.com/mindaffect/General/wiki/First-time-use>`_.  
+ 1. Clone or download this repository: `git clone https://github.com/mindaffect/pymindaffectBCI`
+ 2. Install the necessary bits to your local python path:
+   1. change to the directory where you cloned the repository.
+   2. Add this module to the python path, and install dependencies. `pip install -e .`
+
+Installation Test
+-----------------
+
+You can run a quick test if the installation without any additional hardware by running::
+
+  python3 -m mindaffectBCI.online_bci --acquisation fakedata
+
+Essentially, this run the SDK test code which simulates a *fake* EEG source and then runs the full BCI sequence, with decoder discovery, calibration and prediction.
+
+Important: FrameRate Check
+--------------------------
+
+For rapid visual stimulation BCI (like the noisetagging BCI), it is *very* important that the visual flicker be displayed *accurately*.  However, as the graphics performance of computers varies widely it is hard to know in advance if a particular configuration is accurate enough.  To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.  You can run this with::
+
+  python3 -m mindaffectBCI.examples.presentation.framerate_check
+
+As this runs it will show in a window your current graphics frame-rate and, more importantly, the variability in the frame times.  For good BCI performance this jitter should be <1ms.  If you see jitter greater than this you should probably adjust your graphics card settings.  The most important setting to consider is to be sure that you  have `_vsync_ <https://en.wikipedia.org/wiki/Screen_tearing#Vertical_synchronization>` *turned-on*.  Many graphics cards turn this off by default, as it (in theory) gives higher frame rates for gaming.  However, for our system, frame-rate is less important than *exact*  timing, hence always turn vsync on for visual Brain-Compuber-Interfaces!
+
+
+Brain Computer Interface Test
+-----------------------------
+
+If you have:
+  1. installed `pyglet <https://pyglet.org>`_ , e.g. using `pip3 install pyglet`
+  2. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
+  3. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
+  4. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
+
+Then you can jump directly to trying a fully functional simple letter matrix BCI using::
+
+  python3 -m mindaffectBCI.online_bci
+
+Note: For more information on how to run an on-line BCI, *including using other supported amplifiers*, see this document: `OnlineBCI_quickstart.md <OnlineBCI_quickstart.md>`_
+
+Getting Support
+---------------
+
+For a general overview of how to use the mindaffectBCI, hardware, software and how to use it, see the `system wiki <https://github.com/mindaffect/General/wiki>`_.
+
+If you run into and issue you can either directly raise an issue on the projects `github page <https://github.com/mindaffect/pymindaffectBCI>`_ 
+
+..
+    or directly contact the developers on `gitter <https://gitter.im/mindaffect>`_ -- to complain, complement, or just chat:
+
+    .. image:: https://badges.gitter.im/mindaffect/unitymindaffectBCI.svg
+      :target: https://gitter.im/mindaffect/pymindaffectBCI?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 
 File Structure
@@ -20,6 +70,7 @@ This repository is organized roughly as follows:
    - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
    - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
    - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
+   - `online_bci.json <mindaffectBCI/online_bci.json>`_ - This JSON file contains the configuration information to run a full noisetagging BCI.
 
 - `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. Important modules within this package are:
    - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
@@ -36,64 +87,6 @@ This repository is organized roughly as follows:
    - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
 
    - `acquisation <mindaffectBCI/examples/acquisation/>`_ - Example data acquisation modules.  An acquisation module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
-
-
-Installing mindaffectBCI
-------------------------
-
-That's easy::
-
-  pip3 install mindaffectBCI
-
-To update an already installed version do::
-
-  pip3 install --update mindaffectBCI
-
-
-Getting Support
----------------
-
-For a general overview of how to use the mindaffectBCI, hardware, software and how to use it, see the `system wiki <https://github.com/mindaffect/General/wiki>`_.
-
-If you run into and issue you can either directly raise an issue on the projects `github page <https://github.com/mindaffect/pymindaffectBCI>`_ or directly contact the developers on `gitter <https://gitter.im/mindaffect>`_ -- to complain, complement, or just chat:
-
-.. image:: https://badges.gitter.im/mindaffect/unitymindaffectBCI.svg
-   :target: https://gitter.im/mindaffect/pymindaffectBCI?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
-Testing the mindaffectBCI SDK
------------------------------
-
-This SDK provides the functionality needed to add Brain Controls to your own applications.  However, it *does not* provide the actual brain measuring hardware. 
-
-Quick Installation Test
------------------------
-
-You can run a quick test if the installation is correct by running::
-
-  python3 -m mindaffectBCI.noisetag
-
-Essentially, this run the SDK test code which pretends to run a full BCI sequence, with decoder discovery, calibration and prediction.  If you have the fakerecognise running then this should do this in a terminal and generate a lot of text saying things like: `cal 1/10`.
-
-Quick BCI Test
---------------
-
-If you have:
-  1. installed `pyglet <https://pyglet.org>`_ , e.g. using `pip3 install pyglet`
-  2. installed `brainflow <https://brainflow.org>`_ , e.g. using `pip3 install brainflow`
-  3. have connected an `openBCI ganglion <https://shop.openbci.com>`_ ,
-  4. have followed `MindAffect headset layout.pdf <https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf>`_ to attach the electrodes to the back of your head.
-
-For more information on how to run an on-line BCI see this document: `OnlineBCI_quickstart.md <OnlineBCI_quickstart.md>`_
-
-Then you can jump directly to trying a fully functional simple letter matrix BCI using::
-
-  python3 -m mindaffectBCI.online_bci
-
-*NOTE*: For this type of rapid visual stimulation BCI, it is *very* important that the visual flicker be displayed *accurately*.  However, as the graphics performance of computers varies widely it is hard to know in advance if a particular configuration is accurate enough.  To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.  You can run this with::
-
-  python3 -m mindaffectBCI.examples.presentation.framerate_check
-
-As this runs  it will show in a window your current graphics frame-rate and, more importantly, the variability in the frame times.  For good BCI performance this jitter should be <1ms.  If you see jitter greater than this you should probably adjust your graphics card settings.  The most important setting to consider is to be sure that you  have `_vsync_ <https://en.wikipedia.org/wiki/Screen_tearing#Vertical_synchronization>` *turned-on*.  Many graphics cards turn this off by default, as it (in theory) gives higher frame rates for gaming.  However, for our system, frame-rate is less important than *exact*  timing, hence always turn vsync on for visual Brain-Compuber-Interfaces!
 
 System Overview
 ---------------
@@ -116,8 +109,7 @@ Simple *output* module
 
 An output module listens for selections from the mindaffect decoder and acts on them to create some output.  Here we show how to make a simple output module which print's "Hello World" when the presentation 'button' with ID=1 is selected.
 
-Note: Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our github `examples/output/minimal_output.py <https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/output/minimal_output.py>`_
-
+Note: this should be in a separate file from the *output* example above.  You can find the complete code for this minimal-presentation on our github `examples/output/minimal_output.py <https://github.com/mindaffect/pymindaffectBCI/blob/master/mindaffectBCI/examples/output/minimal_output.py>`_
 
 .. code:: python
 
@@ -160,6 +152,7 @@ Finally, run the main loop
 
 
 For more complex output examples, and examples for controlling a `lego boost <https://www.lego.com/en-gb/themes/boost>`_ robot, or a `philips Hue <https://www2.meethue.com/en-us>`_ controllable light, look in the `examples\output` directory. 
+
 
 Simple *presention* module
 ----------------------------
