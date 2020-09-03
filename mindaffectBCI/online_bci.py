@@ -46,7 +46,8 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             acq_args = dict(board_id=1, serial_port='com3') # connect to the ganglion
         acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
         acquisation.start()
-        # wait for driver to startup -- N.B. NEEDED!!
+
+        # give it some time to startup successfully
         sleep(5)
     elif acquisation == 'ganglion': # pyOpenBCI ganglion driver
         from mindaffectBCI.examples.acquisation import utopia_ganglion
@@ -70,6 +71,8 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             decoder_args = dict(calplots=True)
         decoder = Process(target=decoder.run, kwargs=decoder_args, daemon=True)
         decoder.start()
+        # allow time for the decoder to startup
+        sleep(4)
     elif decoder == 'none':
         decoder = None
 

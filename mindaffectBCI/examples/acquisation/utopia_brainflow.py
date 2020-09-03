@@ -2,6 +2,7 @@ import argparse
 from brainflow.board_shim import BoardShim, BrainFlowInputParams
 from mindaffectBCI import utopiaclient 
 from time import time, sleep
+import traceback
 
 PACKETRATE_HZ = 50
 LOGINTERVAL_S = 3
@@ -73,6 +74,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     # connect to the utopia client
     client = utopiaclient.UtopiaClient()
+    client.disableHeartbeats() # disable heartbeats as we're a datapacket source
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
@@ -81,7 +83,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     board.start_stream (45000, streamer_params)
     # N.B. we force a sleep here to allow the board to startup correctly
-    sleep(1)
+    sleep(3)
 
     nSamp=0
     nBlock=0
@@ -104,7 +106,6 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         # extract the info we want
         eeg = data[eeg_channels,:] # (channels,samples) 
         ts = data[timestamp_channel,:] # (samples,)
-        
 
         # forward the *EEG* data to the utopia client
         nSamp = nSamp + data.shape[1]
@@ -112,6 +113,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         # format for sending to MA
         eeg = eeg.T # MA uses (samples,channels)
         ts = (int(ts[-1]*1000))%(1<<31) # MA uses milliseconds wrapped into 32-bit ints
+        #ts = client.getTimeStamp()
         client.sendMessage(utopiaclient.DataPacket(ts, eeg))
 
         # limit the packet sending rate..
@@ -125,4 +127,7 @@ if __name__ == "__main__":
     #run(board_id=1,serial_port='com3')
 
     args=parse_args()    
-    run(**vars(args))
+    try:
+        run(**vars(args))
+    except:
+        traceback.print_exc()
