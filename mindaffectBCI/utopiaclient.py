@@ -691,9 +691,10 @@ class UtopiaClient:
         self.udpsock=None
         self.recvbuf = b''
         self.tsClock = TimeStampClock()
-        self.nextHeartbeatTime=self.getTimeStamp()
-        self.nextHeartbeatTimeUDP=self.getTimeStamp()
-        self.ssdpDiscover=None
+        self.sendHeartbeats = True
+        self.nextHeartbeatTime = self.getTimeStamp()
+        self.nextHeartbeatTimeUDP = self.getTimeStamp()
+        self.ssdpDiscover = None
 
     # time-stamp management
     def setTimeStampClock(self, tsClock):
@@ -703,6 +704,11 @@ class UtopiaClient:
     def getTimeStamp(self):
         """Get the time-stamp for the current time"""
         return self.tsClock.getTimeStamp()
+    def disableHeartbeats(self):
+        '''' stop sending hearbeat messages. Use, e.g. when you want to use your own time-stamp clock. '''
+        self.sendHeartbeats = False
+    def enableHeartbeats(self):
+        self.sendHeartbeats = True
 
     def connect(self, hostname=None, port=8400):
         """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
@@ -827,14 +833,17 @@ class UtopiaClient:
         self.sendRaw(msg.serialize()) # send the raw message directly
         self.sendHeartbeatIfTimeout()
 
-    def sendHeartbeatIfTimeout(self):
-        curtime = self.getTimeStamp()
-        if curtime > self.nextHeartbeatTime:
-           self.nextHeartbeatTime=curtime+self.HEARTBEATINTERVAL_ms
-           self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
-        if curtime > self.nextHeartbeatTimeUDP:
-           self.nextHeartbeatTimeUDP=curtime+self.HEARTBEATINTERVALUDP_ms
-           self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(curtime)).serialize())
+    def sendHeartbeatIfTimeout(self, timestamp=None):
+        if not self.sendHeartbeats:
+            return
+        if timestamp is None:
+            timestamp = self.getTimeStamp()
+        if timestamp > self.nextHeartbeatTime:
+            self.nextHeartbeatTime=timestamp+self.HEARTBEATINTERVAL_ms
+            self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(timestamp)).serialize())
+        if timestamp > self.nextHeartbeatTimeUDP:
+            self.nextHeartbeatTimeUDP=timestamp+self.HEARTBEATINTERVALUDP_ms
+            self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(timestamp)).serialize())
         
     def sendMessages(self, msgs):
         """sends single or multiple utopia-messages to the utopia server
@@ -876,6 +885,9 @@ class UtopiaClient:
     def initClockAlign(self, delays_ms=[50]*10):
         """Send some initial heartbeat messages to seed the alignment of the server clock with
         our local clock"""
+        if not self.sendHeartbeats:
+            print("Warning: not sending heartbeats as they are disabled!")
+            return
         self.sendMessage(Heartbeat(self.getTimeStamp()))
         for delay in delays_ms:
             time.sleep(delay/1000)

@@ -181,6 +181,7 @@ def initConnections(host=None, obciport=None):
     print("Opened openBCI on %s with %d ch @ %g hz"%(board.port, nChans, fSample))
 
     client = utopiaclient.UtopiaClient()
+    client.disableHeartbeats() # disabled for data sources
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(getTime_ms(), ""));
