@@ -359,6 +359,7 @@ class ElectrodequalityScreen(Screen):
             self.t0 = getTimeStamp()
             self.noisetag.addSubscription("D") # subscribe to "DataPacket" messages
             self.noisetag.modeChange("ElectrodeQuality")
+            self.dataringbuffer.clear()
         if self.clearScreen:
             self.window.clear()
         # get the sig qualities
