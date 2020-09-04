@@ -68,16 +68,21 @@ class UtopiaDataInterface:
         self.newmsgs = [] # list new unprocssed messages since last update call
 
         # BODGE: running statistics for sig2noise estimation
-        # TODO: move into it's own Sig2Noise computation class
+        # TODO []: move into it's own Sig2Noise computation class
         self.send_signalquality = send_signalquality
         self.last_sigquality_ts = None
         self.last_log_ts = None
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
-        self.noise2sig_halflife = 2000 # noise2sig estimate halflife
+        self.noise2sig_halflife = (5000,500) # noise2sig estimate halflife
+        # TODO []: move into a exp-move-ave power est class
+        self.raw_power_N = 0
         self.raw_power = 0
-        self.raw_N = 0 
+        self.raw_mean_N = 0
+        self.raw_mean = 0  
+        self.preproc_power_N = 0
         self.preproc_power = 0
-        self.preproc_N = 0
+        self.preproc_mean_N = 0
+        self.preproc_mean = 0
 
     def connect(self, host=None, port=-1, queryifhostnotfound=True):
         '''make a connection to the utopia host'''
@@ -237,24 +242,15 @@ class UtopiaDataInterface:
 
     def update_and_send_ElectrodeQualities(self, d_raw: np.ndarray, d_preproc: np.ndarray, ts: int):
         ''' compute running estimate of electrode qality and stream it '''
-        raw_power, preproc_power = self.__class__.update_electrode_powers(d_raw, d_preproc)
-
-        # BODGE []: estimate the noise2signal ratio as raw:preprocessed power
-        # compute the sliding window weight for the old data
-        alpha = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife / 1000.0))
-        # compute weighted summed power and weighted summed weight (so works for different sample rates)
-        self.raw_power = self.raw_power*alpha + raw_power
-        self.raw_N     = self.raw_N*alpha + d_raw.shape[0]
-        self.preproc_power = self.preproc_power*alpha + preproc_power
-        self.preproc_N = self.preproc_N*alpha + d_preproc.shape[0]
+        raw_power, preproc_power = self.update_electrode_powers(d_raw, d_preproc)
 
         # noise2signal estimated as removed raw power (assumed=noise) to preprocessed power (assumed=signal)
-        raw_avepower = np.sqrt(self.raw_power / self.raw_N)
-        preproc_avepower = np.sqrt(self.preproc_power / self.preproc_N)
+        raw_avepower = np.sqrt(self.raw_power / self.raw_power_N)
+        preproc_avepower = np.sqrt(self.preproc_power / self.preproc_power_N)
         noise2sig = np.maximum(float(1e-6), np.abs(raw_avepower - preproc_avepower)) /  np.maximum(float(1e-8),preproc_avepower)
 
         # hack - detect disconnected channels
-        noise2sig[ self.raw_power/self.raw_N < 1e-8] = 100
+        noise2sig[ self.raw_power/self.raw_power_N < 1e-8] = 100
 
         # hack - cap to 100
         noise2sig = np.minimum(noise2sig,100)
@@ -269,19 +265,33 @@ class UtopiaDataInterface:
             self.sendMessage(SignalQuality(ts, noise2sig))
             self.last_sigquality_ts = ts
 
-    @staticmethod
-    def update_electrode_powers(d_raw: np.ndarray, d_preproc:np.ndarray):
-        ''' compute running estimate of per electrode raw and preprocessed power '''
+    def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
+        ''' track exp-weighted-moving average centered power for 2 input streams '''
         # smoothed per-channel raw signal power -- 
         # BODGE: center over time+space to correct for arbitary offsets over all channels
         # TODO []: use a separate baseline removal filter for the raw-version?
         #          or leave it non-centered?  so it's an indirect measure of the offset?
-        d_raw = d_raw.copy() - np.mean(d_raw, axis=0, keepdims=True) 
-        if d_preproc.shape[0]>3:
-            d_preproc = d_preproc.copy() - np.mean(d_preproc, axis=0, keepdims=True)
+        # compute the sliding window weight for the old data
+        alpha_mu = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife[0] / 1000.0))
+        alpha_pow = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife[1] / 1000.0))
+
+        # compute exp-weighted mean and exp-weighted variance==power
+        self.raw_mean_N     = self.raw_mean_N*alpha_mu + d_raw.shape[0]
+        self.raw_mean  = self.raw_mean*alpha_mu + np.sum(d_raw, axis=0)
+        d_raw = d_raw.copy() - self.raw_mean / self.raw_mean_N
         raw_power =  np.sum(d_raw**2, axis=0)
+        self.raw_power_N     = self.raw_power_N*alpha_mu + d_raw.shape[0]
+        self.raw_power = self.raw_power*alpha_pow + raw_power
+        
+        # compute exp-weighted mean and exp-weighted variance==power
+        self.preproc_mean_N = self.preproc_mean_N*alpha_mu + d_preproc.shape[0]
+        self.preproc_mean = self.preproc_mean*alpha_mu + np.sum(d_preproc, axis=0)
+        d_preproc = d_preproc.copy() - self.preproc_mean / self.preproc_mean_N
         preproc_power = np.sum(d_preproc**2, axis=0)
-        return (raw_power, preproc_power)
+        self.preproc_power_N = self.preproc_power_N*alpha_pow + d_preproc.shape[0]
+        self.preproc_power = self.preproc_power*alpha_pow + preproc_power
+
+        return (self.raw_power, self.preproc_power)
 
 
     def update(self, timeout_ms=None, mintime_ms=None):

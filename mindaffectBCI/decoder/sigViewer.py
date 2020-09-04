@@ -49,7 +49,7 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
 
         # exit if figure is closed
         if not plt.fignum_exists(1):
-            exit()
+            quit()
         
         # Update the records, at least 100ms wait..
         ui.update(timeout_ms=100, mintime_ms=95)
