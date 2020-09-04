@@ -2,9 +2,9 @@ import os
 import numpy as np
 from scipy.io import loadmat
 from scipy.signal import welch
-from utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind
-from multipleCCA import robust_whitener
-from updateSummaryStatistics import updateCxx
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind
+from mindaffectBCI.decoder.multipleCCA import robust_whitener
+from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 
 def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
 

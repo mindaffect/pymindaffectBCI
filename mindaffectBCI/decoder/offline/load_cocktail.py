@@ -2,7 +2,7 @@ import os
 from glob import glob
 import numpy as np
 from scipy.io import loadmat, whosmat
-from utils import block_randomize, butter_sosfilt, window_axis
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, window_axis
 
 
 def argsort(l):
