@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 
 marker2stim=dict(lh=(1,3),rh=(2,4))
 
-def load_twofinger(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,1),(25,-1)), subtriallen=10, nvirt=20, verb=0, ch_idx=slice(32)):
+def load_twofinger(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, verb=0, ch_idx=slice(32)):
     
     # load the data file
     Xfn = datadir

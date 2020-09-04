@@ -9,7 +9,7 @@ ERP_STIM_DUR = 80/1000 # 80ms
 MI_STIM_DUR = 4 # 3s
 SSVEP_STIM_DUR = 4
 
-def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True):
+def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True):
     
     if offset_ms is None:
         offset_ms = (0, 0)
