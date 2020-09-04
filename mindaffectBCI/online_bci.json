@@ -7,8 +7,8 @@
     },
 
     "decoder_args":{
-        "stopband" : [[0,3],[25,-1]],
-        "out_fs" : 80,
+        "stopband" : [[45,65],[0,3],[25,-1]],
+        "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
         "calplots" : true,
