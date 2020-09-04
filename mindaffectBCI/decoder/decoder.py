@@ -8,6 +8,7 @@ from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import dedupY0
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
+import os
 
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
@@ -152,14 +153,15 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         
         # now call the clsfr fit method, on the true-target info
         print("Training dataset = ({},{})".format(X.shape, Y.shape))
-        cvscores = clsfr.cv_fit(X, Y)
+        cvscores = clsfr.cv_fit(X, Y, cv=2)
         score = np.mean(cvscores['test_score'])
         print("clsfr={} => {}".format(clsfr, score))
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10), 
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight))
         # extract the final estimated performance
-        print("decoding curve {}".format(decoding_curve[1]))
-        perr = decoding_curve[1][-1] if len(decoding_curve)>1 else score
+        #print("decoding curve {}".format(decoding_curve[1]))
+        #print("score {}".format(score))
+        perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
         try:
             from scipy.io import savemat
             savemat('calibration_data', dict(X=X, Y=Y, fs=ui.fs))
@@ -180,11 +182,19 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
                 plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
                 plt.show(block=False)
+                # save figures
+                logsdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/')
+                plt.figure(1)
+                plt.savefig(os.path.join(logsdir,'model_{}.png'.format(uname)))
+                plt.figure(2)
+                plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
+                plt.figure(3)
+                plt.savefig(os.path.join(logsdir,'summary_statistics_{}.png'.format(uname)))
             except:
                 pass
 
         # send message with calibration performance score
-        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, 1-perr))
+        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, perr))
         
     return X, Y
 
@@ -391,7 +401,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, datafile:str=None,
         tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
-        calplots:bool=False, predplots:bool=False, **kwargs):
+        calplots:bool=False, predplots:bool=False, label=None, **kwargs):
     """ run the main decoder processing loop
 
     Args:
@@ -412,6 +422,14 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         guiplots=True
     except:
         guiplots=False
+
+    # setup the saving label
+    global uname
+    from datetime import datetime 
+    uname = datetime.now().strftime("%y%m%d_%H%M")
+    if label is not None: # include label as prefix
+        uname = "{}_{}".format(label,uname)
+
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
         ppfn = butterfilt_and_downsample(order=4, stopband=stopband, fs_out=out_fs)

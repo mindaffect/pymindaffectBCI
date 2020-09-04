@@ -161,7 +161,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             
             scores.append(self.audc_score(Fyi))
 
-        # retrain with all the data
+        # final retrain with all the data
         self.fit(X, Y)
 
         if return_estimator:
