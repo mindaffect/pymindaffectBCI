@@ -707,8 +707,8 @@ class ExptScreenManager(Screen):
                "\n"+ \
                "0) Electrode Quality" +"\n"+ \
                "1) Calibration" +"\n"+ \
-               "2) Copy-spelling" +"\n"+ \
-               "3) Free-spelling" +"\n"+ \
+               "2) Cued Prediction" +"\n"+ \
+               "3) Free Typing" +"\n"+ \
                "Q) Quit"
     menu_keys = {pyglet.window.key._0:ExptPhases.SignalQuality, 
                  pyglet.window.key._1:ExptPhases.CalInstruct, 
@@ -716,7 +716,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key._3:ExptPhases.PredInstruct,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, simple_calibration=False):
+    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -732,8 +732,8 @@ class ExptScreenManager(Screen):
         self.nCal = nCal
         self.nPred = nPred
         self.framesperbit = framesperbit
-        self.simple_calibration = simple_calibration
         self.fullscreen_stimulus = fullscreen_stimulus
+        self.selectionThreshold = selectionThreshold
         self.screen = None
         self.transitionNextPhase()
         
@@ -822,7 +822,7 @@ class ExptScreenManager(Screen):
             
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
@@ -841,7 +841,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.set_sentence('')
@@ -987,7 +987,7 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, 
+def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
         framesperbit:int=1, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
@@ -1026,7 +1026,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None,
         symbols = load_symbols(symbols)
         
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, simple_calibration=simple_calibration)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold)
 
     # set per-frame callback to the draw function    
     if drawrate > 0:
@@ -1049,6 +1049,7 @@ if __name__ == "__main__":
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
     #parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
     parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
+    parser.add_argument('--selectionThreshold',type=float,help='target error threshold for selection to occur',default=.1)
     #parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
