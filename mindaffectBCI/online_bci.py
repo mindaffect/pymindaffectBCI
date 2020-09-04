@@ -151,6 +151,12 @@ def parse_args():
                 else: # otherwise just override
                     val = newval
             setattr(args,name,val)
+        
+        # set label to config file name if label is not set
+        if args.label is None:
+            # get filename without path or ext
+            tmp = os.path.splitext(os.path.basename(config_file))[0]
+            setattr(args,'label',tmp)
 
     return args
 
