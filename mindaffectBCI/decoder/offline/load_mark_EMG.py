@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 
-def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
+def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
 
     fs=1000
     ch_names=None
