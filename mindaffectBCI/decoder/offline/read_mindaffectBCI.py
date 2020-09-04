@@ -148,7 +148,7 @@ def rewrite_timestamps2servertimestamps(msgs):
     return (msgs,ab)
 
     
-def read_mindaffectBCI_messages( fn:str ):
+def read_mindaffectBCI_messages( fn:str, regress:bool=True ):
     ''' read the data from a text-file save version into a list of messages,
         WARNING: this reads the  messages as raw, and does *not* try to time-stamp clocks
                  w.r.t.  the message source.  To compare messages between clients you will
@@ -162,15 +162,19 @@ def read_mindaffectBCI_messages( fn:str ):
                 msgs.append(msg)
 
     # TODO [X]: intelligent time-stamp re-writer taking account of the client-ip
-    clientips = [ m.clientip for m in msgs ]
-    for client in set(clientips):
-        clientmsgs = [ c for c in msgs if c.clientip == client ]
-        _, ab = rewrite_timestamps2servertimestamps(clientmsgs)
+    if regress:
+        clientips = [ m.clientip for m in msgs ]
+        for client in set(clientips):
+            clientmsgs = [ c for c in msgs if c.clientip == client ]
+            _, ab = rewrite_timestamps2servertimestamps(clientmsgs)
+    else: # just use the server ts
+        for m in msgs:
+            m.timestamp = m.sts
     return msgs
 
-def read_mindaffectBCI_data_messages( fn:str ):
+def read_mindaffectBCI_data_messages( fn:str, regress=True ):
     ''' read the data from a text-file save version into a dataarray and message list '''
-    rawmsgs = read_mindaffectBCI_messages(fn)
+    rawmsgs = read_mindaffectBCI_messages(fn, regress)
     # split into datapacket messages and others
     data=[]
     msgs=[]
@@ -179,10 +183,6 @@ def read_mindaffectBCI_data_messages( fn:str ):
             data.append(m)
         else:
             msgs.append(m)
-
-    # rewrite the timestamps to the common server clock
-    #data, data2server_ab = rewrite_timestamps2servertimestamps(data)
-    #msgs, msgs2server_ab = rewrite_timestamps2servertimestamps(msgs)
 
     # convert the data messages into a single numpy array,
     # with (interpolated) time-stamps in the final 'channel'

@@ -157,6 +157,9 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         print("clsfr={} => {}".format(clsfr, score))
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10), 
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight))
+        # extract the final estimated performance
+        print("decoding curve {}".format(decoding_curve[1]))
+        perr = decoding_curve[1][-1] if len(decoding_curve)>1 else score
         try:
             from scipy.io import savemat
             savemat('calibration_data', dict(X=X, Y=Y, fs=ui.fs))
@@ -181,7 +184,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 pass
 
         # send message with calibration performance score
-        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, 1-score))
+        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, 1-perr))
         
     return X, Y
 
@@ -457,14 +460,12 @@ def mainloop(*args,**kwargs):
     run(*args,**kwargs)
 
 if  __name__ == "__main__":
-    print("called as main?")
-
     import argparse
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
-    parser.add_argument('--out_fs',type=int, help='output sample rate', default=80)
-    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=400)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=120)
+    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--stopband',type=json.loads, help='output sample rate', default=((0,3),(25,-1)))
     parser.add_argument('--predplots', action='store_true', help='flag make decoding plots are prediction time')

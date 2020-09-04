@@ -1,8 +1,8 @@
 import numpy as np
 from scipy.io import loadmat
-from utils import butter_sosfilt, window_axis, block_randomize
-from multipleCCA import robust_whitener
-from updateSummaryStatistics import updateCxx
+from mindaffectBCI.decoder.utils import butter_sosfilt, window_axis, block_randomize
+from mindaffectBCI.decoder.multipleCCA import robust_whitener
+from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 import matplotlib.pyplot as plt
 
 def load_ninapro_db2(datadir, stopband=((0,15), (45,65), (95,125), (250,-1)), envelopeband=(10,-1), trlen_ms=None, ofs=60, nvirt=20, rectify=True, whiten=True, log=True, plot=False, filterbank=None, zscore_y=True, verb=1):
