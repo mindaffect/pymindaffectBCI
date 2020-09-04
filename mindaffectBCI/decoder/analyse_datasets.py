@@ -172,15 +172,15 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     if coords is not None and 'pos2d' in coords[2]:
         ch_pos = coords[2]['pos2d']
     elif not ch_names is None and len(ch_names) > 0:
-        from readCapInf import getPosInfo
+        from mindaffectBCI.decoder.readCapInf import getPosInfo
         cnames, xy, xyz, iseeg =getPosInfo(ch_names)
         ch_pos=xy
     if ch_pos is not None:
         print('ch_pos={}'.format(ch_pos.shape))
 
     # visualize the dataset
-    from stim2event import stim2event
-    from updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
+    from mindaffectBCI.decoder.stim2event import stim2event
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
 
     print("Plot X+Y")
@@ -260,7 +260,7 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.suptitle("Fy")
     plt.show()
 
-    from normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
+    from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
     print("normalized Fy")
     plt.figure(20);plt.clf()
     # normalize every sample

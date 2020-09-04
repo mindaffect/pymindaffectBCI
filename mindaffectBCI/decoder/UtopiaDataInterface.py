@@ -315,7 +315,7 @@ class UtopiaDataInterface:
         if not self.isConnected():
             self.connect()
         if not self.isConnected():
-            return
+            return [],0,0
         if self.data_ringbuffer is None: # do special init stuff if not done
             nsamp, nmsg = self.initDataRingBuffer()
         if self.stimulus_ringbuffer is None: # do special init stuff if not done
@@ -489,23 +489,32 @@ class butterfilt_and_downsample(TransformerMixin):
 
         # preprocess -> downsample @60hz
         if self.resamprate_ > 1:
-            resamp_start = self.nsamp%self.resamprate_ # 1st sample in the re-sampled data
-            self.nsamp = self.nsamp + X.shape[self.axis] # track sample counter
+            # number samples through this cycle due to remainder of last block
+            resamp_start = self.nsamp%self.resamprate_
+            # convert to number samples needed to complete this cycle
+            # this is then the sample to take for the next cycle
+            if resamp_start > 0:
+                resamp_start = self.resamprate_ - resamp_start
             
             # allow non-integer resample rates
             idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_).astype(np.int)
-            #print('idx={}'.format(idx))
+            #print('idx={}'.format(self.nsamp+idx))
 
+            self.nsamp = self.nsamp + X.shape[self.axis] # track sample counter
             X = X[..., idx, :] # decimate X (trl, samp, d)
             if Y is not None:
                 Y = Y[..., idx, :] # decimate Y (trl, samp, y)
+        else:
+            self.nsamp = self.nsamp + X.shape[self.axis] # track sample counter
+        
         return X if Y is None else (X, Y)
 
+    @staticmethod
     def testcase():
         ''' test the filt+downsample transformation filter by incremental calling '''
         X=np.cumsum(np.random.randn(100,1),axis=0)
         # high-pass and decimate
-        fds = butterfilt_and_downsample(stopband=((0,1)),fs=100,fs_out=10)
+        fds = butterfilt_and_downsample(stopband=((0,1)),fs=200,fs_out=80)
 
         
         print("single step")
@@ -513,15 +522,16 @@ class butterfilt_and_downsample(TransformerMixin):
         m0 = fds.transform(X) # (samp,ny,ne)
         print("M0 -> {}".format(m0[:20]))
 
-        print("Step size = 1")
-        fds.fit(X[0:1,:])
+        step=6
+        print("Step size = {}".format(step))
+        fds.fit(X[0:0+step,:])
         m1=np.zeros(m0.shape,m0.dtype)
         t=0
-        for i in range(len(X)):
-            idx=slice(i,i+1)
+        for i in range(0,len(X),step):
+            idx=slice(i,i+step)
             mm=fds.transform(X[idx,:])
-            m1[t:t+mm.size]=mm
-            t = t +mm.size
+            #m1[t:t+mm.shape[0],:]=mm
+            t = t +mm.shape[0]
         print("M1 -> {}".format(m1[:20]))
         print("diff: {}".format(np.max(np.abs(m0-m1))))
 
@@ -589,6 +599,9 @@ class stim2eventfilt(TransformerMixin):
         print("m0={}\nm1={}\n,m4={}\n".format(m0,m1,m4))
             
 
+def testfilt():
+    butterfilt_and_downsample.testcase()
+
 def testRaw():
     # test with raw
     ui = UtopiaDataInterface()
@@ -610,7 +623,7 @@ def testFileProxy():
     fs = 200
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=60)
+    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=90)
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
     ui.connect()
     sigViewer(ui)
@@ -643,6 +656,7 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
 
     
 if __name__ == "__main__":
+    testfilt()
     #testRaw()
     #testPP()
     #testERP()

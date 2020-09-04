@@ -19,9 +19,9 @@
 
     "presentation":"selectionMatrix",
     "presentation_args":{
-        "ncal":20,
+        "ncal":10,
         "npred":10,
-        "symbols":"symbols.txt",
+        "symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,

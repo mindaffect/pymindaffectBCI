@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.io import loadmat
-from utils import butter_sosfilt
+from mindaffectBCI.decoder.utils import butter_sosfilt
 
 def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=None, passband=None, stopband=((0,5),(25,-1)), verb=0, ch_names=None):
 

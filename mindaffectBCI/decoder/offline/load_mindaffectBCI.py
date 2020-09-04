@@ -1,10 +1,10 @@
 import os
 import numpy as np
-from .read_mindaffectBCI import read_mindaffectBCI_data_messages
-from devent2stimsequence import devent2stimSequence, upsample_stimseq
-from utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
+from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_data_messages
+from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,1),(25,-1)), order=6, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-1000,1000)):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-1000,1000), regress=True):
     
     # load the data file
     Xfn = datadir
@@ -15,7 +15,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,
     sessdir = os.path.dirname(Xfn)
 
     if verb > 1: print("Loading {}".format(Xfn))
-    X, messages =read_mindaffectBCI_data_messages(Xfn)
+    X, messages =read_mindaffectBCI_data_messages(Xfn, regress=regress)
 
     # strip the data time-stamp channel
     data_ts = X[...,-1] # (nsamp,)
@@ -112,11 +112,18 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((0,
 def testcase():
     import sys
 
-    sessfn = '../../resources/example_data/mindaffectBCI.txt'
+    if len(sys.argv)>1:
+        sessfn = sys.argv[1]
+    else:
+        # default to last log file if not given
+        import glob
+        import os
+        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+        sessfn = max(files, key=os.path.getctime)
  
-    from load_mindaffectBCI import load_mindaffectBCI
+    from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
     print("Loading: {}".format(sessfn))
-    X, Y, coords = load_mindaffectBCI(sessfn, ofs=60)
+    X, Y, coords = load_mindaffectBCI(sessfn, ofs=90, regress=False)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
@@ -126,8 +133,10 @@ def testcase():
     print("fs={}".format(fs))
 
     # visualize the dataset
-    from analyse_datasets import debug_test_dataset
-    debug_test_dataset(X, Y, coords, tau_ms=100, evtlabs=('re','fe'), rank=1, model='cca')
+    from mindaffectBCI.decoder.analyse_datasets import debug_test_dataset
+    debug_test_dataset(X, Y, coords,
+                        #preproc_args=dict(badChannelThresh=None, badTrialThresh=None, stopband=None, whiten_spectrum=False, whiten=False),
+                        tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')
     
     
 if __name__=="__main__":

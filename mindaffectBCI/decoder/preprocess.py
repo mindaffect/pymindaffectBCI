@@ -1,4 +1,4 @@
-from utils import idOutliers, butter_sosfilt
+from mindaffectBCI.decoder.utils import idOutliers, butter_sosfilt
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
