@@ -7,7 +7,7 @@ from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import dedupY0
-from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
+from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_erp
 import os
 
 PREDICTIONPLOTS = False
@@ -138,7 +138,8 @@ def strip_unused(Y):
     return Y, used_y
 
 
-def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, calfn="calibration_data.pk", fitfn="fit_data.pk"):
+def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
+                            cv=3, calfn="calibration_data.pk", fitfn="fit_data.pk"):
     ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
     X = None
     Y = None
@@ -153,7 +154,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         
         # now call the clsfr fit method, on the true-target info
         print("Training dataset = ({},{})".format(X.shape, Y.shape))
-        cvscores = clsfr.cv_fit(X, Y, cv=2)
+        cvscores = clsfr.cv_fit(X, Y, cv=cv)
         score = np.mean(cvscores['test_score'])
         print("clsfr={} => {}".format(clsfr, score))
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10), 
@@ -172,8 +173,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 import matplotlib.pyplot as plt
                 plt.figure(1)
                 clsfr.plot_model()
+                plt.suptitle('Factored Model')
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
+                plt.suptitle('Decoding Curve')
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
                 plt.figure(3) # plot the CCA info
@@ -181,6 +184,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 Y_true = Y_true[...,0:1,:]
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
                 plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
+                plt.suptitle("Summary Statistics")
+                plt.figure(4)
+                plot_erp(Cxy,evtlabs=clsfr.evtlabs)
+                plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
                 logsdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/')
@@ -190,6 +197,8 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
                 plt.figure(3)
                 plt.savefig(os.path.join(logsdir,'summary_statistics_{}.png'.format(uname)))
+                plt.figure(4)
+                plt.savefig(os.path.join(logsdir,'erp_{}.png'.format(uname)))
             except:
                 pass
 
@@ -400,7 +409,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, datafile:str=None,
-        tau_ms:float=400, out_fs:float=80, evtlabs=None, stopband=((0,3),(25,-1)), 
+        tau_ms:float=450, out_fs:float=100, evtlabs=None, stopband=((45,65),(0,3),(25,-1)), cv=2, 
         calplots:bool=False, predplots:bool=False, label=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -451,7 +460,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            doCalibrationSupervised(ui, clsfr)
+            doCalibrationSupervised(ui, clsfr, cv=cv)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             doPredictionStatic(ui, clsfr)
@@ -482,10 +491,11 @@ if  __name__ == "__main__":
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
-    parser.add_argument('--out_fs',type=int, help='output sample rate', default=120)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
-    parser.add_argument('--stopband',type=json.loads, help='output sample rate', default=((0,3),(25,-1)))
+    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(0,3),(25,-1)))
+    parser.add_argument('--cv',type=int, help='number cross validation folds', default=2)
     parser.add_argument('--predplots', action='store_true', help='flag make decoding plots are prediction time')
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
