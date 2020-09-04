@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from .read_buffer_offline import read_buffer_offline_data, read_buffer_offline_events, read_buffer_offline_header
-from utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 
 trigger_event='stimulus.note.play' # the actual times the user hit the button
 

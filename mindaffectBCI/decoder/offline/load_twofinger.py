@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from scipy.io import loadmat, whosmat
-from utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 
 marker2stim=dict(lh=(1,3),rh=(2,4))
 

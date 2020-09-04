@@ -1,8 +1,8 @@
 import os
 import numpy as np
 from scipy.io import loadmat, whosmat
-from utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind
-from preprocess import extract_envelope
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind
+from mindaffectBCI.decoder.preprocess import extract_envelope
 
 SSVEP_FREQS=(12, 8.57, 6.67, 5.45)
 ERP_STIM_DUR = 80/1000 # 80ms
