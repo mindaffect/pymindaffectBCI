@@ -288,7 +288,7 @@ class CalibrationPhase(FSM):
         if self.trli<self.nTrials:
             # TODO []: should choose from set active objIDs?
             tgtidx = random.randint(0,len(self.objIDs)-1)
-            self.tgtidx = tgtidx if not tgtidx == self.tgtidx else tgtidx+1%len(self.objIDs)
+            self.tgtidx = tgtidx if not tgtidx == self.tgtidx else (tgtidx+1)%len(self.objIDs)
             print("Start Cal: %d/%d tgtidx=%d"%(self.trli,self.nTrials,self.tgtidx))
             self.stimulusStateStack.push(
                 SingleTrial(self.stimSeq,
@@ -329,7 +329,7 @@ class PredictionPhase(FSM):
         if self.tgti<self.nTrials:
             if self.cuedprediction :
                 tgtidx = random.randint(0,len(self.objIDs)-1)
-                self.tgtidx = tgtidx if not tgtidx == self.tgtidx else tgtidx+1%len(self.objIDs)
+                self.tgtidx = tgtidx if not tgtidx == self.tgtidx else (tgtidx+1)%len(self.objIDs)
             else:
                 self.tgtidx = -1
             print("Start Pred: %d/%d"%(self.tgti,self.nTrials))
