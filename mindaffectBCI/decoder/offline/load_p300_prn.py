@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt, window_axis, block_randomize
 
-def load_p300_prn(datadir, sessdir=None, sessfn=None, ofs=60, offset_ms=(-1000,1000), ifs=None, fr=None, stopband=((0,1), (25,-1)), order=6, subtriallen=10, verb=0, nvirt=20, chidx=slice(64)):
+def load_p300_prn(datadir, sessdir=None, sessfn=None, ofs=60, offset_ms=(-1000,1000), ifs=None, fr=None, stopband=((45,65), (0,1), (25,-1)), order=4, subtriallen=10, verb=0, nvirt=20, chidx=slice(64)):
 
     # load the data file
     Xfn = datadir

@@ -4,7 +4,7 @@ from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-1000,1000), regress=True):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((45,65),(0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-1000,1000), regress=True):
     
     # load the data file
     Xfn = datadir
