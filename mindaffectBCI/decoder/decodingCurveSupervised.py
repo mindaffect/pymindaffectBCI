@@ -2,22 +2,20 @@ import numpy as np
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     '''
-    Compute a decoding curve, i.e. mistake-probability over time for various stopping rules, from the per-epoch output scores
-    
-    [aveProbErr,aveProbErrEst,integerationLengths,stopYerr,stopThresh,aveThreshPerrIntYerr,Yest,Perr]=decodingCurveSupervised(Fy,objIDs,nInt,varargin)
+    Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores
     
     Args:
         Fy  = (nModel,nTrl,nEp,nY) [nY x nEpoch x nTrl x nModel ] similarity score for each input epoch for each output
                 N.B. Supervised decoder only has 1 model!!!
-        objIDs = [ nY x 1 ] mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
+        objIDs = (nY,) mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
                 N.B. if objIDs > size(Fy,2), then additional virtual outputs are added
-        nInt = [ 2 x 1] [the number of integeration lengths to use, numThresholds] ([30,25])
+        nInt = (2,) the number of integeration lengths to use, numThresholds. Defaults to ([30,25])
     Returns:
         integerationLengths - [nInt] the actual integeration lengths in samples
-        ProbErr: (nInt: float) empherical error probablility at this integeration length
+        ProbErr: (nInt,)float empherical error probablility at this integeration length
         ProbErrEst(np.ndarray): (nInt: float) decoder estimate of the error rate for each integeration length
-        StopPerr - [nInt] error rate at this average trial length when using ProbErrEst-thresholding based stopping
-        StopThresh - [nInt] ProbErrEst threshold used to get this average trial length.
+        StopPerr - (nInt,) error rate at this average trial length when using ProbErrEst-thresholding based stopping
+        StopThresh - (nInt,) ProbErrEst threshold used to get this average trial length.
         Yerr(np.ndarray): (nTrl,nInt : bool) flag if estimate was correct at this integeration length for this trial 
         Perr(np.ndarray): (nTrl,nInt : float) compute probability of error for this integeration length and trial
     '''
