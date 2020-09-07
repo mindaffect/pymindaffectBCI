@@ -150,7 +150,7 @@ def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
     X = np.real(ifft(Fx,axis=axis))
     return (X,W)
 
-def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None):
+def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None, log=False):
     import matplotlib.pyplot as plt
     from scipy.signal import welch
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
@@ -158,9 +158,15 @@ def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None):
     print('FX={}'.format(FX.shape))
     plt.figure(18);plt.clf()
     muFX = np.median(FX,axis=0,keepdims=True)
-    ylim = (0,2*np.median(np.max(muFX,axis=-2),axis=-1))
-    plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)
-    plt.suptitle("Grand average spectrum")
+    if log:
+        muFX = 10*np.log10(muFX)
+        unit='db (10*log10(uV^2))'
+        plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs)       
+    else:
+        unit='uV^2'
+        ylim = (0,2*np.median(np.max(muFX,axis=-2),axis=-1))
+        plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)       
+    plt.suptitle("Grand average spectrum ({})".format(unit))
 
 def extract_envelope(X,fs,
                      stopband=None,whiten=True,filterbank=None,log=True,env_stopband=(10,-1),
