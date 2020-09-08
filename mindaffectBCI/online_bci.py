@@ -26,6 +26,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     from mindaffectBCI.decoder import startUtopiaHub
     hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
     hub.start()
+    sleep(1)
 
     #---------------------------ACQUISATION ------------------------------
     # start the ganglion acquisation process
@@ -36,6 +37,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         # don't run acq driver here, user will start it manually
         acquisation = None
     elif acquisation == 'fakedata':
+        print('Starting fakedata')
         from mindaffectBCI.examples.acquisation import utopia_fakedata
         acq_args=dict(host='localhost', nch=4, fs=200)
         acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
@@ -80,6 +82,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     if hub is not None and not hub.is_alive():
         raise ValueError("Hub didn't start correctly!")
     if acquisation is not None and not acquisation.is_alive():
+        print("Acq didn't start correctly!")
         raise ValueError("Acquisation didn't start correctly!")
     if decoder is not None and not decoder.is_alive():
         raise ValueError("Decoder didn't start correctly!")
