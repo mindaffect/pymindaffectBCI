@@ -47,7 +47,8 @@ class RingBuffer:
         self.bufshape = (int(maxsize), )+shape
         self.buffer = np.zeros((2*int(maxsize), np.prod(shape)), dtype=dtype) # store as 2d
         # position for the -1 element. N.B. start maxsize so pos-maxsize is always valid
-        self.pos = int(maxsize) 
+        self.pos = int(maxsize)
+        self.n = 0 # count of total number elements added to the buffer
         self.copypos = 0 # position of the last element copied to the 1st half
         self.copysize = 0 # number entries to copy as a block
 
@@ -58,15 +59,20 @@ class RingBuffer:
     def extend(self, x):
         '''add a group of elements to the ring buffer'''
         # TODO[] : incremental copy to the 1st half, to spread the copy cost?
-        if self.pos+x.shape[0] >= self.buffer.shape[0]:
-            nx = x.shape[0]
+        nx = x.shape[0]
+        if self.pos+nx >= self.buffer.shape[0]:
             flippos = self.buffer.shape[0]//2
             # flippos-nx to 1st half
             self.buffer[:(flippos-nx), :] = self.buffer[(self.pos-(flippos-nx)):self.pos, :]
             # move cursor to end 1st half
             self.pos = flippos-nx
-        self.buffer[self.pos:self.pos+x.shape[0], :] =  x.reshape((x.shape[0], self.buffer.shape[1]))
-        self.pos = self.pos+x.shape[0]
+
+        # insert in the buffer
+        self.buffer[self.pos:self.pos+nx, :] =  x.reshape((nx, self.buffer.shape[1]))
+        # move the cursor
+        self.pos = self.pos+nx
+        # update the count
+        self.n = self.n + nx
         return self
     
     @property
@@ -371,6 +377,104 @@ def idOutliers(X, thresh=4, axis=-2, verbosity=1):
         print("%d bad" % (np.sum(bad.ravel())))
     return (bad, power)
 
+class linear_trend_tracker():
+    """ linear trend tracker with forgetting factor
+    """   
+
+    def __init__(self,halflife=10):
+        self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
+        self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
+
+    def fit(self,X,Y):
+        if hasattr(X,'__iter__'):
+            N = len(X)
+            self.X0=X[0,...] 
+            self.Y0=Y[0,...] 
+        else:
+            N = 1
+            self.X0 = X
+            self.Y0 = Y
+        self.N = 1
+        self.Xlast = self.X0
+        self.Ylast = self.Y0
+        self.sX = 0
+        self.sY = 0
+        self.sXX = 0
+        self.sYX = 0
+        self.sYY = 0
+        self.a=1
+        self.b=0
+        if N > 1:
+            self.transform(X[1:,...],Y[1:,...])
+
+    def transform(self,X,Y):
+        if not hasattr(self,'X0'):
+            self.fit(X,Y)
+            return Y
+
+        if np.all(X==self.Xlast) or np.all(Y==self.Ylast):
+            return self.getY(X)
+  
+        ## center x/y
+        cY  = Y - self.Y0
+        cX  = X - self.X0
+        N = len(X) if hasattr(X,'__iter__') else 1
+        # update the 1st and 2nd order summary statistics 
+        wght    = self.alpha**N
+        self.N  = wght*self.N   + N
+        self.sY = wght*self.sY  + np.sum(cY,axis=0)
+        self.sX = wght*self.sX  + np.sum(cX,axis=0)
+        self.sYY= wght*self.sYY + np.sum(cY*cY,axis=0)
+        self.sYX= wght*self.sYX + np.sum(cY*cX,axis=0)
+        self.sXX= wght*self.sXX + np.sum(cX*cX,axis=0)
+
+        if self.N < self.warmup_weight:
+            return Y
+
+        # update the fit parameters
+        Yvar  = self.sYY - self.sY * self.sY / self.N
+        Xvar  = self.sXX - self.sX * self.sX / self.N
+        YXvar = self.sYX - self.sY * self.sX / self.N
+        self.a = (YXvar / Xvar + Yvar/YXvar )/2        
+        # update the bias given the estimated slope b = mu_y - a * mu_x
+        # being sure to include the shift to the origin!
+        self.b = (self.Y0 + self.sY / self.N) - self.a * (self.X0 + self.sX / self.N)
+        #self.b = (self.sY / self.N) - self.a * (self.sX / self.N)
+
+        # return the updated Y after regressing to the X
+        # N.B. don't forget to use the *non* centered X!
+        return self.getY(X)
+
+    def getX(self,y):
+        return ( y  - self.b ) / self.a 
+
+    def getY(self,x):
+        return self.a * (x) + self.b
+
+    @staticmethod
+    def testcase():
+        X = np.arange(1000) + np.random.randn(1)*1e6
+        a = 1000/50 
+        b = 1000*np.random.randn(1)
+        Ytrue= a*X+b
+        Y    = Ytrue+ np.random.standard_normal(Ytrue.shape)*10
+
+        ltt = linear_trend_tracker()
+        ltt.fit(X[0],Y[0]) # check scalar inputs
+        step = 30
+        idxs = list(range(step,X.shape[0],step))
+        ab = np.zeros((len(idxs),2))
+        print("{}) a={} b={}".format('true',a,b))
+        for i,j in enumerate(idxs):
+            yt = ltt.transform(X[j-step:j],Y[j-step:j])
+            ab[i,:] = (ltt.a,ltt.b)
+            yest=ltt.getY(X[j])
+            print("{:4d}) a={:5f} b={:5f}\ty-y_true={:2.5f}\ty_est-y_true={:2.5f}".format(j,ab[i,0],ab[i,1],
+                         Ytrue[j]-Y[j],Ytrue[j]-yest))
+        import matplotlib.pyplot as plt
+        plt.plot(idxs,ab[:,0]-a,label='a')
+        plt.plot(idxs,ab[:,1]-b,label='b')
+        plt.legend()
 
 
 try:
@@ -662,3 +766,5 @@ def test_sosfilt_py():
 #     K= sum(a)/sum(b);             # amplitude scale factor
 #     b= K*b;    
 
+if __name__=='__main__':
+    linear_trend_tracker.testcase()

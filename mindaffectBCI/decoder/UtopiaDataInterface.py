@@ -21,17 +21,18 @@
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
 from collections import deque
-from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment
+from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment, linear_trend_tracker
 from time import sleep
 import numpy as np
 
 class UtopiaDataInterface:
     # TODO [X] : infer valid data time-stamps
-    # TODO [] : smooth and de-jitter the data time-stamps
+    # TODO [X] : smooth and de-jitter the data time-stamps
     # TODO [] : expose a (potentially blocking) message generator interface
     # TODO [X] : ring-buffer for the stimulus-state also, so fast random access
     # TODO [X] : rate limit waiting to reduce computational load
-    
+    VERBOSITY = 1
+
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
                  timeout_ms=100, mintime_ms=50, fs=None, U=None):
@@ -54,7 +55,9 @@ class UtopiaDataInterface:
 
         # DataPackets
         self.data_ringbuffer = None # init later...
-        self.data_timestamp = None # ts of most recent processed data
+        self.data_timestamp = None # ts of last data packet seen
+        self.last_sample_timestamp = None # ts of the last preprocessed packed added to ring buffer
+        self.sample2timestamp = None # sample tracker to de-jitter time-stamp information
         self.data_preprocessor = data_preprocessor # function to pre-process the incomming data
 
         # StimulusEvents
@@ -74,15 +77,9 @@ class UtopiaDataInterface:
         self.last_log_ts = None
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
         self.noise2sig_halflife = (5000,500) # noise2sig estimate halflife
-        # TODO []: move into a exp-move-ave power est class
-        self.raw_power_N = 0
-        self.raw_power = 0
-        self.raw_mean_N = 0
-        self.raw_mean = 0  
-        self.preproc_power_N = 0
-        self.preproc_power = 0
-        self.preproc_mean_N = 0
-        self.preproc_mean = 0
+        # TODO [x]: move into a exp-move-ave power est class
+        self.raw_power = None
+        self.preproc_power = None
 
     def connect(self, host=None, port=-1, queryifhostnotfound=True):
         '''make a connection to the utopia host'''
@@ -140,15 +137,14 @@ class UtopiaDataInterface:
         if self.data_preprocessor:
             self.data_preprocessor.fit(np.array(databuf[0].samples), fs=self.raw_fs) # tell it the sample rate
 
-        # apply the data packet pre-processing
-        databuf = [self.processDataPacket(m) for m in databuf]
-        # strip empty packets (which may happen because of downsampling in the pre-processor)
-        databuf = [m for m in databuf if m.size > 0]
+        # apply the data packet pre-processing -- to get the info
+        # on the data state after pre-processing
+        tmpdatabuf = [self.processDataPacket(m) for m in databuf]
+        # strip empty packets
+        tmpdatabuf = [ d for d in tmpdatabuf if d.shape[0]>0]
         # estimate the sample rate of the pre-processed data
-        pp_nsamp = sum([d.shape[0] for d in databuf]) - databuf[0].shape[0]
-        # TODO []: fix if empty datapacket?
-        pp_dur = (databuf[-1][-1,-1] - databuf[0][-1,-1])/1000.0 #[-1, -1]-databuf[0][-1, -1])/1000.0
-        self.fs = pp_nsamp/pp_dur # fs = nSamp/time
+        pp_nsamp = sum([d.shape[0] for d in tmpdatabuf]) - tmpdatabuf[0].shape[0]
+        self.fs = pp_nsamp/dur # fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
 
         # create the ring buffer, big enough to store the pre-processed data
@@ -156,11 +152,15 @@ class UtopiaDataInterface:
             print("Warning: re-init data ring buffer")
         # TODO []: why does the datatype of the ring buffer matter so much? Is it because of uss?
         #  Answer[]: it's the time-stamps, float32 rounds time-stamps to 24bits
-        self.data_ringbuffer = RingBuffer(maxsize=self.fs*self.datawindow_ms/1000, shape=databuf[0].shape[1:], dtype=np.float32)
+        self.data_ringbuffer = RingBuffer(maxsize=self.fs*self.datawindow_ms/1000, shape=tmpdatabuf[0].shape[1:], dtype=np.float32)
 
         # insert the warmup data into the ring buffer
+        self.data_timestamp=None # reset last seen data
+        # use linear trend tracker to de-jitter the sample timestamps
+        self.sample2timestamp = linear_trend_tracker(halflife=1000)
         for d in databuf:
-            # init the ring-buffer if needed
+            # apply the pre-processing again (this time with fs estimated)
+            d = self.processDataPacket(d)
             self.data_ringbuffer.extend(d)
 
         return (nsamp, nmsg)
@@ -190,9 +190,12 @@ class UtopiaDataInterface:
             # warning-- with agressive downsample this may not produce any data!
             d = self.data_preprocessor.transform(d)
 
-            # BODGE: running estimate of the electrode-quality
-            if self.send_signalquality:
+            # BODGE: running estimate of the electrode-quality, ONLY after initialization!
+            if self.send_signalquality and self.data_ringbuffer is not None:
                 self.update_and_send_ElectrodeQualities(d_raw, d, m.timestamp)
+
+                #if self.VERBOSITY > 0 and self.data_ringbuffer is not None:
+                #    self.plot_raw_preproc_data(d_raw,d,m.timestamp)
 
         if d.size > 0 :
             # If have data to add to the ring-buffer, guarding for time-stamp wrap-around
@@ -201,24 +204,68 @@ class UtopiaDataInterface:
             if self.data_timestamp is not None and m.timestamp < self.data_timestamp:
                 print("Warning: Time-stamp wrap-around detected!!")
 
-            if self.data_timestamp is not None and self.data_timestamp < m.timestamp:
-                # simple linear interpolation for the sample time-stamps
-                ts = np.linspace(self.data_timestamp, m.timestamp, len(d)+1)
-                ts = ts[1:]
-            else:                
-                if self.fs :
-                    # interpolate with the estimated sample rate                    
-                    ts = np.arange(-len(d)+1,1)*(1000/self.fs) + m.timestamp
-                else:
-                    # give all same timestamp
-                    ts = np.ones(len(d))*m.timestamp
-
-            # combine data with timestamps
-            d = np.concatenate((np.array(d), ts[:, np.newaxis]), 1)
+            d = self.add_sample_timestamps(d,m.timestamp,self.fs)
 
         # update the last time-stamp tracking
         self.data_timestamp= m.timestamp
         return d
+
+    def add_sample_timestamps(self,d:np.ndarray,timestamp:float,fs:float):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            d (np.ndarray): (t,d) the data matrix to attach time stamps to
+            timestamp (float): the timestamp of the last sample of d
+            fs (float): the nomional sample rate of d
+
+        Returns:
+            np.ndarray: (t,d+1) data matrix with attached time-stamp channel
+        """
+        if self.last_sample_timestamp is not None and self.last_sample_timestamp < timestamp:
+            # update the tracker for the sample-number to sample timestamp mapping
+            if self.sample2timestamp is not None:
+                n=self.data_ringbuffer.n+len(d)
+                #print("n={} ts={}".format(n,timestamp))
+                newtimestamp = self.sample2timestamp.transform(n,timestamp)
+                #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
+                # use the corrected de-jittered time-stamp -- if it's not tooo different
+                if abs(timestamp-newtimestamp) < 50:
+                    timestamp = newtimestamp
+
+            # simple linear interpolation for the sample time-stamps
+            ts = np.linspace(self.last_sample_timestamp, timestamp, len(d)+1)
+            ts = ts[1:]
+        else:                
+            if fs :
+                # interpolate with the estimated sample rate                    
+                ts = np.arange(-len(d)+1,1)*(1000/fs) + timestamp
+            else:
+                # give all same timestamp
+                ts = np.ones(len(d))*timestamp
+
+        # combine data with timestamps
+        d = np.concatenate((np.array(d), ts[:, np.newaxis]), 1)
+        self.last_sample_timestamp = timestamp
+        return d
+
+    def plot_raw_preproc_data(self, d_raw, d_preproc, ts):
+        '''debugging function to check the diff between the raw and pre-processed data'''
+        if not hasattr(self,'rawringbuffer'):
+            self.preprocringbuffer=RingBuffer(maxsize=self.fs*3,shape=(d_preproc.shape[-1]+1,))
+            self.rawringbuffer=RingBuffer(maxsize=self.raw_fs*3,shape=(d_raw.shape[-1]+1,))
+        d_preproc = self.add_sample_timestamps(d_preproc,ts,self.fs)
+        self.preprocringbuffer.extend(d_preproc)
+        d_raw = self.add_sample_timestamps(d_raw,ts,self.raw_fs)
+        self.rawringbuffer.extend(d_raw)
+        if self.last_sigquality_ts is None or ts > self.last_sigquality_ts + self.send_sigquality_interval:
+            import matplotlib.pyplot as plt
+            plt.figure(10);plt.clf();
+            idx = np.flatnonzero(self.rawringbuffer[:,-1])[0]
+            plt.subplot(211); plt.cla(); plt.plot(self.rawringbuffer[idx:,-1],self.rawringbuffer[idx:,:-1])
+            idx = np.flatnonzero(self.preprocringbuffer[:,-1])[0]
+            plt.subplot(212); plt.cla(); plt.plot(self.preprocringbuffer[idx:,-1],self.preprocringbuffer[idx:,:-1])
+            plt.show(block=False)
+
 
     def processStimulusEvent(self, m: StimulusEvent):
         '''pre-process a StimulusEvent message ready to be inserted into the stimulus ringbuffer'''
@@ -244,54 +291,52 @@ class UtopiaDataInterface:
         ''' compute running estimate of electrode qality and stream it '''
         raw_power, preproc_power = self.update_electrode_powers(d_raw, d_preproc)
 
-        # noise2signal estimated as removed raw power (assumed=noise) to preprocessed power (assumed=signal)
-        raw_avepower = np.sqrt(self.raw_power / self.raw_power_N)
-        preproc_avepower = np.sqrt(self.preproc_power / self.preproc_power_N)
-        noise2sig = np.maximum(float(1e-6), np.abs(raw_avepower - preproc_avepower)) /  np.maximum(float(1e-8),preproc_avepower)
+        # convert to average amplitude
+        raw_amp = np.sqrt(raw_power)
+        preproc_amp = np.sqrt(preproc_power)
+
+        # noise2signal estimated as removed raw amplitude (assumed=noise) to preprocessed amplitude (assumed=signal)
+        noise2sig = np.maximum(float(1e-6), np.abs(raw_amp - preproc_amp)) /  np.maximum(float(1e-8),preproc_amp)
 
         # hack - detect disconnected channels
-        noise2sig[ self.raw_power/self.raw_power_N < 1e-8] = 100
+        noise2sig[ raw_power < 1e-6 ] = 100
+
+        # hack - detect filter artifacts = preproc power is too big..
+        noise2sig[ preproc_amp > raw_amp*10 ] = 100
 
         # hack - cap to 100
         noise2sig = np.minimum(noise2sig,100)
 
         # rate limit sending of signal-quality messages
         if self.last_sigquality_ts is None or ts > self.last_sigquality_ts + self.send_sigquality_interval:
-            print("SigQ:\nraw_power={} ({}/{})\npp_power={} ({}/{})\nnoise2sig={}".format(
-                   raw_avepower,raw_power,d_raw.shape[0],
-                   preproc_avepower,preproc_power,d_preproc.shape[0],
+            print("SigQ:\nraw_power=({}/{})\npp_power=({}/{})\nnoise2sig={}".format(
+                   raw_amp,d_raw.shape[0],
+                   preproc_amp,d_preproc.shape[0],
                    noise2sig))
             print("Q",end='')
             self.sendMessage(SignalQuality(ts, noise2sig))
             self.last_sigquality_ts = ts
 
+            if self.VERBOSITY>2:
+                # plot the sample time-stamp jitter...
+                import matplotlib.pyplot as plt
+                plt.figure(10)
+                ts = self.data_ringbuffer[:,-1]
+                idx = np.flatnonzero(ts)
+                if len(idx)>0:
+                    ts = ts[idx[0]:]
+                    plt.subplot(211); plt.cla(); plt.plot(np.diff(ts)); plt.title('diff time-sample')
+                    plt.subplot(212); plt.cla(); plt.plot((ts-ts[0])-np.arange(len(ts))*1000.0/self.fs); plt.title('regression against sample-number')
+                    plt.show(block=False)
+
     def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
         ''' track exp-weighted-moving average centered power for 2 input streams '''
-        # smoothed per-channel raw signal power -- 
-        # BODGE: center over time+space to correct for arbitary offsets over all channels
-        # TODO []: use a separate baseline removal filter for the raw-version?
-        #          or leave it non-centered?  so it's an indirect measure of the offset?
-        # compute the sliding window weight for the old data
-        alpha_mu = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife[0] / 1000.0))
-        alpha_pow = 2** (-(d_raw.shape[0] / self.raw_fs) / (self.noise2sig_halflife[1] / 1000.0))
-
-        # compute exp-weighted mean and exp-weighted variance==power
-        self.raw_mean_N     = self.raw_mean_N*alpha_mu + d_raw.shape[0]
-        self.raw_mean  = self.raw_mean*alpha_mu + np.sum(d_raw, axis=0)
-        d_raw = d_raw.copy() - self.raw_mean / self.raw_mean_N
-        raw_power =  np.sum(d_raw**2, axis=0)
-        self.raw_power_N     = self.raw_power_N*alpha_mu + d_raw.shape[0]
-        self.raw_power = self.raw_power*alpha_pow + raw_power
-        
-        # compute exp-weighted mean and exp-weighted variance==power
-        self.preproc_mean_N = self.preproc_mean_N*alpha_mu + d_preproc.shape[0]
-        self.preproc_mean = self.preproc_mean*alpha_mu + np.sum(d_preproc, axis=0)
-        d_preproc = d_preproc.copy() - self.preproc_mean / self.preproc_mean_N
-        preproc_power = np.sum(d_preproc**2, axis=0)
-        self.preproc_power_N = self.preproc_power_N*alpha_pow + d_preproc.shape[0]
-        self.preproc_power = self.preproc_power*alpha_pow + preproc_power
-
-        return (self.raw_power, self.preproc_power)
+        if self.raw_power is None:
+            self.raw_power = power_tracker(self.raw_fs/10, self.raw_fs, self.raw_fs)
+            self.preproc_power = power_tracker(self.fs/10, self.fs, self.fs)
+        self.raw_power.transform(d_raw)
+        self.preproc_power.transform(d_preproc)
+        return (self.raw_power.power(), self.preproc_power.power())
 
 
     def update(self, timeout_ms=None, mintime_ms=None):
@@ -442,7 +487,7 @@ class UtopiaDataInterface:
 try:
     from sklearn.base import TransformerMixin
 except:
-    # fake the class if sklearn is not available
+    # fake the class if sklearn is not available, e.g. Android/iOS
     class TransformerMixin:
         def __init__():
             pass
@@ -609,6 +654,65 @@ class stim2eventfilt(TransformerMixin):
         print("m0={}\nm1={}\n,m4={}\n".format(m0,m1,m4))
             
 
+class power_tracker():
+    def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
+        # convert to per-sample decay factor
+        self.alpha_mu = self.hl2alpha(fs * halflife_mu_ms / 1000.0 ) 
+        self.alpha_power= self.hl2alpha(fs * halflife_power_ms / 1000.0 )
+        self.sX_N = None
+        self.sX = None
+        self.sXX_N = None
+        self.sXX = None
+
+    def hl2alpha(self,hl):
+        return np.exp(np.log(.5)/hl)
+
+    def fit(self,X):
+        self.sX_N = X.shape[0]
+        self.sX = np.sum(X,axis=0)
+        self.sXX_N = X.shape[0]
+        self.sXX = np.sum((X-(self.sX/self.sX_N))**2,axis=0)
+        return self.power()
+
+    def transform(self, X: np.ndarray):
+        ''' compute the exponientially weighted centered power of X '''
+        if self.sX is None: # not fitted yet!
+            return self.fit(X)
+        # compute updated mean
+        alpha_mu   = self.alpha_mu ** X.shape[0]
+        self.sX_N  = self.sX_N*alpha_mu + X.shape[0]
+        self.sX    = self.sX*alpha_mu + np.sum(X, axis=0)
+        # center and compute updated power
+        alpha_pow  = self.alpha_power ** X.shape[0]
+        self.sXX_N = self.sXX_N*alpha_pow + X.shape[0]
+        self.sXX   = self.sXX*alpha_pow + np.sum((X-(self.sX/self.sX_N))**2, axis=0)       
+        return self.power()
+    
+    def mean(self):
+        return self.sX / self.sX_N
+    def power(self):
+        return self.sXX / self.sXX_N
+    
+    def testcase(self):
+        X = np.random.randn(10000,2)
+        #X = np.cumsum(X,axis=0)
+        pt = power_tracker(100,100,100)
+        print("All at once: power={}".format(pt.transform(X)))  # all at once
+        pt = power_tracker(100,1000,1000)
+        print("alpha_mu={} alpha_pow={}".format(pt.alpha_mu,pt.alpha_power) )
+        step = 30
+        idxs = list(range(step,X.shape[0],step))
+        powers = np.zeros((len(idxs),X.shape[-1]))
+        mus = np.zeros((len(idxs),X.shape[-1]))
+        for i,j in enumerate(idxs):
+            powers[i,:] = np.sqrt(pt.transform(X[j-step:j,:]))
+            mus[i,:]=pt.mean()
+        for d in range(X.shape[-1]):
+            plt.subplot(X.shape[-1],1,d+1)
+            plt.plot(X[:,d])
+            plt.plot(idxs,mus[:,d])
+            plt.plot(idxs,powers[:,d])
+
 def testfilt():
     butterfilt_and_downsample.testcase()
 
@@ -627,13 +731,13 @@ def testPP():
     ui.connect()
     sigViewer(ui)
 
-def testFileProxy():
+def testFileProxy(filename):
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
-    U = FileProxyHub()
+    U = FileProxyHub(filename)
     fs = 200
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=90)
+    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=200)
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
     ui.connect()
     sigViewer(ui)
@@ -666,8 +770,8 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
 
     
 if __name__ == "__main__":
-    testfilt()
+    #testfilt()
     #testRaw()
     #testPP()
     #testERP()
-    testFileProxy()
+    testFileProxy("..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt")
