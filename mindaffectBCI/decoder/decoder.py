@@ -505,7 +505,7 @@ if  __name__ == "__main__":
 
     if args.savefile is not None:
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
-        U = FileProxyHub(args.savefile)
+        U = FileProxyHub(args.savefile,use_server_ts=False)
         ppfn = butterfilt_and_downsample(order=4, stopband=args.stopband, fs_out=args.out_fs)
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
