@@ -4,7 +4,8 @@ import re
 from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
 
 # named reg-exp to parse the different messages types log lines
-serverts_re = re.compile(r'^sts:(?P<sts>[-0-9]*)\W')
+recievedts_re = re.compile(r'\Wrts:(?P<sts>[-0-9]*)\W')
+serverts_re = re.compile(r'.*sts:(?P<sts>[-0-9]*)\W')
 clientts_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W')
 clientip_re = re.compile(r'.*<-\W(?P<ip>[0-9.:]*)$')
 stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-/.*$')
@@ -162,12 +163,15 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=True ):
                 msgs.append(msg)
 
     # TODO [X]: intelligent time-stamp re-writer taking account of the client-ip
-    if regress:
+    if regress is None:
+        # do nothing, leave client + server time-stamps in place
+        pass
+    elif regress==True:
         clientips = [ m.clientip for m in msgs ]
         for client in set(clientips):
             clientmsgs = [ c for c in msgs if c.clientip == client ]
             _, ab = rewrite_timestamps2servertimestamps(clientmsgs)
-    else: # just use the server ts
+    elif regress==False: # just use the server ts
         for m in msgs:
             m.timestamp = m.sts
     return msgs
@@ -209,8 +213,11 @@ def testcase(fn=None):
 
     
 if __name__=="__main__":
-    import sys
-    fn = None
+    # default to last log file if not given
+    import glob
+    import os
+    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+    fn = max(files, key=os.path.getctime)
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
     testcase(fn)
