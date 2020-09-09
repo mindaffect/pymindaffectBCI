@@ -381,22 +381,19 @@ class linear_trend_tracker():
     """ linear trend tracker with forgetting factor
     """   
 
-    def __init__(self,halflife=10):
+    def __init__(self,halflife=1000,step_halflife=10,step_threshold=5):
         self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
         self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
+        self.N=0
+        self.step_threshold=step_threshold 
+        if step_halflife is None and halflife:
+            step_halflife = max(halflife/100,1) 
+        self.step_alpha = np.exp(np.log(.5)/step_halflife) if step_halflife else .999
 
-    def fit(self,X,Y):
-        if hasattr(X,'__iter__'):
-            N = len(X)
-            self.X0=X[0,...] 
-            self.Y0=Y[0,...] 
-        else:
-            N = 1
-            self.X0 = X
-            self.Y0 = Y
-        self.N = 1
-        self.Xlast = self.X0
-        self.Ylast = self.Y0
+    def reset(self):
+        self.N = 0
+        self.X0 = None
+        self.Y0 = None
         self.sX = 0
         self.sY = 0
         self.sXX = 0
@@ -404,21 +401,37 @@ class linear_trend_tracker():
         self.sYY = 0
         self.a=1
         self.b=0
-        if N > 1:
-            self.transform(X[1:,...],Y[1:,...])
+        self.err=0
+        self.step_N = 0
+        self.step_err = 0
+
+    def fit(self,X,Y):
+        self.reset()
+        if hasattr(X,'__iter__'):
+            self.N = len(X)
+            self.X0=X[0,...] 
+            self.Y0=Y[0,...] 
+            if len(X)>1 :
+                self.transform(X[1:,...],Y[1:,...])
+        else:
+            self.N = 1
+            self.X0 = X
+            self.Y0 = Y
+        self.a = 1
+        self.b = self.Y0 - self.a * self.X0
 
     def transform(self,X,Y):
-        if not hasattr(self,'X0'):
+        if self.N==0:
             self.fit(X,Y)
             return Y
 
-        if np.all(X==self.Xlast) or np.all(Y==self.Ylast):
-            return self.getY(X)
+        #if np.all(X==self.Xlast) or np.all(Y==self.Ylast):
+        #    return self.getY(X)
   
         ## center x/y
         # N.B. be sure to do all the analysis in floating point to avoid overflow
-        cX  = float(X - self.X0)
-        cY  = float(Y - self.Y0)
+        cX  = np.array(X - self.X0,dtype=float)
+        cY  = np.array(Y - self.Y0, dtype=float)
         N = len(X) if hasattr(X,'__iter__') else 1
         # update the 1st and 2nd order summary statistics 
         wght    = self.alpha**N
@@ -429,22 +442,42 @@ class linear_trend_tracker():
         self.sYX= wght*self.sYX + np.sum(cY*cX,axis=0)
         self.sXX= wght*self.sXX + np.sum(cX*cX,axis=0)
 
-        if self.N < self.warmup_weight:
-            return Y
-
         # update the fit parameters
-        Yvar  = self.sYY - self.sY * self.sY / self.N
-        Xvar  = self.sXX - self.sX * self.sX / self.N
-        YXvar = self.sYX - self.sY * self.sX / self.N
-        self.a = (YXvar / Xvar + Yvar/YXvar )/2        
+        if self.N > 1:
+            Yvar  = self.sYY - self.sY * self.sY / self.N
+            Xvar  = self.sXX - self.sX * self.sX / self.N
+            YXvar = self.sYX - self.sY * self.sX / self.N
+            self.a = (YXvar / Xvar + Yvar/YXvar )/2        
         # update the bias given the estimated slope b = mu_y - a * mu_x
         # being sure to include the shift to the origin!
         self.b = (self.Y0 + self.sY / self.N) - self.a * (self.X0 + self.sX / self.N)
         #self.b = (self.sY / self.N) - self.a * (self.sX / self.N)
 
-        # return the updated Y after regressing to the X
-        # N.B. don't forget to use the *non* centered X!
-        return self.getY(X)
+        # check for steps in the inputs if the tracker is warmed up
+        # get our prediction for this point and use to track our prediction error
+        Yest = self.getY(X)
+        err  = np.abs(Y-Yest)
+
+        # track the prediction error, with long and short half-life
+        self.err = self.err*wght + err
+        # track with step window
+        step_wght = self.step_alpha**N
+        self.step_N = self.step_N * step_wght + N
+        self.step_err = self.step_err * step_wght + err
+
+        # only return the estimate if we've warmed up the tracker
+        if self.N < self.warmup_weight:
+            return Y
+
+        # detect change in statistics by significant difference in error statistics
+        # between long and short halflife
+        if (self.step_err / self.step_N) > (self.err / self.N) * self.step_threshold:
+            print("step-detected")
+            self.reset()
+            self.fit(X,Y)
+            Yest = Y
+
+        return Yest
 
     def getX(self,y):
         return ( y  - self.b ) / self.a 
@@ -460,9 +493,14 @@ class linear_trend_tracker():
         Ytrue= a*X+b
         Y    = Ytrue+ np.random.standard_normal(Ytrue.shape)*10
 
-        savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
+        import glob
+        import os
+        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+        savefile = max(files, key=os.path.getctime)
+        #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
         from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
         from mindaffectBCI.utopiaclient import DataPacket
+        print("Loading: {}".format(savefile))
         msgs = read_mindaffectBCI_messages(savefile,regress=None) # load without time-stamp fixing.
         dp = [ m for m in msgs if isinstance(m,DataPacket)]
         nsc = np.array([ (m.samples.shape[0],m.sts,m.timestamp) for m in dp])
@@ -470,10 +508,10 @@ class linear_trend_tracker():
         Y = nsc[:,1]
         Ytrue = nsc[:,2]
 
-        ltt = linear_trend_tracker()
+        ltt = linear_trend_tracker(1000)
         ltt.fit(X[0],Y[0]) # check scalar inputs
         step = 1
-        idxs = list(range(step,X.shape[0],step))
+        idxs = list(range(step+1,X.shape[0],step))
         ab = np.zeros((len(idxs),2))
         print("{}) a={} b={}".format('true',a,b))
         for i,j in enumerate(idxs):
