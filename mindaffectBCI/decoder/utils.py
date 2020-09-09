@@ -416,8 +416,9 @@ class linear_trend_tracker():
             return self.getY(X)
   
         ## center x/y
-        cY  = Y - self.Y0
-        cX  = X - self.X0
+        # N.B. be sure to do all the analysis in floating point to avoid overflow
+        cX  = float(X - self.X0)
+        cY  = float(Y - self.Y0)
         N = len(X) if hasattr(X,'__iter__') else 1
         # update the 1st and 2nd order summary statistics 
         wght    = self.alpha**N
@@ -459,9 +460,19 @@ class linear_trend_tracker():
         Ytrue= a*X+b
         Y    = Ytrue+ np.random.standard_normal(Ytrue.shape)*10
 
+        savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
+        from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
+        from mindaffectBCI.utopiaclient import DataPacket
+        msgs = read_mindaffectBCI_messages(savefile,regress=None) # load without time-stamp fixing.
+        dp = [ m for m in msgs if isinstance(m,DataPacket)]
+        nsc = np.array([ (m.samples.shape[0],m.sts,m.timestamp) for m in dp])
+        X = np.cumsum(nsc[:,0])
+        Y = nsc[:,1]
+        Ytrue = nsc[:,2]
+
         ltt = linear_trend_tracker()
         ltt.fit(X[0],Y[0]) # check scalar inputs
-        step = 30
+        step = 1
         idxs = list(range(step,X.shape[0],step))
         ab = np.zeros((len(idxs),2))
         print("{}) a={} b={}".format('true',a,b))
@@ -469,6 +480,8 @@ class linear_trend_tracker():
             yt = ltt.transform(X[j-step:j],Y[j-step:j])
             ab[i,:] = (ltt.a,ltt.b)
             yest=ltt.getY(X[j])
+            if abs(yest-Ytrue[j])> 1000:
+                print("argh!")
             print("{:4d}) a={:5f} b={:5f}\ty-y_true={:2.5f}\ty_est-y_true={:2.5f}".format(j,ab[i,0],ab[i,1],
                          Ytrue[j]-Y[j],Ytrue[j]-yest))
         import matplotlib.pyplot as plt
