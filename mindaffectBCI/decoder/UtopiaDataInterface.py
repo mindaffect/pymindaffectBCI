@@ -227,7 +227,7 @@ class UtopiaDataInterface:
                 n=self.data_ringbuffer.n+len(d)
                 #print("n={} ts={}".format(n,timestamp))
                 newtimestamp = self.sample2timestamp.transform(n,timestamp)
-                print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
+                #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
                 # use the corrected de-jittered time-stamp -- if it's not tooo different
                 if abs(timestamp-newtimestamp) < 50:
                     timestamp = int(newtimestamp)
