@@ -3,7 +3,7 @@ from time import sleep
 
 class FileProxyHub:
     ''' Proxy UtopiaClient which gets messages from a saved log file '''
-    def __init__(self, filename:str=None, speedup:float=None):
+    def __init__(self, filename:str=None, speedup:float=None, use_server_ts:bool=True):
         self.filename = filename
         if self.filename is None:
             # default to last log file if not given
@@ -14,6 +14,7 @@ class FileProxyHub:
         self.speedup = speedup
         self.isConnected = True
         self.lasttimestamp = None
+        self.use_server_ts = use_server_ts
         self.file = open(self.filename,'r')
     
     def getTimeStamp(self):
@@ -32,7 +33,8 @@ class FileProxyHub:
             if msg is None:
                 continue
             # re-write timestamp to server time stamp
-            msg.timestamp = msg.sts
+            if self.use_server_ts:
+                msg.timestamp = msg.sts
             # initialize the time-stamp tracking
             if self.lasttimestamp is None: 
                 self.lasttimestamp = msg.timestamp
