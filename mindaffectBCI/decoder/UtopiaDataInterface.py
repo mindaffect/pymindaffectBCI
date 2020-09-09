@@ -157,7 +157,7 @@ class UtopiaDataInterface:
         # insert the warmup data into the ring buffer
         self.data_timestamp=None # reset last seen data
         # use linear trend tracker to de-jitter the sample timestamps
-        self.sample2timestamp = linear_trend_tracker(halflife=1000)
+        self.sample2timestamp = linear_trend_tracker(halflife=5000)
         for d in databuf:
             # apply the pre-processing again (this time with fs estimated)
             d = self.processDataPacket(d)
@@ -227,10 +227,10 @@ class UtopiaDataInterface:
                 n=self.data_ringbuffer.n+len(d)
                 #print("n={} ts={}".format(n,timestamp))
                 newtimestamp = self.sample2timestamp.transform(n,timestamp)
-                #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
+                print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
                 # use the corrected de-jittered time-stamp -- if it's not tooo different
                 if abs(timestamp-newtimestamp) < 50:
-                    timestamp = newtimestamp
+                    timestamp = int(newtimestamp)
 
             # simple linear interpolation for the sample time-stamps
             ts = np.linspace(self.last_sample_timestamp, timestamp, len(d)+1)
