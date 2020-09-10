@@ -157,8 +157,9 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         cvscores = clsfr.cv_fit(X, Y, cv=cv)
         score = np.mean(cvscores['test_score'])
         print("clsfr={} => {}".format(clsfr, score))
-        decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10), 
-                                      priorsigma=(clsfr.sigma0_, clsfr.priorweight))
+        decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
+                                      priorsigma=(clsfr.sigma0_, clsfr.priorweight),
+                                      softmaxscale=clsfr.softmaxscale_)
         # extract the final estimated performance
         #print("decoding curve {}".format(decoding_curve[1]))
         #print("score {}".format(score))
