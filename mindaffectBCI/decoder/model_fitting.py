@@ -200,7 +200,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     
 class MultiCCA(BaseSequence2Sequence):
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=.02, rcond=None, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=.005, rcond=None, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
         self.rank = rank
         self.reg  = reg
