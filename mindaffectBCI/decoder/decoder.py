@@ -453,7 +453,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
             evtlabs = evtlabs.split(',')
-        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs)
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, reg=0.003)
         print('clsfr={}'.format(clsfr))
     
     current_mode = "idle"
