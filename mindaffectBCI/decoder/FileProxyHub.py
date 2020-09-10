@@ -5,7 +5,7 @@ class FileProxyHub:
     ''' Proxy UtopiaClient which gets messages from a saved log file '''
     def __init__(self, filename:str=None, speedup:float=None, use_server_ts:bool=True):
         self.filename = filename
-        if self.filename is None:
+        if self.filename is None or self.filename == '-':
             # default to last log file if not given
             import glob
             import os
