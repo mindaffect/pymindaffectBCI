@@ -86,7 +86,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
     score=clsfr.audc_score(Fy)
     print(clsfr)
     print("score={}".format(score))
-    (dc) = decodingCurveSupervised(Fy, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+    (dc) = decodingCurveSupervised(Fy, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_)
 
     return score,dc,Fy,clsfr
 
@@ -151,7 +151,7 @@ def flatten_decoding_curves(decoding_curves):
         st[di,:ll] = dc[4][:ll] 
     return il,pe,pee,se,st
 
-def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=('re', 'fe'), rank=1, model='cca', cv=True, preproc_args=None, **kwargs):
+def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=('re', 'fe'), rank=1, model='cca', cv=True, preprocess_args=None, clsfr_args=dict(), **kwargs):
     fs = coords[1]['fs'] if coords is not None else fs
     tau = int(fs*tau_ms/1000)
     offset=int(offset_ms*fs/1000)    
@@ -164,8 +164,8 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     print("Y={}".format(Y.shape))
     print("fs={}".format(fs))
 
-    if preproc_args is not None:
-        X, Y, coords = preprocess(X, Y, coords, **preproc_args)
+    if preprocess_args is not None:
+        X, Y, coords = preprocess(X, Y, coords, **preprocess_args)
 
     ch_names = coords[2]['coords'] if coords is not None else None
     ch_pos = None
@@ -219,7 +219,13 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.show()
     
     # fit the model
-    score, res, Fy, clsfr = analyse_dataset(X,Y,coords,model,evtlabs=evtlabs,cv=cv,tau_ms=tau_ms,fs=fs,offset_ms=offset_ms,rank=rank,**kwargs)
+    # override with direct keyword arguments
+    clsfr_args['evtlabs']=evtlabs
+    clsfr_args['tau_ms']=tau_ms
+    clsfr_args['fs']=fs
+    clsfr_args['offset_ms']=offset_ms
+    clsfr_args['rank']=rank
+    score, res, Fy, clsfr = analyse_dataset(X,Y,coords,model,**clsfr_args,**kwargs)
     
     plt.figure(14)
     plot_decoding_curve(*res)
@@ -422,14 +428,21 @@ if __name__=="__main__":
     #              model='cca',tau_ms=750,evtlabs=('re','anyre'),rank=3,reg=.02)
 
     from offline.load_mindaffectBCI  import load_mindaffectBCI
-    savefile = '/Users/Developer/Desktop/UtopiaMessages_2007191_1558_brainproducts.log'
+    savefile = None
+    #savefile = '/Users/Developer/Desktop/UtopiaMessages_2007191_1558_brainproducts.log'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2152_testing_python.txt'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2128_master.txt'
     #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2116_testing_gdx.txt'
     #savefile = "/Users/Developer/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
-    X, Y, coords = load_mindaffectBCI(savefile, stopband=((0,3),(25,-1)), ofs=80)
-    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', reg=.02)
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
+    if savefile is None:
+        # default to last log file if not given
+        import glob
+        import os
+        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+        savefile = max(files, key=os.path.getctime)
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(0,3),(25,-1)), ofs=60)
+    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca')
+    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()

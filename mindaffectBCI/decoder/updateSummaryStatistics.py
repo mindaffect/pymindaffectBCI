@@ -496,11 +496,11 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             times = times / fs
     if ch_names is None:
         ch_names = np.arange(A.shape[-1])
-    if ch_pos is None and len(ch_names) > 0:
+    elif ch_pos is None and len(ch_names) > 0:
         # try to load position info from capfile
         try: 
             print("trying to get pos from cap file!")
-            from readCapInf import getPosInfo
+            from mindaffectBCI.decoder.readCapInf import getPosInfo
             cnames, xy, xyz, iseeg =getPosInfo(ch_names)
             if all(iseeg):
                 ch_pos = xy
@@ -547,14 +547,15 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             pR.plot(times,R[ci,e,:],label=evtlabs[e])
         pR.title.set_text("{}".format(ci))
 
-        if ci == 0:
-            # legend only in the last plot
-            pR.legend()
-            # rotate the ticks to be readable?
-            if ch_pos is None:
-                # TODO[]: get and only set for the tick locations!
-                pA.set_xticklabels(ch_names,rotation=65)
-            
+    # legend in the temporal plot
+    axR.legend()
+    # rotate the ticks to be readable?
+    if ch_pos is None:
+        # TODO[]: get and only set for the tick locations!
+        #axA.set_xticklabels(ch_names,rotation=65)
+        pass
+
+
 def testSlicedvsContinuous():
     import numpy as np
     from utils import testSignal, sliceData, sliceY
