@@ -7,7 +7,8 @@ from mindaffectBCI.decoder.scoreStimulus import scoreStimulus, scoreStimulusCont
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
-from mindaffectBCI.decoder.normalizeOutputScores import estimate_Fy_noise_variance
+from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import calibrate_softmaxscale
 
 try:
     from sklearn.model_selection import StratifiedKFold
@@ -101,12 +102,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
 
     def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True):
-        if hasattr(self,'sigma0_'):
+        # build optional arguments if set
+        kwargs=dict()
+        if hasattr(self,'sigma0_') and self.sigma0_ is not None:
             # include the score prior
-            print('priorsigma=({},{})'.format(self.sigma0_,self.priorweight))
-            Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, priorsigma=(self.sigma0_,self.priorweight))
-        else:
-            Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels)
+            #print('priorsigma=({},{})'.format(self.sigma0_,self.priorweight))
+            kwargs['priorsigma']=(self.sigma0_,self.priorweight)
+        if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
+            kwargs['softmaxscale']=self.softmaxscale_
+
+        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, **kwargs)
         return Ptgt #(nTrl, nEp, nY)
 
     
@@ -129,7 +134,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
-    def cv_fit(self, X, Y, cv=5, fit_params={}, verbose=0, return_estimator=True, dedup0=True):
+    def cv_fit(self, X, Y, cv=5, fit_params={}, verbose=0, return_estimator=True, calibrate_softmax=True, dedup0=True):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
         # TODO [] : make more computationally efficient by pre-computing the updateSummaryStatistics etc.
         # TODO [] : conform to sklearn cross_validate signature
@@ -164,6 +169,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         # final retrain with all the data
         self.fit(X, Y)
 
+        self.sigma0_ = None
+        self.softmaxscale_ = None
         if return_estimator:
             # estimate prior for Fy using the cv'd Fy
             #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
@@ -172,7 +179,12 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)  # per-trial
             #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
             self.sigma0_ = np.median(self.sigma0_.ravel())  # ave
-            print('Sigma0{} = {}'.format(self.sigma0_.shape, self.sigma0_))
+            print('Sigma0 = {}'.format(self.sigma0_))
+
+            if calibrate_softmax:
+                # calibrate the softmax scale to give more valid probabilities
+                nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, priorsigma=(self.sigma0_,self.priorweight))
+                self.softmaxscale_ = calibrate_softmaxscale(nFy)
 
         return {'estimator': Fy, 'test_score': scores}
     

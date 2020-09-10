@@ -49,12 +49,13 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
                                                priorsigma=priorsigma)
 
     if nocontrolamplitude is not None:
-      # add a no-control pseudo-output to simulate not looking
-      #Median rather than mean?
-      mussFy=np.sum(ssFy,0)/np.maximum(2,np.sum(validTgt,0,keepdims=True)) # mean score for each trial/decisPt [ 1 x nDecis x nTrl x nMdl ]
-      # add to the scores & validTgt info
-      ssFy=cat(1,ssFy,nocontrolamplitude+mussFy)
-      validtgtTrl=cat(1,validtgtTrl,ones([1,size(validtgtTrl,2),size(validtgtTrl,3),size(validtgtTrl,4)]))
+      raise NotImplementedError('no-control signal not yet implemented correctly')
+      # # add a no-control pseudo-output to simulate not looking
+      # #Median rather than mean?
+      # mussFy=np.sum(ssFy,0)/np.maximum(2,np.sum(validTgt,0,keepdims=True)) # mean score for each trial/decisPt [ 1 x nDecis x nTrl x nMdl ]
+      # # add to the scores & validTgt info
+      # ssFy=np.concatenate((ssFy,nocontrolamplitude+mussFy),0)
+      # validtgtTrl=np.concatenate((validtgtTrl,np.ones([1,size(validtgtTrl,2),size(validtgtTrl,3),size(validtgtTrl,4)])))
 
     # compute the target probabilities over output for each model+trial
     # use the softmax approach to get Ptgt for all outputs
