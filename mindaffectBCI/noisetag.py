@@ -550,7 +550,7 @@ class Noisetag:
             self.utopiaController.removeSubscription(msgs)
 
     # methods to define what (meta) stimulus sequence we will play
-    def startExpt(self,nCal=1,nPred=20,selnThreshold=.1,
+    def startExpt(self,nCal=1,nPred=20,selectionThreshold=.1,
                   cuedprediction=False,
                   *args,**kwargs):
         if  self.stimulusStateMachineStack.stack :
@@ -559,7 +559,7 @@ class Noisetag:
         self.stimulusStateMachineStack.push(
             Experiment(self.objIDs,self.noisecode.stimSeq,
                        nCal,nPred,
-                       selnThreshold,cuedprediction,
+                       selectionThreshold,cuedprediction,
                        self.utopiaController,
                        self.stimulusStateMachineStack,
                        *args,**kwargs))

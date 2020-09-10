@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 MindAffect B.V. 
+# Copyright (c) 2019 MindAffect B.V.
 #  Author: Jason Farquhar <jason@mindaffect.nl>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -12,7 +12,7 @@
 #
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -64,13 +64,13 @@ class InstructionScreen(Screen):
         self.isDone = False
         self.clearScreen = True
         # initialize the instructions screen
-        self.instructLabel = pyglet.text.Label(x=window.width//2, 
-                                             y=window.height//2, 
-                                             anchor_x='center', 
-                                             anchor_y='center', 
-                                             font_size=24, 
-                                             color=(255, 255, 255, 255), 
-                                             multiline=True, 
+        self.instructLabel = pyglet.text.Label(x=window.width//2,
+                                             y=window.height//2,
+                                             anchor_x='center',
+                                             anchor_y='center',
+                                             font_size=24,
+                                             color=(255, 255, 255, 255),
+                                             multiline=True,
                                              width=int(window.width*.8))
         self.set_text(text)
         print("Instruct (%dms): %s"%(duration, text))
@@ -78,7 +78,7 @@ class InstructionScreen(Screen):
     def reset(self):
         self.isRunning = False
         self.isDone = False
-        
+
     def set_text(self, text):
         '''set/update the text to show in the instruction screen'''
         if type(text) is list:
@@ -103,8 +103,8 @@ class InstructionScreen(Screen):
         return self.isDone
 
     def elapsed_ms(self):
-        return getTimeStamp()-self.t0    
-    
+        return getTimeStamp()-self.t0
+
     def draw(self, t):
         '''Show a block of text to the user for a given duration on a blank screen'''
         if not self.isRunning:
@@ -175,7 +175,7 @@ class ConnectingScreen(InstructionScreen):
     query_text = "Couldnt auto-discover mindaffect decoder\n\nPlease enter decoder address: %s"
     drawconnect_timeout_ms = 50
     autoconnect_timeout_ms = 5000
-    
+
     def __init__(self, window, noisetag, duration=150000):
         super().__init__(window, self.prefix_text + self.searching_text, duration, False)
         self.noisetag = noisetag
@@ -190,12 +190,12 @@ class ConnectingScreen(InstructionScreen):
         if not self.isRunning:
             super().draw(t)
             return
-        
+
         if not self.noisetag.isConnected():
             if self.stage == 0: # try-connection
                 print('Not connected yet!!')
-                self.noisetag.connect(self.host, self.port, 
-                                      queryifhostnotfound=False, 
+                self.noisetag.connect(self.host, self.port,
+                                      queryifhostnotfound=False,
                                       timeout_ms=self.drawconnect_timeout_ms)
                 if self.noisetag.isConnected():
                     self.set_text(self.prefix_text + self.connected_text%(self.noisetag.gethostport()))
@@ -208,7 +208,7 @@ class ConnectingScreen(InstructionScreen):
                     # ensure old key-presses are gone
                     last_text = None
                     last_key_press = None
-                    
+
             elif self.stage == 1:  # query hostname
                 # query the user for host/port
                 # accumulate user inputs
@@ -225,13 +225,58 @@ class ConnectingScreen(InstructionScreen):
                         self.usertext = ''
                         self.set_text(self.prefix_text + self.trying_text%(self.host))
                         self.stage = 0 # back to try-connection stage
-                    elif last_text: 
+                    elif last_text:
                         # add to the host string
                         self.usertext += last_text
                     last_text = None
                 if self.stage == 1: # in same stage
                     # update display with user input
                     self.set_text(self.prefix_text + self.query_text%(self.usertext))
+        super().draw(t)
+
+
+#-----------------------------------------------------------------
+class SettingsScreen(InstructionScreen):
+    '''Modified instruction screen to change various settings - selection threshold'''
+
+    prefix_text = "Configuration Settings\n\n"
+    threshold_text = "New Selection Threshold: %s\n"
+
+    def __init__(self, window, settings_class, duration=150000):
+        super().__init__(window, self.prefix_text + self.threshold_text%(settings_class.selectionThreshold), duration, False)
+        self.settings_class = settings_class
+        self.usertext = ''
+
+    def draw(self, t):
+        '''check for results from decoder.  show if found..'''
+        global last_text, last_key_press
+        if not self.isRunning:
+            super().draw(t)
+            return
+
+        # query the user for host/port
+        # accumulate user inputs
+        if last_key_press:
+            if last_key_press == pyglet.window.key.BACKSPACE:
+                # remove last character
+                self.usertext = self.usertext[:-1]
+            last_key_press = None
+            if last_text:
+                print(last_text + ":" + str(ord(last_text)))
+            if last_text == '\n' or last_text == '\r':
+                # set as new host to try
+                try:
+                    self.threshold = float(self.usertext)
+                    self.settings_class.selectionThreshold=self.threshold
+                    self.isDone = True
+                except ValueError:
+                    # todo: flash to indicate invalid..
+                    pass
+            elif last_text and last_text in "0123456789.":
+                # add to the host string
+                self.usertext += last_text
+            last_text = None
+            self.set_text(self.prefix_text + self.threshold_text%(self.usertext))
         super().draw(t)
 
 
@@ -258,14 +303,14 @@ class QueryDialogScreen(InstructionScreen):
         if last_text:
             if last_text == '\r' or last_text == '\n':
                 self.isDone = True
-            elif last_text: 
+            elif last_text:
                 # add to the host string
                 self.usertext += last_text
             last_text=None
             # update display with user input
             self.set_text(self.query +self.usertext)
         super().draw(t)
-        
+
 #-----------------------------------------------------------------
 from math import log10
 from collections import deque
@@ -299,7 +344,7 @@ class ElectrodequalityScreen(Screen):
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
         # anchor in the center to make drawing easier
         img.anchor_x = 1
-        img.anchor_y = 1        
+        img.anchor_y = 1
         self.sprite = [None]*nch
         self.label  = [None]*nch
         self.linebbox = [None]*nch # bounding box for the channel line
@@ -307,33 +352,33 @@ class ElectrodequalityScreen(Screen):
             x = self.chrect[0]
             y = self.chrect[1]+(i+1)*self.chrect[3]
             # convert to a sprite and make the right size
-            self.sprite[i] = pyglet.sprite.Sprite(img, x=x, y=y, 
-                                                batch=self.batch, 
+            self.sprite[i] = pyglet.sprite.Sprite(img, x=x, y=y,
+                                                batch=self.batch,
                                                 group=self.background)
             # make the desired size
             self.sprite[i].update(scale_x=r*.6/img.width, scale_y=r*.6/img.height)
             # and a text label object
-            self.label[i] = pyglet.text.Label("%d"%(i), font_size=32, 
-                                            x=x, y=y, 
-                                            color=(255, 255, 255, 255), 
-                                            anchor_x='center', 
-                                            anchor_y='center', 
-                                            batch=self.batch, 
+            self.label[i] = pyglet.text.Label("%d"%(i), font_size=32,
+                                            x=x, y=y,
+                                            color=(255, 255, 255, 255),
+                                            anchor_x='center',
+                                            anchor_y='center',
+                                            batch=self.batch,
                                             group=self.foreground)
             # bounding box for the datalines
             self.linebbox[i] = (x+r, y, winh*.9-x+r, self.chrect[3])
         # title for the screen
-        self.title=pyglet.text.Label(self.instruct, font_size=32, 
-                                     x=0, y=winh, color=(255, 255, 255, 255), 
-                                     anchor_y="top", 
-                                     width=int(window.width*.7), 
-                                     multiline=True, 
-                                     batch=self.batch, 
+        self.title=pyglet.text.Label(self.instruct, font_size=32,
+                                     x=0, y=winh, color=(255, 255, 255, 255),
+                                     anchor_y="top",
+                                     width=int(window.width*.7),
+                                     multiline=True,
+                                     batch=self.batch,
                                      group=self.foreground)
 
     def reset(self):
         self.isRunning = False
-        
+
     def is_done(self):
         # check termination conditions
         isDone=False
@@ -351,7 +396,7 @@ class ElectrodequalityScreen(Screen):
             self.noisetag.removeSubscription("D")
             self.noisetag.modeChange("idle")
         return isDone
-        
+
     def draw(self, t):
         '''Show a set of colored circles based on the lastSigQuality'''
         if not self.isRunning:
@@ -439,14 +484,92 @@ class ElectrodequalityScreen(Screen):
                 pyglet.graphics.glColor3d(*col)
                 pyglet.gl.glLineWidth(1)
                 pyglet.graphics.draw(len(d), pyglet.gl.GL_LINE_STRIP, ('v2f', coords))
-            
+
                 # axes scale
                 x = bbox[0]+bbox[2]+20 # at *right* side of the line box
                 y = bbox[1]
                 pyglet.graphics.glColor3f(1,1,1)
                 pyglet.gl.glLineWidth(10)
-                pyglet.graphics.draw(2, pyglet.gl.GL_LINES, 
+                pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
                                         ('v2f', (x,y-10/2*yscale, x,y+10/2*yscale)))
+
+#-------------------------------------------------------------
+class FrameRateTestScreen(InstructionScreen):
+    ''' screen from testing the frame rate of the display under pyglet control '''
+
+    testing_text = "Checking display framerate\nPlease wait"
+    results_text = "Frame rate: "
+    failure_text = "WARNING:\nhigh variability in frame timing detected\nyour performance may suffer\n"
+    success_text = "SUCCESS:\nsufficient accuracy frame timing detected\n"
+    statistics_text = "\n{:3.0f} +/-{:3.1f} [{:2.0f},{:2.0f}]\n mean +/-std [min,max]"
+    closing_text = "\n Press key to continue."
+    
+    def __init__(self, window, testduration=2000, warmup_duration=1000, duration=20000, waitKey=False):
+        super().__init__(window, self.testing_text, duration, waitKey)
+        self.testduration = testduration
+        self.warmup_duration = warmup_duration
+        self.ftimes = []
+        self.logtime = None
+        self.log_interval = 2000
+        
+    def draw(self, t):
+        if not self.isRunning:
+            self.ftimes = []
+            self.logtime = 0
+        # call parent draw method
+        super().draw(t)
+                    
+        # record the  flip timing info
+        # TODO[]: use a deque to make sliding window...
+        if self.elapsed_ms() > self.warmup_duration:
+            self.ftimes.append(self.window.lastfliptime)
+
+        if self.elapsed_ms() > self.warmup_duration + self.testduration:
+            if self.elapsed_ms() > self.logtime:
+                self.logtime=self.elapsed_ms() + self.log_interval
+                log=True
+            else:
+                log=False
+            (medt,madt,mint,maxt) = self.analyse_ftimes(self.ftimes,log)
+            # show warning if timing is too poor
+            if madt > 1:
+                msg=self.failure_text
+            else:
+                msg=self.success_text
+            msg += self.statistics_text.format(medt,madt,mint,maxt)
+            msg += self.closing_text
+            self.set_text(msg)
+            self.waitKey = True
+
+    @staticmethod
+    def analyse_ftimes(ftimes, verb=0):
+        # convert to inter-frame time
+        fdur = [ ftimes[i+1]-ftimes[i] for i in range(len(ftimes)-1) ]
+        #print(["%d"%(int(f)) for f in fdur])
+        # analyse the frame durations, in outlier robust way
+        from statistics import median    
+        medt=median(fdur) # median (mode?)
+        madt=0; mint=999; maxt=-999; N=0;
+        for dt in fdur:
+            if dt > 200 : continue # skip outliers
+            N=N+1
+            madt += (dt-medt) if dt>medt else (medt-dt)
+            mint = dt if dt<mint else mint
+            maxt = dt if dt>maxt else maxt
+        madt = madt/len(fdur)
+
+        if verb>0 :
+            print("Statistics: %f(%f) [%f,%f]"%(medt,madt,mint,maxt))
+            try:    
+                from numpy import histogram
+                [hist,bins]=histogram(fdur,range(8,34,2))
+                # report summary statistics to the user
+                print("Histogram:",
+                      "\nDuration:","\t".join("%6.4f"%((bins[i]+bins[i+1])/2) for i in range(len(bins)-1)),
+                      "\nCount   :","\t".join("%6d"%t for t in hist))
+            except:
+                pass
+        return (medt,madt,mint,maxt)
 
 #-------------------------------------------------------------
 class SelectionGridScreen(Screen):
@@ -454,12 +577,12 @@ class SelectionGridScreen(Screen):
     and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
     LOGLEVEL=1
-    
-    def __init__(self, window, symbols, noisetag, objIDs=None, 
+
+    def __init__(self, window, symbols, noisetag, objIDs=None,
                  bgFraction=.2, instruct="", clearScreen=True, sendEvents=True, liveFeedback=True):
-        '''Intialize the stimulus display with the grid of strings in the 
+        '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
-        Store the grid object in the fakepresentation.objects list so can 
+        Store the grid object in the fakepresentation.objects list so can
         use directly with the fakepresentation BCI presentation wrapper.'''
         self.window=window
         # create set of sprites and add to render batch
@@ -488,7 +611,7 @@ class SelectionGridScreen(Screen):
 
     def setliveFeedback(self, value):
         self.liveFeedback=value
-    
+
     def setliveSelections(self, value):
         if self.liveSelections is None :
             self.noisetag.addSelectionHandler(self.doSelection)
@@ -535,14 +658,14 @@ class SelectionGridScreen(Screen):
         else:
             if self.objIDs is None:
                 self.objIDs = list(range(1,nsymb+1))
-            objIDs = self.objIDs 
+            objIDs = self.objIDs
         # get size of the matrix
         gridheight  = len(symbols) + 1 # extra row for sentence
         gridwidth = max([len(s) for s in symbols])
-        ngrid      = gridwidth * gridheight     
+        ngrid      = gridwidth * gridheight
 
         self.noisetag.setActiveObjIDs(self.objIDs)
-    
+
         # add a background sprite with the right color
         self.objects=[None]*nsymb
         self.labels=[None]*nsymb
@@ -567,20 +690,20 @@ class SelectionGridScreen(Screen):
                 img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
                 # convert to a sprite (for fast re-draw) and store in objects list
                 # and add to the drawing batch (as background)
-                self.objects[idx]=pyglet.sprite.Sprite(img, x=x+bgoffsetx, y=y+bgoffsety, 
+                self.objects[idx]=pyglet.sprite.Sprite(img, x=x+bgoffsetx, y=y+bgoffsety,
                                                        batch=self.batch, group=self.background)
                 # re-scale (on GPU) to the size of this grid cell
-                self.objects[idx].update(scale_x=int(w-bgoffsetx*2)/img.width, 
+                self.objects[idx].update(scale_x=int(w-bgoffsetx*2)/img.width,
                                          scale_y=int(h-bgoffsety*2)/img.height)
                 # add the foreground label for this cell, and add to drawing batch
-                self.labels[idx]=pyglet.text.Label(symbols[i][j], font_size=32, x=x+w/2, y=y+h/2, 
-                                                   color=(255, 255, 255, 255), 
-                                                   anchor_x='center', anchor_y='center', 
+                self.labels[idx]=pyglet.text.Label(symbols[i][j], font_size=32, x=x+w/2, y=y+h/2,
+                                                   color=(255, 255, 255, 255),
+                                                   anchor_x='center', anchor_y='center',
                                                    batch=self.batch, group=self.foreground)
 
         # add opto-sensor block - as last object
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
-        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9, 
+        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9,
                                               batch=self.batch, group=self.background)
         self.opto_sprite.update(scale_x=int(winw*.1), scale_y=int(winh*.1))
         self.opto_sprite.visible=False
@@ -588,9 +711,9 @@ class SelectionGridScreen(Screen):
         # add the sentence box
         y = (gridheight-1)/gridheight*winh # top-edge cell
         x = winw*.2 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, 
-                                        color=(255, 255, 255, 255), 
-                                        anchor_x='left', anchor_y='center', 
+        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='left', anchor_y='center',
                                         batch=self.batch, group=self.foreground)
 
     def is_done(self):
@@ -623,7 +746,7 @@ class SelectionGridScreen(Screen):
         except StopIteration:
             self.isDone=True
             return
-        
+
         # turn all off if no stim-state
         if stimulus_state is None:
             stimulus_state = [0]*len(self.objects)
@@ -634,14 +757,14 @@ class SelectionGridScreen(Screen):
         # update the state
         # TODO[]: iterate over objectIDs and match with those from the
         #         stimulus state!
-        for idx in range(min(len(self.objects), len(stimulus_state))): 
+        for idx in range(min(len(self.objects), len(stimulus_state))):
             # set background color based on the stimulus state (if set)
             try:
                 self.objects[idx].color=self.state2color[stimulus_state[idx]]
             except KeyError:
                 pass
-            
-                
+
+
         # show live-feedback (if wanted)
         if self.liveFeedback:
             # get prediction info if any
@@ -662,10 +785,10 @@ class SelectionGridScreen(Screen):
                 self.opto_sprite.visible=True
                 self.opto_sprite.color = (0, 0, 0) if target_state==0 else (255, 255, 255)
 
-        # do the draw                
+        # do the draw
         self.batch.draw()
         self.frameend=self.noisetag.getTimeStamp()
-    
+
         # frame flip time logging info
         if self.LOGLEVEL > 0 and self.noisetag.isConnected():
             opto = target_state if target_state is not None else 0
@@ -676,8 +799,7 @@ class SelectionGridScreen(Screen):
 #---------------------------------------------------------
 from enum import IntEnum
 class ExptScreenManager(Screen):
-    '''class to manage a whole experiment:
-       instruct->cal->instruct->predict->instruct'''
+    '''class to manage a whole application, with main menu, checks, etc.'''
 
     class ExptPhases(IntEnum):
         ''' enumeration for the different phases of an experiment/BCI application '''
@@ -695,6 +817,8 @@ class ExptScreenManager(Screen):
         Quit=100
         Welcome=99
         Minimize=101
+        Settings=105
+        FrameRateCheck=200
 
     welcomeInstruct="Welcome to the mindaffectBCI\n\nkey to continue"
     calibrationInstruct="Calibration\n\nThe next stage is CALIBRATION\nlook at the indicated green target\n\nkey to continue"
@@ -710,11 +834,15 @@ class ExptScreenManager(Screen):
                "1) Calibration" +"\n"+ \
                "2) Cued Prediction" +"\n"+ \
                "3) Free Typing" +"\n"+ \
-               "Q) Quit"
-    menu_keys = {pyglet.window.key._0:ExptPhases.SignalQuality, 
-                 pyglet.window.key._1:ExptPhases.CalInstruct, 
+               "Q) Quit" + "\n\n\n" + \
+               "f) frame-rate-check" + "\n" + \
+               "s) settings"
+    menu_keys = {pyglet.window.key._0:ExptPhases.SignalQuality,
+                 pyglet.window.key._1:ExptPhases.CalInstruct,
                  pyglet.window.key._2:ExptPhases.CuedPredInstruct,
                  pyglet.window.key._3:ExptPhases.PredInstruct,
+                 pyglet.window.key.F:ExptPhases.FrameRateCheck,
+                 pyglet.window.key.S:ExptPhases.Settings,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1):
@@ -737,7 +865,7 @@ class ExptScreenManager(Screen):
         self.selectionThreshold = selectionThreshold
         self.screen = None
         self.transitionNextPhase()
-        
+
     def draw(self, t):
         if self.screen is None:
             return
@@ -773,19 +901,19 @@ class ExptScreenManager(Screen):
             self.instruct.reset()
             self.screen = self.instruct
             self.next_stage = self.ExptPhases.Connecting
-            
+
         elif self.stage==self.ExptPhases.Connecting: # connecting instruct
             print("connecting screen")
             self.connecting.reset()
             self.screen = self.connecting
             self.next_stage = self.ExptPhases.MainMenu
-    
+
         elif self.stage==self.ExptPhases.SignalQuality: # electrode quality
             print("signal quality")
             self.electquality.reset()
             self.screen=self.electquality
             self.next_stage = self.ExptPhases.MainMenu
-            
+
         elif self.stage==self.ExptPhases.CalInstruct: # calibration instruct
             print("Calibration instruct")
             if self.fullscreen_stimulus==True :
@@ -803,7 +931,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
-                    
+
         elif self.stage==self.ExptPhases.CalResults: # Calibration Results
             print("Calibration Results")
             if self.fullscreen_stimulus==True :
@@ -820,7 +948,7 @@ class ExptScreenManager(Screen):
             self.instruct.reset()
             self.screen=self.instruct
             self.next_stage = self.ExptPhases.CuedPrediction
-            
+
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
             self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
@@ -866,7 +994,7 @@ class ExptScreenManager(Screen):
             #print("flicker with selection")
             #self.selectionGrid.noisetag.startFlickerWithSelection(numframes=10/isi)
             print("single trial")
-            self.selectionGrid.set_grid([[None, 'up', None], 
+            self.selectionGrid.set_grid([[None, 'up', None],
                                          ['left', 'fire', 'right']])
             self.selectionGrid.noisetag.startSingleTrial(numframes=10/isi)
             # N.B. ensure decoder is in prediction mode!
@@ -874,11 +1002,22 @@ class ExptScreenManager(Screen):
             self.selectionGrid.reset()
             self.screen = self.selectionGrid
 
+        elif self.stage==self.ExptPhases.FrameRateCheck: # frame-rate-check
+            print("frame-rate-check")
+            #from mindaffectBCI.examples.presentation.framerate_check import FrameRateTestScreen
+            self.screen=FrameRateTestScreen(self.window,waitKey=True)
+            self.next_stage = self.ExptPhases.MainMenu
+
+        elif self.stage==self.ExptPhases.Settings: # config settings
+            print("settings")
+            self.screen = SettingsScreen(self.window, self)
+            self.next_stage = self.ExptPhases.MainMenu
+
         else: # end
             print('quit')
             self.screen=None
 
-            
+
 #------------------------------------------------------------------------
 # Initialization: display, utopia-connection
 # use noisetag object as time-stamp provider
@@ -901,15 +1040,26 @@ def timedflip(self):
     flipstats.addpoint(self.lastfliptime-olft)
     global fliplogtime
     if self.lastfliptime > fliplogtime:
-        fliplogtime=fliplogtime+5000    
+        fliplogtime=fliplogtime+5000
         print("\nFlipTimes:"+str(flipstats))
         print("Hist:\n"+flipstats.hist())
+
+last_key_press=None
+def on_key_press(symbols, modifiers):
+    '''main key-press handler, which stores the last key in a global variable'''
+    global last_key_press
+    last_key_press=symbols
+
+last_text=None
+def on_text(text):
+    global last_text
+    last_text=text
 
 def initPyglet(fullscreen=False):
     '''intialize the pyglet window, keyhandler'''
     global window
     # set up the window
-    if fullscreen: 
+    if fullscreen:
         # N.B. accurate video timing only guaranteed with fullscreen
         # N.B. over-sampling seems to introduce frame lagging on windows+Intell
         config = pyglet.gl.Config(double_buffer=True) #double_buffer=False,sample_buffers=1, samples=4)
@@ -934,7 +1084,7 @@ def initPyglet(fullscreen=False):
         # TODO []: stop minimise when switch to/from full-screen mode
         if fullscreen:
             window.minimize()
-    
+
     # TODO[]: handle resize events correctly.
     return window
 
@@ -949,15 +1099,6 @@ def draw(dt):
         pyglet.app.exit()
     #print('.', end='', flush=True)
 
-def on_key_press(symbols, modifiers):
-    '''main key-press handler, which stores the last key in a global variable'''
-    global last_key_press
-    last_key_press=symbols
-
-def on_text(text):
-    global last_text
-    last_text=text
-
 def load_symbols(fn):
     """load a screen layout from a text file
 
@@ -966,7 +1107,7 @@ def load_symbols(fn):
 
     Returns:
         symbols [list of lists of str]: list of list of the symbols strings
-    """    
+    """
     symbols = []
 
     # look relative to the py-file dir if can't find
@@ -1001,7 +1142,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
     """
-    global nt, ss 
+    global nt, ss
     # N.B. init the noise-tag first, so asks for the IP
     if stimfile is None:
         stimfile = 'mgold_61_6521_psk_60hz.txt'
@@ -1016,20 +1157,20 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
 
     # the logical arrangement of the display matrix
     if symbols is None:
-        symbols=[['a', 'b', 'c', 'd', 'e'], 
-                 ['f', 'g', 'h', 'i', 'j'], 
-                 ['k', 'l', 'm', 'n', 'o'], 
-                 ['p', 'q', 'r', 's', 't'], 
+        symbols=[['a', 'b', 'c', 'd', 'e'],
+                 ['f', 'g', 'h', 'i', 'j'],
+                 ['k', 'l', 'm', 'n', 'o'],
+                 ['p', 'q', 'r', 's', 't'],
                  ['u', 'v', 'w', 'x', 'y']]
 
     elif isinstance(symbols,str):
         # load the layout from a file
         symbols = load_symbols(symbols)
-        
+
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold)
 
-    # set per-frame callback to the draw function    
+    # set per-frame callback to the draw function
     if drawrate > 0:
         # slow down for debugging
         pyglet.clock.schedule_interval(draw, drawrate)
