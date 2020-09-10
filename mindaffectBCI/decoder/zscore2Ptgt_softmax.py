@@ -4,11 +4,11 @@ def zscore2Ptgt_softmax(f, softmaxscale=2, validTgt=None, marginalizemodels=True
     '''
     convert normalized output scores into target probabilities
     Inputs:
-     f - (nM,nTrl,nDecis,nY) [#Y x #decisPts x #Trials x #Models] normalized accumulated scores]
+     f - (nM,nTrl,nDecis,nY)  normalized accumulated scores]
      softmaxscale - float, slope to scale from scores to probabilities
-     validtgtTrl = (nTrl,nY) [nY x #Trl]:bool which targets are valid in which trials 
+     validtgtTrl = (nTrl,nY):bool which targets are valid in which trials 
     Outputs:
-     Ptgt - (nTrl,nY) [#Y x #Trials] - target probability for each trial
+     Ptgt - (nTrl,nY) - target probability for each trial
     '''
 
     # fix the nuisance parameters to get per-output per trial score
@@ -86,6 +86,44 @@ def softmax_nout_corr(n):
     ''' approximate correction factor for probabilities out of soft-max to correct for number of outputs'''
     #return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
     return np.ones(n.shape) #np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
+
+
+def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10), MINP=.01):
+    '''
+    attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
+    Inputs:
+     f - (nTrl,nDecis,nY) normalized accumulated scores]
+     validTgt = (nTrl,nY) [nY x #Trl]:bool which targets are valid in which trials
+     scales = set of possible soft-max scales to try
+     MINP - float, minimium P-value.  We clip the true-target p-val to this level as a way
+            of forcing the fit to concentrate on getting the p-val right when high, rather than
+            over penalizing when it's wrong
+    Outputs:
+     softmaxscale - float, slope for softmax to return calibrated probabilities
+    '''
+    if validTgt is None: # get which outputs are used in which trials..
+        validTgt = np.any(f != 0, 1) # (nTrl,nY)
+    elif validTgt.ndim == 1:
+        validTgt = validTgt[np.newaxis, :]
+    # include the nout correction on a per-trial basis
+    noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
+
+    # simply try a load of scales - as input are normalized shouldn't need more than this
+    Ed = np.zeros(len(scales),)
+    for i,s in enumerate(scales):
+        softmaxscale = s * noutcorr[:,np.newaxis,np.newaxis] #(nTrl,1,1)
+
+        # apply the soft-max with this scaling
+        Ptgt = softmax(f*softmaxscale,validTgt)
+        # Compute the loss = cross-entropy.  
+        # As Y==0 is *always* the true-class, this becomes simply sum log this class 
+        Ed[i] = np.sum(-np.log(np.maximum(Ptgt[...,0],MINP)))
+        #print("{}) scale={} Ed={}".format(i,s,Ed[i]))
+    # use the max-entropy scale
+    mini = np.argmin(Ed)
+    softmaxscale = scales[mini]
+    print("softmaxscale={}".format(softmaxscale))
+    return softmaxscale
 
 #@function
 def testcase():
