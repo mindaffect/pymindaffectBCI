@@ -3,8 +3,9 @@ import numpy as np
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_data_messages
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
+from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((45,65),(0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-1000,1000), regress=True):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
     
     # load the data file
     Xfn = datadir
@@ -15,32 +16,63 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((45
     sessdir = os.path.dirname(Xfn)
 
     if verb > 1: print("Loading {}".format(Xfn))
-    X, messages =read_mindaffectBCI_data_messages(Xfn, regress=regress)
+    # TODO []: convert to use the on-line time-stamp code
+    X, messages = read_mindaffectBCI_data_messages(Xfn, regress=regress)
+
+    import pickle
+    pickle.dump(dict(data=X),open('raw_lmbci.pk','wb'))
 
     # strip the data time-stamp channel
     data_ts = X[...,-1] # (nsamp,)
     X = X[...,:-1] # (nsamp,nch)
     
     # estimate the sample rate from the data.
-    dur_s = (data_ts[-1] - data_ts[0])/1000.0
-    fs  = X.shape[0] / dur_s
+    dur_s = (data_ts[-1] - data_ts[-1000])/1000.0
+    fs  = min(1000,X.shape[0]) / dur_s
     ch_names = None
 
-    if verb > 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
+    if verb >= 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
+
+    # pre-process: spectral filter + downsample
+    # incremental call in bits
+    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=200, fs_out=ofs)
+    #ppfn = None
+    if ppfn is not None:
+        if verb >= 0:
+            print("preFilter: {}Hz & downsample {}->{}Hz".format(stopband,fs,ofs))
+        #ppfn.fit(X[0:1,:])
+        # process in blocks to be like the on-line, use time-stamp as Y to get revised ts
+        if False:
+            idxs = np.arange(0,X.shape[0],6); idxs[-1]=X.shape[0]
+            Xpp=[]
+            tspp=[]
+            for i in range(len(idxs)-1):
+                idx = range(idxs[i],idxs[i+1])
+                Xi, tsi = ppfn.transform(X[idx,:], data_ts[idx,np.newaxis])
+                Xpp.append(Xi)
+                tspp.append(tsi)
+            X=np.concatenate(Xpp,axis=0)
+            data_ts = np.concatenate(tspp,axis=0)
+        else:
+            X, data_ts = ppfn.transform(X, data_ts[:,np.newaxis])
+        data_ts = data_ts[...,0] # map back to 1d
+        fs  = ppfn.out_fs_ # update with actual re-sampled data rate
+        #dur_s = (data_ts[-1] - data_ts[0])/1000.0
+        #fs  = X.shape[0] / dur_s
+
 
     # extract the stimulus sequence
     Me, stim_ts, objIDs, _ = devent2stimSequence(messages)
-        
+
+    import pickle
+    pickle.dump(dict(data=np.append(X,data_ts[:,np.newaxis],-1),stim=np.append(Me,stim_ts[:,np.newaxis],-1)),open('pp_lmbci.pk','wb'))
+
     # up-sample to stim rate
     Y, stim_samp = upsample_stimseq(data_ts, Me, stim_ts, objIDs)
+    Y_ts = np.zeros((Y.shape[0],),dtype=int); 
+    Y_ts[stim_samp]=stim_ts
     if verb > 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
-    
-    # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
-        if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X,stopband,fs,order=order)
-    
+
     # slice into trials
     # isi = interval *before* every stimulus --
     #  include data-start so includes 1st stimulus
@@ -74,31 +106,22 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=90, stopband=((45
     Yraw = Y.copy()
     X = np.zeros((len(trl_samp_idx), xlen_samp, Xraw.shape[-1]), dtype=Xraw.dtype) # (nTrl,nsamp,d)
     Y = np.zeros((len(trl_samp_idx), xlen_samp, Yraw.shape[-1]), dtype=Yraw.dtype)
+    Xe_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
+    Ye_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
     for ti, si in enumerate(trl_samp_idx):
         idx = slice(si+bgnend_samp[0],si+bgnend_samp[1])
         X[ti, :, :] = Xraw[idx, :]
+        Xe_ts[ti,:] = data_ts[idx]
         Y[ti, :, :] = Yraw[idx, :]
+        Ye_ts[ti,:] = Y_ts[idx]
     del Xraw, Yraw
     if verb > 0: print("X={}\nY={}".format(X.shape,Y.shape))
 
-    # preprocess -> downsample
-    #resamprate = int(round(fs/ofs))
-    #if resamprate > 1:
-    #    if verb > 0:
-    #        print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
-    #    X = X[..., ::resamprate, :] # decimate X (trl, samp, d)
-    #    Y = Y[..., ::resamprate, :] # decimate Y (OK as we latch Y)
-    #    fs = fs/resamprate
-    resamprate = round(2*fs/ofs)/2 # round to nearest .5
-    if resamprate > 1:
-        print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
-        # TODO []: use better re-sampler also in ONLINE
-        idx = np.arange(0,X.shape[1],resamprate).astype(np.int)
-        X = X[..., idx, :] # decimate X (trl, samp, d)
-        Y = Y[..., idx, :] # decimate Y (OK as we latch Y)
-        fs = fs/resamprate
-    
+    import pickle
+    pickle.dump(dict(X=X,Y=Y,X_ts=Xe_ts,Y_ts=Ye_ts),open('sliced_lmbci.pk','wb'))
+
+
     # make coords array for the meta-info about the dimensions of X
     coords = [None]*X.ndim
     coords[0] = {'name':'trial','coords':trl_ts}
@@ -121,9 +144,10 @@ def testcase():
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
         sessfn = max(files, key=os.path.getctime)
  
+    sessfn = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
     from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
     print("Loading: {}".format(sessfn))
-    X, Y, coords = load_mindaffectBCI(sessfn, ofs=90, regress=False)
+    X, Y, coords = load_mindaffectBCI(sessfn, ofs=100, regress=False)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
@@ -134,8 +158,8 @@ def testcase():
 
     # visualize the dataset
     from mindaffectBCI.decoder.analyse_datasets import debug_test_dataset
-    debug_test_dataset(X, Y, coords,
-                        #preproc_args=dict(badChannelThresh=None, badTrialThresh=None, stopband=None, whiten_spectrum=False, whiten=False),
+    debug_test_dataset(X[:,:,:], Y[:,:,:], coords,
+                        preprocess_args=dict(badChannelThresh=None, badTrialThresh=3, stopband=None, whiten_spectrum=False, whiten=False),
                         tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')
     
     
