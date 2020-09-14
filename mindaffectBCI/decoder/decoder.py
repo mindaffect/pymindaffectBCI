@@ -74,6 +74,7 @@ def getCalibration_dataset(ui):
 
         # extract any complete trials data/msgs
         for (bgn_ts, end_ts) in trials:
+            # N.B. be sure to make a copy so isn't changed outside us..
             data = ui.extract_data_segment(bgn_ts, end_ts)
             stimulus = ui.extract_stimulus_segment(bgn_ts, end_ts)
             print("Extract trl: {}->{}: data={} stim={}".format(bgn_ts, end_ts, data.shape, stimulus.shape))
@@ -108,24 +109,36 @@ def dataset_to_XY_ndarrays(dataset):
     # map to single fixed size matrix + upsample stimulus to he EEG sample rate
     Y = np.zeros((len(dataset), trlen, 256), dtype=dataset[0][1].dtype)
     X = np.zeros((len(dataset), trlen, dataset[0][0].shape[-1]-1), dtype=dataset[0][0].dtype)  # zero-padded data, w/o time-stamps
+    X_ts = np.zeros((len(dataset),trlen),dtype=int)
+    Y_ts = np.zeros((len(dataset),trlen),dtype=int)
     for ti, (data, stimulus) in enumerate(dataset):
         # extract the data & remove the timestamp channel and insert into the ndarray
         # guard for slightly different sizes..
         if X.shape[1] <= data.shape[0]:
             X[ti, :, :] = data[:X.shape[1], :-1]
+            X_ts[ti, :] = data[:X.shape[1], -1]
         else:  # pad end with final value
             X[ti, :data.shape[0], :] = data[:, :-1]
             X[ti, data.shape[0]:, :] = data[-1, :-1]
+            X_ts[ti, :data.shape[0]] = data[:, -1]
 
         # upsample stimulus to the data-sample rate and insert into ndarray
         data_ts = data[:, -1]  # data timestamp per sample
         stimulus_ts = stimulus[:, -1]  # stimulus timestamp per stimulus event
-        stimulus, _ = upsample_stimseq(data_ts, stimulus[:, :-1], stimulus_ts)
+        stimulus, data_i = upsample_stimseq(data_ts, stimulus[:, :-1], stimulus_ts)
+        Y_ts[ti,data_i] = stimulus_ts # record stim-ts @ this data_ts
         # store -- compensating for any variable trial lengths.
         if Y.shape[1] < stimulus.shape[0]:
             Y[ti, :, :] = stimulus[:Y.shape[1], :]
         else:
             Y[ti, :stimulus.shape[0], :] = stimulus
+
+    try:
+        import pickle
+        pickle.dump(dict(X=X, Y=Y, X_ts=X_ts, Y_ts=Y_ts, fs=ui.fs),
+                    open('calibration_data.pk','wb'))
+    except:
+        print('Error saving cal data')
 
     return X, Y
 
@@ -164,11 +177,6 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         #print("decoding curve {}".format(decoding_curve[1]))
         #print("score {}".format(score))
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
-        try:
-            from scipy.io import savemat
-            savemat('calibration_data', dict(X=X, Y=Y, fs=ui.fs))
-        except:
-            print('Error saving cal data')
         if CALIBRATIONPLOTS:
             try:
                 import matplotlib.pyplot as plt
@@ -467,7 +475,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             doPredictionStatic(ui, clsfr)
 
         # check for new mode-messages
-        newmsgs, _, _ = ui.update()
+        newmsgs, nsamp, nstim = ui.update()
 
         # update the system mode
         current_mode = "idle"
@@ -504,9 +512,13 @@ if  __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.savefile is not None:
+    if True or args.savefile is not None:
+        setattr(args,'savefile',"C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_android_200911_1405.txt")
+        setattr(args,'out_fs',100)
+        setattr(args,'savefile_fs',200)
+        setattr(args,'cv',5)
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
-        U = FileProxyHub(args.savefile)#,use_server_ts=True)
+        U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=4, stopband=args.stopband, fs_out=args.out_fs)
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
