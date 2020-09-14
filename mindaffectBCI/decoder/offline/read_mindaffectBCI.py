@@ -95,69 +95,53 @@ def read_mindaffectBCI_message(line):
 
 def datapackets2array(msgs):
     data=[]
-    last_ts = None
+    from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
+    tsfilt = timestamp_interpolation(sample2timestamp=linear_trend_tracker(halflife=500))
     for msg in msgs:
         samples = msg.samples
         ts   = msg.timestamp
-        # TODO[]: so the same way as the on-line with a de-jittering method
-        # add the time-stamp as the last channel
-        # TODO []: interpolate the time-stamps for every sample
-        if last_ts is not None:
-            # interpolate the time-stamps, from last sample to last this packet inclusive
-            tsch = np.linspace(last_ts, ts, samples.shape[0]+1, endpoint=True)
-            tsch = tsch[1:,np.newaxis] # strip the last valid time-stamp
-        else:
-            # if in doubt, give all the same time-stamp...
-            tsch = np.ones((samples.shape[0],1))*ts
-        samples = np.append(samples,tsch,-1)
+        ts   = ts % (1<<24)
+        samples_ts = tsfilt.transform(ts,len(samples))
+        samples = np.append(samples, samples_ts[:,np.newaxis], -1).astype(samples.dtype)
         data.append(samples)
-        last_ts = ts
+        #last_ts = ts
     # convert data into single np array
     data = np. concatenate(data,0)
     return data    
 
-def rewrite_timestamps2servertimestamps(msgs,regresstype):
+def rewrite_timestamps2servertimestamps(msgs):
     ''' rewrite message time-stamps  to best-fit server time-stamps '''
     # get the client-timestamp, server-timestamp pairs
     x = np.array([msg.timestamp for msg in msgs]) #  from: client timestamp
     y = np.array([msg.sts for msg in msgs]) # to: server timestamp
-    if regresstype=='linear_trend_tracker':
-        # simulate the on-line time-stamp tracker
-        from mindaffectBCI.decoder.utils import linear_trend_tracker
-        ltt = linear_trend_tracker(halflife=5000)
-        ltt.fit(x[0],y[0])
-        for i,(m,xi,yi) in enumerate(zip(msgs,x,y)):
-            yt = ltt.transform(xi,yi)
-            m.rawtimestamp = m.timestamp
-            m.timestamp = yt
 
-    else:
-        # Warning: strip and -1....
-        invalidts = np.logical_or(x==-1,y==-1)
-        x = x[~invalidts]
-        y = y[~invalidts]
-        # add constant feature  for the intercept
-        x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1)),1)
-        # LS  solve
-        # TODO[X]: use a robust least squares which allows for outliers due to network delays
-        # TODO[]: use a proper weighted least squares robust estimator, also for on-line
-        y_fit = y.copy()
-        for i in range(3):
-            ab,res,_,_ = np.linalg.lstsq(x,y_fit,rcond=-1)
-            y_est = x[:,0]*ab[0] + ab[1]
-            err = y - y_est # server > true, clip positive errors
-            scale = np.mean(np.abs(err))
-            clipIdx = err > 3*scale
-            #print("{} overestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] + 3*scale
-            clipIdx = err < -3*scale
-            #print("{} underestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] - 3*scale
-        #print("ab={}".format(ab))
-        # now rewrite the client time-stamps
-        for m in msgs:
-            m.rawtimestamp = m.timestamp
-            m.timestamp = m.rawtimestamp*ab[0] + ab[1]
+    # Warning: strip and -1....
+    invalidts = np.logical_or(x==-1,y==-1)
+    x = x[~invalidts]
+    y = y[~invalidts]
+    # add constant feature  for the intercept
+    x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1)),1)
+    # LS  solve
+    # TODO[X]: use a robust least squares which allows for outliers due to network delays
+    # TODO[]: use a proper weighted least squares robust estimator, also for on-line
+    y_fit = y.copy()
+    for i in range(3):
+        ab,res,_,_ = np.linalg.lstsq(x,y_fit,rcond=-1)
+        y_est = x[:,0]*ab[0] + ab[1]
+        err = y - y_est # server > true, clip positive errors
+        scale = np.mean(np.abs(err))
+        clipIdx = err > 3*scale
+        #print("{} overestimates".format(np.sum(clipIdx)))
+        y_fit[clipIdx] = y_est[clipIdx] + 3*scale
+        clipIdx = err < -3*scale
+        #print("{} underestimates".format(np.sum(clipIdx)))
+        y_fit[clipIdx] = y_est[clipIdx] - 3*scale
+    #print("ab={}".format(ab))
+    # now rewrite the client time-stamps
+    for m in msgs:
+        m.rawtimestamp = m.timestamp
+        m.timestamp = m.rawtimestamp*ab[0] + ab[1]
+
     return msgs
 
     
@@ -186,7 +170,8 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=True ):
         clientips = [ m.clientip for m in msgs ]
         for client in set(clientips):
             clientmsgs = [ c for c in msgs if c.clientip == client ]
-            rewrite_timestamps2servertimestamps(clientmsgs,regress)
+            rewrite_timestamps2servertimestamps(clientmsgs)
+        
     return msgs
 
 def read_mindaffectBCI_data_messages( fn:str, regress=True ):
@@ -196,6 +181,11 @@ def read_mindaffectBCI_data_messages( fn:str, regress=True ):
     data=[]
     msgs=[]
     for m in rawmsgs:
+        #  WARNING BODGE: fit time-stamp in 24bits for float32 ring buffer
+        #  Note: this leads to wrap-arroung in (1<<24)/1000/3600 = 4.6 hours
+        #        but that shouldn't matter.....
+        m.timestamp = m.timestamp % (1<<24)
+
         if isinstance(m,DataPacket):
             data.append(m)
         else:

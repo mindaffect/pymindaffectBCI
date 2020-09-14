@@ -1,4 +1,5 @@
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_message
+from mindaffectBCI.utopiaclient import DataPacket
 from time import sleep
 
 class FileProxyHub:
@@ -13,7 +14,7 @@ class FileProxyHub:
             self.filename = max(files, key=os.path.getctime)
         self.speedup = speedup
         self.isConnected = True
-        self.lasttimestamp = None
+        self.lasttimestamp = 0
         self.use_server_ts = use_server_ts
         self.file = open(self.filename,'r')
     
@@ -52,12 +53,54 @@ class FileProxyHub:
         self.lasttimestamp = self.lasttimestamp + timeout_ms
         return msgs
 
+def testcase(filename, fs=200, ofs=200, stopband=((45,65),(0,3),(25,-1)), order=4):
+    import numpy as np
+    from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker, butterfilt_and_downsample
+
+    U = FileProxyHub(filename)
+    tsfilt = timestamp_interpolation(fs=fs,sample2timestamp=linear_trend_tracker(500))
+
+    if stopband is not None:
+        ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs)
+    else:
+        ppfn = None
+    
+    #ppfn = None
+
+    nsamp=0
+    t=0
+    data=[]
+    ts=[]
+    while U.isConnected:
+        msgs = U.getNewMessages(100)
+        print('.',end='',flush=True)
+        for m in msgs:
+            if m.msgID == DataPacket.msgID:
+                timestamp = m.timestamp % (1<<24)
+                samples = m.samples
+                sample_ts = tsfilt.transform(timestamp,len(samples))
+                if ppfn: # apply pre-processor
+                    samples, sample_ts = ppfn.transform(samples, sample_ts[:,np.newaxis])
+                    sample_ts = sample_ts[:,0]
+                if len(samples) > 0:
+                    data.extend(samples)
+                    ts.extend(sample_ts)
+    data = np.array(data)
+    ts = np.array(ts)
+    data = np.append(data,ts[:,np.newaxis],-1)
+    # dump as pickle
+    import pickle
+    if ppfn is None:
+        pickle.dump(dict(data=data),open('raw_fph.pk','wb'))
+    else:
+        pickle.dump(dict(data=data),open('pp_fph.pk','wb'))
+
+
 if __name__=="__main__":
     import sys
     filename = sys.argv[1] if len(sys.argv)>1 else None
 
-    U = FileProxyHub(filename)
-    t=0
-    while U.isConnected:
-        msgs = U.getNewMessages(100)
-        print("{}) {}msgs\n{}\n".format(t,len(msgs),msgs))
+    filename = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
+
+    testcase(filename)
+
