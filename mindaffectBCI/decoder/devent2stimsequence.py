@@ -39,8 +39,8 @@ def devent2stimSequence(devents):
             Me[ei, usedobjIDs] = Me[ei-1, usedobjIDs]
         # 2) overwrite with updated state
         # N.B. indexing hack with [int,tuple,] to index correctly
-        Me[ei, objIDs,] = objState
-        usedobjIDs[objIDs,] = True
+        Me[ei, objIDs, ] = objState
+        usedobjIDs[objIDs, ] = True
     
     # restrict to only stim-event info
     # Note: horrible integer indexing tricks to get only the elements we want..
