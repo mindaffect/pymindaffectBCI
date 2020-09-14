@@ -88,7 +88,7 @@ def softmax_nout_corr(n):
     return np.ones(n.shape) #np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
 
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10), MINP=.01):
+def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
     Inputs:

@@ -96,6 +96,7 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     X_ts = X[:, -1] # last channel is timestamps
     # TODO: binary-search to make these searches more efficient!
     # search backwards for trial-start time-stamp
+    # TODO[] : use a bracketing test.. (better with wrap-arround)
     bgn_samp = np.flatnonzero(np.logical_and(bgn_ts <= X_ts, X_ts != 0))
     # get the index of this timestamp, guarding for after last sample
     bgn_samp = bgn_samp[0] if len(bgn_samp) > 0 else len(X_ts)+1
@@ -390,7 +391,7 @@ class linear_trend_tracker():
             step_halflife = max(halflife/100,1) 
         self.step_alpha = np.exp(np.log(.5)/step_halflife) if step_halflife else .999
 
-    def reset(self):
+    def reset(self, keep_err=False):
         self.N = 0
         self.X0 = None
         self.Y0 = None
@@ -401,9 +402,10 @@ class linear_trend_tracker():
         self.sYY = 0
         self.a=1
         self.b=0
-        self.err=0
-        self.step_N = 0
-        self.step_err = 0
+        if not keep_err:
+            self.err=0
+            self.step_N = 0
+            self.step_err = 0
 
     def fit(self,X,Y):
         self.reset()
@@ -473,7 +475,7 @@ class linear_trend_tracker():
         # between long and short halflife
         if (self.step_err / self.step_N) > (self.err / self.N) * self.step_threshold:
             print("step-detected")
-            self.reset()
+            self.reset(keep_err=True)
             self.fit(X,Y)
             Yest = Y
 

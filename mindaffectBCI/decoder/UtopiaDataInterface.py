@@ -56,7 +56,6 @@ class UtopiaDataInterface:
         # DataPackets
         self.data_ringbuffer = None # init later...
         self.data_timestamp = None # ts of last data packet seen
-        self.last_sample_timestamp = None # ts of the last preprocessed packed added to ring buffer
         self.sample2timestamp = None # sample tracker to de-jitter time-stamp information
         self.data_preprocessor = data_preprocessor # function to pre-process the incomming data
 
@@ -135,16 +134,17 @@ class UtopiaDataInterface:
 
         # init the pre-processor (if one)
         if self.data_preprocessor:
-            self.data_preprocessor.fit(np.array(databuf[0].samples), fs=self.raw_fs) # tell it the sample rate
+            self.data_preprocessor.fit(np.array(databuf[0].samples)[0:1,:], fs=self.raw_fs) # tell it the sample rate
 
         # apply the data packet pre-processing -- to get the info
         # on the data state after pre-processing
         tmpdatabuf = [self.processDataPacket(m) for m in databuf]
         # strip empty packets
-        tmpdatabuf = [ d for d in tmpdatabuf if d.shape[0]>0]
+        tmpdatabuf = [d for d in tmpdatabuf if d.shape[0]>0]
         # estimate the sample rate of the pre-processed data
+        pp_dur = (tmpdatabuf[-1][-1,-1] - tmpdatabuf[0][-1,-1])/1000.0 
         pp_nsamp = sum([d.shape[0] for d in tmpdatabuf]) - tmpdatabuf[0].shape[0]
-        self.fs = pp_nsamp/dur # fs = nSamp/time
+        self.fs = pp_nsamp/pp_dur # fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
 
         # create the ring buffer, big enough to store the pre-processed data
@@ -156,12 +156,18 @@ class UtopiaDataInterface:
 
         # insert the warmup data into the ring buffer
         self.data_timestamp=None # reset last seen data
+        nsamp=0
+        # re-init the preprocessor for consistency with off-line
+        if self.data_preprocessor:
+            self.data_preprocessor.fit(np.array(databuf[0].samples)[0:1,:], fs=self.raw_fs)
         # use linear trend tracker to de-jitter the sample timestamps
-        self.sample2timestamp = linear_trend_tracker(halflife=5000)
-        for d in databuf:
+        self.sample2timestamp = timestamp_interpolation(fs=self.fs,
+                                                        sample2timestamp=linear_trend_tracker(halflife=500))
+        for m in databuf:
             # apply the pre-processing again (this time with fs estimated)
-            d = self.processDataPacket(d)
+            d = self.processDataPacket(m)
             self.data_ringbuffer.extend(d)
+            nsamp = nsamp + d.shape[0]
 
         return (nsamp, nmsg)
 
@@ -221,31 +227,12 @@ class UtopiaDataInterface:
         Returns:
             np.ndarray: (t,d+1) data matrix with attached time-stamp channel
         """
-        if self.last_sample_timestamp is not None and self.last_sample_timestamp < timestamp:
-            # update the tracker for the sample-number to sample timestamp mapping
-            if self.sample2timestamp is not None:
-                n=self.data_ringbuffer.n+len(d)
-                #print("n={} ts={}".format(n,timestamp))
-                newtimestamp = self.sample2timestamp.transform(n,timestamp)
-                #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
-                # use the corrected de-jittered time-stamp -- if it's not tooo different
-                if abs(timestamp-newtimestamp) < 50:
-                    timestamp = int(newtimestamp)
-
-            # simple linear interpolation for the sample time-stamps
-            ts = np.linspace(self.last_sample_timestamp, timestamp, len(d)+1)
-            ts = ts[1:]
-        else:                
-            if fs :
-                # interpolate with the estimated sample rate                    
-                ts = np.arange(-len(d)+1,1)*(1000/fs) + timestamp
-            else:
-                # give all same timestamp
-                ts = np.ones(len(d))*timestamp
-
-        # combine data with timestamps
-        d = np.concatenate((np.array(d), ts[:, np.newaxis]), 1)
-        self.last_sample_timestamp = timestamp
+        if self.sample2timestamp is not None:
+            sample_ts = self.sample2timestamp.transform(timestamp, len(d))
+        else: # all the same ts
+            sample_ts = np.ones((len(d),),dtype=int)*timestamp
+        # combine data with timestamps, ensuring type is preserved
+        d = np.append(np.array(d), sample_ts[:, np.newaxis], -1).astype(d.dtype)
         return d
 
     def plot_raw_preproc_data(self, d_raw, d_preproc, ts):
@@ -364,20 +351,22 @@ class UtopiaDataInterface:
             timeout_ms = self.timeout_ms
         if mintime_ms is None:
             mintime_ms = self.mintime_ms
-        nsamp = 0
-        nmsg = 0
-        nstimulus = 0
         if not self.isConnected():
             self.connect()
         if not self.isConnected():
             return [],0,0
+
+        t0 = self.getTimeStamp()
+        nsamp = 0
+        nmsg = 0
+        nstimulus = 0
+
         if self.data_ringbuffer is None: # do special init stuff if not done
             nsamp, nmsg = self.initDataRingBuffer()
         if self.stimulus_ringbuffer is None: # do special init stuff if not done
             self.initStimulusRingBuffer()
         if self.last_log_ts is None:
             self.last_log_ts = self.getTimeStamp()
-        t0 = self.getTimeStamp()
 
         # record the list of new messages from this call
         newmsgs = self.newmsgs # start with any left-overs from old calls 
@@ -436,8 +425,8 @@ class UtopiaDataInterface:
         if self.getTimeStamp() > self.last_log_ts + 2000:
             print("",flush=True)
             self.last_log_ts = self.getTimeStamp()
-            
-        # return new mesages, and count new samples/stimulus 
+        
+        # return new messages, and count new samples/stimulus 
         return (newmsgs, nsamp, nstimulus)
 
     def push_back_newmsgs(self,oldmsgs):
@@ -501,7 +490,7 @@ class butterfilt_and_downsample(TransformerMixin):
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60):
         self.stopband = stopband
         self.fs = fs
-        self.fs_out = fs_out
+        self.fs_out = fs_out if fs_out < fs else fs
         self.order = order
         self.axis = -2
         self.nsamp = 0
@@ -534,12 +523,16 @@ class butterfilt_and_downsample(TransformerMixin):
         # preprocess -> downsample
         self.nsamp = 0
         self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0
-        print("resample: {}->{}hz rsrate={}".format(self.fs, self.fs/self.resamprate_, self.resamprate_))
+        self.out_fs_  = self.fs/self.resamprate_
+        print("resample: {}->{}hz rsrate={}".format(self.fs, self.out_fs_, self.resamprate_))
 
         return self
 
     def transform(self, X, Y=None):
         # propogate the filter coefficients between calls
+        if not hasattr(self,'sos_'):
+            self.fit(X[0:1,:])
+
         X, self.zi_ = sosfilt(self.sos_, X, axis=self.axis, zi=self.zi_)
 
         # preprocess -> downsample @60hz
@@ -654,7 +647,7 @@ class stim2eventfilt(TransformerMixin):
         print("m0={}\nm1={}\n,m4={}\n".format(m0,m1,m4))
             
 
-class power_tracker():
+class power_tracker(TransformerMixin):
     def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
         # convert to per-sample decay factor
         self.alpha_mu = self.hl2alpha(fs * halflife_mu_ms / 1000.0 ) 
@@ -713,6 +706,89 @@ class power_tracker():
             plt.plot(idxs,mus[:,d])
             plt.plot(idxs,powers[:,d])
 
+
+class timestamp_interpolation(TransformerMixin):
+    """transform from per-packet time-stamps to per-sample timestamps (with de-jitter)
+    """
+
+    def __init__(self,fs=None,sample2timestamp=None):
+        """tranform from per-packet (i.e. multiple-samples) to per-sample timestamps
+
+        Args:
+            fs (float): default sample rate, used when no other timing info is available
+            sample2timestamp (transformer, optional): class to de-jitter timestamps based on sample-count. Defaults to None.
+        """        
+        self.fs=fs
+        self.sample2timestamp = sample2timestamp
+
+    def fit(self,ts,nsamp=1):
+        self.last_sample_timestamp_ = ts
+        self.n_ = 0
+
+    def transform(self,timestamp:float,nsamp:int=1):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            timestamp (float): the timestamp of the last sample of d
+            nsamp(int): number of samples to interpolate
+
+        Returns:
+            np.ndarray: (nsamp) the interpolated time-stamps
+        """
+        if not hasattr(self,'last_sample_timestamp_'):
+            self.fit(timestamp,nsamp)
+
+        # update tracking number samples processed
+        self.n_ = self.n_ + nsamp
+
+        if self.last_sample_timestamp_ < timestamp:
+            # update the tracker for the sample-number to sample timestamp mapping
+            if self.sample2timestamp is not None:
+                #print("n={} ts={}".format(n,timestamp))
+                newtimestamp = self.sample2timestamp.transform(self.n_, timestamp)
+                #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
+                # use the corrected de-jittered time-stamp -- if it's not tooo different
+                if abs(timestamp-newtimestamp) < 50:
+                    timestamp = int(newtimestamp)
+
+            # simple linear interpolation for the sample time-stamps
+            samples_ts = np.linspace(self.last_sample_timestamp_, timestamp, nsamp+1, endpoint=True, dtype=int)
+            samples_ts = samples_ts[1:]
+        else:
+            if self.fs :
+                # interpolate with the estimated sample rate                    
+                samples_ts = np.arange(-nsamp+1,1,dtype=int)*(1000/self.fs) + timestamp
+            else:
+                # give all same timestamp
+                samples_ts = np.ones(nsamp,dtype=int)*timestamp
+
+        # update the tracking info
+        self.last_sample_timestamp_ = timestamp
+
+        return samples_ts
+
+    def testcase(self, npkt=1000, fs=100):
+        # generate random packet sizes
+        nsamp = np.random.random_integers(0,10,size=(npkt,))
+        # generate true sample timestamps
+        ts_true = np.arange(np.sum(nsamp))*1000/fs
+        # packet end indices
+        idx = np.cumsum(nsamp)-1
+        # packet end time-stamps
+        pkt_ts = ts_true[idx]
+        # add some time-stamp jitter, always positive..
+        pkt_ts = pkt_ts + np.random.uniform(0,.5*1000/fs,size=pkt_ts.shape)
+        # apply the time-stamp interplotation
+        sts=[]
+        tsfn = timestamp_interpolation(fs=fs,sample2timestamp = linear_trend_tracker(halflife=5000,step_threshold=2))
+        for i,(n,t) in enumerate(zip(nsamp,pkt_ts)):
+            samp_ts = tsfn.transform(t,n)
+            sts.extend(samp_ts)
+        # plot the result.
+        import matplotlib.pyplot as plt
+        plt.plot(ts_true - sts)
+        plt.show()
+
 def testfilt():
     butterfilt_and_downsample.testcase()
 
@@ -742,6 +818,41 @@ def testFileProxy(filename):
     ui.connect()
     sigViewer(ui)
 
+def testFileProxy2(filename):
+    from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
+    U = FileProxyHub(filename)
+    fs = 200
+    ofs = 200
+    # test with a filter + downsampler
+    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=ofs)
+    ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
+    ui.connect()
+    # run in bits..
+    data=[]
+    stim=[]
+    emptycount = 0 
+    while True:
+        newmsg, nsamp, nstim = ui.update()
+        if len(newmsg) == 0 and nsamp == 0 and nstim == 0: 
+            emptycount = emptycount + 1
+            if emptycount > 10:
+                break
+        else:
+            emptycount=0
+        if nsamp > 0:
+            data.append(ui.data_ringbuffer[-nsamp:,:].copy())
+        if nstim > 0:
+            stim.append(ui.stimulus_ringbuffer[-nstim:,:].copy())
+    # convert to single data block
+    data = np.vstack(data)
+    stim = np.vstack(stim)
+    # dump as pickle
+    import pickle
+    if ppfn is None:
+        pickle.dump(dict(data=data,stim=stim),open('raw_udi.pk','wb'))
+    else:
+        pickle.dump(dict(data=data,stim=stim),open('pp_udi.pk','wb'))
+
 def testERP():
     ui = UtopiaDataInterface()
     ui.connect()
@@ -770,8 +881,10 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
 
     
 if __name__ == "__main__":
+    #timestamp_interpolation().testcase()
     #testfilt()
     #testRaw()
     #testPP()
     #testERP()
-    testFileProxy("..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt")
+    testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
+    "..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"

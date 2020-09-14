@@ -36,15 +36,17 @@ def preprocess(X, Y, coords, whiten=False, whiten_spectrum=False, badChannelThre
         X = X - np.mean(X, axis=-1, keepdims=True)
 
     if whiten>0:
-        print("whiten:{}".format(whiten))
-        X, W = spatially_whiten(X,reg=whiten)
+        reg = whiten if not isinstance(whiten,bool) else 0
+        print("whiten:{}".format(reg))
+        X, W = spatially_whiten(X,reg=reg)
 
     if stopband is not None:
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
     if whiten_spectrum > 0:
-        print("Spectral whiten:{}".format(whiten_spectrum))
-        X, W = spectrally_whiten(X, axis=-2, reg=whiten_spectrum)
+        reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else 0
+        print("Spectral whiten:{}".format(reg))
+        X, W = spectrally_whiten(X, axis=-2, reg=reg)
 
     return X, Y, coords
 
@@ -64,10 +66,10 @@ def rmBadChannels(X:np.ndarray, Y:np.ndarray, coords, thresh=3.5):
         coords
     """    
     isbad, pow = idOutliers(X, thresh=thresh, axis=(0,1))
+    print("Ch-power={}".format(pow.ravel()))
     keep = isbad[0,0,...]==False
     X=X[...,keep]
 
-    #print("power={}".format(pow))
     if 'coords' in coords[-1] and coords[-1]['coords'] is not None:
         rmd = coords[-1]['coords'][isbad[0,0,...]]
         print("Bad Channels Removed: {} = {}={}".format(np.sum(isbad),np.flatnonzero(isbad[0,0,...]),rmd))
@@ -95,10 +97,11 @@ def rmBadTrial(X, Y, coords, thresh=3.5, verb=1):
         coords
     """
     isbad,pow = idOutliers(X, thresh=thresh, axis=(1,2))
+    print("Trl-power={}".format(pow.ravel()))
     X=X[isbad[...,0,0]==False,...]
     Y=Y[isbad[...,0,0]==False,...]
 
-    if 'coords' in coords[0]:
+    if 'coords' in coords[0] and np.sum(isbad) > 0:
         rmd = coords[0]['coords'][isbad[...,0,0]]
         print("BadTrials Removed: {} = {}".format(np.sum(isbad),rmd))
 
