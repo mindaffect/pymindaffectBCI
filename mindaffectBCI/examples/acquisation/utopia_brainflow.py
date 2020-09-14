@@ -86,18 +86,17 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     # N.B. we force a sleep here to allow the board to startup correctly
     sleep(3)
 
+    maxpacketsamples = int(16000 / 4 / len(eeg_channels))
     nSamp=0
     nBlock=0
     data=None
-    ots = 0
+    ots = None
     while True:
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
         if data.size == 0:
             sleep(.001)
             continue
-        dts = data[timestamp_channel,-1]-ots
-        ots = dts
 
         # BODGE: simulated boards seem to not work correctly without some blocking IO
         if board_id <= 0:
@@ -106,16 +105,26 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
         # extract the info we want
         eeg = data[eeg_channels,:] # (channels,samples) 
-        ts = data[timestamp_channel,:] # (samples,)
+        timestamps = data[timestamp_channel,:] # (samples,)
 
         # forward the *EEG* data to the utopia client
-        nSamp = nSamp + data.shape[1]
-        nBlock = nBlock + 1
+        nSamp = nSamp + eeg.shape[1]
         # format for sending to MA
         eeg = eeg.T # MA uses (samples,channels)
-        ts = (int(ts[-1]*1000))%(1<<31) # MA uses milliseconds wrapped into 32-bit ints
-        #ts = client.getTimeStamp()
-        client.sendMessage(utopiaclient.DataPacket(ts, eeg))
+
+        # TODO[]: send as smaller packets if too much data
+        pktidx = list(range(0,eeg.shape[0],maxpacketsamples)) + [eeg.shape[0],]
+        for i in range(len(pktidx)-1):
+            d = eeg[pktidx[i]:pktidx[i+1],:]
+            ts = timestamps[pktidx[i+1]-1]
+            # ensure increasing time-stamps.... (brainflow bug?)
+            ts = max(ots,ts) if ots is not None else ts
+            ots = ts
+            # fit time-stamp into 32-bit int (with potential wrap-around)
+            ts = (int(ts*1000))%(1<<31) 
+            #ts = client.getTimeStamp()
+            client.sendMessage(utopiaclient.DataPacket(ts, d))
+            nBlock = nBlock + 1
 
         # limit the packet sending rate..
         sleep(1/PACKETRATE_HZ)
