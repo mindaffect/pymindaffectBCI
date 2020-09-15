@@ -684,7 +684,8 @@ class UtopiaClient:
     DEFAULTPORT=8400    
     HEARTBEATINTERVAL_ms=1000
     HEARTBEATINTERVALUDP_ms=200
-    
+    MAXMESSAGESIZE = 1024 * 256
+
     def __init__(self):
         self.isConnected = False
         self.sock = []
@@ -860,7 +861,7 @@ class UtopiaClient:
             self.sock.setblocking(0)
         data=[]
         try:
-            data = self.sock.recv(8192)
+            data = self.sock.recv(self.MAXMESSAGESIZE)
         except socket.timeout:
             pass
         except socket.error as ex:

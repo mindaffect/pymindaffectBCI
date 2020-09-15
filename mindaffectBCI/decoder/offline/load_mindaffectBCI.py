@@ -35,7 +35,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
 
     # pre-process: spectral filter + downsample
     # incremental call in bits
-    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=200, fs_out=ofs)
+    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs)
     #ppfn = None
     if ppfn is not None:
         if verb >= 0:
