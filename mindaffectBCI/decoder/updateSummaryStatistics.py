@@ -382,12 +382,12 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     for ei in range(nevt):
         if ei==0:
             ax = plt.subplot(3,nevt,nevt+ei+1) # N.B. subplot indexs from 1!
-            plt.ylabel('time')
-            plt.xlabel('space')
+            plt.xlabel('time (s)')
+            plt.ylabel('space')
         else: # no axis on other sub-plots
             plt.subplot(3, nevt, nevt+ei+1, sharey=ax, sharex=ax)
             plt.tick_params(labelbottom=False, labelleft=False)
-        plt.imshow(Cxy[ei, :, :], aspect='auto')
+        plt.imshow(Cxy[ei, :, :].T, aspect='auto', origin='lower', extent=(times[0], times[-1], 0, Cxy.shape[-1]))
         # TODO []: use the ch_names to add lables to the  axes
         plt.title('{}'.format(evtlabs[ei]))
     # only last one has colorbar
@@ -399,11 +399,11 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
             print("Warning: only the 1st set ERPs is plotted")
         Cyy = Cyy[0, ...]
     Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
-    plt.subplot(313);
-    plt.imshow(Cyy2d, extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]]);
+    plt.subplot(313)
+    plt.imshow(Cyy2d, extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
     plt.title('Cyy')
 
-def plot_erp(erp, evtlabs=None, times=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
+def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
     '''
     Make a multi-plot of the event ERPs (as stored in erp)
     erp = (nE, tau, d) current per output ERPs
@@ -413,6 +413,10 @@ def plot_erp(erp, evtlabs=None, times=None, ch_names=None, axis=-1, plottype='pl
             print("Warning: only the 1st set ERPs is plotted")
         erp = erp[0, ...]
     icoords = evtlabs if not evtlabs is None else list(range(erp.shape[-3]))
+    if times is None:
+        times = list(range(offset,erp.shape[-2]+offset))
+        if fs is not None:
+            times = [ t/fs for t in times ]
     jcoords = times if not times is None else list(range(offset,erp.shape[-2]+offset))
     kcoords = ch_names if not ch_names is None else list(range(erp.shape[-1]))
     if axis<0:
@@ -533,18 +537,19 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             plt.tick_params(labelbottom=False,labelleft=False) # no labels
 
         # make the spatial plot
+        sign = np.sign(A[ci,np.argmax(np.abs(A[ci,:]))]) # normalize directions
         if not ch_pos is None:
             cRng= np.max(np.abs(A.reshape((-1))))
             levels = np.linspace(-cRng,cRng,20)
-            tt=pA.tricontourf(ch_pos[:,0],ch_pos[:,1],A[ci,:],levels=levels,cmap='Spectral')
+            tt=pA.tricontourf(ch_pos[:,0],ch_pos[:,1],A[ci,:]*sign,levels=levels,cmap='Spectral')
             pA.plot(ch_pos[:,0],ch_pos[:,1],'ko',markersize=5)
             plt.colorbar(tt)
         else:
-            pA.plot(ch_names,A[ci,:],'.-')
+            pA.plot(ch_names,A[ci,:]*sign,'.-')
         pA.title.set_text("{}".format(ci))
         # make the temporal plot, with labels, N.B. use loop so can set each lines label
         for e in range(R.shape[-2]):
-            pR.plot(times,R[ci,e,:],label=evtlabs[e])
+            pR.plot(times,R[ci,e,:]*sign,label=evtlabs[e])
         pR.title.set_text("{}".format(ci))
 
     # legend in the temporal plot
