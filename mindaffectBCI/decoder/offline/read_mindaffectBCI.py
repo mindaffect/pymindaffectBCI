@@ -162,15 +162,21 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=True ):
     if regress is None:
         # do nothing, leave client + server time-stamps in place
         pass
-    elif regress==False: # just use the server ts
+    elif regress==False: 
+        # just use the server ts, as they have been put on the same time-line by the hub
         for m in msgs:
             m.timestamp = m.sts
     else:
-        #if regress=='online'
         clientips = [ m.clientip for m in msgs ]
         for client in set(clientips):
             clientmsgs = [ c for c in msgs if c.clientip == client ]
+            # only regress datapacket messages
+            #if not any(isinstance(m,DataPacket) for m in clientmsgs):
+            print('rewrite for client ip: {}'.format(client))
             rewrite_timestamps2servertimestamps(clientmsgs)
+            #else:
+            #    for m in msgs:
+            #        m.timestamp = m.sts
         
     return msgs
 

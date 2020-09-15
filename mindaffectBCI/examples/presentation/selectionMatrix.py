@@ -576,10 +576,11 @@ class SelectionGridScreen(Screen):
     '''Screen which shows a grid of symbols which will be flickered with the noisecode
     and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
-    LOGLEVEL=1
+    LOGLEVEL=0
 
     def __init__(self, window, symbols, noisetag, objIDs=None,
-                 bgFraction=.2, instruct="", clearScreen=True, sendEvents=True, liveFeedback=True):
+                 bgFraction=.2, instruct="", 
+                 clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -595,6 +596,7 @@ class SelectionGridScreen(Screen):
         self.frameend = getTimeStamp()
         self.symbols = symbols
         self.objIDs = objIDs
+        self.optosensor = optosensor
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
@@ -701,7 +703,7 @@ class SelectionGridScreen(Screen):
                                                    anchor_x='center', anchor_y='center',
                                                    batch=self.batch, group=self.foreground)
 
-        # add opto-sensor block - as last object
+        # add opto-sensor block
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
         self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9,
                                               batch=self.batch, group=self.background)
@@ -777,13 +779,14 @@ class SelectionGridScreen(Screen):
                 self.objects[predidx].color=fbcol
 
         # disp opto-sensor if targetState is set
-        if self.opto_sprite is not None:
-            self.opto_sprite.visible=False  # default to opto-off
-        if target_state is not None and target_state in (0, 1):
-            print("*" if target_state==1 else '.', end='', flush=True)
+        if self.optosensor :
             if self.opto_sprite is not None:
-                self.opto_sprite.visible=True
-                self.opto_sprite.color = (0, 0, 0) if target_state==0 else (255, 255, 255)
+                self.opto_sprite.visible=False  # default to opto-off
+            if target_state is not None and target_state in (0, 1):
+                print("*" if target_state==1 else '.', end='', flush=True)
+                if self.opto_sprite is not None:
+                    self.opto_sprite.visible=True
+                    self.opto_sprite.color = (0, 0, 0) if target_state==0 else (255, 255, 255)
 
         # do the draw
         self.batch.draw()
@@ -845,7 +848,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.S:ExptPhases.Settings,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1):
+    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1, optosensor:bool=True):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -855,7 +858,7 @@ class ExptScreenManager(Screen):
         self.query  =  QueryDialogScreen(window, 'Query Test:')
         self.electquality = ElectrodequalityScreen(window, noisetag)
         self.results = ResultsScreen(window, noisetag)
-        self.selectionGrid = SelectionGridScreen(window, symbols, noisetag)
+        self.selectionGrid = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
         self.nCal = nCal
@@ -1130,7 +1133,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
-        framesperbit:int=1, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1168,7 +1171,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         symbols = load_symbols(symbols)
 
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, optosensor=optosensor)
 
     # set per-frame callback to the draw function
     if drawrate > 0:
