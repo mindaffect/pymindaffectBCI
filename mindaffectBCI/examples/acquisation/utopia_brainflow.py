@@ -47,8 +47,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     # init the board params
     params = BrainFlowInputParams ()
-    params.ip_port = ip_port
     params.serial_port = serial_port
+    params.ip_port = ip_port
     params.mac_address = mac_address
     params.other_info = other_info
     params.serial_number = serial_number
@@ -56,7 +56,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     params.ip_protocol = ip_protocol
     params.timeout = timeout
 
-    print('params= {}'.format(vars(params)))
+    print('board_id={} params= {}'.format(board_id, vars(params)))
 
     if (log):
         BoardShim.enable_dev_board_logger ()
@@ -86,7 +86,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     # N.B. we force a sleep here to allow the board to startup correctly
     sleep(3)
 
-    maxpacketsamples = int(16000 / 4 / len(eeg_channels))
+    maxpacketsamples = int(32000 / 4 / len(eeg_channels))
     nSamp=0
     nBlock=0
     data=None
@@ -99,7 +99,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
             continue
 
         # BODGE: simulated boards seem to not work correctly without some blocking IO
-        if board_id <= 0:
+        if board_id < 0:
             print('.',end='',flush=True)
         #print("{} samp in {} uS - {}".format(data.shape[1],dts,data.shape[1]/dts))
 
@@ -113,18 +113,26 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         eeg = eeg.T # MA uses (samples,channels)
 
         # TODO[]: send as smaller packets if too much data
-        pktidx = list(range(0,eeg.shape[0],maxpacketsamples)) + [eeg.shape[0],]
-        for i in range(len(pktidx)-1):
-            d = eeg[pktidx[i]:pktidx[i+1],:]
-            ts = timestamps[pktidx[i+1]-1]
-            # ensure increasing time-stamps.... (brainflow bug?)
-            ts = max(ots,ts) if ots is not None else ts
-            ots = ts
+        if eeg.shape[0] < maxpacketsamples:
             # fit time-stamp into 32-bit int (with potential wrap-around)
+            ts = timestamps[-1]
             ts = (int(ts*1000))%(1<<31) 
             #ts = client.getTimeStamp()
-            client.sendMessage(utopiaclient.DataPacket(ts, d))
+            client.sendMessage(utopiaclient.DataPacket(ts, eeg))
             nBlock = nBlock + 1
+        else:
+            pktidx = list(range(0,eeg.shape[0],maxpacketsamples)) + [eeg.shape[0],]
+            for i in range(len(pktidx)-1):
+                d = eeg[pktidx[i]:pktidx[i+1],:]
+                ts = timestamps[pktidx[i+1]-1]
+                # ensure increasing time-stamps.... (brainflow bug?)
+                ts = max(ots,ts) if ots is not None else ts
+                ots = ts
+                # fit time-stamp into 32-bit int (with potential wrap-around)
+                ts = (int(ts*1000))%(1<<31) 
+                #ts = client.getTimeStamp()
+                client.sendMessage(utopiaclient.DataPacket(ts, d))
+                nBlock = nBlock + 1
 
         # limit the packet sending rate..
         sleep(1/PACKETRATE_HZ)
@@ -134,7 +142,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.release_session ()
 
 if __name__ == "__main__":
-    #run(board_id=1,serial_port='com3')
+    #run(board_id=1,serial_port='com3') # ganglion
+    run(board_id=0,serial_port='com4')
 
     args=parse_args()    
     try:

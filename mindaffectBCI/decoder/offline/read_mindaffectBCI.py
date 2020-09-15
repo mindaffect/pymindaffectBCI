@@ -209,7 +209,7 @@ def testcase(fn=None):
     if fn is None:
         fn = 'mindaffectBCI.txt'
 
-    print("read messages")
+    print("read messages from {}".format(fn))
     msgs = read_mindaffectBCI_messages(fn)
     for msg in msgs[:100]:
         print("{}".format(msg))

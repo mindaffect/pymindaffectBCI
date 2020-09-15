@@ -53,6 +53,14 @@ class Screen:
         return False
 
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 class InstructionScreen(Screen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, duration=5000, waitKey=True):
@@ -115,6 +123,13 @@ class InstructionScreen(Screen):
         self.instructLabel.draw()
 
 
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 class MenuScreen(InstructionScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
@@ -138,6 +153,14 @@ class MenuScreen(InstructionScreen):
             self.isDone = True
         return self.isDone
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 class ResultsScreen(InstructionScreen):
     '''Modified instruction screen with waits for and presents calibration results'''
@@ -164,6 +187,14 @@ class ResultsScreen(InstructionScreen):
         super().draw(t)
 
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 class ConnectingScreen(InstructionScreen):
     '''Modified instruction screen with waits for the noisetag to connect to the decoder'''
@@ -235,6 +266,14 @@ class ConnectingScreen(InstructionScreen):
         super().draw(t)
 
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 class SettingsScreen(InstructionScreen):
     '''Modified instruction screen to change various settings - selection threshold'''
@@ -311,6 +350,12 @@ class QueryDialogScreen(InstructionScreen):
             self.set_text(self.query +self.usertext)
         super().draw(t)
 
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-----------------------------------------------------------------
 from math import log10
 from collections import deque
@@ -422,7 +467,7 @@ class ElectrodequalityScreen(Screen):
             self.label[i].text = "%d: %3.1f"%(i, qual)
             #print(self.label[i].text + " ", end='')
             if issig2noise:
-                qual = log10(qual)/2 # n2s=50->1 n2s=10->.5 n2s=1->0
+                qual = log10(qual)/1 # n2s=50->1 n2s=10->.5 n2s=1->0
             qual = max(0, min(1, qual))
             qualcolor = (int(255*qual), int(255*(1-qual)), 0) #red=bad, green=good
             self.sprite[i].color=qualcolor
@@ -460,7 +505,8 @@ class ElectrodequalityScreen(Screen):
                 data.append(d)
                 mu.append(mui)
                 mad.append(madi)
-            datascale_uv = max(5,sum(mad)/len(mad)*4)
+            from statistics import median
+            datascale_uv = max(5,median(mad)*4)
 
             for ci in range(nch):
                 d = data[ci]
@@ -493,6 +539,13 @@ class ElectrodequalityScreen(Screen):
                 pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
                                         ('v2f', (x,y-10/2*yscale, x,y+10/2*yscale)))
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-------------------------------------------------------------
 class FrameRateTestScreen(InstructionScreen):
     ''' screen from testing the frame rate of the display under pyglet control '''
@@ -571,6 +624,13 @@ class FrameRateTestScreen(InstructionScreen):
                 pass
         return (medt,madt,mint,maxt)
 
+
+
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #-------------------------------------------------------------
 class SelectionGridScreen(Screen):
     '''Screen which shows a grid of symbols which will be flickered with the noisecode
@@ -799,6 +859,11 @@ class SelectionGridScreen(Screen):
             self.noisetag.log(logstr)
 
 
+
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
 #---------------------------------------------------------
 from enum import IntEnum
 class ExptScreenManager(Screen):
@@ -1034,18 +1099,20 @@ def getTimeStamp():
 
 import types
 from mindaffectBCI.noisetag import sumstats
-flipstats=sumstats(); fliplogtime=0
+flipstats=None;#sumstats(); 
+fliplogtime=0
 def timedflip(self):
     '''pseudo method type which records the timestamp for window flips'''
+    global flipstats, fliplogtime
     type(self).flip(self)
     olft=self.lastfliptime
     self.lastfliptime=getTimeStamp()
-    flipstats.addpoint(self.lastfliptime-olft)
-    global fliplogtime
-    if self.lastfliptime > fliplogtime:
-        fliplogtime=fliplogtime+5000
-        print("\nFlipTimes:"+str(flipstats))
-        print("Hist:\n"+flipstats.hist())
+    if flipstats is not None:
+        flipstats.addpoint(self.lastfliptime-olft)
+        if self.lastfliptime > fliplogtime:
+            fliplogtime=fliplogtime+5000
+            print("\nFlipTimes:"+str(flipstats))
+            print("Hist:\n"+flipstats.hist())
 
 last_key_press=None
 def on_key_press(symbols, modifiers):

@@ -515,7 +515,7 @@ if  __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if True or args.savefile is not None:
+    if args.savefile is not None:
         setattr(args,'savefile',"C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_android_200911_1405.txt")
         setattr(args,'out_fs',100)
         setattr(args,'savefile_fs',200)
