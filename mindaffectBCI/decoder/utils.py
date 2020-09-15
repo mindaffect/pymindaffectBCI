@@ -379,17 +379,17 @@ def idOutliers(X, thresh=4, axis=-2, verbosity=1):
     return (bad, power)
 
 class linear_trend_tracker():
-    """ linear trend tracker with forgetting factor
+    """ linear trend tracker with adaptive forgetting factor
     """   
 
-    def __init__(self,halflife=1000,step_halflife=10,step_threshold=4):
+    def __init__(self,halflife=1000,int_err_halflife=50, K_int_err=1):
         self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
         self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
         self.N=0
-        self.step_threshold=step_threshold 
-        if step_halflife is None and halflife:
-            step_halflife = max(halflife/100,1) 
-        self.step_alpha = np.exp(np.log(.5)/step_halflife) if step_halflife else .999
+        if int_err_halflife is None and halflife:
+            int_err_halflife = max(halflife/100,1) 
+        self.int_err_alpha = np.exp(np.log(.5)/int_err_halflife) if int_err_halflife else .999
+        self.K_int_err = K_int_err
 
     def reset(self, keep_err=False):
         self.N = 0
@@ -403,12 +403,12 @@ class linear_trend_tracker():
         self.a=1
         self.b=0
         if not keep_err:
-            self.err=0
-            self.step_N = 0
-            self.step_err = 0
+            self.int_err = 0
+            self.abs_err=0
+            self.int_err_N = 0
 
-    def fit(self,X,Y):
-        self.reset()
+    def fit(self,X,Y,keep_err=False):
+        self.reset(keep_err)
         if hasattr(X,'__iter__'):
             self.N = len(X)
             self.X0=X[0,...] 
@@ -429,20 +429,28 @@ class linear_trend_tracker():
 
         #if np.all(X==self.Xlast) or np.all(Y==self.Ylast):
         #    return self.getY(X)
+        # get our prediction for this point and use to track our prediction error
+        Yest = self.getY(X)
+        err  = np.mean(np.abs(Y-Yest))
   
         ## center x/y
         # N.B. be sure to do all the analysis in floating point to avoid overflow
-        cX  = np.array(X - self.X0,dtype=float)
+        cX  = np.array(X - self.X0, dtype=float)
         cY  = np.array(Y - self.Y0, dtype=float)
         N = len(X) if hasattr(X,'__iter__') else 1
         # update the 1st and 2nd order summary statistics 
         wght    = self.alpha**N
-        self.N  = wght*self.N   + N
-        self.sY = wght*self.sY  + np.sum(cY,axis=0)
-        self.sX = wght*self.sX  + np.sum(cX,axis=0)
-        self.sYY= wght*self.sYY + np.sum(cY*cY,axis=0)
-        self.sYX= wght*self.sYX + np.sum(cY*cX,axis=0)
-        self.sXX= wght*self.sXX + np.sum(cX*cX,axis=0)
+        # adaptive learning rate as function of integerated error
+        if self.N > self.warmup_weight:
+            ptwght = max(1, abs(self.int_err/self.int_err_N)*self.K_int_err) #1/max(1,err) if self.N > self.warmup_weight else 1
+        else:
+            ptwght = 1
+        self.N  = wght*self.N   + ptwght*N
+        self.sY = wght*self.sY  + ptwght*np.sum(cY,axis=0)
+        self.sX = wght*self.sX  + ptwght*np.sum(cX,axis=0)
+        self.sYY= wght*self.sYY + ptwght*np.sum(cY*cY,axis=0)
+        self.sYX= wght*self.sYX + ptwght*np.sum(cY*cX,axis=0)
+        self.sXX= wght*self.sXX + ptwght*np.sum(cX*cX,axis=0)
 
         # update the fit parameters
         if self.N > 1:
@@ -455,17 +463,17 @@ class linear_trend_tracker():
         self.b = (self.Y0 + self.sY / self.N) - self.a * (self.X0 + self.sX / self.N)
         #self.b = (self.sY / self.N) - self.a * (self.sX / self.N)
 
-        # check for steps in the inputs if the tracker is warmed up
+        # check for steps in the inputs
         # get our prediction for this point and use to track our prediction error
         Yest = self.getY(X)
-        err  = np.abs(Y-Yest)
+        err  = np.mean(Y-Yest)
 
         # track the prediction error, with long and short half-life
-        self.err = self.err*wght + err
+        self.abs_err = self.abs_err*wght + abs(err)
         # track with step window
-        step_wght = self.step_alpha**N
-        self.step_N = self.step_N * step_wght + N
-        self.step_err = self.step_err * step_wght + err
+        int_err_wght = self.int_err_alpha**N
+        self.int_err_N = self.int_err_N * int_err_wght + N
+        self.int_err = self.int_err*int_err_wght + err
 
         # only return the estimate if we've warmed up the tracker
         if self.N < self.warmup_weight:
@@ -473,11 +481,10 @@ class linear_trend_tracker():
 
         # detect change in statistics by significant difference in error statistics
         # between long and short halflife
-        if (self.step_err / self.step_N) > (self.err / self.N) * self.step_threshold:
-            print("step-detected")
-            self.reset(keep_err=True)
-            self.fit(X,Y)
-            Yest = Y
+        #if (self.step_err / self.step_N) > (self.err / self.N) * self.step_threshold:
+        #    print("step-detected")
+        #    #self.fit(X,Y,keep_err=True)
+        #    #Yest = Y
 
         return Yest
 
@@ -499,6 +506,7 @@ class linear_trend_tracker():
         import os
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
         savefile = max(files, key=os.path.getctime)
+        savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
         #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
         from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
         from mindaffectBCI.utopiaclient import DataPacket
@@ -513,22 +521,37 @@ class linear_trend_tracker():
         ltt = linear_trend_tracker(1000)
         ltt.fit(X[0],Y[0]) # check scalar inputs
         step = 1
-        idxs = list(range(step+1,X.shape[0],step))
+        idxs = list(range(1,X.shape[0],step))
         ab = np.zeros((len(idxs),2))
         print("{}) a={} b={}".format('true',a,b))
+        dts = np.zeros((Y.shape[0],))
+        dts[0] = ltt.getY(X[0])
         for i,j in enumerate(idxs):
-            yt = ltt.transform(X[j-step:j],Y[j-step:j])
+            dts[j:j+step] = ltt.transform(X[j:j+step],Y[j:j+step])
             ab[i,:] = (ltt.a,ltt.b)
-            yest=ltt.getY(X[j])
-            if abs(yest-Ytrue[j])> 1000:
-                print("argh!")
-            print("{:4d}) a={:5f} b={:5f}\ty-y_true={:2.5f}\ty_est-y_true={:2.5f}".format(j,ab[i,0],ab[i,1],
+            yest = ltt.getY(X[j])
+            err =  yest - Ytrue[j]
+            if abs(err)> 1000:
+                print("{}) argh!".format(i))
+            if i < 100:
+                print("{:4d}) a={:5f} b={:5f}\ty-y_true={:2.5f}\ty_est-y_true={:2.5f}".format(j,ab[i,0],ab[i,1],
                          Ytrue[j]-Y[j],Ytrue[j]-yest))
-        import matplotlib.pyplot as plt
-        plt.plot(idxs,ab[:,0]-a,label='a')
-        plt.plot(idxs,ab[:,1]-b,label='b')
-        plt.legend()
 
+        import matplotlib.pyplot as plt
+        ab,res,_,_ = np.linalg.lstsq(np.append(X[:,np.newaxis],np.ones((X.shape[0],1)),1),Y,rcond=-1)
+        ots = X*ab[0]+ab[1]        
+        idx=range(X.shape[0])
+        plt.plot(X[idx],Y[idx]- X[idx]*ab[0]-Y[0],label='server ts')
+        plt.plot(X[idx],dts[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server)')
+        plt.plot(X[idx],ots[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server) offline')
+
+        err = Y - X*ab[0] - Y[0]
+        cent = np.median(err); scale=np.median(np.abs(err-cent))
+        plt.ylim((cent-scale*5,cent+scale*5))
+
+        plt.legend()
+        plt.show()
+        
 
 try:
     from scipy.signal import butter, sosfilt, sosfilt_zi
