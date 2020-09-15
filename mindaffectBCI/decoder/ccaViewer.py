@@ -200,22 +200,24 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         W = W[0,...]
         R = R[0,...]
 
-        R_lim = (np.min(R.ravel()) * 2, np.max(R.ravel()) * 2)
+        R_lim = (-np.max(np.abs(R.ravel())) * 2, np.max(np.abs(R.ravel())) * 2)
         R_lim = [ d if not np.isnan(d) else 0 for d in R_lim ] # guard
 
-        W_lim = (np.min(W.ravel())*2, np.max(W.ravel())*2)
+        W_lim = (-np.max(np.abs(W.ravel()))*2, np.max(np.abs(W.ravel()))*2)
         W_lim = [ d if not np.isnan(d) else 0 for d in W_lim ] # guard
 
         # Update the plots for each event type
         for ri in range(rank):
+            sign = np.sign(W[ri,np.argmax(np.abs(W[ri,:]))]) # normalize directions
+
             # plot the temporal responses
             for ei in range(len(evtlabs)):
-                temporal_lines[ri][ei].set_ydata(R[ri,ei,:])
+                temporal_lines[ri][ei].set_ydata(R[ri,ei,:]*sign)
             temporal_ax[ri].set_ylim( R_lim )
 
             # plot the spatial patterns
             # TODO[]: as a topographic plot
-            spatial_lines[ri][-1].set_ydata(W[ri,:])
+            spatial_lines[ri][-1].set_ydata(W[ri,:]*sign)
             spatial_ax[ri].set_ylim(W_lim)
 
 if __name__=='__main__':
@@ -233,8 +235,7 @@ if __name__=='__main__':
     ch_names = args.ch_names.split(',') if args.ch_names is not None else None
 
     data_preprocessor = None
-    #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((0, 4), (25, -1)), fs_out=80)
+    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((45,65), (0, 4), (25, -1)), fs_out=100)
     ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
     ui.connect(hostname)
 

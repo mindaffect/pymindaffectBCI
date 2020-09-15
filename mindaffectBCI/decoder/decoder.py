@@ -126,12 +126,14 @@ def dataset_to_XY_ndarrays(dataset):
         data_ts = data[:, -1]  # data timestamp per sample
         stimulus_ts = stimulus[:, -1]  # stimulus timestamp per stimulus event
         stimulus, data_i = upsample_stimseq(data_ts, stimulus[:, :-1], stimulus_ts)
-        Y_ts[ti,data_i] = stimulus_ts # record stim-ts @ this data_ts
         # store -- compensating for any variable trial lengths.
-        if Y.shape[1] < stimulus.shape[0]:
+        if Y.shape[1] < stimulus.shape[0]: # long trial
             Y[ti, :, :] = stimulus[:Y.shape[1], :]
-        else:
+        else: # short trial
             Y[ti, :stimulus.shape[0], :] = stimulus
+        # record stim-ts @ this data_ts
+        tmp = data_i < Y.shape[1]
+        Y_ts[ti,data_i[tmp]] = stimulus_ts[tmp] 
 
     try:
         import pickle
@@ -179,9 +181,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
         if CALIBRATIONPLOTS:
             try:
+            #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model()
+                clsfr.plot_model(fs=ui.fs)
                 plt.suptitle('Factored Model')
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
@@ -192,10 +195,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 Y_true = clsfr.stim2event(Y)
                 Y_true = Y_true[...,0:1,:]
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
-                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
+                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=ui.fs)
                 plt.suptitle("Summary Statistics")
                 plt.figure(4)
-                plot_erp(Cxy,evtlabs=clsfr.evtlabs)
+                plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=ui.fs)
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
