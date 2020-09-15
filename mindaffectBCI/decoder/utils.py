@@ -351,7 +351,7 @@ def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
     return (X, Y)
 
 
-def idOutliers(X, thresh=4, axis=-2, verbosity=1):
+def idOutliers(X, thresh=4, axis=-2, verbosity=0):
     ''' identify outliers with excessively high power in the input data
     Inputs:
       X:float the data to identify outliers in
@@ -492,7 +492,7 @@ class linear_trend_tracker():
         return ( y  - self.b ) / self.a 
 
     def getY(self,x):
-        return self.a * (x) + self.b
+        return self.a * x + self.b
 
     @staticmethod
     def testcase():
@@ -506,7 +506,7 @@ class linear_trend_tracker():
         import os
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
         savefile = max(files, key=os.path.getctime)
-        savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
+        #savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
         #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
         from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
         from mindaffectBCI.utopiaclient import DataPacket
@@ -530,12 +530,12 @@ class linear_trend_tracker():
             dts[j:j+step] = ltt.transform(X[j:j+step],Y[j:j+step])
             ab[i,:] = (ltt.a,ltt.b)
             yest = ltt.getY(X[j])
-            err =  yest - Ytrue[j]
+            err =  yest - Y[j]
             if abs(err)> 1000:
-                print("{}) argh!".format(i))
+                print("{}) argh! yest={} ytrue={} err={}".format(i,yest,Ytrue[j],err))
             if i < 100:
-                print("{:4d}) a={:5f} b={:5f}\ty-y_true={:2.5f}\ty_est-y_true={:2.5f}".format(j,ab[i,0],ab[i,1],
-                         Ytrue[j]-Y[j],Ytrue[j]-yest))
+                print("{:4d}) a={:5f} b={:5f}\ty_est-y={:2.5f}".format(j,ab[i,0],ab[i,1],
+                        Y[j]-yest))
 
         import matplotlib.pyplot as plt
         ab,res,_,_ = np.linalg.lstsq(np.append(X[:,np.newaxis],np.ones((X.shape[0],1)),1),Y,rcond=-1)
