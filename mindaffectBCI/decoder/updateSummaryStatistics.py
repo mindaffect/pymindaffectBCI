@@ -546,11 +546,11 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             plt.colorbar(tt)
         else:
             pA.plot(ch_names,A[ci,:]*sign,'.-')
-        pA.title.set_text("{}".format(ci))
+        pA.title.set_text("Spatial Filter #{}".format(ci))
         # make the temporal plot, with labels, N.B. use loop so can set each lines label
         for e in range(R.shape[-2]):
             pR.plot(times,R[ci,e,:]*sign,label=evtlabs[e])
-        pR.title.set_text("{}".format(ci))
+        pR.title.set_text("Impulse Response #{}".format(ci))
 
     # legend in the temporal plot
     axR.legend()
