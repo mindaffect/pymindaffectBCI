@@ -884,7 +884,7 @@ if __name__ == "__main__":
     #timestamp_interpolation().testcase()
     #testfilt()
     #testRaw()
-    #testPP()
+    testPP()
     #testERP()
-    testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
+    #testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
     "..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"
