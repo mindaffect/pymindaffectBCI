@@ -190,12 +190,12 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
 
     # additional badness conditions based on eigen-spectrum
     if not rcond is None:
-        print('rcond={}\nsigma\{}'.format(rcond,sigma))
+        #print('rcond={}\nsigma\{}'.format(rcond,sigma))
         # identify eigen-values we want to remove due to rcond
         if 0 <= rcond:  # value threshold
-            print('bad={}'.format(bad))
+            #print('bad={}'.format(bad))
             bad = np.logical_or(bad, sigma.real < rcond*max(np.abs(sigma)))
-            print('bad={}'.format(bad))
+            #print('bad={}'.format(bad))
         elif -1 < rcond and rcond < 0:  # fraction
             si = np.argsort(sigma)  # N.B. Ascending
             bad[si[:int(len(si)*abs(rcond))]] = True  # up to this fraction are bad
@@ -278,7 +278,7 @@ def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     
 
 def testcase():
-    from mindffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
+    from mindaffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
     #from multipleCCA import *
     if False:
         X, Y, st = testNoSignal()
