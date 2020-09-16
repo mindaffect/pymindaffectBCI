@@ -75,7 +75,8 @@ class UtopiaDataInterface:
         self.last_sigquality_ts = None
         self.last_log_ts = None
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
-        self.noise2sig_halflife = (5000,500) # noise2sig estimate halflife
+        # noise2sig estimate halflife_ms, running-offset, de-trended power
+        self.noise2sig_halflife_ms = (10000, 500) # 10s for offset, .5s for power
         # TODO [x]: move into a exp-move-ave power est class
         self.raw_power = None
         self.preproc_power = None
@@ -319,8 +320,9 @@ class UtopiaDataInterface:
     def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
         ''' track exp-weighted-moving average centered power for 2 input streams '''
         if self.raw_power is None:
-            self.raw_power = power_tracker(self.raw_fs/10, self.raw_fs, self.raw_fs)
-            self.preproc_power = power_tracker(self.fs/10, self.fs, self.fs)
+            mu_hl, pow_hl = self.noise2sig_halflife_ms
+            self.raw_power = power_tracker(mu_hl, pow_hl, self.raw_fs)
+            self.preproc_power = power_tracker(mu_hl, pow_hl, self.fs)
         self.raw_power.transform(d_raw)
         self.preproc_power.transform(d_preproc)
         return (self.raw_power.power(), self.preproc_power.power())
@@ -485,6 +487,15 @@ except:
         def transform(self,X):
             pass
 
+
+
+
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
 class butterfilt_and_downsample(TransformerMixin):
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60):
@@ -584,6 +595,12 @@ class butterfilt_and_downsample(TransformerMixin):
         print("diff: {}".format(np.max(np.abs(m0-m1))))
 
 
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 from mindaffectBCI.decoder.stim2event import stim2event
 class stim2eventfilt(TransformerMixin):
     ''' transformer to transform a sequence of stimulus states to a brain event sequence '''
@@ -647,6 +664,13 @@ class stim2eventfilt(TransformerMixin):
         print("m0={}\nm1={}\n,m4={}\n".format(m0,m1,m4))
             
 
+
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 class power_tracker(TransformerMixin):
     def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
         # convert to per-sample decay factor
@@ -707,6 +731,12 @@ class power_tracker(TransformerMixin):
             plt.plot(idxs,powers[:,d])
 
 
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 class timestamp_interpolation(TransformerMixin):
     """transform from per-packet time-stamps to per-sample timestamps (with de-jitter)
     """
