@@ -106,16 +106,20 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     # shutdown the background processes
     try: 
         decoder.terminate()
+        decoder.join()
     except:
         pass
     try:
         acquisation.terminate()
+        acquisation.join()
     except:
         pass
     
-    print('killing hub')
-    os.kill(hub.pid, signal.SIGTERM)
-    print('exit online_bci')
+    hub.terminate()
+    hub.join()
+    #print('killing hub')
+    #os.kill(hub.pid, signal.SIGTERM)
+    #print('exit online_bci')
 
 def parse_args():
     import argparse
