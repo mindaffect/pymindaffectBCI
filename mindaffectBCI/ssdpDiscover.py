@@ -69,7 +69,7 @@ class ssdpDiscover :
         'HOST: {0}:{1}',
         'MAN: "ssdp:discover"',
         'ST: {st}', 'MX: {mx}', '', ''])
-    def __init__(self,servicetype="ssdp:all",discoverytimeout=5):
+    def __init__(self,servicetype="ssdp:all",discoverytimeout=3):
         self.servicetype=servicetype
         self.queryt=None
         self.sock=None
@@ -83,23 +83,24 @@ class ssdpDiscover :
     
     def initSocket(self):
         # make the UDP socket to the multicast group with timeout
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)#, socket.IPPROTO_UDP)
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
-        self.sock.bind(('',self.ssdpgroup[1])) # bind port
 
         # request membership
         group = socket.inet_aton(self.ssdpgroup[0])
 
-        local_ip = get_remote_ip()        
-        if local_ip is None:
-           local_ip=get_local_ip()
-        print("Trying local ip: {}".format(local_ip))
-        mreq = group + socket.inet_aton(local_ip)
+        #local_ip = get_remote_ip()        
+        #if local_ip is None:
+        #   local_ip=get_local_ip()
+        #print("Trying local ip: {}".format(local_ip))
+        #mreq = group + socket.inet_aton(local_ip)
 
-        #mreq = struct.pack('4sL', group, socket.INADDR_ANY)
+        mreq = struct.pack('4sl', group, socket.INADDR_ANY)
 
+        self.sock.bind(('',self.ssdpgroup[1])) # bind port
+        # add to multi-cast group to get responses
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         
         
@@ -150,14 +151,18 @@ class ssdpDiscover :
             print("Socket error" + str(ex)) 
             return (None,None)
 
-        # guard for recieving our own query message!
-        if b"M-SEARCH" in rsp:
+        if rsp == self.msearchMessage:
             print("Response was query message!")
             return (None,None)
+
 
         # got a response, parse it...           
         rsp=rsp.decode('utf-8')
         print("Got response from : %s\n%s\n"%(addr,rsp))
+
+        # guard for recieving our own query message!
+        #if "M-SEARCH" in rsp:
+
         # does the response contain servertype, if so then we match
         location=None
         if self.servicetype is None or self.servicetype in rsp :
