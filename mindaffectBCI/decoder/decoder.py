@@ -56,7 +56,6 @@ def get_trial_start_end(msgs, start_ts=None):
     # N.B. start_ts is not None if trail start without end..
     return (trials, start_ts, msgs)
 
-
 def getCalibration_dataset(ui):
     ''' extract a labelled dataset from the utopiaInterface, which are trilas between modechange messages '''
     # run until we get a mode change gathering training data in trials
@@ -154,11 +153,13 @@ def strip_unused(Y):
 
 
 def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
-                            cv=3, calfn="calibration_data.pk", fitfn="fit_data.pk"):
+                            cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None):
     ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
     X = None
     Y = None
     dataset = getCalibration_dataset(ui)
+    if previous_dataset is not None: # combine with the old calibration data
+        dataset.extend(previous_dataset)
     if dataset:
         # convert msgs -> to nd-arrays
         X, Y = dataset_to_XY_ndarrays(dataset)
@@ -217,7 +218,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         # send message with calibration performance score
         ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, perr))
         
-    return X, Y
+    return dataset, X, Y
 
 
 def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=None):
@@ -467,15 +468,19 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, reg=0.003)
         print('clsfr={}'.format(clsfr))
     
+    calibration_dataset = None
     current_mode = "idle"
     # clean shutdown when told shutdown
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            doCalibrationSupervised(ui, clsfr, cv=cv)
+            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, previous_dataset=calibration_dataset)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             doPredictionStatic(ui, clsfr)
+
+        elif current_mode.lower() in ("reset"):
+            calibration_dataset = None
 
         # check for new mode-messages
         newmsgs, nsamp, nstim = ui.update()
