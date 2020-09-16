@@ -887,12 +887,14 @@ class ExptScreenManager(Screen):
         Minimize=101
         Settings=105
         FrameRateCheck=200
+        Reset=110
 
     welcomeInstruct="Welcome to the mindaffectBCI\n\nkey to continue"
     calibrationInstruct="Calibration\n\nThe next stage is CALIBRATION\nlook at the indicated green target\n\nkey to continue"
     cuedpredictionInstruct="Prediction\n\nThe next stage is CUED PREDICTION\nLook at the green cued letter\n\nLive BCI feedback in blue\n\nkey to continue"
     predictionInstruct="Prediction\n\nThe next stage is free PREDICTION\nLook at the letter you want to select\nLive BCI feedback in blue\n\nkey to continue"
     closingInstruct="Closing\nThankyou\n\nPress to exit"
+    resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
 
     main_menu ="Welcome to the mindaffectBCI" +"\n"+ \
                "\n"+ \
@@ -904,13 +906,16 @@ class ExptScreenManager(Screen):
                "3) Free Typing" +"\n"+ \
                "Q) Quit" + "\n\n\n" + \
                "f) frame-rate-check" + "\n" + \
-               "s) settings"
+               "s) settings\n" + \
+               "r) reset calibration model"
+               
     menu_keys = {pyglet.window.key._0:ExptPhases.SignalQuality,
                  pyglet.window.key._1:ExptPhases.CalInstruct,
                  pyglet.window.key._2:ExptPhases.CuedPredInstruct,
                  pyglet.window.key._3:ExptPhases.PredInstruct,
                  pyglet.window.key.F:ExptPhases.FrameRateCheck,
                  pyglet.window.key.S:ExptPhases.Settings,
+                 pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1, optosensor:bool=True):
@@ -969,6 +974,14 @@ class ExptScreenManager(Screen):
             self.instruct.reset()
             self.screen = self.instruct
             self.next_stage = self.ExptPhases.Connecting
+
+        elif self.stage==self.ExptPhases.Reset: # reset the decoder
+            print("reset")
+            self.instruct.set_text(self.resetInstruct)
+            self.instruct.reset()
+            self.screen = self.instruct
+            self.noisetag.modeChange("reset")
+            self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.Connecting: # connecting instruct
             print("connecting screen")

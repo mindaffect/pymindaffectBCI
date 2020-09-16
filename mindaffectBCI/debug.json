@@ -1,0 +1,29 @@
+{
+    "acquisation":"fakedata",
+
+    "acq_args":{
+    },
+
+    "decoder":"mindaffectBCI.decoder.decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[0,3],[25,-1]],
+        "out_fs" : 100,
+        "evtlabs" : ["re","fe"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":2,
+        "npred":10,
+        "selectionThreshold":0.1,
+        "symbols":"symbols.txt",
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":false,
+        "host":"-"
+    }
+}
