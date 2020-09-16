@@ -76,7 +76,7 @@ class UtopiaDataInterface:
         self.last_log_ts = None
         self.send_sigquality_interval = 1000 # send signal qualities every 1000ms = 1Hz
         # noise2sig estimate halflife_ms, running-offset, de-trended power
-        self.noise2sig_halflife_ms = (10000, 500) # 10s for offset, .5s for power
+        self.noise2sig_halflife_ms = (5000, 500) # 10s for offset, .5s for power
         # TODO [x]: move into a exp-move-ave power est class
         self.raw_power = None
         self.preproc_power = None
