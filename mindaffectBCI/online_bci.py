@@ -3,32 +3,14 @@ import signal
 from multiprocessing import Process
 from time import sleep
 
-def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
-    """[summary]
-
-    Args:
-        label (str, optional): string label for the saved data file. Defaults to ''.
-        acquisation (str, optional): the name of the acquisation driver to use. Defaults to None.
-        acq_args (dict, optional): dictionary of optoins to pass to the acquisation driver. Defaults to None.
-        decoder (str, optional): the name of the decoder function to use.  Defaults to 'decoder'.
-        decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
-        presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
-        presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.
-
-    Raises:
-        ValueError: invalid options, e.g. unrecognised acq_driver
-    """    
-    if acquisation is None: 
-        acquisation = 'brainflow'
-
-    #--------------------------- HUB ------------------------------
-    # start the utopia-hub process
+def startHubProcess(label):
     from mindaffectBCI.decoder import startUtopiaHub
     hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
     hub.start()
     sleep(1)
+    return hub
 
-    #---------------------------ACQUISATION ------------------------------
+def startAcquisationProcess(label,acquisation,acq_args):
     # start the ganglion acquisation process
     # Using brainflow for the acquisation driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
@@ -61,12 +43,10 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         acquisation.start()
     else:
         raise ValueError("Unrecognised acquisation driver! {}".format(acquisation))
+    
+    return acquisation
 
-    if not acquisation.is_alive():
-        raise ValueError("Acquisation didn't start correctly!")
-
-    #---------------------------DECODER ------------------------------
-    # start the decoder process - with default settings for a noise-tag
+def startDecoderProcess(label,decoder,decoder_args):
     if decoder == 'decoder' or decoder == 'mindaffectBCI.decoder.decoder':
         from mindaffectBCI.decoder import decoder
         if decoder_args is None:
@@ -77,14 +57,67 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         sleep(4)
     elif decoder == 'none':
         decoder = None
+    return decoder
 
-    # check all started up and running..
-    if hub is not None and not hub.is_alive():
+def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
+    """[summary]
+
+    Args:
+        label (str, optional): string label for the saved data file. Defaults to ''.
+        acquisation (str, optional): the name of the acquisation driver to use. Defaults to None.
+        acq_args (dict, optional): dictionary of optoins to pass to the acquisation driver. Defaults to None.
+        decoder (str, optional): the name of the decoder function to use.  Defaults to 'decoder'.
+        decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
+        presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
+        presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.
+
+    Raises:
+        ValueError: invalid options, e.g. unrecognised acq_driver
+    """    
+    if acquisation is None: 
+        acquisation = 'brainflow'
+
+    hub_proc = None
+    acquisation_proc = None
+    decoder_proc = None
+    for retries in range(10):
+        #--------------------------- HUB ------------------------------
+        # start the utopia-hub process
+        if hub_proc is None or not hub_proc.is_alive():
+            hub_proc = startHubProcess(label)
+
+        #---------------------------ACQUISATION ------------------------------
+        if acquisation_proc is None or not acquisation_proc.is_alive():
+            acquisation_proc = startAcquisationProcess(label,acquisation,acq_args)
+
+        #---------------------------DECODER ------------------------------
+        # start the decoder process - with default settings for a noise-tag
+        if decoder_proc is None or not decoder_proc.is_alive():
+            decoder_proc = startDecoderProcess(label, decoder, decoder_args)
+
+        # terminate if all started successfully
+        # check all started up and running..
+        component_failed=False
+        if hub_proc is not None and not hub_proc.is_alive():
+            print("Hub didn't start correctly!")
+            component_failed=True
+        if acquisation_proc is not None and not acquisation_proc.is_alive():
+            print("Acq didn't start correctly!")
+            component_failed=True
+        if decoder_proc is not None and not decoder_proc.is_alive():
+            component_failed=True
+
+        # stop re-starting if all are running fine
+        if not component_failed:
+            break
+
+    if hub_proc is not None and not hub_proc.is_alive():
+        print("Hub didn't start correctly!")
         raise ValueError("Hub didn't start correctly!")
-    if acquisation is not None and not acquisation.is_alive():
+    if acquisation_proc is not None and not acquisation_proc.is_alive():
         print("Acq didn't start correctly!")
         raise ValueError("Acquisation didn't start correctly!")
-    if decoder is not None and not decoder.is_alive():
+    if decoder_proc is not None and not decoder_proc.is_alive():
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
