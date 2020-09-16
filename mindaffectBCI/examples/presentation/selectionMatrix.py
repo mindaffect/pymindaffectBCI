@@ -362,7 +362,7 @@ from collections import deque
 class ElectrodequalityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
 
-    instruct = "Electrode Quality\n\nAdjust headset until all\nelectrodes are green\n(or noise to signal ratio < 5)"
+    instruct = "Electrode Quality\n\nAdjust headset until all electrodes are green\n(or noise to signal ratio < 5)"
     def __init__(self, window, noisetag, nch=4, duration=200000, waitKey=True):
         super().__init__(window)
         self.noisetag = noisetag
@@ -414,9 +414,9 @@ class ElectrodequalityScreen(Screen):
             self.linebbox[i] = (x+r, y, winh*.9-x+r, self.chrect[3])
         # title for the screen
         self.title=pyglet.text.Label(self.instruct, font_size=32,
-                                     x=0, y=winh, color=(255, 255, 255, 255),
+                                     x=winw*.1, y=winh, color=(255, 255, 255, 255),
                                      anchor_y="top",
-                                     width=int(window.width*.7),
+                                     width=int(winw*.9),
                                      multiline=True,
                                      batch=self.batch,
                                      group=self.foreground)
@@ -1254,7 +1254,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=4)
+    parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=10)
     parser.add_argument('npred',type=int, help='number prediction trials', nargs='?', default=10)
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
