@@ -88,18 +88,18 @@ class ssdpDiscover :
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
         self.sock.bind(('',self.ssdpgroup[1])) # bind port
-        #local_ip = get_remote_ip()
-        
-        #if local_ip is None:
-        #    local_ip=get_local_ip()
-        #print("Trying local ip: {}".format(local_ip))
-        #membership_request = socket.inet_aton(self.ssdpgroup[0]) + socket.inet_aton(local_ip)
-        ### Send add membership request to socket
-        #self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership_request)
 
         # request membership
         group = socket.inet_aton(self.ssdpgroup[0])
-        mreq = struct.pack('4sL', group, socket.INADDR_ANY)
+
+        local_ip = get_remote_ip()        
+        if local_ip is None:
+           local_ip=get_local_ip()
+        print("Trying local ip: {}".format(local_ip))
+        mreq = group + socket.inet_aton(local_ip)
+
+        #mreq = struct.pack('4sL', group, socket.INADDR_ANY)
+
         self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         
         
@@ -125,20 +125,37 @@ class ssdpDiscover :
                 print(ex)
                 return ()
 
+        # wait for the specified time for a response
+        t0 = time.time()
+        ttg = timeout
+        responses = []
+        while time.time() < t0 + timeout:
+            location, rsp = self.wait_msearch_response(ttg)
+            if location is not None:
+                responses.append(location)
+            ttg = t0 + timeout - time.time()
+
         # wait for responses to our query
+        return responses
+
+    def wait_msearch_response(self,timeout):
         self.sock.settimeout(timeout)
         print("Waiting responses")
         try:
             rsp,addr=self.sock.recvfrom(8192)
         except socket.timeout:
             print("Socket timeout")
-            return ()
+            return (None,None)
         except socket.error as ex :
             print("Socket error" + str(ex)) 
-            return ()
+            return (None,None)
 
-        # got a response, parse it...
-        responses=[]
+        # guard for recieving our own query message!
+        if b"M-SEARCH" in rsp:
+            print("Response was query message!")
+            return (None,None)
+
+        # got a response, parse it...           
         rsp=rsp.decode('utf-8')
         print("Got response from : %s\n%s\n"%(addr,rsp))
         # does the response contain servertype, if so then we match
@@ -162,8 +179,8 @@ class ssdpDiscover :
                     break # done with self response
             # add to the list of possible servers
             print("Loc added to response list: {}".format(location))
-            responses.append(location)
-        return responses
+        return (location,rsp)
+
 
 def ipscanDiscover(port:int, ip:str=None, timeout=.5):
     ''' scan for service by trying all 255 possible final ip-addresses'''
@@ -209,7 +226,7 @@ def testIncrementalScanning():
         # sleep to represent doing other work..
         time.sleep(1)
 
-def discoverOrIPscan(port:int = 8400, timeout_ms:int = 5000):
+def discoverOrIPscan(port:int = 8400, timeout_ms:int = 15000):
     disc=ssdpDiscover("utopia/1.1");
     hosts = disc.discover(timeout=timeout_ms/1000.0)
     
