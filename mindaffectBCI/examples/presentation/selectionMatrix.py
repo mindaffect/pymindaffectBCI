@@ -363,7 +363,7 @@ class ElectrodequalityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
 
     instruct = "Electrode Quality\n\nAdjust headset until all electrodes are green\n(or noise to signal ratio < 5)"
-    def __init__(self, window, noisetag, nch=4, duration=200000, waitKey=True):
+    def __init__(self, window, noisetag, nch=4, duration=3600*1000, waitKey=True):
         super().__init__(window)
         self.noisetag = noisetag
         self.t0 = None  # timer for the duration
@@ -383,7 +383,7 @@ class ElectrodequalityScreen(Screen):
         self.foreground = pyglet.graphics.OrderedGroup(1)
         winw, winh = window.get_size()
         r = (winh*.8)/(nch+1)
-        # TODO[] use bounding box
+        # TODO[X] use bounding box
         self.chrect = (int(winw*.1), 0, r, r) # bbox for each signal, (x, y, w, h)
         # make a sprite to draw the electrode qualities
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
@@ -411,7 +411,7 @@ class ElectrodequalityScreen(Screen):
                                             batch=self.batch,
                                             group=self.foreground)
             # bounding box for the datalines
-            self.linebbox[i] = (x+r, y, winh*.9-x+r, self.chrect[3])
+            self.linebbox[i] = (x+r, y, winw-(x+r)-.5*r, self.chrect[3])
         # title for the screen
         self.title=pyglet.text.Label(self.instruct, font_size=32,
                                      x=winw*.1, y=winh, color=(255, 255, 255, 255),
@@ -464,7 +464,7 @@ class ElectrodequalityScreen(Screen):
         # update the colors
         #print("Qual:", end='')
         for i, qual in enumerate(electrodeQualities):
-            self.label[i].text = "%d: %3.1f"%(i, qual)
+            self.label[i].text = "%d: %3.1f"%(i+1, qual)
             #print(self.label[i].text + " ", end='')
             if issig2noise:
                 qual = log10(qual)/1 # n2s=50->1 n2s=10->.5 n2s=1->0
