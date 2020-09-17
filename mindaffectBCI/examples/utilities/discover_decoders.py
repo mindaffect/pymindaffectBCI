@@ -22,7 +22,7 @@
 from mindaffectBCI.utopiaclient import UtopiaClient
 
 # connect to the mindaffectDecoder
-def discover_decoders():
+def run():
   U=UtopiaClient()
   try:
     U.autoconnect(timeout_ms=5000, queryifhostnotfound=False, scanifhostnotfound=True)
