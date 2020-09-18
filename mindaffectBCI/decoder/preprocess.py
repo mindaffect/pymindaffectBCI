@@ -3,7 +3,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-def preprocess(X, Y, coords, whiten=False, whiten_spectrum=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None):
+def preprocess(X, Y, coords, whiten=False, whiten_spectrum=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None, filterbank=None):
     """apply simple pre-processing to an input dataset
 
     Args:
@@ -47,6 +47,15 @@ def preprocess(X, Y, coords, whiten=False, whiten_spectrum=False, badChannelThre
         reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else 0
         print("Spectral whiten:{}".format(reg))
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
+
+    if filterbank is not None:
+        X, _, _ = butter_filterbank(X,filterbank,fs=coords[-2]['fs'])
+        # make filterbank entries into virtual channels
+        X = np.reshape(X,X.shape[:-2]+(prod(X.shape[-2:],)))
+        # update meta-info
+        if 'coords' in coords[-1] and coords[-1]['coords'] is not None:
+            ch_names = coords[-1]['coords']
+            ch_names = ["{}_{}".format(c,f) for f in filterbank for c in coords]
 
     return X, Y, coords
 
@@ -153,13 +162,28 @@ def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
     X = np.real(ifft(Fx,axis=axis))
     return (X,W)
 
+
+def butter_filterbank(X:np.ndarray, filterbank, fs:float, axis=-2, order=4, verb=1):
+    if verb > 0:  print("Filterbank: {}".format(filterbank))
+    if not axis == -2:
+        raise ValueError("axis other than -2 not supported yet!")
+    # apply filter bank to frequency ranges into virtual channels
+    Xf=np.zeros(X.shape[:axis+1]+(len(filterbank),)+X.shape[axis+1:],dtype=X.dtype)
+    for bi,stopband in enumerate(filterbank):
+        if verb>1: print("{}) band={}\n".format(bi,stopband))
+        Xf[...,bi,:], _, _ = butter_sosfilt(X.copy(),stopband=stopband,fs=fs,order=order)
+    # TODO[X]: make a nicer shape, e.g. (tr,samp,band,ch)
+    #X = np.concatenate([X[...,np.newaxis,:] for X in Xs],-2)
+    return Xf
+
+
 def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None, log=False):
     import matplotlib.pyplot as plt
     from scipy.signal import welch
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
     freqs, FX = welch(X, axis=axis, fs=fs, nperseg=fs//2, return_onesided=True, detrend=False) # FX = (nFreq, nch)
     print('FX={}'.format(FX.shape))
-    plt.figure(18);plt.clf()
+    #plt.figure(18);plt.clf()
     muFX = np.median(FX,axis=0,keepdims=True)
     if log:
         muFX = 10*np.log10(muFX)
@@ -167,7 +191,7 @@ def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None, log=Fal
         plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs)       
     else:
         unit='uV^2'
-        ylim = (0,2*np.median(np.max(muFX,axis=-2),axis=-1))
+        ylim = (0,2*np.median(np.max(muFX,axis=tuple(range(muFX.ndim-1))),axis=-1))
         plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)       
     plt.suptitle("Grand average spectrum ({})".format(unit))
 
@@ -213,18 +237,9 @@ def extract_envelope(X,fs,
         if plot:plt.figure(102);plt.clf();plt.plot(X[:int(fs*10),:].copy());plt.title("+whiten")            
 
     if not filterbank is None:
-        if verb > 0:  print("Filterbank: {}".format(filterbank))
-        if plot:plt.figure(103);plt.clf();
-        # apply filter bank to frequency ranges into virtual channels
-        Xs=[]
-        # TODO: make a nicer shape, e.g. (tr,samp,band,ch)
-        # TODO[]: check doesn't modify in place
-        for bi,band in enumerate(filterbank):
-            Xf, _, _ = butter_sosfilt(X.copy(),band,fs)
-            Xs.append(Xf)
-            if plot:plt.subplot(len(filterbank),1,bi+1);plt.plot(Xf[:int(fs*10),:]);plt.title("+filterbank {}".format(band))
-        # stack the bands as virtual channels
-        X = np.concatenate(Xs,-1)
+        X = filterbank(X,filterbank,fs)
+        # make filterbank entries into virtual channels
+        X = np.reshape(X,X.shape[:-2]+(prod(X.shape[-2:],)))
         
     X = np.abs(X) # rectify
     if plot:plt.figure(104);plt.plot(X[:int(fs*10),:]);plt.title("+abs")
@@ -240,3 +255,34 @@ def extract_envelope(X,fs,
         if plot:plt.figure(104);plt.clf();plt.plot(X[:int(fs*10),:]);plt.title("+env")
     return X
 
+
+def testCases():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
+    fs=100
+    X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
+    X = np.cumsum(X,-2) # 1/f spectrum
+    print("X={}".format(X.shape))
+    #plt.figure()
+    #plot_grand_average_spectrum(X, fs)
+    #plt.show()
+
+    Xf = butter_filterbank(X,((10,-1),((0,10),(20,-1)),(0,20)),fs,order=2) # tr,samp,band,ch
+    print("Xf={}".format(Xf.shape))
+    # bands -> virtual channels
+    # make filterbank entries into virtual channels
+    plt.figure()
+    plot_grand_average_spectrum(np.concatenate((X[:,np.newaxis,...],np.moveaxis(Xf,(0,1,2,3),(0,2,1,3)),np.sum(Xf,-2)[:,np.newaxis,...]),1), fs)
+    plt.show()
+    
+    # compare raw vs summed filterbank
+    Xf_s = np.sum(Xf,-2,keepdims=False)
+    plt.figure()
+    plot_erp(np.concatenate((X[0:1,...],np.moveaxis(Xf[0,...],(0,1,2),(1,0,2)),Xf_s[0:1,...]),0))
+    plt.suptitle('X, Xf_s')
+    plt.show()
+    
+
+if __name__=="__main__":
+    testCases()
