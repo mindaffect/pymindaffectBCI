@@ -105,6 +105,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             print("Acq didn't start correctly!")
             component_failed=True
         if decoder_proc is not None and not decoder_proc.is_alive():
+            print("Acq didn't start correctly!")
             component_failed=True
 
         # stop re-starting if all are running fine

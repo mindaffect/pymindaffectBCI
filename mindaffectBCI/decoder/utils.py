@@ -554,7 +554,7 @@ class linear_trend_tracker():
         
 
 try:
-    from scipy.signal import butter, sosfilt, sosfilt_zi
+    from scipy.signal import butter, bessel, sosfilt, sosfilt_zi
 except:
 #if True:
     # use the pure-python fallbacks
@@ -587,60 +587,62 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
         
     return zi
 
-def butter_sosfilt_sos(stopband, fs, order=6, passband=None, verb=0):
+def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
     ''' given a set of filter cutoffs return butterworth sos coefficients '''
     sos=[]
-    # passband first (if given)
-    if not passband is None:
-        sb = np.array(passband)
-        sb[sb<0] = (fs/2)+sb[sb<0]+1
-        nb  = sb/(fs/2)
-        if nb[0] < .0001: # only nb[1] matters
-            if verb>0: print("lowpass={}={}".format(sb[1],nb[1]))
-            sosi = butter(order, nb[1], btype='lowpass', output='sos')
-        elif .9999 < nb[1]: # only nb[0] matters
-            if verb>0: print("highpass={}={}".format(sb[0],nb[0]))
-            sosi = butter(order, nb[0], btype='highpass', output='sos')
-        elif .0001 < nb[0] and nb[1] < .999:
-            if verb>0: print("bandpass={}={}".format(sb,nb))
-            sosi = butter(order, nb, btype='bandpass', output='sos')
-        sos.append(sosi)
 
     # convert to normalized frequency, Note: not to close to 0/1
     if stopband is not None:
-        stopband = np.array(stopband,dtype=np.float32)
-        if stopband.ndim<2:
-            stopband=stopband[np.newaxis,:]
-        stopband[stopband<0] = (fs/2)+stopband[stopband<0]+1 # neg freq count back from nyquist
-        for i in range(stopband.shape[-2]):
-            sb  = stopband[i,:]
-            nb  = sb/(fs/2)
-            if  nb[1] < .0001 or .9999 < nb[0]: # no filter
+        if not hasattr(stopband[0],'__iter__'):
+            stopband=(stopband,)
+
+        for sb in stopband:
+            btype = None
+            if type(sb[-1]) is str:
+                btype = sb[-1]
+                sb = sb[:-1]
+
+            # convert to normalize frequency
+            sb = np.array(sb,dtype=np.float32)
+            sb[sb<0] = (fs/2)+sb[sb<0]+1 # neg freq count back from nyquist
+            Wn  = sb/(fs/2)
+
+            if  Wn[1] < .0001 or .9999 < Wn[0]: # no filter
                 continue
 
-            if nb[0] < .0001:
-                if verb>0: print("Highpass={}={}".format(sb[1],nb[1]))
-                sosi = butter(order, nb[1], btype='highpass', output='sos')
-            elif .9999 < nb[1]:
-                if verb>0: print("lowpass={}={}".format(sb[0],nb[0]))
-                sosi = butter(order, nb[0], btype='lowpass', output='sos')
-            else: # .001 < nb[0] and nb[1] < .999:
-                if verb>0: print("bandstop={}={}".format(sb,nb))
-                sosi = butter(order, nb, btype='bandstop', output='sos')
-                
+            # identify type from frequencies used, cliping if end of frequency range
+            if Wn[0] < .0001:
+                Wn = Wn[1]
+                btype = 'highpass' if btype is None or btype == 'bandstop' else 'lowpass'
+            elif .9999 < Wn[1]:
+                Wn = Wn[0]
+                btype = 'lowpass' if btype is None or btype == 'bandstop' else 'highpass'
+
+            elif btype is None: # .001 < Wn[0] and Wn[1] < .999:
+                btype = 'bandstop'
+
+            if verb>0: print("{}={}={}".format(btype,sb,Wn))
+
+            if ftype == 'butter':
+                sosi = butter(order, Wn, btype=btype, output='sos')
+            elif ftype == 'bessel':
+                sosi = bessel(order, Wn, btype=btype, output='sos', norm='phase')
+            else:
+                raise ValueError("Unrecognised filter type")
+
             sos.append(sosi)
+
     # single big filter cascade
     sos = np.concatenate(sos,axis=0)
     #print("sos={}".format(sos.shape))
     return sos
 
-
-def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, verb=True):
+def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, verb=True, ftype='butter'):
     ''' use a (cascade of) butterworth SOS filter(s) to band-pass and (cascade of) band stop X along axis '''
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # TODO []: auto-order determination?
-    sos = butter_sosfilt_sos(stopband, fs, order, passband=passband)
+    sos = iir_sosfilt_sos(stopband, fs, order, passband=passband, ftype=ftype)
     sos = sos.astype(X.dtype) # keep as single precision
 
     if axis == X.ndim-2 and zi is None:
@@ -664,14 +666,14 @@ def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, ve
     # return filtered data, filter-coefficients, filter-state
     return (X, sos, zi)
 
-def save_butter_sosfilt_coeff(filename=None, stopband=((0,5),(25,-1)), fs=200, order=6):
+def save_butter_sosfilt_coeff(filename=None, stopband=((0,5),(25,-1)), fs=200, order=6, ftype='butter'):
     ''' design a butterworth sos filter cascade and save the coefficients '''
     import pickle
-    sos = butter_sosfilt_sos(stopband, fs, order, passband=None)
+    sos = iir_sosfilt_sos(stopband, fs, order, passband=None, fytpe=ftype)
     zi = sosfilt_zi(sos)
     if filename is None:
         # auto-generate descriptive filename
-        filename = "butter_stopband{}_fs{}.pk".format(stopband,fs)
+        filename = "{}_stopband{}_fs{}.pk".format(btype,stopband,fs)
     with open(filename,'wb') as f:
         pickle.dump(sos,f)
         pickle.dump(zi,f)
@@ -686,7 +688,7 @@ def test_butter_sosfilt():
 
     plt.clf();plt.subplot(511);plt.plot(X);
 
-    pbs=(((0,1),(50,-1)),(10,-1),((5,10),(15,20),(45,50)))
+    pbs=(((0,1),(40,-1)),(10,-1),((5,10),(15,20),(45,50)))
     for i,pb in enumerate(pbs):
         Xf,_,_ = butter_sosfilt(X,pb,fs)
         plt.subplot(5,1,i+2);plt.plot(Xf);plt.title("{}".format(pb))
@@ -705,7 +707,23 @@ def test_butter_sosfilt():
         Xf.append(Xfi)
     Xf = np.concatenate(Xf,axis=0)
     plt.subplot(5,1,5);plt.plot(Xf);plt.title("{} - incremental".format(pb))
-    
+    plt.show()
+
+    # test diff specifications
+    pb = ((0,1),(40,-1)) # pair stops
+    Xf0,_,_ = butter_sosfilt(X,pb,fs,axis=-2)
+    plt.subplot(3,1,1);plt.plot(Xf0);plt.title("{}".format(pb))
+ 
+    pb = (1,40,'bandpass') # single pass
+    Xfi,_,_ = butter_sosfilt(X,pb,fs,axis=-2)
+    plt.subplot(3,1,2);plt.plot(Xfi);plt.title("{}".format(pb))
+
+    pb = (1,40,'bandpass') # single pass
+    Xfi,_,_ = butter_sosfilt(X,pb,fs,axis=-2,ftype='bessel')
+    plt.subplot(3,1,3);plt.plot(Xfi);plt.title("{} - bessel".format(pb))
+    plt.show()
+
+
 # TODO[] : cythonize?
 # TODO[X] : vectorize over d? ---- NO. 2.5x *slower*
 def sosfilt_2d_py(sos,X,axis=-2,zi=None):
@@ -843,4 +861,5 @@ def test_sosfilt_py():
 #     b= K*b;    
 
 if __name__=='__main__':
+    test_butter_sosfilt()
     linear_trend_tracker.testcase()
