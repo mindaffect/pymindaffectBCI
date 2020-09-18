@@ -163,7 +163,7 @@ def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
     return (X,W)
 
 
-def butter_filterbank(X:np.ndarray, filterbank, fs:float, axis=-2, order=4, verb=1):
+def butter_filterbank(X:np.ndarray, filterbank, fs:float, axis=-2, order=4, ftype='butter', verb=1):
     if verb > 0:  print("Filterbank: {}".format(filterbank))
     if not axis == -2:
         raise ValueError("axis other than -2 not supported yet!")
@@ -171,7 +171,7 @@ def butter_filterbank(X:np.ndarray, filterbank, fs:float, axis=-2, order=4, verb
     Xf=np.zeros(X.shape[:axis+1]+(len(filterbank),)+X.shape[axis+1:],dtype=X.dtype)
     for bi,stopband in enumerate(filterbank):
         if verb>1: print("{}) band={}\n".format(bi,stopband))
-        Xf[...,bi,:], _, _ = butter_sosfilt(X.copy(),stopband=stopband,fs=fs,order=order)
+        Xf[...,bi,:], _, _ = butter_sosfilt(X.copy(),stopband=stopband,fs=fs,order=order,ftype=ftype)
     # TODO[X]: make a nicer shape, e.g. (tr,samp,band,ch)
     #X = np.concatenate([X[...,np.newaxis,:] for X in Xs],-2)
     return Xf
@@ -262,24 +262,27 @@ def testCases():
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
     fs=100
     X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
-    X = np.cumsum(X,-2) # 1/f spectrum
+    #X = np.cumsum(X,-2) # 1/f spectrum
     print("X={}".format(X.shape))
     #plt.figure()
     #plot_grand_average_spectrum(X, fs)
     #plt.show()
 
-    Xf = butter_filterbank(X,((10,-1),((0,10),(20,-1)),(0,20)),fs,order=2) # tr,samp,band,ch
+    bands = ((0,10,'bandpass'),(10,20,'bandpass'),(20,-1,'bandpass'))
+    Xf = butter_filterbank(X,bands,fs,order=4,ftype='bessel') # tr,samp,band,ch
     print("Xf={}".format(Xf.shape))
     # bands -> virtual channels
     # make filterbank entries into virtual channels
     plt.figure()
-    plot_grand_average_spectrum(np.concatenate((X[:,np.newaxis,...],np.moveaxis(Xf,(0,1,2,3),(0,2,1,3)),np.sum(Xf,-2)[:,np.newaxis,...]),1), fs)
+    Xf_s = np.sum(Xf,-2,keepdims=False)
+    plot_grand_average_spectrum(np.concatenate((X[:,np.newaxis,...],Xf_s[:,np.newaxis,...],np.moveaxis(Xf,(0,1,2,3),(0,2,1,3))),1), fs)
+    plt.legend(('X','Xf_s','X_bands'))
     plt.show()
     
     # compare raw vs summed filterbank
-    Xf_s = np.sum(Xf,-2,keepdims=False)
     plt.figure()
-    plot_erp(np.concatenate((X[0:1,...],np.moveaxis(Xf[0,...],(0,1,2),(1,0,2)),Xf_s[0:1,...]),0))
+    plot_erp(np.concatenate((X[0:1,...],Xf_s[0:1,...],np.moveaxis(Xf[0,...],(0,1,2),(1,0,2))),0),
+             evtlabs=['X','Xf_s']+['Xf_{}'.format(b) for b in bands])
     plt.suptitle('X, Xf_s')
     plt.show()
     
