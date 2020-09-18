@@ -25,7 +25,7 @@ def get_ip_address( NICname ):
 
 def nic_info():
     """
-    Return a list with tuples containing NIC and IPv4
+    Return a list with tuples containing NIC and IPv4 address
     """
     nic = []
     for ix in socket.if_nameindex():
@@ -63,7 +63,10 @@ def get_remote_ip():
     return ip
 
 class ssdpDiscover :
-    ssdpgroup = ("239.255.255.250", 1900)
+    ssdpv4group = ("239.255.255.250", 1900)
+    ssdpv6group= ("FF08::C", 1900)
+    ssdpgroup = None
+
     msearchTemplate = "\r\n".join([
         'M-SEARCH * HTTP/1.1',
         'HOST: {0}:{1}',
@@ -73,50 +76,83 @@ class ssdpDiscover :
         self.servicetype=servicetype
         self.queryt=None
         self.sock=None
-        self.msearchMessage=self.makeDiscoveryMessage(servicetype,discoverytimeout)
 
-    def makeDiscoveryMessage(self,servicetype,timeout):
-        msearchMessage = self.msearchTemplate.format(*self.ssdpgroup, st=servicetype, mx=timeout)
+    def makeDiscoveryMessage(self,ssdpgroup,servicetype,timeout):
+        msearchMessage = self.msearchTemplate.format(*ssdpgroup, st=servicetype, mx=timeout)
         if sys.version_info[0] == 3:
             msearchMessage = msearchMessage.encode("utf-8")
         return msearchMessage
     
-    def initSocket(self):
+    def initSocket(self, v6=False):
         # make the UDP socket to the multicast group with timeout
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+        if v6 and socket.has_ipv6:
+            IPPROTO_IPV6 = socket.IPPROTO_IPV6 if hasattr(socket,'IPPROTO_V6') else 41
+            self.ssdpgroup = self.ssdpv6group
+            self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 5)
+                self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, 1)
+                self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, 0)
+            except:
+                print("couldn't set socket options\n")
+            self.sock.bind(('',self.ssdpgroup[1])) # bind port
 
-        # request membership
-        group = socket.inet_aton(self.ssdpgroup[0])
+            # request multicast group membership
+            mreq = struct.pack("16s15s".encode('utf-8'), 
+                                socket.inet_pton(socket.AF_INET6, self.ssdpgroup[0]), 
+                                (chr(0) * 16).encode('utf-8'))
+            self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
 
-        #local_ip = get_remote_ip()        
-        #if local_ip is None:
-        #   local_ip=get_local_ip()
-        #print("Trying local ip: {}".format(local_ip))
-        #mreq = group + socket.inet_aton(local_ip)
+            if_idx=0
+            self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, struct.pack("I",if_idx))
 
-        mreq = struct.pack('4sl', group, socket.INADDR_ANY)
+        else:
+            self.ssdpgroup = self.ssdpv4group
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 5)
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
 
-        self.sock.bind(('',self.ssdpgroup[1])) # bind port
-        # add to multi-cast group to get responses
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+            self.sock.bind(('',self.ssdpgroup[1])) # bind port
+
+            # request membership
+            group = socket.inet_aton(self.ssdpgroup[0])
+
+            # Set multicast interface -- only on unix!
+            if_idx=0
+            #ifi = socket.if_nametoindex(ifn)
+            #ifis = struct.pack("I", ifi)
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, struct.pack("I",if_idx))
+
+            #local_ip = get_remote_ip()        
+            #if local_ip is None:
+            #   local_ip=get_local_ip()
+            #print("Trying local ip: {}".format(local_ip))
+            #mreq = group + socket.inet_aton(local_ip)
+
+            mreq = struct.pack('4sl', group, socket.INADDR_ANY)
+
+            # add to multi-cast group to get responses
+            self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
         
         
-    def discover(self,timeout=.001,querytimeout=5):
+    def discover(self,timeout=.001,querytimeout=5,v6=False):
         '''auto-discover the utopia-hub using ssdp discover messages,
            timeout is time to wait for a response.  query timeout is time between re-sending the ssdp-discovery query message.'''
         # make and send the discovery message
         if self.sock is None:
             try : 
-                self.initSocket()
+                self.initSocket(v6)
             except socket.error :
                 print("Couldnt init socket!")
                 return ()
 
         # re-send the ssdp query
         if self.queryt is None or self.queryt+querytimeout < time.time():
+            # build discovery message for this service/group
+            self.msearchMessage=self.makeDiscoveryMessage(self.ssdpgroup, self.servicetype, querytimeout)
+
             print("Sending query message:\n%s"%(self.msearchMessage))
             try:
                 self.sock.sendto(self.msearchMessage, self.ssdpgroup)
@@ -217,23 +253,23 @@ def ipscanDiscover(port:int, ip:str=None, timeout=.5):
 
 
 def testIncrementalScanning():
-    disc=ssdpDiscover("utopia/1.1");
+    disc=ssdpDiscover("utopia/1.1")
     while True:
         d0 = time.time()
-        resp = disc.discover(timeout=.001)
+        resp = disc.discover(timeout=.001,v6=False)
         dt = time.time()-d0
         print("Discover time: " + str(dt))
         if len(resp)==0 :
             print("No new responses")
         else :
             print(resp)
-            break;
+            break
         # sleep to represent doing other work..
         time.sleep(1)
 
 def discoverOrIPscan(port:int = 8400, timeout_ms:int = 15000):
-    disc=ssdpDiscover("utopia/1.1");
-    hosts = disc.discover(timeout=timeout_ms/1000.0)
+    disc=ssdpDiscover("utopia/1.1")
+    hosts = disc.discover(timeout=timeout_ms/1000.0,v6=False)
     
     if hosts is None or len(hosts) == 0:
         hosts=ipscanDiscover(8400)
