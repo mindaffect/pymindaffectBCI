@@ -136,6 +136,7 @@ class MenuScreen(InstructionScreen):
     def __init__(self, window, text, valid_keys):
         super().__init__(window, text, 999999, True)
         self.valid_keys = valid_keys
+        self.key_press = None
         print("Menu")
 
     def is_done(self):
