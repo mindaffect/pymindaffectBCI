@@ -412,6 +412,8 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
         if erp.shape[0]>1 :
             print("Warning: only the 1st set ERPs is plotted")
         erp = erp[0, ...]
+    elif erp.ndim == 2:
+        erp = erp[np.newaxis,...]
     icoords = evtlabs if not evtlabs is None else list(range(erp.shape[-3]))
     if times is None:
         times = list(range(offset,erp.shape[-2]+offset))
