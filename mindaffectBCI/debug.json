@@ -2,6 +2,8 @@
     "acquisation":"fakedata",
 
     "acq_args":{
+        "board_id":0,
+        "serial_port":"com4"
     },
 
     "decoder":"mindaffectBCI.decoder.decoder",
@@ -23,7 +25,7 @@
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
-        "fullscreen_stimulus":false,
+        "fullscreen_stimulus":true,
         "host":"-"
     }
 }
