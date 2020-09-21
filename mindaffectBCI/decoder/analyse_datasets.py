@@ -278,7 +278,7 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.figure(21)
     plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
 
-    return clsfr
+    return clsfr,res
 
 def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, loader_args=None, *args,**kwargs):
     """run the debug_test_dataset for a single subject from dataset

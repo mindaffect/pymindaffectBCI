@@ -10,6 +10,7 @@ from mindaffectBCI.decoder.offline.load_mTRF_audio import load_mTRF_audio
 from mindaffectBCI.decoder.offline.load_twofinger import load_twofinger
 from mindaffectBCI.decoder.offline.load_brainsonfire import load_brainsonfire
 from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
+from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
 def plos_one():
@@ -153,6 +154,11 @@ def testdataset(fn, **args):
                  'fs':fs}
     coords[2] = {'name':'channel','coords':None}
     return (X, Y, coords)
+
+def mindaffectBCI(exptdir, **args):
+    loader = load_mindaffectBCI
+    filenames = glob(os.path.join(exptdir, 'mindaffectBCI*.txt'))
+    return (loader,filenames,exptdir)
 
 def toy():
     ''' make a toy dataset for testing '''
