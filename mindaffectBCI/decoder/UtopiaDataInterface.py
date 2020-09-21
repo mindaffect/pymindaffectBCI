@@ -369,6 +369,8 @@ class UtopiaDataInterface:
             self.initStimulusRingBuffer()
         if self.last_log_ts is None:
             self.last_log_ts = self.getTimeStamp()
+        if t0 is None:
+            t0 = self.getTimeStamp()
 
         # record the list of new messages from this call
         newmsgs = self.newmsgs # start with any left-overs from old calls 
@@ -498,13 +500,14 @@ except:
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
 class butterfilt_and_downsample(TransformerMixin):
-    def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60):
+    def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
         self.stopband = stopband
         self.fs = fs
         self.fs_out = fs_out if fs_out < fs else fs
         self.order = order
         self.axis = -2
         self.nsamp = 0
+        self.ftype = ftype
 
     def fit(self, X, fs:float =None, zi=None):
         if fs is not None: # parameter overrides stored fs
@@ -529,7 +532,7 @@ class butterfilt_and_downsample(TransformerMixin):
 
         else:
             # estimate them from the given information
-            X, self.sos_, self.zi_ = butter_sosfilt(X, self.stopband, self.fs, self.order, axis=self.axis, zi=zi)
+            X, self.sos_, self.zi_ = butter_sosfilt(X, self.stopband, self.fs, order=self.order, axis=self.axis, zi=zi, ftype=self.ftype)
             
         # preprocess -> downsample
         self.nsamp = 0
