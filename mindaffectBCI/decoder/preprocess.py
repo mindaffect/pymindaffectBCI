@@ -262,6 +262,7 @@ def testCases():
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
     fs=100
     X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
+    X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
     #X = np.cumsum(X,-2) # 1/f spectrum
     print("X={}".format(X.shape))
     #plt.figure()
@@ -269,7 +270,7 @@ def testCases():
     #plt.show()
 
     bands = ((0,10,'bandpass'),(10,20,'bandpass'),(20,-1,'bandpass'))
-    Xf = butter_filterbank(X,bands,fs,order=4,ftype='bessel') # tr,samp,band,ch
+    Xf = butter_filterbank(X,bands,fs,order=8,ftype='bessel') # tr,samp,band,ch
     print("Xf={}".format(Xf.shape))
     # bands -> virtual channels
     # make filterbank entries into virtual channels

@@ -8,9 +8,9 @@ recievedts_re = re.compile(r'\Wrts:(?P<sts>[-0-9]*)\W')
 serverts_re = re.compile(r'.*sts:(?P<sts>[-0-9]*)\W')
 clientts_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W')
 clientip_re = re.compile(r'.*<-\W(?P<ip>[0-9.:]*)$')
-stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-/.*$')
-datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<samples>.*) <-/.*$')
-modechange_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*mode:(?P<newmode>.*) <-/.*$')
+stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-.*$')
+datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<samples>.*) <-.*$')
+modechange_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*mode:(?P<newmode>.*) <-.*$')
 
 def read_StimulusEvent(line:str):
     ''' read a stimulus event message from a text-file save version '''
@@ -225,7 +225,9 @@ if __name__=="__main__":
     # default to last log file if not given
     import glob
     import os
-    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+    fileregexp = '../../../logs/mindaffectBCI*.txt'
+    #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
+    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
     fn = max(files, key=os.path.getctime)
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
