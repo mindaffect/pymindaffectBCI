@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(0,3),(25,-1)), order=4, verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(0,3),(25,-1)), order=4, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
     
     # load the data file
     Xfn = datadir
@@ -35,7 +35,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
 
     # pre-process: spectral filter + downsample
     # incremental call in bits
-    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs)
+    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs, ftype=ftype)
     #ppfn = None
     if ppfn is not None:
         if verb >= 0:
@@ -141,10 +141,12 @@ def testcase():
         # default to last log file if not given
         import glob
         import os
-        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+        fileregexp = '../../../logs/mindaffectBCI*.txt'
+        fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
+        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
         sessfn = max(files, key=os.path.getctime)
  
-    sessfn = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
+    #sessfn = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
     from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
     print("Loading: {}".format(sessfn))
     X, Y, coords = load_mindaffectBCI(sessfn, ofs=100, regress=False)

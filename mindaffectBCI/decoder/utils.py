@@ -445,6 +445,9 @@ class linear_trend_tracker():
             ptwght = max(1, abs(self.int_err/self.int_err_N)*self.K_int_err) #1/max(1,err) if self.N > self.warmup_weight else 1
         else:
             ptwght = 1
+        # adaptive learning rate as a function of the direction of the error...
+        #if err < 0:
+        #    ptwght = ptwght*.1
         self.N  = wght*self.N   + ptwght*N
         self.sY = wght*self.sY  + ptwght*np.sum(cY,axis=0)
         self.sX = wght*self.sX  + ptwght*np.sum(cX,axis=0)

@@ -12,9 +12,10 @@ class FileProxyHub:
             import os
             files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
             self.filename = max(files, key=os.path.getctime)
+            print("Loading : {}\n".format(self.filename))
         self.speedup = speedup
         self.isConnected = True
-        self.lasttimestamp = 0
+        self.lasttimestamp = None
         self.use_server_ts = use_server_ts
         self.file = open(self.filename,'r')
     
@@ -37,12 +38,12 @@ class FileProxyHub:
             if self.use_server_ts:
                 msg.timestamp = msg.sts
             # initialize the time-stamp tracking
-            if self.lasttimestamp is None: 
+            if self.lasttimestamp is None or self.lasttimestamp==0: 
                 self.lasttimestamp = msg.timestamp
             # add to outgoing message queue
             msgs.append(msg)
             # check if should stop
-            if self.lasttimestamp+timeout_ms < msg.sts:
+            if self.lasttimestamp is not None and self.lasttimestamp+timeout_ms < msg.sts:
                 break
         else:
             # mark as disconneted at EOF

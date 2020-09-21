@@ -134,7 +134,7 @@ class InstructionScreen(Screen):
 class MenuScreen(InstructionScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, valid_keys):
-        super().__init__(window, text, 999999, True)
+        super().__init__(window, text, 99999999, True)
         self.valid_keys = valid_keys
         self.key_press = None
         print("Menu")
@@ -641,7 +641,8 @@ class SelectionGridScreen(Screen):
 
     def __init__(self, window, symbols, noisetag, objIDs=None,
                  bgFraction=.2, instruct="", 
-                 clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True):
+                 clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True,
+                 waitKey=True):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -662,6 +663,7 @@ class SelectionGridScreen(Screen):
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
         self.liveSelections = None
+        self.waitKey=waitKey
 
     def reset(self):
         self.isRunning=False
@@ -809,6 +811,14 @@ class SelectionGridScreen(Screen):
         except StopIteration:
             self.isDone=True
             return
+
+        if self.waitKey:
+            global last_key_press
+            if last_key_press:
+                self.key_press = last_key_press
+                #self.noisetag.reset()
+                self.isDone = True
+                last_key_press = None
 
         # turn all off if no stim-state
         if stimulus_state is None:
@@ -967,7 +977,9 @@ class ExptScreenManager(Screen):
             print("main menu")
             self.menu.reset()
             self.screen = self.menu
+            self.noisetag.modeChange('idle')
             self.next_stage = None
+            
 
         elif self.stage==self.ExptPhases.Welcome: # welcome instruct
             print("welcome instruct")
@@ -1232,6 +1244,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
+    if windowed:
+        fullscreen_stimulus = False
     nt=Noisetag(stimFile=stimfile)
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
