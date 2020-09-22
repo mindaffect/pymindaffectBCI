@@ -607,6 +607,8 @@ def decodeRawMessage(msg):
         decodedmsg, _ = Reset.deserialize(msg.payload)
     elif msg.msgID==DataPacket.msgID:
         decodedmsg, _ = DataPacket.deserialize(msg.payload)
+    elif msg.msgID==Subscribe.msgID:
+        decodedmsg, _ = Subscribe.deserialize(msg.payload)
     else:
         decodedmsg = msg
     return decodedmsg
@@ -684,7 +686,7 @@ class UtopiaClient:
     DEFAULTPORT=8400    
     HEARTBEATINTERVAL_ms=1000
     HEARTBEATINTERVALUDP_ms=200
-    MAXMESSAGESIZE = 1024 * 256
+    MAXMESSAGESIZE = 1024 * 1024
 
     def __init__(self):
         self.isConnected = False

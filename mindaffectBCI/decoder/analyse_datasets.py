@@ -242,15 +242,11 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
         plot_erp(factored2full(clsfr.W_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
     plt.show()
 
+
     if not clsfr.R_ is None:
         print("Plot Factored Model")
         plt.figure(18);plt.clf();
-        if hasattr(clsfr,'A_'):
-            plt.suptitle("fwd-model")
-            plot_factoredmodel(clsfr.A_, clsfr.R_, ch_names=ch_names, ch_pos=ch_pos, evtlabs=evtlabs, times=times)
-        else:
-            plt.suptitle("bwd-model")
-            plot_factoredmodel(clsfr.W_, clsfr.R_, ch_names=ch_names, ch_pos=ch_pos, evtlabs=evtlabs, times=times)
+        clsfr.plot_model()
         plt.show()
     
     print("plot Fe")
