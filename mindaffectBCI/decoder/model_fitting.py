@@ -191,7 +191,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     def plot_model(self, **kwargs):
         if not self.R_ is None:
             print("Plot Factored Model")
-            if hasattr(self, 'A_'):
+            if False and hasattr(self, 'A_'):
                 plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, **kwargs)
             else:
                 plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
@@ -200,7 +200,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     
 class MultiCCA(BaseSequence2Sequence):
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=.005, rcond=None, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=.001, rcond=None, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
         self.rank = rank
         self.reg  = reg
@@ -221,7 +221,7 @@ class MultiCCA(BaseSequence2Sequence):
         Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, stimTimes, tau=self.tau, offset=self.offset, badEpThresh=self.badEpThresh, center=self.center)
         #print("diag(Cxx)={}".format(np.diag(Cxx)))
         # do the CCA fit
-        J, W, R = multipleCCA(Cxx, Cxy, Cyy, reg=self.reg, rank=self.rank, rcond=self.rcond, CCA=self.CCA)
+        J, W, R = multipleCCA(Cxx, Cxy, Cyy, reg=self.reg, rank=self.rank, rcond=self.rcond, CCA=self.CCA, symetric=self.symetric)
         # maintain type compatiability
         W = W.astype(X.dtype)
         R = R.astype(X.dtype)

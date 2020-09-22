@@ -506,6 +506,8 @@ class butterfilt_and_downsample(TransformerMixin):
         self.fs_out = fs_out if fs_out < fs else fs
         self.order = order
         self.axis = -2
+        if not self.axis == -2:
+            raise ValueError("axis != -2 is not yet supported!")
         self.nsamp = 0
         self.ftype = ftype
 
@@ -549,53 +551,79 @@ class butterfilt_and_downsample(TransformerMixin):
 
         X, self.zi_ = sosfilt(self.sos_, X, axis=self.axis, zi=self.zi_)
 
+        nsamp = self.nsamp
+        self.nsamp = self.nsamp + X.shape[self.axis] # track *raw* sample counter
+
         # preprocess -> downsample @60hz
         if self.resamprate_ > 1:
             # number samples through this cycle due to remainder of last block
-            resamp_start = self.nsamp%self.resamprate_
+            resamp_start = nsamp%self.resamprate_
             # convert to number samples needed to complete this cycle
             # this is then the sample to take for the next cycle
             if resamp_start > 0:
                 resamp_start = self.resamprate_ - resamp_start
             
             # allow non-integer resample rates
-            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_).astype(np.int)
-            #print('idx={}'.format(self.nsamp+idx))
 
-            self.nsamp = self.nsamp + X.shape[self.axis] # track sample counter
-            X = X[..., idx, :] # decimate X (trl, samp, d)
-            if Y is not None:
-                Y = Y[..., idx, :] # decimate Y (trl, samp, y)
-        else:
-            self.nsamp = self.nsamp + X.shape[self.axis] # track sample counter
+            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_)
+            if self.resamprate_%1 > 0: # non-integer re-sample, interpolate
+                idx_l = np.floor(idx).astype(int) # sample above
+                idx_u = np.ceil(idx).astype(int) # sample below
+                # BODGE: guard for packet ending at sample boundary.
+                idx_u[-1] = idx_u[-1] if idx_u[-1]<X.shape[self.axis] else X.shape[self.axis]-1
+                w_u   = idx - idx_l # linear weight of the upper sample
+                X = X[...,idx_u,:] * w_u[:,np.newaxis] + X[...,idx_l,:] * (1-w_u[:,np.newaxis]) # linear interpolation
+                if Y is not None:
+                    Y = Y[...,idx_u,:] * w_u[:,np.newaxis] + Y[...,idx_l,:] * (1-w_u[:,np.newaxis])
+
+            else:
+                idx = idx.astype(int)
+                X = X[..., idx, :] # decimate X (trl, samp, d)
+                if Y is not None:
+                    Y = Y[..., idx, :] # decimate Y (trl, samp, y)
         
         return X if Y is None else (X, Y)
 
     @staticmethod
     def testcase():
         ''' test the filt+downsample transformation filter by incremental calling '''
-        X=np.cumsum(np.random.randn(100,1),axis=0)
+        #X=np.cumsum(np.random.randn(100,1),axis=0)
+        X=np.sin(np.arange(100)[:,np.newaxis]*2*np.pi/30)
+        xs = np.arange(X.shape[0])[:,np.newaxis]
         # high-pass and decimate
-        fds = butterfilt_and_downsample(stopband=((0,1)),fs=200,fs_out=80)
+        bands = ((0,20,'bandpass'))
+        fs = 200
+        fs_out = 130
+        fds = butterfilt_and_downsample(stopband=bands,fs=fs,fs_out=fs_out)
 
         
         print("single step")
         fds.fit(X[0:1,:])
-        m0 = fds.transform(X) # (samp,ny,ne)
+        m0,xs0 = fds.transform(X,xs) # (samp,ny,ne)
         print("M0 -> {}".format(m0[:20]))
 
         step=6
         print("Step size = {}".format(step))
-        fds.fit(X[0:0+step,:])
+        fds.fit(X[0:1,:])
         m1=np.zeros(m0.shape,m0.dtype)
+        xs1 = np.zeros(xs0.shape,xs0.dtype)
         t=0
         for i in range(0,len(X),step):
-            idx=slice(i,i+step)
-            mm=fds.transform(X[idx,:])
-            #m1[t:t+mm.shape[0],:]=mm
+            idx=np.arange(i,min(i+step,len(X)))
+            mm, idx1=fds.transform(X[idx,:],idx[:,np.newaxis])
+            m1[t:t+mm.shape[0],:]=mm
+            xs1[t:t+mm.shape[0]]=idx1
             t = t +mm.shape[0]
         print("M1 -> {}".format(m1[:20]))
         print("diff: {}".format(np.max(np.abs(m0-m1))))
+
+        import matplotlib.pyplot as plt 
+        plt.plot(xs,X,'*-',label='X')
+        plt.plot(xs0,m0,'*-',label='{} {}->{}Hz single'.format(bands,fs,fs_out))
+        plt.plot(xs1,m1,'*-',label='{} {}->{}Hz incremental'.format(bands,fs,fs_out))
+        plt.legend()
+        plt.show()
+
 
 
 
@@ -822,9 +850,6 @@ class timestamp_interpolation(TransformerMixin):
         plt.plot(ts_true - sts)
         plt.show()
 
-def testfilt():
-    butterfilt_and_downsample.testcase()
-
 def testRaw():
     # test with raw
     ui = UtopiaDataInterface()
@@ -915,9 +940,9 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
     
 if __name__ == "__main__":
     #timestamp_interpolation().testcase()
-    #testfilt()
+    butterfilt_and_downsample.testcase()
     #testRaw()
-    testPP()
+    #testPP()
     #testERP()
     #testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
     "..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"
