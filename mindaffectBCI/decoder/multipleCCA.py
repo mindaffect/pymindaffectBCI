@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 
 def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
-                reg=0, rank=1, CCA=True, rcond=1e-6, symetric=False):
+                reg=0, rank=1, CCA=True, rcond=1e-4, symetric=False):
     '''
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cxy,Cyy,regx,regy,rank,CCA)
@@ -320,6 +320,21 @@ def testcase():
     from decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
     dc=decodingCurveSupervised(Fy)
     plot_decoding_curve(*dc)
+
+def testcase_matlab_summarystatistics():
+    from scipy.io import loadmat
+    ss = loadmat('C:/Users/Developer/Desktop/utopia/matlab/buffer/SummaryStatistics.mat')
+    print(ss)
+    Cxx=ss['Cxx']
+    Cxy=np.moveaxis(ss['Cxy'],(0,1,2),(2,1,0)) # (d,tau,e)->(e,tau,d)
+    Cyy=np.moveaxis(ss['Cyy'],(0,1,2,3),(3,2,1,0)) # (e,tau,e,tau) -> (tau,e,tau,e)
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_erp, plot_factoredmodel
+    plot_summary_statistics(Cxx,Cxy,Cyy)
+    plt.show()
+    from mindaffectBCI.decoder.multipleCCA import multipleCCA
+    J,W,R = multipleCCA(Cxx,Cxy,Cyy)
+    plot_factoredmodel(W,R)
+    plot.show()
 
 if __name__=="__main__":
     testcase()

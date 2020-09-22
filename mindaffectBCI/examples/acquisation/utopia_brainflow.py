@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument ('--streamer-params', type = str, help  = 'streamer params', required = False, default = '')
     parser.add_argument ('--serial-number', type = str, help  = 'serial number', required = False, default = '')
     parser.add_argument ('--board-id', type = int, help  = 'board id, check docs to get a list of supported boards', default = 1 )#required = True)
-    parser.add_argument ('--log', action = 'store_true')
+    parser.add_argument ('--log', type=int, help = ' set the brainflow logging level', default=1)
     args = parser.parse_args ()
     return args
 

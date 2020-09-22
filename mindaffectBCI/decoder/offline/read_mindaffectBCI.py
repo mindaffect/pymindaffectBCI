@@ -39,7 +39,7 @@ def read_DataPacket(line:str ):
     shape = np.fromstring(res['shape'].replace('x',','),sep=',',dtype=int)
     shape = shape[::-1] # N.B. python order, fastest last..
     samples = np.fromstring(res['samples'].replace(']','').replace('[',''),sep=',',dtype=np.float32)
-    samples = samples.reshape(shape)
+    samples = samples[:np.prod(shape)].reshape(shape) # guard too many samples?
     return DataPacket(ts,samples)
     
 def read_ModeChange(line:str):

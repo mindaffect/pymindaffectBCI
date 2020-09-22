@@ -173,7 +173,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     
     else:
         # single dataset
-        plt.plot(integerationLengths.T,aveProbErr.T,label='avePerr')
+        plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
         if len(args)>=7-2:
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
