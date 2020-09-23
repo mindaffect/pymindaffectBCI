@@ -430,7 +430,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, datafile:str=None,
         tau_ms:float=450, out_fs:float=100, evtlabs=None, 
-        stopband=((45,65),(0,3),(24,-1)), ftype='butter', order:int=4, cv:int=5, 
+        stopband=((45,65),(0,5),(28,-1)), ftype='butter', order:int=6, cv:int=5, 
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -519,7 +519,7 @@ if  __name__ == "__main__":
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=250)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
-    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(0,3),(25,-1)))
+    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(0,5.5),(25,-1)))
     parser.add_argument('--cv',type=int, help='number cross validation folds', default=5)
     parser.add_argument('--predplots', action='store_true', help='flag make decoding plots are prediction time')
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
@@ -529,7 +529,8 @@ if  __name__ == "__main__":
     args = parser.parse_args()
 
     if True or args.savefile is not None:
-        setattr(args,'savefile',"../utopia/java/utopia2ft/UtopiaMessages_200922_1636.log")
+        setattr(args,'savefile',"../utopia/java/messagelib/UtopiaMessages_200923_1849.log")
+        setattr(args,'savefile',"../../Downloads/jason/UtopiaMessages_200923_1749_*.log")
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
