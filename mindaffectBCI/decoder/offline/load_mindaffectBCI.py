@@ -39,7 +39,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     #ppfn = None
     if ppfn is not None:
         if verb >= 0:
-            print("preFilter: {}Hz & downsample {}->{}Hz".format(stopband,fs,ofs))
+            print("preFilter: {}th {} {}Hz & downsample {}->{}Hz".format(order,ftype,stopband,fs,ofs))
         #ppfn.fit(X[0:1,:])
         # process in blocks to be like the on-line, use time-stamp as Y to get revised ts
         if False:
