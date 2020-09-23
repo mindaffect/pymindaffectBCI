@@ -168,7 +168,7 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
     if not reg is None and not reg == 0:
         # TODO[]: Optimal shrinkage?
         if np.ndim(reg) == 0 or len(reg) == 1:  # weight w.r.t. same amplitude identity
-            C = (1-reg)*C + reg*np.eye(C.shape[0], dtype=C.dtype)*np.mean(C.diagonal())
+            C = (1-reg)*C + reg*np.eye(C.shape[0], dtype=C.dtype)*np.median(C.diagonal())
         elif len(reg) == C.shape[0]:  # diag entries
             np.fill_diagonal(C, C.diagonal()+reg)
         else:  # full reg matrix
@@ -194,7 +194,7 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
         # identify eigen-values we want to remove due to rcond
         if 0 <= rcond:  # value threshold
             #print('bad={}'.format(bad))
-            bad = np.logical_or(bad, sigma.real < rcond*max(np.abs(sigma)))
+            bad = np.logical_or(bad, sigma.real < rcond*np.median(np.abs(sigma)))
             #print('bad={}'.format(bad))
         elif -1 < rcond and rcond < 0:  # fraction
             si = np.argsort(sigma)  # N.B. Ascending
