@@ -96,7 +96,7 @@ def read_mindaffectBCI_message(line):
 def datapackets2array(msgs):
     data=[]
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
-    tsfilt = timestamp_interpolation(sample2timestamp=linear_trend_tracker(halflife=500))
+    tsfilt = timestamp_interpolation(sample2timestamp=linear_trend_tracker())
     for msg in msgs:
         samples = msg.samples
         ts   = msg.timestamp

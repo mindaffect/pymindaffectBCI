@@ -35,7 +35,7 @@ class UtopiaDataInterface:
 
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
-                 timeout_ms=100, mintime_ms=50, fs=None, U=None):
+                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp=None):
         # rate control
         self.timeout_ms = timeout_ms
         self.mintime_ms = mintime_ms # minimum time to spend in update => max processing rate
@@ -56,7 +56,7 @@ class UtopiaDataInterface:
         # DataPackets
         self.data_ringbuffer = None # init later...
         self.data_timestamp = None # ts of last data packet seen
-        self.sample2timestamp = None # sample tracker to de-jitter time-stamp information
+        self.sample2timestamp = sample2timestamp # sample tracker to de-jitter time-stamp information
         self.data_preprocessor = data_preprocessor # function to pre-process the incomming data
 
         # StimulusEvents
@@ -114,24 +114,30 @@ class UtopiaDataInterface:
         # get some initial data to get data shape and sample rate
         databuf = []
         nmsg = 0
-        while len(databuf) < 30:
-            msgs = self.getNewMessages(500)
+        iter = 0
+        data_start_ts = None
+        data_ts = 0
+        while data_start_ts is None or data_ts - data_start_ts < 3000:
+            msgs = self.getNewMessages(100)
             for m in msgs:
                 m = self.preprocess_message(m)
                 if m.msgID == DataPacket.msgID: # data-packets are special
                     if len(m.samples) > 0:
                         databuf.append(m) # append raw data
+                        if data_start_ts is None:
+                            data_start_ts = m.timestamp
+                        data_ts = m.timestamp
                     else:
                         print("Huh? got empty data packet: {}".format(m))
                 else:
                     self.msg_ringbuffer.append(m)
                     self.msg_timestamp = m.timestamp
                     nmsg = nmsg+1
-        nsamp = sum([len(m.samples) for m in databuf]) - len(databuf[0].samples)
-        dur = (databuf[-1].timestamp - databuf[0].timestamp)/1000.0 #[-1, -1]-databuf[0][-1, -1])/1000.0
+        nsamp = [len(m.samples) for m in databuf]
+        data_ts = [ m.timestamp for m in databuf]
         if self.raw_fs is None:
-            self.raw_fs = nsamp/dur # fs = nSamp/time
-        print('Estimated sample rate {} samp in {} s ={}'.format(nsamp,dur,self.raw_fs))
+            self.raw_fs = np.median( np.array(nsamp[1:])  / np.diff(data_ts) * 1000.0)
+        print('Estimated sample rate {} samp in {} s ={}'.format(sum(nsamp),(data_ts[-1]-data_ts[0])/1000.0,self.raw_fs))
 
         # init the pre-processor (if one)
         if self.data_preprocessor:
@@ -143,9 +149,9 @@ class UtopiaDataInterface:
         # strip empty packets
         tmpdatabuf = [d for d in tmpdatabuf if d.shape[0]>0]
         # estimate the sample rate of the pre-processed data
-        pp_dur = (tmpdatabuf[-1][-1,-1] - tmpdatabuf[0][-1,-1])/1000.0 
-        pp_nsamp = sum([d.shape[0] for d in tmpdatabuf]) - tmpdatabuf[0].shape[0]
-        self.fs = pp_nsamp/pp_dur # fs = nSamp/time
+        pp_nsamp = [m.shape[0] for m in tmpdatabuf]
+        pp_ts = [ m[-1,-1] for m in tmpdatabuf]
+        self.fs = np.median( np.array(pp_nsamp[1:])  / np.diff(pp_ts) * 1000.0)# fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
 
         # create the ring buffer, big enough to store the pre-processed data
@@ -162,8 +168,9 @@ class UtopiaDataInterface:
         if self.data_preprocessor:
             self.data_preprocessor.fit(np.array(databuf[0].samples)[0:1,:], fs=self.raw_fs)
         # use linear trend tracker to de-jitter the sample timestamps
-        self.sample2timestamp = timestamp_interpolation(fs=self.fs,
-                                                        sample2timestamp=linear_trend_tracker(halflife=500))
+        if self.sample2timestamp is None or self.sample2timestamp == 'linear_trend_tracker':
+            self.sample2timestamp = timestamp_interpolation(fs=self.fs,
+                                                            sample2timestamp=linear_trend_tracker())
         for m in databuf:
             # apply the pre-processing again (this time with fs estimated)
             d = self.processDataPacket(m)
@@ -228,7 +235,7 @@ class UtopiaDataInterface:
         Returns:
             np.ndarray: (t,d+1) data matrix with attached time-stamp channel
         """
-        if self.sample2timestamp is not None:
+        if self.sample2timestamp is not None and not isinstance(self.sample2timestamp,str):
             sample_ts = self.sample2timestamp.transform(timestamp, len(d))
         else: # all the same ts
             sample_ts = np.ones((len(d),),dtype=int)*timestamp
@@ -772,7 +779,7 @@ class timestamp_interpolation(TransformerMixin):
     """transform from per-packet time-stamps to per-sample timestamps (with de-jitter)
     """
 
-    def __init__(self,fs=None,sample2timestamp=None):
+    def __init__(self,fs=None,sample2timestamp=None, max_delta=200):
         """tranform from per-packet (i.e. multiple-samples) to per-sample timestamps
 
         Args:
@@ -781,6 +788,7 @@ class timestamp_interpolation(TransformerMixin):
         """        
         self.fs=fs
         self.sample2timestamp = sample2timestamp
+        self.max_delta = max_delta
 
     def fit(self,ts,nsamp=1):
         self.last_sample_timestamp_ = ts
@@ -802,14 +810,14 @@ class timestamp_interpolation(TransformerMixin):
         # update tracking number samples processed
         self.n_ = self.n_ + nsamp
 
-        if self.last_sample_timestamp_ < timestamp:
+        if self.last_sample_timestamp_ < timestamp or self.sample2timestamp is not None:
             # update the tracker for the sample-number to sample timestamp mapping
             if self.sample2timestamp is not None:
                 #print("n={} ts={}".format(n,timestamp))
                 newtimestamp = self.sample2timestamp.transform(self.n_, timestamp)
                 #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
                 # use the corrected de-jittered time-stamp -- if it's not tooo different
-                if abs(timestamp-newtimestamp) < 50:
+                if abs(timestamp-newtimestamp) < self.max_delta:
                     timestamp = int(newtimestamp)
 
             # simple linear interpolation for the sample time-stamps
@@ -841,7 +849,7 @@ class timestamp_interpolation(TransformerMixin):
         pkt_ts = pkt_ts + np.random.uniform(0,.5*1000/fs,size=pkt_ts.shape)
         # apply the time-stamp interplotation
         sts=[]
-        tsfn = timestamp_interpolation(fs=fs,sample2timestamp = linear_trend_tracker(halflife=5000,step_threshold=2))
+        tsfn = timestamp_interpolation(fs=fs,sample2timestamp = linear_trend_tracker(halflife=100, int_err_halflife=5, K_int_err=10))
         for i,(n,t) in enumerate(zip(nsamp,pkt_ts)):
             samp_ts = tsfn.transform(t,n)
             sts.extend(samp_ts)

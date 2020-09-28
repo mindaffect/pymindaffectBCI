@@ -188,11 +188,13 @@ def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None, log=Fal
     if log:
         muFX = 10*np.log10(muFX)
         unit='db (10*log10(uV^2))'
-        plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs)       
+        ylim = (2*np.median(np.min(muFX,axis=tuple(range(muFX.ndim-1))),axis=-1),
+                2*np.median(np.max(muFX,axis=tuple(range(muFX.ndim-1))),axis=-1))
     else:
         unit='uV^2'
         ylim = (0,2*np.median(np.max(muFX,axis=tuple(range(muFX.ndim-1))),axis=-1))
-        plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)       
+
+    plot_erp(muFX, ch_names=ch_names, evtlabs=None, times=freqs, ylim=ylim)       
     plt.suptitle("Grand average spectrum ({})".format(unit))
 
 def extract_envelope(X,fs,
