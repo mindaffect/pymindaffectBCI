@@ -26,9 +26,10 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     data_ts = X[...,-1] # (nsamp,)
     X = X[...,:-1] # (nsamp,nch)
     
-    # estimate the sample rate from the data.
-    dur_s = (data_ts[-1] - data_ts[-1000])/1000.0
-    fs  = min(1000,X.shape[0]) / dur_s
+    # estimate the sample rate from the data -- robustly?
+    idx = range(0,data_ts.shape[0],1000)
+    samp2ms = np.median( np.diff(data_ts[idx])/1000.0 ) 
+    fs = 1000.0 / samp2ms
     ch_names = None
 
     if verb >= 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
@@ -142,7 +143,7 @@ def testcase():
         import glob
         import os
         fileregexp = '../../../logs/mindaffectBCI*.txt'
-        fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
+        #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
         sessfn = max(files, key=os.path.getctime)
  

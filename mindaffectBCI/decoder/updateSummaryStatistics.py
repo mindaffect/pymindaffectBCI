@@ -369,7 +369,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     plt.clf()
     # Cxx
     plt.subplot(311);
-    plt.imshow(Cxx, extent=[0, Cxx.shape[0], 0, Cxx.shape[1]]);
+    plt.imshow(Cxx, origin='lower', extent=[0, Cxx.shape[0], 0, Cxx.shape[1]])
     # TODO []: use the ch_names to add lables to the  axes
     plt.title('Cxx')
 
@@ -400,7 +400,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
         Cyy = Cyy[0, ...]
     Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
     plt.subplot(313)
-    plt.imshow(Cyy2d, extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
+    plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
     plt.title('Cyy')
 
 def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
