@@ -184,7 +184,7 @@ def mkRowCol(width=5,height=5, repeats=10):
     return StimSeq(None,array.tolist(),None)
 
 
-def mkFreqTag(period_phase=((2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(2,1),(3,1),(4,1),(5,1),(6,1),(7,1),(3,2),(4,2),(5,2),(6,2),(7,2),(4,3),(5,3),(6,3),(7,3),(5,4),(6,4),(7,4),(6,5),(7,5),(7,6)),nEvent=120, isbinary=True):
+def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1),(7,1),(3,2),(4,2),(5,2),(6,2),(7,2),(4,3),(5,3),(6,3),(7,3),(5,4),(6,4),(7,4),(6,5),(7,5),(7,6)),nEvent=120, isbinary=True):
     """Generate a frequency tagging stimulus sequence
 
     Args:
@@ -198,12 +198,23 @@ def mkFreqTag(period_phase=((2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(2,1),(3,1),(4,1
         # extract desired length and phase
         l,o = e if hasattr(e,'__iter__') else (e,0)
         # generate the sequence
-        s = np.cos( (np.arange(array.shape[0])+o)/l*2*np.pi )
+        s = np.sin( (np.arange(array.shape[0])+o+1e-6)/l*2*np.pi )
         if isbinary:
             array[s>0,i] = 1
         else:
             array[:,i] = s
     return StimSeq(None,array.tolist(),None)
+
+
+def mkCodes():
+    # test generators
+    rc=mkRowCol(width=5,height=5, repeats=10)
+    rc.toFile('rc5x5.png')
+    rc.toFile('rc5x5.txt')
+
+    ssvep=mkFreqTag()
+    ssvep.toFile('ssvep.png')
+    ssvep.toFile('ssvep.txt')
 
 # testcase code
 if __name__ == "__main__":
@@ -217,11 +228,5 @@ if __name__ == "__main__":
     ss = StimSeq.fromFile("mgold_65_6532_psk_60hz.txt")
     ss.toFile("mgold_65_6532_psk_60hz.png")
 
-    # test generators
-    rc=mkRowCol(width=5,height=5, repeats=10)
-    rc.toFile('rc5x5.png')
-    rc.toFile('rc5x5.txt')
-
-    ssvep=mkFreqTag()
-    ssvep.toFile('ssvep.png')
-    ssvep.toFile('ssvep.txt')
+    # make codebooks
+    mkCodes()
