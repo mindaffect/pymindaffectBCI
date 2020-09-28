@@ -430,7 +430,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, datafile:str=None,
         tau_ms:float=450, out_fs:float=100, evtlabs=None, 
-        stopband=((45,65),(0,5),(28,-1)), ftype='butter', order:int=6, cv:int=5, 
+        stopband=((45,65),(0,5.5),(25,-1)), ftype='butter', order:int=6, cv:int=5, 
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -516,7 +516,7 @@ if  __name__ == "__main__":
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
-    parser.add_argument('--out_fs',type=int, help='output sample rate', default=250)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(0,5.5),(25,-1)))
@@ -528,9 +528,10 @@ if  __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if True or args.savefile is not None:
-        setattr(args,'savefile',"../utopia/java/messagelib/UtopiaMessages_200923_1849.log")
-        setattr(args,'savefile',"../../Downloads/jason/UtopiaMessages_200923_1749_*.log")
+    if args.savefile is not None:# or True:#
+        #setattr(args,'savefile',"../utopia/java/messagelib/UtopiaMessages_.log")
+        setattr(args,'savefile',"../utopia/java/utopia2ft/UtopiaMessages_*1700.log")
+        #setattr(args,'savefile',"../../Downloads/jason/UtopiaMessages_200923_1749_*.log")
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
