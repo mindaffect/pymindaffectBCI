@@ -30,9 +30,6 @@ from mindaffectBCI.utopiaclient import DataPacket
 import pyglet
 isi = 1/60
 drawrate = 0  # rate at which draw is called
-last_key_press = None
-last_text = None
-
 
 class Screen:
 
@@ -101,11 +98,11 @@ class InstructionScreen(Screen):
             self.isDone = False
             return self.isDone
         if self.waitKey:
-            global last_key_press
-            if last_key_press:
-                self.key_press = last_key_press
+            #global last_key_press
+            if self.window.last_key_press:
+                self.key_press = self.window.last_key_press
                 self.isDone = True
-                last_key_press = None
+                self.window.last_key_press = None
         if self.elapsed_ms() > self.duration:
             self.isDone = True
         return self.isDone
@@ -145,11 +142,11 @@ class MenuScreen(InstructionScreen):
             self.isDone = False
             return self.isDone
         global last_key_press
-        if last_key_press:
-            self.key_press = last_key_press
+        if self.window.last_key_press:
+            self.key_press = self.window.last_key_press
             if self.key_press in self.valid_keys:
                 self.isDone = True
-            last_key_press = None
+            self.window.last_key_press = None
         if self.elapsed_ms() > self.duration:
             self.isDone = True
         return self.isDone
@@ -238,29 +235,29 @@ class ConnectingScreen(InstructionScreen):
                     # waited too long, giveup and ask user
                     self.stage = 1
                     # ensure old key-presses are gone
-                    last_text = None
-                    last_key_press = None
+                    self.window.last_text = None
+                    self.window.last_key_press = None
 
             elif self.stage == 1:  # query hostname
                 # query the user for host/port
                 # accumulate user inputs
-                if last_key_press:
-                    if last_key_press == pyglet.window.key.BACKSPACE:
+                if self.window.last_key_press:
+                    if self.window.last_key_press == pyglet.window.key.BACKSPACE:
                         # remove last character
                         self.usertext = self.usertext[:-1]
-                    last_key_press = None
-                if last_text:
-                    print(last_text + ":" + str(ord(last_text)))
-                    if last_text == '\n' or last_text == '\r':
+                    self.window.last_key_press = None
+                if self.window.last_text:
+                    print(self.window.last_text + ":" + str(ord(self.window.last_text)))
+                    if self.window.last_text == '\n' or self.window.last_text == '\r':
                         # set as new host to try
                         self.host = self.usertext
                         self.usertext = ''
                         self.set_text(self.prefix_text + self.trying_text%(self.host))
                         self.stage = 0 # back to try-connection stage
-                    elif last_text:
+                    elif self.window.last_text:
                         # add to the host string
                         self.usertext += last_text
-                    last_text = None
+                    self.window.last_text = None
                 if self.stage == 1: # in same stage
                     # update display with user input
                     self.set_text(self.prefix_text + self.query_text%(self.usertext))
@@ -296,14 +293,14 @@ class SettingsScreen(InstructionScreen):
 
         # query the user for host/port
         # accumulate user inputs
-        if last_key_press:
-            if last_key_press == pyglet.window.key.BACKSPACE:
+        if self.window.last_key_press:
+            if self.window.last_key_press == pyglet.window.key.BACKSPACE:
                 # remove last character
                 self.usertext = self.usertext[:-1]
-            last_key_press = None
-            if last_text:
-                print(last_text + ":" + str(ord(last_text)))
-            if last_text == '\n' or last_text == '\r':
+            self.window.last_key_press = None
+            if self.window.last_text:
+                print(self.window.last_text + ":" + str(ord(self.window.last_text)))
+            if self.window.last_text == '\n' or self.window.last_text == '\r':
                 # set as new host to try
                 try:
                     self.threshold = float(self.usertext)
@@ -312,10 +309,10 @@ class SettingsScreen(InstructionScreen):
                 except ValueError:
                     # todo: flash to indicate invalid..
                     pass
-            elif last_text and last_text in "0123456789.":
+            elif self.window.last_text and self.window.last_text in "0123456789.":
                 # add to the host string
                 self.usertext += last_text
-            last_text = None
+            self.window.last_text = None
             self.set_text(self.prefix_text + self.threshold_text%(self.usertext))
         super().draw(t)
 
@@ -335,18 +332,18 @@ class QueryDialogScreen(InstructionScreen):
         # accumulate user inputs
         global last_key_press, last_text
 
-        if last_key_press:
-            if last_key_press == pyglet.window.key.BACKSPACE:
+        if self.window.last_key_press:
+            if self.window.last_key_press == pyglet.window.key.BACKSPACE:
                 self.usertext = self.usertext[:-1]
                 self.set_text(self.query +self.usertext)
-            last_key_press = None
-        if last_text:
-            if last_text == '\r' or last_text == '\n':
+            self.window.last_key_press = None
+        if self.window.last_text:
+            if self.window.last_text == '\r' or self.window.last_text == '\n':
                 self.isDone = True
-            elif last_text:
+            elif self.window.last_text:
                 # add to the host string
-                self.usertext += last_text
-            last_text=None
+                self.usertext += self.window.last_text
+            self.window.last_text=None
             # update display with user input
             self.set_text(self.query +self.usertext)
         super().draw(t)
@@ -432,10 +429,10 @@ class ElectrodequalityScreen(Screen):
             return False
         if self.waitKey:
             global last_key_press
-            if last_key_press:
-                self.key_press = last_key_press
+            if self.window.last_key_press:
+                self.key_press = self.window.last_key_press
                 isDone = True
-                last_key_press = None
+                self.window.last_key_press = None
         if getTimeStamp() > self.t0+self.duration:
             isDone=True
         if isDone:
@@ -481,32 +478,46 @@ class ElectrodequalityScreen(Screen):
         for m in msgs:
             if m.msgID == DataPacket.msgID:
                 print('D', end='', flush=True)
+                self.dataringbuffer.extend(m.samples)
                 if getTimeStamp() > self.t0+self.datawindow_ms: # slide buffer
-                    self.dataringbuffer.popleft()
-                self.dataringbuffer.append(m.samples)
-        # draw the lines
+                    # remove same number of samples we've just added
+                    for i in range(len(m.samples)):
+                        self.dataringbuffer.popleft()
 
 
         if self.dataringbuffer:
+            if len(self.dataringbuffer[0]) != len(self.sprite):
+                self.update_nch(len(self.dataringbuffer[0]))
+
             # transpose and flatten the data
             # and estimate it's summary statistics
+            from statistics import median
+
+            # CAR
+            dataringbuffer =[]
+            for t in self.dataringbuffer:
+                mu = median(t)
+                dataringbuffer.append([c-mu for c in t])
+            
+            # other pre-processing
             data = []
             mu = [] # mean
             mad = [] # mean-absolute-difference
             nch=len(self.linebbox)
             for ci in range(nch):
-                d = [ t[ci] for m in self.dataringbuffer for t in m ]
+                d = [ t[ci] for t in dataringbuffer ]
                 # mean last samples
                 tmp = d[-int(len(d)*.2):]
                 mui = sum(tmp)/len(tmp)
-                # center
+                # center (in time)
                 d = [ t-mui for t in d ]
                 # scale estimate
                 madi = sum([abs(t-mui) for t in tmp])/len(tmp)
                 data.append(d)
                 mu.append(mui)
                 mad.append(madi)
-            from statistics import median
+
+            
             datascale_uv = max(5,median(mad)*4)
 
             for ci in range(nch):
@@ -575,6 +586,7 @@ class FrameRateTestScreen(InstructionScreen):
                     
         # record the  flip timing info
         # TODO[]: use a deque to make sliding window...
+        # TODO[]: plot the histogram of frame-times?
         if self.elapsed_ms() > self.warmup_duration:
             self.ftimes.append(self.window.lastfliptime)
 
@@ -814,11 +826,11 @@ class SelectionGridScreen(Screen):
 
         if self.waitKey:
             global last_key_press
-            if last_key_press:
-                self.key_press = last_key_press
+            if self.window.last_key_press:
+                self.key_press = self.window.last_key_press
                 #self.noisetag.reset()
                 self.isDone = True
-                last_key_press = None
+                self.window.last_key_press = None
 
         # turn all off if no stim-state
         if stimulus_state is None:
@@ -1140,16 +1152,14 @@ def timedflip(self):
             print("\nFlipTimes:"+str(flipstats))
             print("Hist:\n"+flipstats.hist())
 
-last_key_press=None
 def on_key_press(symbols, modifiers):
     '''main key-press handler, which stores the last key in a global variable'''
-    global last_key_press
-    last_key_press=symbols
+    global window
+    window.last_key_press=symbols
 
-last_text=None
 def on_text(text):
-    global last_text
-    last_text=text
+    global window
+    window.last_text = text
 
 def initPyglet(fullscreen=False):
     '''intialize the pyglet window, keyhandler'''
@@ -1166,6 +1176,8 @@ def initPyglet(fullscreen=False):
 
     # setup a key press handler, just store key-press in global variable
     window.push_handlers(on_key_press, on_text)
+    window.last_key_press=None
+    window.last_text=None
 
     global nframe; nframe=0
     # override window's flip method to record the exact *time* the
