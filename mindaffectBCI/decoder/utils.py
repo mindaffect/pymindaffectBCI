@@ -382,7 +382,7 @@ class linear_trend_tracker():
     """ linear trend tracker with adaptive forgetting factor
     """   
 
-    def __init__(self,halflife=1000,int_err_halflife=50, K_int_err=1):
+    def __init__(self,halflife=70,int_err_halflife=5, K_int_err=10):
         self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
         self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
         self.N=0

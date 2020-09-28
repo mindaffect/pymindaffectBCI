@@ -37,10 +37,17 @@ def startAcquisationProcess(label,acquisation,acq_args):
         from mindaffectBCI.examples.acquisation import utopia_ganglion
         acquisation = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
         acquisation.start()
+
+    elif acquisation == 'javacyton': # java cyton driver
+        from mindaffectBCI.examples.acquisation import startJavaCyton
+        acquisation = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+
     elif acquisation == 'eego': # ANT-neuro EEGO
         from mindaffectBCI.examples.acquisation import utopia_eego
         acquisation = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
         acquisation.start()
+
     else:
         raise ValueError("Unrecognised acquisation driver! {}".format(acquisation))
     
