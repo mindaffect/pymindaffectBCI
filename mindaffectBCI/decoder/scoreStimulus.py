@@ -15,7 +15,8 @@ def scoreStimulus(X, W, R=None, b=None, offset=0, isepoched=None):
      OR
       W = (nM x nE x tau x d) spatio-temporal filter per event type and model
       R = None
-      b = (nE,1) offset for each stimulus type
+      b = (nE,1) bias for each stimulus type
+      offset = 0 (1,1) offset in X for applying W
     Outputs:
       Fe= (nM x nTrl x nEpoch/nSamp x nE) similarity score for each input epoch for each output
     Copyright (c) MindAffect B.V. 2018
@@ -130,6 +131,7 @@ def scoreStimulusCont(X, W, R=None, b=None, offset=0):
     tmp = np.zeros(Fe.shape[:-2]+(X.shape[-2], Fe.shape[-1]),dtype=X.dtype)
     # padd after the result = accumulate information *backwards* in time to
     # start of the window -> Fe causes X
+    # also shift by the desired offset to compensate for shifted windows
     tmp[..., -offset:Fe.shape[-2]-offset, :] = Fe
     Fe = tmp
 
