@@ -27,7 +27,7 @@ def startAcquisationProcess(label,acquisation,acq_args):
     elif acquisation == 'brainflow':
         from mindaffectBCI.examples.acquisation import utopia_brainflow
         if acq_args is None:
-            acq_args = dict(board_id=1, serial_port='com3') # connect to the ganglion
+            acq_args = dict(board_id=1, serial_port='com3', log=1) # connect to the ganglion
         acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
         acquisation.start()
 
@@ -149,8 +149,8 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     except:
         pass
     
-    hub.terminate()
-    hub.join()
+    hub_proc.terminate()
+    hub_proc.join()
     #print('killing hub')
     #os.kill(hub.pid, signal.SIGTERM)
     #print('exit online_bci')
