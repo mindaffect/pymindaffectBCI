@@ -174,9 +174,14 @@ def parse_args():
         config_file = args.config_file
         # search for the file in py-dir if not in CWD
         import os.path
+        if not os.path.isfile(config_file) and os.path.isfile(config_file+'.json'):
+                config_file = config_file +'.json'
         if not os.path.isfile(config_file):
             pydir = os.path.dirname(os.path.abspath(__file__))
-            config_file = os.path.join(pydir, config_file) if os.path.isfile(os.path.join(pydir, config_file)) else config_file
+            if os.path.isfile(os.path.join(pydir,config_file)):
+                config_file = os.path.join(pydir, config_file)
+            elif os.path.isfile(os.path.join(pydir,config_file+'.json')):
+                config_file = os.path.join(pydir, config_file+'.json')
 
         with open(config_file,'r') as f:
             config = json.load(f)

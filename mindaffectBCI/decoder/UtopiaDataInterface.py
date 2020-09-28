@@ -564,9 +564,9 @@ class butterfilt_and_downsample(TransformerMixin):
                 resamp_start = self.resamprate_ - resamp_start
             
             # allow non-integer resample rates
-
             idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_)
-            if self.resamprate_%1 > 0: # non-integer re-sample, interpolate
+
+            if self.resamprate_%1 > 0 and idx.size>0 : # non-integer re-sample, interpolate
                 idx_l = np.floor(idx).astype(int) # sample above
                 idx_u = np.ceil(idx).astype(int) # sample below
                 # BODGE: guard for packet ending at sample boundary.
@@ -859,7 +859,7 @@ def testRaw():
 def testPP():
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=60)
+    ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=100)
     #ppfn= butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=80)     
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None)
     ui.connect()
@@ -940,9 +940,9 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
     
 if __name__ == "__main__":
     #timestamp_interpolation().testcase()
-    butterfilt_and_downsample.testcase()
+    #butterfilt_and_downsample.testcase()
     #testRaw()
-    #testPP()
+    testPP()
     #testERP()
     #testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
     "..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"
