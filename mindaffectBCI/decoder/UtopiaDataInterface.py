@@ -309,7 +309,8 @@ class UtopiaDataInterface:
                    preproc_amp,d_preproc.shape[0],
                    noise2sig))
             print("Q",end='')
-            self.sendMessage(SignalQuality(ts, noise2sig))
+            # N.B. use *our* time-stamp for outgoing messages!
+            self.sendMessage(SignalQuality(None, noise2sig))
             self.last_sigquality_ts = ts
 
             if self.VERBOSITY>2:
