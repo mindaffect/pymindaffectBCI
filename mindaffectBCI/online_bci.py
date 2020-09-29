@@ -48,6 +48,11 @@ def startAcquisationProcess(label,acquisation,acq_args):
         acquisation = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
         acquisation.start()
 
+    elif acquisation == 'lsl': # lsl eeg input stream
+        from mindaffectBCI.examples.acquisation import utopia_lsl
+        acquisation = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+
     else:
         raise ValueError("Unrecognised acquisation driver! {}".format(acquisation))
     

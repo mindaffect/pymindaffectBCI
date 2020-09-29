@@ -170,11 +170,15 @@ class ResultsScreen(InstructionScreen):
         self.noisetag = noisetag
         self.pred = None
 
+    def reset(self):
+        self.noisetag.clearLastPrediction()
+        self.pred = None
+        super().reset()
+
     def draw(self, t):
         '''check for results from decoder.  show if found..'''
         if not self.isRunning:
-            self.noisetag.clearLastPrediction()
-            self.pred = None
+            self.reset()
         # check for new predictions
         pred = self.noisetag.getLastPrediction()
         # update text if got predicted performance
