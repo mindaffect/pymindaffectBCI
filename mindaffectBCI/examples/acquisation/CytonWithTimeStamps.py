@@ -150,7 +150,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
 if __name__ == "__main__":
     #run(board_id=1,serial_port='com3') # ganglion
-    run(board_id=0,serial_port='COM14')
+    #run(board_id=0,serial_port='COM14') # Cyton
 
     args=parse_args()    
     try:
