@@ -592,56 +592,59 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
 
 def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
     ''' given a set of filter cutoffs return butterworth sos coefficients '''
-    sos=[]
 
     # convert to normalized frequency, Note: not to close to 0/1
-    if stopband is not None:
-        if not hasattr(stopband[0],'__iter__'):
-            stopband=(stopband,)
+    if stopband is None:
+        return np.array(())
 
-        for sb in stopband:
-            btype = None
-            if type(sb[-1]) is str:
-                btype = sb[-1]
-                sb = sb[:-1]
+    if not hasattr(stopband[0],'__iter__'):
+        stopband=(stopband,)
 
-            # convert to normalize frequency
-            sb = np.array(sb,dtype=np.float32)
-            sb[sb<0] = (fs/2)+sb[sb<0]+1 # neg freq count back from nyquist
-            Wn  = sb/(fs/2)
+    sos=[]
+    for sb in stopband:
+        btype = None
+        if type(sb[-1]) is str:
+            btype = sb[-1]
+            sb = sb[:-1]
 
-            if  Wn[1] < .0001 or .9999 < Wn[0]: # no filter
-                continue
+        # convert to normalize frequency
+        sb = np.array(sb,dtype=np.float32)
+        sb[sb<0] = (fs/2)+sb[sb<0]+1 # neg freq count back from nyquist
+        Wn  = sb/(fs/2)
 
-            # identify type from frequencies used, cliping if end of frequency range
-            if Wn[0] < .0001:
-                Wn = Wn[1]
-                btype = 'highpass' if btype is None or btype == 'bandstop' else 'lowpass'
-            elif .9999 < Wn[1]:
-                Wn = Wn[0]
-                btype = 'lowpass' if btype is None or btype == 'bandstop' else 'highpass'
+        if  Wn[1] < .0001 or .9999 < Wn[0]: # no filter
+            continue
 
-            elif btype is None: # .001 < Wn[0] and Wn[1] < .999:
-                btype = 'bandstop'
+        # identify type from frequencies used, cliping if end of frequency range
+        if Wn[0] < .0001:
+            Wn = Wn[1]
+            btype = 'highpass' if btype is None or btype == 'bandstop' else 'lowpass'
+        elif .9999 < Wn[1]:
+            Wn = Wn[0]
+            btype = 'lowpass' if btype is None or btype == 'bandstop' else 'highpass'
 
-            if verb>0: print("{}={}={}".format(btype,sb,Wn))
+        elif btype is None: # .001 < Wn[0] and Wn[1] < .999:
+            btype = 'bandstop'
 
-            if ftype == 'butter':
-                sosi = butter(order, Wn, btype=btype, output='sos')
-            elif ftype == 'bessel':
-                sosi = bessel(order, Wn, btype=btype, output='sos', norm='phase')
-            else:
-                raise ValueError("Unrecognised filter type")
+        if verb>0: print("{}={}={}".format(btype,sb,Wn))
 
-            sos.append(sosi)
+        if ftype == 'butter':
+            sosi = butter(order, Wn, btype=btype, output='sos')
+        elif ftype == 'bessel':
+            sosi = bessel(order, Wn, btype=btype, output='sos', norm='phase')
+        else:
+            raise ValueError("Unrecognised filter type")
+
+        sos.append(sosi)
 
     # single big filter cascade
     sos = np.concatenate(sos,axis=0)
-    #print("sos={}".format(sos.shape))
     return sos
 
 def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, verb=True, ftype='butter'):
     ''' use a (cascade of) butterworth SOS filter(s) to band-pass and (cascade of) band stop X along axis '''
+    if stopband is None: # deal with no filter case
+        return (X,None,None)
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # TODO []: auto-order determination?
