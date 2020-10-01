@@ -441,6 +441,7 @@ class Noisetag:
             return True
         self.utopiaController.autoconnect(host,port,
                                           queryifhostnotfound=queryifhostnotfound,
+                                          localhostifhostnotfound=True,
                                           timeout_ms=timeout_ms)
         return self.utopiaController.isConnected()
     
