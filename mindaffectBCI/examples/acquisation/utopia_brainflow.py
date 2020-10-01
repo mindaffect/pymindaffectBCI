@@ -42,7 +42,7 @@ def parse_args():
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=0):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1):
     global board, client
 
     # init the board params
