@@ -23,6 +23,6 @@ setup(name='mindaffectBCI',
         "Operating System :: OS Independent",
       ],
       python_requires='>=3.5',
-      install_requires=['numpy>=1.17.2', 'pyglet>=1.4.7', 'scipy>=1.4.1', 'brainflow>=3.2.0',
-'matplotlib>=3.2.1'],
+      install_requires=['numpy>=1.0.2', 'pyglet>=1.2', 'scipy>=1.0', 'brainflow>=3.0',
+'matplotlib>=3.0'],
       zip_safe=False)

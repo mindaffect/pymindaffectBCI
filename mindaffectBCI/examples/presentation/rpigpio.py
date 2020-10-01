@@ -30,7 +30,7 @@ from gpiozero import LED
 nt=None
 leds=[]
 objIDs=[]
-framerate=1/60
+framerate = 60
 
 #---------------------------------------------------------------------
 def draw():
@@ -62,12 +62,13 @@ def selectionHandler(objID):
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init(numleds=2):
-
+def init(numleds=2, led2gpiopin=(2,3,4)):
+    if led2gpiopin is None:
+        led2gpiopin = list(range(numleds))
     leds=[]
     objIDs=[]
     for i in range(numleds):
-        leds.append(LED[i])
+        leds.append(LED(led2gpiopin[i]))
         objIDs.append(i+1)
 
     nt=Noisetag()
@@ -79,7 +80,7 @@ def init(numleds=2):
     nt.addSelectionHandler(selectionHandler)
 
 if __name__=="__main__":
-    framerate = 1/60
-    init(numleds=2)
+    framerate = 60
+    init(numleds=2, led2gpiopin=(2,3,4))
     while True :
         draw()
