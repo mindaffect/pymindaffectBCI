@@ -23,8 +23,14 @@
 
 # Set up imports and paths
 import time
-from mindaffectBCI.noisetag import NoiseTag
+from mindaffectBCI.noisetag import Noisetag
 from gpiozero import LED 
+
+
+nt=None
+leds=[]
+objIDs=[]
+framerate=1/60
 
 #---------------------------------------------------------------------
 def draw():
@@ -38,13 +44,16 @@ def draw():
     # BODGE: sleep to limit the stimulus update rate
     time.sleep(1/framerate)
     # update the state of each LED to match the stimulusstate
-    for idx in range(len(fp.objects)): 
+    for i,led in enumerate(leds): 
         # get the background state of this cell
-        bs = stimulusstate[idx] if stimulus_state else None
+        bs = stimulus_state[i] if stimulus_state else None
         if not bs is None and bs>0 :
-            leds[idx].on()
+            led.on()
         else :
-            leds[idx].off()
+            led.off()
+
+    if target_state is not None and target_state>=0:
+        print("*" if target_state==1 else '.', end='', flush=True)
     # send info on updated display state
     nt.sendStimulusState()
 
@@ -53,24 +62,24 @@ def selectionHandler(objID):
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init():
-    framerate=1/60
+def init(numleds=2):
 
-    numleds=2
     leds=[]
     objIDs=[]
-    for i in range(len(leds)):
-        leds.append(LED(leds[i]))
+    for i in range(numleds):
+        leds.append(LED[i])
         objIDs.append(i+1)
 
     nt=Noisetag()
     nt.connect()
-    nt.startExpt(objIDs,nCal=10,nPred=10,
+    nt.setActiveObjIDs(objIDs)
+    nt.startExpt(nCal=10,nPred=10,
                 cueduration=4,duration=10,feedbackduration=4)
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 
 if __name__=="__main__":
-    init()
+    framerate = 1/60
+    init(numleds=2)
     while True :
         draw()
