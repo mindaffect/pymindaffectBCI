@@ -6,7 +6,6 @@ import socket
 
 # add utopiaclient to path and import
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../python/pymindaffectBCI'))
 from mindaffectBCI import utopiaclient
 
 SCALE_FACTOR_EEG = 1000000.0/(1.2*8388607.0*1.5*51.0) #uV/count

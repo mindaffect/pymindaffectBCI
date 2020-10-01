@@ -38,6 +38,11 @@ def startAcquisationProcess(label,acquisation,acq_args):
         acquisation = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
         acquisation.start()
 
+    elif acquisation == 'cyton': # pyOpenBCI ganglion driver
+        from mindaffectBCI.examples.acquisation import utopia_cyton
+        acquisation = Process(target=utopia_cyton.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+
     elif acquisation == 'javacyton': # java cyton driver
         from mindaffectBCI.examples.acquisation import startJavaCyton
         acquisation = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
