@@ -166,14 +166,20 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
         # guard against empty training dataset
         if X is None or Y is None :
-            return None, None
+            return None, None, None
         Y, used_idx = strip_unused(Y)
         
         # now call the clsfr fit method, on the true-target info
-        print("Training dataset = ({},{})".format(X.shape, Y.shape))
-        cvscores = clsfr.cv_fit(X, Y, cv=cv)
-        score = np.mean(cvscores['test_score'])
-        print("clsfr={} => {}".format(clsfr, score))
+        try:
+            print("Training dataset = ({},{})".format(X.shape, Y.shape))
+            cvscores = clsfr.cv_fit(X, Y, cv=cv)
+            score = np.mean(cvscores['test_score'])
+            print("clsfr={} => {}".format(clsfr, score))
+        except:
+            import traceback
+            traceback.print_exc()
+            return None, None, None
+
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
                                       softmaxscale=clsfr.softmaxscale_)
@@ -429,8 +435,8 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, datafile:str=None,
-        tau_ms:float=450, out_fs:float=100, evtlabs=None, 
-        stopband=((45,65),(0,5.5),(25,-1)), ftype='butter', order:int=6, cv:int=5, 
+        tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
+        stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5, 
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -440,7 +446,12 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         msg_timeout_ms (float, optional): timeout for getting new messages from the data-interface. Defaults to 100.
         host (str, optional): hostname for the utopia hub. Defaults to None.
         tau_ms (float, optional): length of the stimulus response. Defaults to 400.
-        out_fs (float, optional): sample rate after the pre-processor. Defaults to 80.
+        offset_ms (float, optiona): offset in ms to shift the analysis window. Use to compensate for response lag.  Defaults to 0.
+        stopband (tuple, optional): temporal filter specification for `UtopiaDataInterface.butterfilt_and_downsample`. Defaults to ((45,65),(5.5,25,'bandpass'))
+        ftype (str, optional): type of temporal filter to use.  Defaults to 'butter'.
+        order (int, optional): order of temporal filter to use.  Defaults to 6.
+        out_fs (float, optional): sample rate after the pre-processor. Defaults to 100.
+        evtlabs (tuple, optional): the brain event coding to use.  Defaults to None.
         calplots (bool, optional): flag if we make plots after calibration. Defaults to False.
         predplots (bool, optional): flag if we make plots after each prediction trial. Defaults to False.
     """
@@ -473,7 +484,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
             evtlabs = evtlabs.split(',')
-        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs)
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000))
         print('clsfr={}'.format(clsfr))
     
     calibration_dataset = None
