@@ -84,13 +84,13 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         '''make predictions on multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)
         
         N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)'''
-        if not hasattr(self,"W_"):
+        if not self.is_fitted():
             # only if we've been fitted!
             raise NotFittedError
         # convert from stimulus coding to brain response coding
         Y = self.stim2event(Y, prevY)
         # valid performance
-        Fe = scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset) # (nM, nTrl, nSamp, nE)
+        Fe = self.transform(X) # (nM, nTrl, nSamp, nE)
         Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=self.offset) #(nM, nTrl, nSamp, nY)
         # BODGE: strip un-needed model dimension
         if Fy.shape[0] == 1 and Fy.ndim > 3:
@@ -200,6 +200,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     
 class MultiCCA(BaseSequence2Sequence):
+    ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=1e-8, rcond=1e-4, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
         self.rank = rank
@@ -240,6 +241,7 @@ class MultiCCA(BaseSequence2Sequence):
         return self
     
 class FwdLinearRegression(BaseSequence2Sequence):
+    ''' Sequence 2 Sequence learning using forward linear regression  X = A*Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-6, badEpThresh=6, center=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, **kwargs)
         self.reg = reg
@@ -302,6 +304,7 @@ class FwdLinearRegression(BaseSequence2Sequence):
         return self
 
 class BwdLinearRegression(BaseSequence2Sequence):
+    ''' Sequence 2 Sequence learning using backward linear regression  W*X = Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-5, badEpThresh=6, center=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, **kwargs)
         self.reg = reg
