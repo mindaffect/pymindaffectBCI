@@ -63,6 +63,8 @@ def selectionHandler(objID):
 #------------------------------------------------------------------------
 # Initialization : display
 def init(numleds=2, led2gpiopin=(2,3,4)):
+    global nt, objIDs, leds
+    
     if led2gpiopin is None:
         led2gpiopin = list(range(numleds))
     leds=[]
