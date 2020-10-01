@@ -19,6 +19,8 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     # TODO []: convert to use the on-line time-stamp code
     X, messages = read_mindaffectBCI_data_messages(Xfn, regress=regress)
 
+    # TODO[]: get the header if there is one?
+
     import pickle
     pickle.dump(dict(data=X),open('raw_lmbci.pk','wb'))
 
@@ -109,27 +111,31 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     Y = np.zeros((len(trl_samp_idx), xlen_samp, Yraw.shape[-1]), dtype=Yraw.dtype)
     Xe_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     Ye_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
+    ep_idx = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
     for ti, si in enumerate(trl_samp_idx):
-        idx = slice(si+bgnend_samp[0],si+bgnend_samp[1])
-        X[ti, :, :] = Xraw[idx, :]
-        Xe_ts[ti,:] = data_ts[idx]
-        Y[ti, :, :] = Yraw[idx, :]
-        Ye_ts[ti,:] = Y_ts[idx]
+        idx = range(si+bgnend_samp[0],min(Xraw.shape[0],si+bgnend_samp[1]))
+        nsamp = len(idx) #min(si+bgnend_samp[1],Xraw.shape[0])-(si+bgnend_samp[0])
+        X[ti, :nsamp, :] = Xraw[idx, :]
+        Xe_ts[ti,:nsamp] = data_ts[idx]
+        Y[ti, :nsamp, :] = Yraw[idx, :]
+        Ye_ts[ti,:nsamp] = Y_ts[idx]
+        ep_idx[ti,:nsamp] = list(idx)
+        
     del Xraw, Yraw
     if verb > 0: print("X={}\nY={}".format(X.shape,Y.shape))
 
     import pickle
-    pickle.dump(dict(X=X,Y=Y,X_ts=Xe_ts,Y_ts=Ye_ts),open('sliced_lmbci.pk','wb'))
+    pickle.dump(dict(X=X,Y=Y,X_ts=Xe_ts,Y_ts=Ye_ts,ep_idx=ep_idx),open('sliced_lmbci.pk','wb'))
 
 
     # make coords array for the meta-info about the dimensions of X
     coords = [None]*X.ndim
-    coords[0] = {'name':'trial','coords':trl_ts}
+    coords[0] = dict(name='trial', coords=trl_ts, trl_idx=ep_idx, trl_ts=Xe_ts, Y_ts=Ye_ts)
     coords[1] = {'name':'time','unit':'ms', \
                  'coords':np.arange(X.shape[1])/fs, \
                  'fs':fs}
-    coords[2] = {'name':'channel','coords':ch_names}
+    coords[2] = dict(name='channel', coords=ch_names)
     # return data + metadata
     return (X, Y, coords)
 
