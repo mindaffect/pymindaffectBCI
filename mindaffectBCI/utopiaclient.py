@@ -729,7 +729,8 @@ class UtopiaClient:
         self.udpsock.bind(self.sock.getsockname())
         return self.isConnected
 
-    def autoconnect(self, hostname=None, port=None, timeout_ms=3000, queryifhostnotfound=False, scanifhostnotfound=False):
+    def autoconnect(self, hostname=None, port=None, timeout_ms=3000, 
+                queryifhostnotfound=False, localhostifhostnotfound=True, scanifhostnotfound=False):
         if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname is None:
             print('Trying to auto-discover the utopia-hub server')
@@ -746,26 +747,36 @@ class UtopiaClient:
             if( len(hosts)>0 ):
                 hostname=hosts[0].strip()
                 print('Discovered utopia-hub on %s ...'%(hostname))
+            if hostname is None:
+                print('Error:: couldnt autodiscover the decoder!')
 
-        if hostname is None:
-            print('Error:: couldnt autodiscover the decoder!')
-            if queryifhostnotfound:
-                # ask user for host
-                print("Could not auto-connect.  Trying manual")
-                hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
-            elif scanifhostnotfound:
-                print("Could not auto-discover.  Trying IP scan.")
-                from mindaffectBCI.ssdpDiscover import ipscanDiscover
-                hosts = ipscanDiscover(port)
-                if  len(hosts)>0:
-                    hostname=hosts[0].strip()
-                    print('Discovered utopia-hub on %s ...'%(hostname))
-                    
-            else:
-                # fall back on local host
-                print("Trying localhost\nIf this fails enter hostname manually")
-                hostname = '127.0.0.1'
 
+        if hostname is not None:
+            self.try_connect(hostname,port,timeout_ms)
+
+        # Try different ways of getting the host info: localhost, query, scan
+        if not self.isConnected and localhostifhostnotfound : 
+            self.try_connect('localhost',port,timeout_ms)
+        
+        if not self.isConnected and queryifhostnotfound:
+            # ask user for host
+            print("Could not auto-connect.  Trying manual")
+            hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
+            self.try_connect(hostname,port,timeout_ms)
+
+        if not self.isConnected and scanifhostnotfound:
+            print("Could not auto-discover.  Trying IP scan.")
+            from mindaffectBCI.ssdpDiscover import ipscanDiscover
+            hosts = ipscanDiscover(port)
+            if  len(hosts)>0:
+                hostname=hosts[0].strip()
+                print('Discovered utopia-hub on %s ...'%(hostname))
+                self.try_connect(hostname,port,timeout_ms)
+            
+        if not self.isConnected:            
+            raise socket.error('Connection Refused!')
+
+    def try_connect(self, hostname, port=None, timeout_ms=5000):
         if ":" in hostname:
             hostname, port=hostname.split(":")
             port=int(port)
@@ -780,27 +791,7 @@ class UtopiaClient:
                 print('Connection refused...  Waiting', flush=True)
                 print(ex)
                 time.sleep(1)
-                
-        if not self.isConnected:
-            print("Could not discover utopia-hub")
-            if queryifhostnotfound:
-                # last ditch attempt ask user for host
-                print("Trying manual")
-                hostname = input("Enter the hostname/IP of the Utopia-HUB: ")
-                try:
-                    self.connect(hostname,port)
-                except socket.error:
-                    pass
-            elif scanifhostnotfound:
-                print("Trying IP scan.")
-                from mindaffectBCI.ssdpDiscover import ipscanDiscover
-                hosts = ipscanDiscover(port)
-                if  len(hosts)>0:
-                    hostname=hosts[0].strip()
-                    print('Discovered utopia-hub on %s ...'%(hostname))
-            
-        if not self.isConnected:            
-            raise socket.error('Connection Refused!')
+
 
     def gethostport(self):
         if self.isConnected:

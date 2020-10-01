@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from .utopiaclient import *
+from mindaffectBCI.utopiaclient import *
 
 class UtopiaController:
     '''controller class to manage the interaction with the Mindaffect decoder,
@@ -58,22 +58,14 @@ class UtopiaController:
         '''get a (relative) wall-time stamp *in milliseconds*'''
         return self.client.getTimeStamp()
         
-    def autoconnect(self, host=None, port=8400, timeout_ms=5000, queryifhostnotfound=True):
+    def autoconnect(self, host=None, port=8400, timeout_ms=5000, 
+                    localhostifhostnotfound=True, queryifhostnotfound=True, scanifhostnotfound=False):
         try:
-            self.client.autoconnect(host, port, timeout_ms=timeout_ms)
+            self.client.autoconnect(host, port, timeout_ms=timeout_ms, localhostifhostnotfound=localhostifhostnotfound, queryifhostnotfound=queryifhostnotfound, scanifhostnotfound=scanifhostnotfound)
         except socket.error as ex:
             print("Socket error connecting: ")
             print(ex)
             pass
-
-        # ask user for host
-        if not self.client.isConnected and queryifhostnotfound:
-            print("Could not auto-connect.  Trying manual")
-            hostport = input("Enter the hostname/IP of the Utopia-HUB: ")
-            try:
-                self.client.autoconnect(hostport)
-            except:
-                print("Could not connect to %s. Run in disconnected!"%(hostport))
 
         if not self.client.isConnected:
             print("Warning:: couldnt connect to a utopia hub....")
