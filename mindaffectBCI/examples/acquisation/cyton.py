@@ -15,8 +15,6 @@ SAMPLE_RATE = 250.0  # Hz
 START_BYTE = 0xA0  # start of data packet
 END_BYTE = 0xC0  # end of data packet
 
-
-
 class OpenBCICyton(object):
     """ OpenBCICyton handles the connection to an OpenBCI Cyton board.
 
@@ -313,7 +311,7 @@ class OpenBCICyton(object):
                 line += c
             self._logger.debug(line)
         else:
-            self.warn("No Message")
+            self._logger.warning("No Message")
 
 
 class OpenBCISample():
