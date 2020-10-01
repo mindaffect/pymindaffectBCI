@@ -1,4 +1,4 @@
-from .cyton import OpenBCICyton
+from mindaffectBCI.examples.acquisation.cyton import OpenBCICyton
 import asyncore # needed for the openBCI server
 import numpy as np
 from time import time, sleep
@@ -6,7 +6,6 @@ import socket
 
 # add utopiaclient to path and import
 import sys, os
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../../python/pymindaffectBCI'))
 from mindaffectBCI import utopiaclient
 
 LOGINTERVAL_S = 2
@@ -189,9 +188,16 @@ def initConnections(host=None, obciport=None):
     client.sendMessage(utopiaclient.DataHeader(getTime_ms(), nChans, fSample, ""))
     return (board, client)
 
-def main(argv):
-    host = argv[1] if len(argv)>1 else None
-    obciport = argv[2] if len(argv)>2 else None
+def parse_arguments():
+    import sys
+    argv = sys.argv
+    print("Arguments:",*argv)
+    # N.B. argv0 is the script name
+    host=argv[1] if len(argv)>1 else 'localhost'
+    obciport=argv[2] if len(argv)>2 else 'com4'
+    return dict(host=host, obciport=obciport)
+
+def run(host='localhost', obciport='com4', **kwargs):
     initConnections(host=host, obciport=obciport)
     # record the stream start time
     global t0, nextLogTime
@@ -206,5 +212,5 @@ def main(argv):
     board.start_stream(utopia_putsamples)
 
 if __name__ == "__main__":
-    import sys
-    main(sys.argv)
+    args=parse_arguments()
+    run(**args)
