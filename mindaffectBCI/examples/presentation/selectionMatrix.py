@@ -316,7 +316,7 @@ class SettingsScreen(InstructionScreen):
                     pass
             elif self.window.last_text and self.window.last_text in "0123456789.":
                 # add to the host string
-                self.usertext += last_text
+                self.usertext += window.last_text
             self.window.last_text = None
             self.set_text(self.prefix_text + self.threshold_text%(self.usertext))
         super().draw(t)
