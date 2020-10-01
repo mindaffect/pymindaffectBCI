@@ -557,7 +557,8 @@ class butterfilt_and_downsample(TransformerMixin):
         if not hasattr(self,'sos_'):
             self.fit(X[0:1,:])
 
-        X, self.zi_ = sosfilt(self.sos_, X, axis=self.axis, zi=self.zi_)
+        if self.sos_ is not None:
+            X, self.zi_ = sosfilt(self.sos_, X, axis=self.axis, zi=self.zi_)
 
         nsamp = self.nsamp
         self.nsamp = self.nsamp + X.shape[self.axis] # track *raw* sample counter
