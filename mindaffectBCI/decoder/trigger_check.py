@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('re','fe'), tau_ms=1000, offset_ms=-250):
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
     import glob
     import os
     if filename is None or filename == '-':
@@ -18,8 +18,8 @@ def triggerPlot(filename=None, evtlabs=('re','fe'), tau_ms=1000, offset_ms=-250)
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=(3,45,'bandpass'), ofs=9999)
-    X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=(3,45,'bandpass'), ofs=9999)
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
@@ -42,8 +42,8 @@ def triggerPlot(filename=None, evtlabs=('re','fe'), tau_ms=1000, offset_ms=-250)
             plt.plot(tmp+2*c,label='X{}'.format(c));
         plt.plot(Y[i,...,0],'k',label='Y');
         plt.title('Trl {}'.format(i))
-        plt.legend()
-    plt.suptitle('First trials data vs. stimulus')
+    plt.legend()
+    plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
     plt.show()
 
 
@@ -100,14 +100,14 @@ def triggerPlot(filename=None, evtlabs=('re','fe'), tau_ms=1000, offset_ms=-250)
     if times[-1]*.05 < scale2*2 and scale2*2 < times[-1]*8: # make line match
         scale2 = times[-1]/2
     elif scale2*2 < times[-1]*.2: # make image smaller
-        ax.set_ylim(min(times[0],mu2-1*scale2),max(times[-1],mu2+1*scale2))
+        ax.set_ylim(min(times[0],mu2-2*scale2),max(times[-1],mu2+2*scale2))
     plt.ylim(mu2-1*scale2,mu2+1*scale2)
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
     plt.show()
 
 if __name__=="__main__":
-    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
+    #filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
     #filename=None
-    #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename)
+    filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
+    triggerPlot(filename, evtlabs=('0','1'), tau_ms=200, offset_ms=0)
 
