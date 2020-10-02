@@ -30,7 +30,7 @@ from gpiozero import LED
 nt=None
 leds=[]
 objIDs=[]
-framerate = 60
+framerate_hz = 60
 
 #---------------------------------------------------------------------
 def draw():
@@ -42,7 +42,7 @@ def draw():
     stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
 
     # BODGE: sleep to limit the stimulus update rate
-    time.sleep(1/framerate)
+    time.sleep(1/framerate_hz)
     # update the state of each LED to match the stimulusstate
     for i,led in enumerate(leds): 
         # get the background state of this cell
@@ -62,7 +62,7 @@ def selectionHandler(objID):
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init(numleds=2, led2gpiopin=(2,3,4)):
+def init(numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
     global nt, objIDs, leds
     
     if led2gpiopin is None:
@@ -76,13 +76,13 @@ def init(numleds=2, led2gpiopin=(2,3,4)):
     nt=Noisetag()
     nt.connect()
     nt.setActiveObjIDs(objIDs)
-    nt.startExpt(nCal=10,nPred=10,
-                cueduration=4,duration=10,feedbackduration=4, framesperbit=4)
+    nt.startExpt(nCal=nCal,nPred=nPred,
+                cueduration=4,duration=10,feedbackduration=4)
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 
 if __name__=="__main__":
-    framerate = 60
-    init(numleds=2, led2gpiopin=(2,3,4))
+    framerate_hz = 15
+    init(numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=100)
     while True :
         draw()

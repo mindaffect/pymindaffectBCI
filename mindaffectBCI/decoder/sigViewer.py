@@ -2,7 +2,7 @@
 import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
-def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.inf, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
+def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.inf, center=True, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
 
@@ -66,6 +66,8 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
         # Update the EEG stream
         idx = slice(-int(ui.fs*timerange),None) # final 5s data
         data = ui.data_ringbuffer[idx, :]
+        if center:
+            data = data - np.mean(data[-int(data.shape[0]*.25):],axis=0)
         xdata = ( data[idx,-1] - data[-1,-1] ) / 1000 # time-position in seconds, relative to last
         for li, ln in enumerate(data_lines):
             ln.set_xdata(xdata)
