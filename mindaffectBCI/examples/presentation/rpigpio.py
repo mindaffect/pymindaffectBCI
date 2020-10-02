@@ -77,7 +77,7 @@ def init(numleds=2, led2gpiopin=(2,3,4)):
     nt.connect()
     nt.setActiveObjIDs(objIDs)
     nt.startExpt(nCal=10,nPred=10,
-                cueduration=4,duration=10,feedbackduration=4)
+                cueduration=4,duration=10,feedbackduration=4, framesperbit=4)
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 

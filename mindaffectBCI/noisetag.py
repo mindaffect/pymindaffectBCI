@@ -429,7 +429,7 @@ class Noisetag:
         self.laststate=(None,None,None,None)
         self.objIDs=None
 
-    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=1500):
+    def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=5000):
         if self.utopiaController is None :
             # use the global controller if none given
             global uc

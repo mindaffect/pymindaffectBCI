@@ -729,7 +729,7 @@ class UtopiaClient:
         self.udpsock.bind(self.sock.getsockname())
         return self.isConnected
 
-    def autoconnect(self, hostname=None, port=None, timeout_ms=3000, 
+    def autoconnect(self, hostname=None, port=None, timeout_ms=5000, 
                 queryifhostnotfound=False, localhostifhostnotfound=True, scanifhostnotfound=False):
         if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname is None:
