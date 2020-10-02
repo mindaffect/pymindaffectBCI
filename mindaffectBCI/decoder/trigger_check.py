@@ -18,8 +18,8 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=(5.5,45,'bandpass'), ofs=9999)
-    X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=(5.5,45,'bandpass'), ofs=9999)
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
@@ -58,12 +58,13 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
     scale = np.median( np.abs(wXeY.ravel()-mu) )
     ylim_wx = (mu-1.5*scale, mu+1.5*scale)
     fig, ax = plt.subplots()
-    plt.imshow(wXeY.T,origin='normal',aspect='auto',extent=[0,wXeY.shape[0],0,times[-1]])
+    plt.imshow(wXeY.T,origin='lower',aspect='auto',extent=[0,wXeY.shape[0],0,times[-1]])
     plt.clim(mu-1.5*scale,mu+1.5*scale)
     plt.set_cmap('jet')
     plt.ylabel('time (ms)')
     plt.xlabel('Epoch')
     plt.title('{}'.format(filename[-50:]))
+    plt.grid()
     #plt.colorbar()
 
     if X.shape[-1]>8 :
@@ -75,16 +76,20 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
 
     # over-plot the error
     ax2=ax.twinx()
-    plt.plot(ts_errY)
+    plt.plot(ts_errY,'k-')
     mu2 = np.median(ts_errY.ravel())
     scale2 = np.median( np.abs(ts_errY.ravel()-mu) )
-
-    plt.ylim(mu2-2.5*scale2,mu2+2.5*scale2)
-    if abs(times[-1]-5*scale2) < 2*times[-1]: # share y-scale if close enough
-        ax.set_ylim(0,max(times[-1],5*scale2))
+    if times[-1]*.5 < scale2*2 and scale2*2 < times[-1]*2: # make line match
+        scale2 = times[-1]/2
+    elif scale2*2 < times[-1]*2: # make image smaller
+        ax.set_ylim(0,max(times[-1],2*scale2))
+    plt.ylim(mu2-1*scale2,mu2+1*scale2)
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
     plt.show()
 
 if __name__=="__main__":
-    triggerPlot()    
+    #filename="C:/Users/Developer/Downloads/mindaffectBCI_noisetag_bci_201001_1402.txt"
+    filename=None
+    filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_noisetag_bci_201002_1026.txt'
+    triggerPlot(filename)
 
