@@ -22,6 +22,7 @@
 from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
 from collections import deque
 from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment, linear_trend_tracker
+from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
 from time import sleep
 import numpy as np
 
@@ -851,7 +852,7 @@ class timestamp_interpolation(TransformerMixin):
         pkt_ts = pkt_ts + np.random.uniform(0,.5*1000/fs,size=pkt_ts.shape)
         # apply the time-stamp interplotation
         sts=[]
-        tsfn = timestamp_interpolation(fs=fs,sample2timestamp = linear_trend_tracker(halflife=100, int_err_halflife=5, K_int_err=10))
+        tsfn = timestamp_interpolation(fs=fs,sample2timestamp = 'lower_bound_tracker')
         for i,(n,t) in enumerate(zip(nsamp,pkt_ts)):
             samp_ts = tsfn.transform(t,n)
             sts.extend(samp_ts)
