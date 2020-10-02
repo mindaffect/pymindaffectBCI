@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=1000, offset_ms=-250):
     import glob
     import os
     if filename is None or filename == '-':
@@ -18,8 +18,8 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    X, Y, coords = load_mindaffectBCI(filename, stopband=(5.5,45,'bandpass'), ofs=9999)
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=(5.5,45,'bandpass'), ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
@@ -27,19 +27,21 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
 
     print("training model")
     tau = int(fs*tau_ms/1000.0)
-    times = np.arange(tau)*1000/fs
+    offset = int(fs*offset_ms/1000.0)
+    times = (np.arange(tau)+offset)*1000/fs
     # BODGE: for speed only use first 10 trials!
     clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
 
     print("applying spatial filter")
     W = clsfr.W_[0,0,...] # (d,)
-    #plt.plot(W);plt.title('W');plt.show()
+    plt.plot(W);plt.title('W');plt.show()
     Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
     wXe = np.einsum("d,TEtd->TEt", W, Xe) # (nTrl, nSamp-tau, tau) apply the spatial filter
 
     # slice out the responses for the trigger stimulus
     print('slicing data')
-    Y_true = Y[...,:Xe.shape[1],0] # (nTrl, nSamp-tau)
+    # N.B. negative offset here as negative shift of Y is same as positive shift of X
+    Y_true = Y[...,-offset:Xe.shape[1]-offset,0] # (nTrl, nSamp-tau)
     wXeY = wXe[Y_true>0,:] # [ep,tau]
 
     # get a samp#, timestamp dataset
@@ -58,7 +60,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
     scale = np.median( np.abs(wXeY.ravel()-mu) )
     ylim_wx = (mu-1.5*scale, mu+1.5*scale)
     fig, ax = plt.subplots()
-    plt.imshow(wXeY.T,origin='lower',aspect='auto',extent=[0,wXeY.shape[0],0,times[-1]])
+    plt.imshow(wXeY.T,origin='lower',aspect='auto',extent=[0,wXeY.shape[0],times[0],times[-1]])
     plt.clim(mu-1.5*scale,mu+1.5*scale)
     plt.set_cmap('jet')
     plt.ylabel('time (ms)')
@@ -79,17 +81,17 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=300):
     plt.plot(ts_errY,'k-')
     mu2 = np.median(ts_errY.ravel())
     scale2 = np.median( np.abs(ts_errY.ravel()-mu) )
-    if times[-1]*.5 < scale2*2 and scale2*2 < times[-1]*2: # make line match
+    if times[-1]*.05 < scale2*2 and scale2*2 < times[-1]*8: # make line match
         scale2 = times[-1]/2
-    elif scale2*2 < times[-1]*2: # make image smaller
-        ax.set_ylim(0,max(times[-1],2*scale2))
+    elif scale2*2 < times[-1]*.2: # make image smaller
+        ax.set_ylim(min(times[0],mu2-1*scale2),max(times[-1],mu2+1*scale2))
     plt.ylim(mu2-1*scale2,mu2+1*scale2)
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
     plt.show()
 
 if __name__=="__main__":
-    #filename="C:/Users/Developer/Downloads/mindaffectBCI_noisetag_bci_201001_1402.txt"
-    filename=None
-    filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_noisetag_bci_201002_1026.txt'
+    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1502.txt"
+    #filename=None
+    #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     triggerPlot(filename)
 
