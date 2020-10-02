@@ -203,7 +203,7 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
         Yevt = Y
     else: # convert to event
         Yevt = stim2event(Y, axis=-2, evtypes=evtlabs)
-    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Yevt[..., 0:1, :], tau=tau)
+    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Yevt[..., 0:1, :], tau=tau, offset=offset)
     plt.figure(11); plt.clf()
     plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs, times, ch_names)
     plt.show()
