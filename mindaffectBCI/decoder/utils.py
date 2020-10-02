@@ -52,6 +52,12 @@ class RingBuffer:
         self.copypos = 0 # position of the last element copied to the 1st half
         self.copysize = 0 # number entries to copy as a block
 
+    def clear(self):
+        self.pos=int(self.bufshape[0])
+        self.n  =0
+        self.copypos=0
+        self.copysize=0
+
     def append(self, x):
         '''add single element to the ring buffer'''
         return self.extend(x[np.newaxis, ...])
@@ -77,11 +83,11 @@ class RingBuffer:
     
     @property
     def shape(self):
-        return self.bufshape
+        return (min(self.n,self.bufshape[0]),)+self.bufshape[1:]
     
     def unwrap(self):
         '''get a view on the valid portion of the ring buffer'''
-        return self.buffer[self.pos-self.bufshape[0]:self.pos, :].reshape(self.shape)
+        return self.buffer[self.pos-min(self.n,self.bufshape[0]):self.pos, :].reshape(self.shape)
 
     def __getitem__(self, item):
         return self.unwrap()[item]
@@ -382,7 +388,7 @@ class linear_trend_tracker():
     """ linear trend tracker with adaptive forgetting factor
     """   
 
-    def __init__(self,halflife=70,int_err_halflife=5, K_int_err=10):
+    def __init__(self,halflife=70,int_err_halflife=5, K_int_err=10, a0=1, b0=0):
         self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
         self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
         self.N=0
@@ -390,8 +396,10 @@ class linear_trend_tracker():
             int_err_halflife = max(halflife/100,1) 
         self.int_err_alpha = np.exp(np.log(.5)/int_err_halflife) if int_err_halflife else .999
         self.K_int_err = K_int_err
+        self.a0 = a0
+        self.b0 = b0
 
-    def reset(self, keep_err=False):
+    def reset(self, keep_err=False, keep_model=False):
         self.N = 0
         self.X0 = None
         self.Y0 = None
@@ -400,8 +408,9 @@ class linear_trend_tracker():
         self.sXX = 0
         self.sYX = 0
         self.sYY = 0
-        self.a=1
-        self.b=0
+        if not keep_model:
+            self.a=self.a0
+            self.b=self.b0
         if not keep_err:
             self.int_err = 0
             self.abs_err=0
@@ -419,7 +428,7 @@ class linear_trend_tracker():
             self.N = 1
             self.X0 = X
             self.Y0 = Y
-        self.a = 1
+        self.a = self.a0
         self.b = self.Y0 - self.a * self.X0
 
     def transform(self,X,Y):
@@ -455,8 +464,8 @@ class linear_trend_tracker():
         self.sYX= wght*self.sYX + ptwght*np.sum(cY*cX,axis=0)
         self.sXX= wght*self.sXX + ptwght*np.sum(cX*cX,axis=0)
 
-        # update the fit parameters
-        if self.N > 1:
+        # update the slope when warmed up
+        if self.N > self.warmup_weight:
             Yvar  = self.sYY - self.sY * self.sY / self.N
             Xvar  = self.sXX - self.sX * self.sX / self.N
             YXvar = self.sYX - self.sY * self.sX / self.N
@@ -464,7 +473,6 @@ class linear_trend_tracker():
         # update the bias given the estimated slope b = mu_y - a * mu_x
         # being sure to include the shift to the origin!
         self.b = (self.Y0 + self.sY / self.N) - self.a * (self.X0 + self.sX / self.N)
-        #self.b = (self.sY / self.N) - self.a * (self.sX / self.N)
 
         # check for steps in the inputs
         # get our prediction for this point and use to track our prediction error
