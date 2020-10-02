@@ -876,14 +876,15 @@ def testPP():
     ui.connect()
     sigViewer(ui)
 
-def testFileProxy(filename):
+def testFileProxy(filename,fs_out=999):
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
     U = FileProxyHub(filename)
-    fs = 200
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=200)
-    ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
+    #ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=fs_out)
+    ppfn= butterfilt_and_downsample(order=6, stopband=(.5,25,'bandpass'), fs_out=fs_out)
+    #ppfn = None
+    ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U)
     ui.connect()
     sigViewer(ui)
 
@@ -953,7 +954,10 @@ if __name__ == "__main__":
     #timestamp_interpolation().testcase()
     #butterfilt_and_downsample.testcase()
     #testRaw()
-    testPP()
+    #testPP()
     #testERP()
-    #testFileProxy2("C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
-    "..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"
+    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
+    testFileProxy(filename)
+    #testFileProxy2(filename)
+    # "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
+    #"..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt"
