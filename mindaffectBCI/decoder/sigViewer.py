@@ -7,9 +7,9 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
     import matplotlib.pyplot as plt
 
     if ui is None:
-        data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=60)
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=60)#999)
         #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
         ui.connect(hostname)
 
     ui.update()
@@ -36,11 +36,20 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
     plt.title("Stimulus")
     stimulus = ui.stimulus_ringbuffer[idx, :]
     # vertical gap between stimulus lines
-    stimulus_linestep = np.arange(data[:, :nstimulus_lines].shape[-1]) * stimstep
-    stimulus_lines = plt.plot(xdata, stimulus[:, :nstimulus_lines] + stimulus_linestep[np.newaxis,:])
-    plt.ylim([-stimstep, stimulus[:, :nstimulus_lines].shape[1] * stimstep])
+    stimulus_linestep = np.arange(nstimulus_lines) * stimstep
+    stimulus_lines = plt.plot((xdata[0],xdata[-1]),np.zeros((2,nstimulus_lines))+stimulus_linestep)
+    plt.ylim([-stimstep, nstimulus_lines* stimstep])
     plt.grid(True)
     #plt.autoscale(axis='x')
+
+    if False:
+        f2=plt.figure(2)
+        timing_line = plt.plot(1000*(xdata-np.arange(-xdata.shape[0], 0) / ui.fs))[0]
+        plt.xlabel('sample')
+        plt.ylabel('error w.r.t. sampling @ {}hz (ts - ts*fs) (ms)'.format(ui.fs))
+        plt.ylim(-200,200)
+        plt.grid()
+        f2.show()
 
     # start the render loop
     fig.show()
@@ -57,18 +66,25 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
         # Update the EEG stream
         idx = slice(-int(ui.fs*timerange),None) # final 5s data
         data = ui.data_ringbuffer[idx, :]
-        xdata = ( data[idx,-1] - data[-1,-1] ) / 1000 # time-position in seconds
+        xdata = ( data[idx,-1] - data[-1,-1] ) / 1000 # time-position in seconds, relative to last
         for li, ln in enumerate(data_lines):
             ln.set_xdata(xdata)
             ln.set_ydata(data[idx, li] + data_linestep[li])
+
+        if False:
+            plt.figure(2)
+            timing_line.set_xdata(xdata)
+            timing_line.set_ydata(1000*(xdata-np.arange(-xdata.shape[0], 0) / ui.fs))
+            f2.canvas.draw()
+            f2.canvas.flush_events()
 
         # Update the Stimulus Stream
         # TODO[]: search backwards instead of assuming the stimulus rate...
         stimulus = ui.stimulus_ringbuffer[idx,:]
         # BODGE: pad with 2 extra 0 events, if haven't had stimulus event for a while..
-        if stimulus[-1,-1] < data[-1,-1]-100:
+        if stimulus.shape[0]<2 or stimulus[-1,-1] < data[-1,-1]-100:
             stimulus = np.append(stimulus,np.zeros((2,stimulus.shape[1])),0)
-            stimulus[-2,-1] = stimulus[-3,-1]+1
+            stimulus[-2,-1] = stimulus[-3,-1]+1 if stimulus.shape[0]>2 else data[-1,-1]-1000*timerange
             stimulus[-1,-1] = data[-1,-1]
         xdata = ( stimulus[idx,-1] - stimulus[-1,-1] ) / 1000
         for li, ln in enumerate(stimulus_lines):
