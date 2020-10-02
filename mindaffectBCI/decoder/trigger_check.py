@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=1000, offset_ms=-250):
+def triggerPlot(filename=None, evtlabs=('re','fe'), tau_ms=1000, offset_ms=-250):
     import glob
     import os
     if filename is None or filename == '-':
@@ -18,7 +18,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=1000, offset_ms=-250):
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=(5.5,45,'bandpass'), ofs=9999)
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=(3,45,'bandpass'), ofs=9999)
     X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
@@ -29,11 +29,27 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=1000, offset_ms=-250):
     tau = int(fs*tau_ms/1000.0)
     offset = int(fs*offset_ms/1000.0)
     times = (np.arange(tau)+offset)*1000/fs
-    # BODGE: for speed only use first 10 trials!
+    # BODGE: for speed only use first 5 trials!
     clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
+
+    plt.clf();
+    for i in range(min(X.shape[0],3)):
+        plt.subplot(3,1,i+1)
+        #plt.imshow(X[0,...].T,aspect='auto',label='X',extent=[0,X.shape[-2],0,X.shape[-1]]);
+        for c in range(X.shape[-1]):
+            tmp = X[i,...,c]
+            tmp = (tmp - np.mean(tmp.ravel())) / max(1,np.std(tmp.ravel()))
+            plt.plot(tmp+2*c,label='X{}'.format(c));
+        plt.plot(Y[i,...,0],'k',label='Y');
+        plt.title('Trl {}'.format(i))
+        plt.legend()
+    plt.suptitle('First trials data vs. stimulus')
+    plt.show()
+
 
     print("applying spatial filter")
     W = clsfr.W_[0,0,...] # (d,)
+
     plt.plot(W);plt.title('W');plt.show()
     Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
     wXe = np.einsum("d,TEtd->TEt", W, Xe) # (nTrl, nSamp-tau, tau) apply the spatial filter
@@ -90,7 +106,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=1000, offset_ms=-250):
     plt.show()
 
 if __name__=="__main__":
-    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1502.txt"
+    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     triggerPlot(filename)
