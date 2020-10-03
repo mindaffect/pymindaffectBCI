@@ -67,7 +67,8 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
         idx = slice(-int(ui.fs*timerange),None) # final 5s data
         data = ui.data_ringbuffer[idx, :]
         if center:
-            data = data - np.mean(data[-int(data.shape[0]*.25):],axis=0)
+            # only the non-timestamp channels
+            data[:,:-1] = data[:,:-1] - np.mean(data[-int(data.shape[0]*.25):,:-1],axis=0)
         xdata = ( data[idx,-1] - data[-1,-1] ) / 1000 # time-position in seconds, relative to last
         for li, ln in enumerate(data_lines):
             ln.set_xdata(xdata)
@@ -83,11 +84,12 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
         # Update the Stimulus Stream
         # TODO[]: search backwards instead of assuming the stimulus rate...
         stimulus = ui.stimulus_ringbuffer[idx,:]
-        # BODGE: pad with 2 extra 0 events, if haven't had stimulus event for a while..
-        if stimulus.shape[0]<2 or stimulus[-1,-1] < data[-1,-1]-100:
-            stimulus = np.append(stimulus,np.zeros((2,stimulus.shape[1])),0)
-            stimulus[-2,-1] = stimulus[-3,-1]+1 if stimulus.shape[0]>2 else data[-1,-1]-1000*timerange
-            stimulus[-1,-1] = data[-1,-1]
+        # BODGE: pad with 2 extra 0 events, if last stimulus before last data
+        if stimulus.shape[0]<2 or stimulus[-1,-1] < data[-1,-1]:
+            pad = np.zeros((2,stimulus.shape[1]),dtype=stimulus.dtype)
+            pad[0,-1] = stimulus[-1,-1]+1 if stimulus.shape[0]>0 else data[-1,-1]-1000*timerange
+            pad[1,-1] = data[-1,-1]
+            stimulus = np.append(stimulus,pad,axis=0)
         xdata = ( stimulus[idx,-1] - stimulus[-1,-1] ) / 1000
         for li, ln in enumerate(stimulus_lines):
             ln.set_xdata(xdata)
