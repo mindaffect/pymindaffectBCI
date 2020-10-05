@@ -8,7 +8,7 @@ class lower_bound_tracker():
     def __init__(self, window_size=200, C=(.01,None), outlier_thresh=(1,None), step_size=.1, step_threshold=1.5, a0=1, b0=0, warmup_size=10):
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
-        self.a0 = a0
+        self.a0 = a0 if a0 is not None else 1
         self.b0 = b0
         self.warmup_size = int(warmup_size*window_size) if warmup_size<1 else warmup_size
         self.step_threshold = step_threshold
