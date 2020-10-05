@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, maxsize=6000):
     import glob
     import os
     if filename is None or filename == '-':
@@ -14,26 +14,24 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
         filename = max(files, key=os.path.getctime)
     else:
-        files = glob.glob(filename)
+        files = glob.glob(os.path.expanduser(filename))
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    X, Y, coords = load_mindaffectBCI(filename, stopband=(1,15,'bandpass'), ofs=9999)
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    # TODO[] : correctly use the evtlabs
+
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=(5,25,'bandpass'), ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     # size limit...
-    if X.shape[1]>2000:
-        X=X[:,:2000,...]
-        Y=Y[:,:2000,...]
+    if maxsize is not None and X.shape[1]>maxsize:
+        X=X[:,:maxsize,...]
+        Y=Y[:,:maxsize,...]
     #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
     print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:-1]]+['output'],Y.shape))
 
-    print("training model")
-    tau = int(fs*tau_ms/1000.0)
-    # BODGE: for speed only use first 5 trials!
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
 
     plt.clf();
     for i in range(min(X.shape[0],3)):
@@ -47,13 +45,19 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
         plt.title('Trl {}'.format(i))
     plt.legend()
     plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
-    plt.show()
+    plt.show(block=False)
+    plt.pause(.1)
 
+    print("training model")
+    tau = int(fs*tau_ms/1000.0)
+    # BODGE: for speed only use first 5 trials!
+    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
+
+    clsfr.plot_model(fs=fs)
+    plt.show()
 
     print("applying spatial filter")
     W = clsfr.W_[0,0,...] # (d,)
-
-    plt.plot(W);plt.title('W');plt.show()
 
     # slice the data w.r.t. the stimulus triggers to generate the visualization
     offset = int(fs*offset_ms/1000.0)
@@ -81,11 +85,11 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
     print('generating plot')
     mu = np.median(wXeY.ravel())
     scale = np.median( np.abs(wXeY.ravel()-mu) )
-    ylim_wx = (mu-1.5*scale, mu+1.5*scale)
     fig, ax = plt.subplots()
     plt.imshow(wXeY.T,origin='lower',aspect='auto',extent=[0,wXeY.shape[0],times[0],times[-1]])
-    plt.clim(mu-1.5*scale,mu+1.5*scale)
-    plt.set_cmap('jet')
+    plt.clim(mu-scale,mu+scale)
+    plt.set_cmap('nipy_spectral')
+    plt.colorbar()
     plt.ylabel('time (ms)')
     plt.xlabel('Epoch')
     plt.title('{}'.format(filename[-50:]))
@@ -114,7 +118,10 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
 
 if __name__=="__main__":
     filename="C:/Users/Developer/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
+    filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
+    #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename, evtlabs=('0','1'), tau_ms=200, offset_ms=-50)
+    triggerPlot(filename, evtlabs=('0','1'), tau_ms=400, offset_ms=-50)
 
