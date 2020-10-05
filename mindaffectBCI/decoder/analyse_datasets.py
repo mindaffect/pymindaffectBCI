@@ -245,8 +245,9 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
 
     if not clsfr.R_ is None:
         print("Plot Factored Model")
-        plt.figure(18);plt.clf();
-        clsfr.plot_model()
+        plt.figure(18)
+        plt.clf()
+        clsfr.plot_model(fs=fs)
         plt.show()
     
     print("plot Fe")

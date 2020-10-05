@@ -530,7 +530,7 @@ if  __name__ == "__main__":
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
-    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(0,5.5),(25,-1)))
+    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--cv',type=int, help='number cross validation folds', default=5)
     parser.add_argument('--predplots', action='store_true', help='flag make decoding plots are prediction time')
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
@@ -539,10 +539,11 @@ if  __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.savefile is not None:# or True:#
-        #setattr(args,'savefile',"../utopia/java/messagelib/UtopiaMessages_.log")
-        setattr(args,'savefile',"../utopia/java/utopia2ft/UtopiaMessages_*1700.log")
-        #setattr(args,'savefile',"../../Downloads/jason/UtopiaMessages_200923_1749_*.log")
+    if args.savefile is not None or True:#
+        #setattr(args,'savefile',"~/utopia/java/messagelib/UtopiaMessages_.log")
+        #setattr(args,'savefile',"~/utopia/java/utopia2ft/UtopiaMessages_*1700.log")
+        #setattr(args,'savefile',"~/Downloads/jason/UtopiaMessages_200923_1749_*.log")
+        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*ganglion*1404*.txt')
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
