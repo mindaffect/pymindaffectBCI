@@ -5,7 +5,7 @@ class lower_bound_tracker():
     """ sliding window linear trend tracker
     """   
 
-    def __init__(self, window_size=100, outlier_thresh=2, step_size=.1, step_threshold=2, a0=1, b0=0, warmup_size=.1):
+    def __init__(self, window_size=200, outlier_thresh=(.5,3), step_size=.1, step_threshold=1, a0=1, b0=0, warmup_size=10):
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
         self.a0 = a0
@@ -13,6 +13,8 @@ class lower_bound_tracker():
         self.warmup_size = int(warmup_size*window_size) if step_size<1 else warmup_size
         self.step_threshold = step_threshold
         self.outlier_thresh = outlier_thresh
+        if not hasattr(self.outlier_thresh,'__iter__'):
+            self.outlier_thresh = (self.outlier_thresh, self.outlier_thresh)
 
     def reset(self, keep_model=False):
         self.buffer.clear()
@@ -64,12 +66,16 @@ class lower_bound_tracker():
             y_est = x[:,0]*ab[0] + ab[1]
             err = y - y_est # server > true, clip positive errors
             scale = np.mean(np.abs(err))
-            clipIdx = err > self.outlier_thresh*scale
+
+            # clip over-estimates
+            clipIdx = err > self.outlier_thresh[0]*scale
             #print("{} overestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] + self.outlier_thresh*scale
-            clipIdx = err < -self.outlier_thresh*scale
+            y_fit[clipIdx] = y_est[clipIdx] + self.outlier_thresh[0]*scale
+
+            # clip under-estimates
+            clipIdx = err < -self.outlier_thresh[1]*scale
             #print("{} underestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] - self.outlier_thresh*scale
+            y_fit[clipIdx] = y_est[clipIdx] - self.outlier_thresh[1]*scale
         
         self.a = ab[0]
         self.b = ab[1]        
