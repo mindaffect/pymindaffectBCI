@@ -13,7 +13,7 @@ class FileProxyHub:
             files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
             self.filename = max(files, key=os.path.getctime)
         else:
-            files = glob.glob(filename)
+            files = glob.glob(os.path.expanduser(filename))
             self.filename = max(files, key=os.path.getctime)
         print("Loading : {}\n".format(self.filename))
         self.speedup = speedup
