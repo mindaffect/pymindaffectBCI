@@ -5,16 +5,19 @@ class lower_bound_tracker():
     """ sliding window linear trend tracker
     """   
 
-    def __init__(self, window_size=200, outlier_thresh=(.5,3), step_size=.1, step_threshold=1, a0=1, b0=0, warmup_size=10):
+    def __init__(self, window_size=200, C=(.01,None), outlier_thresh=(1,None), step_size=.1, step_threshold=1.5, a0=1, b0=0, warmup_size=10):
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
         self.a0 = a0
         self.b0 = b0
-        self.warmup_size = int(warmup_size*window_size) if step_size<1 else warmup_size
+        self.warmup_size = int(warmup_size*window_size) if warmup_size<1 else warmup_size
         self.step_threshold = step_threshold
         self.outlier_thresh = outlier_thresh
         if not hasattr(self.outlier_thresh,'__iter__'):
             self.outlier_thresh = (self.outlier_thresh, self.outlier_thresh)
+        self.C = C
+        if not hasattr(self.C,'__iter__'):
+            self.C = None
 
     def reset(self, keep_model=False):
         self.buffer.clear()
@@ -59,24 +62,49 @@ class lower_bound_tracker():
         # ls fit.
         # add constant feature  for the intercept
         x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1)),1)
-        # LS  solve
+        # weighted LS  solve
+        sqrt_w = np.ones((x.shape[0],),dtype=x.dtype)*.5 # square root of weight so can use linalg.lstsq
         y_fit = y.copy()
         for i in range(3):
-            ab,res,_,_ = np.linalg.lstsq(x,y_fit,rcond=-1)
+            # solve weighted least squares
+            ab,res,_,_ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y_fit*sqrt_w, rcond=-1)
             y_est = x[:,0]*ab[0] + ab[1]
             err = y - y_est # server > true, clip positive errors
             scale = np.mean(np.abs(err))
 
-            # clip over-estimates
-            clipIdx = err > self.outlier_thresh[0]*scale
-            #print("{} overestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] + self.outlier_thresh[0]*scale
+            # 1 by default
+            sqrt_w[:] = .5
+            y_fit = y.copy()
 
-            # clip under-estimates
-            clipIdx = err < -self.outlier_thresh[1]*scale
-            #print("{} underestimates".format(np.sum(clipIdx)))
-            y_fit[clipIdx] = y_est[clipIdx] - self.outlier_thresh[1]*scale
-        
+            if self.C is not None:
+                # sign based cost function
+
+                # postive errors
+                if self.C[0] is not None:
+                    pos_l1 = err>self.C[0]
+                    # wght = C/abs(err)
+                    sqrt_w[pos_l1] = np.sqrt(self.C[0]/err[pos_l1])
+
+                if self.C[1] is not None:
+                    neg_l1 = err<-self.C[1]
+                    sqrt_w[neg_l1] = np.sqrt(self.C[1]/-err[neg_l1])
+
+            if self.outlier_thresh is not None:
+
+                if self.outlier_thresh[0] is not None:
+                    # clip over-estimates
+                    pos_outlier = err > self.outlier_thresh[0]*scale
+                    sqrt_w[pos_outlier] = 0
+                    #print("{} overestimates".format(np.sum(clipIdx)))
+                    #y_fit[pos_outlier] = y_est[pos_outlier] + self.outlier_thresh[0]*scale
+
+                if self.outlier_thresh[1] is not None:
+                    # clip under-estimates
+                    neg_outlier = err < -self.outlier_thresh[1]*scale
+                    sqrt_w[neg_outlier] = 0
+                    #print("{} underestimates".format(np.sum(clipIdx)))
+                    #y_fit[neg_outlier] = y_est[neg_outlier] - self.outlier_thresh[1]*scale
+                    
         self.a = ab[0]
         self.b = ab[1]        
 
@@ -119,7 +147,11 @@ class lower_bound_tracker():
         Y = nsc[:,1]
         Ytrue = nsc[:,2]
 
-        ltt = lower_bound_tracker(window_size=200, outlier_thresh=2, step_size=10, step_threshold=3)
+        #ltt = lower_bound_tracker(window_size=100, outlier_thresh=(.5,None), step_size=10, step_threshold=2)#, C=(.1,None))
+        # differential loss.  Linear above, quadratic below
+        #ltt = lower_bound_tracker(window_size=200, C=(.1,None), step_size=10, step_threshold=2)#, C=(.1,None))
+        # both, lower-bound + clipping
+        ltt = lower_bound_tracker(window_size=200, outlier_thresh=(.5,None), C=(.01,None), step_size=10, step_threshold=2)#, C=(.1,None))
         ltt.fit(X[0],Y[0]) # check scalar inputs
         step = 1
         idxs = list(range(1,X.shape[0],step))
@@ -142,14 +174,14 @@ class lower_bound_tracker():
         ab,res,_,_ = np.linalg.lstsq(np.append(X[:,np.newaxis],np.ones((X.shape[0],1)),1),Y,rcond=-1)
         ots = X*ab[0]+ab[1]        
         idx=range(X.shape[0])
-        plt.plot(X[idx],Y[idx]- X[idx]*ab[0]-Y[0],label='server ts')
-        plt.plot(X[idx],dts[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server)')
-        plt.plot(X[idx],ots[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server) offline')
+        plt.plot(Y[idx]- X[idx]*ab[0]-Y[0],'.-',label='server ts')
+        plt.plot(dts[idx] - X[idx]*ab[0]-Y[0],'.-',label='regressed ts (samp vs server)')
+        plt.plot(ots[idx] - X[idx]*ab[0]-Y[0],'.-',label='regressed ts (samp vs server) offline')
 
         err = Y - X*ab[0] - Y[0]
         cent = np.median(err); scale=np.median(np.abs(err-cent))
         plt.ylim((cent-scale*5,cent+scale*5))
-
+        plt.grid()
         plt.legend()
         plt.show()
 
