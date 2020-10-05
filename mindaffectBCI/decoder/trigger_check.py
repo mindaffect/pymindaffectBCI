@@ -117,9 +117,9 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     plt.show()
 
 if __name__=="__main__":
-    filename="C:/Users/Developer/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
+    #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
+    #filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
