@@ -790,11 +790,12 @@ class timestamp_interpolation(TransformerMixin):
             sample2timestamp (transformer, optional): class to de-jitter timestamps based on sample-count. Defaults to None.
         """        
         self.fs=fs
-        # BODGE: special cases for particular mapping functions so can include the prior slope
+        a0 = 1000/self.fs if self.fs is not None else 1
+         # BODGE: special cases for particular mapping functions so can include the prior slope
         if sample2timestamp=='lower_bound_tracker':
-            self.sample2timestamp = lower_bound_tracker(a0=1000/fs)
+            self.sample2timestamp = lower_bound_tracker(a0=a0)
         elif sample2timestamp=='linear_trend_tracker':
-            self.sample2timestamp = linear_trend_tracker(a0=1000/fs)
+            self.sample2timestamp = linear_trend_tracker(a0=a0)
         else:
             self.sample2timestamp = sample2timestamp
         self.max_delta = max_delta
