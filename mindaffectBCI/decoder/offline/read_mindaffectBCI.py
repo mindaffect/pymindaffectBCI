@@ -93,14 +93,9 @@ def read_mindaffectBCI_message(line):
         msg.clientip = read_clientip(line) # client ip-address
     return msg
 
-def datapackets2array(msgs,sample2timestamp=None):#'lower_bound_tracker'):#'linear_trend_tracker'):
+def datapackets2array(msgs,sample2timestamp='lower_bound_tracker'):
     data=[]
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
-    if sample2timestamp == 'linear_trend_tracker':
-        sample2timestamp = linear_trend_tracker(200,200,500)
-    elif sample2timestamp == 'lower_bound_tracker':
-        from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
-        sample2timestamp = lower_bound_tracker(200,2,10,3)
     tsfilt = timestamp_interpolation(sample2timestamp=sample2timestamp)
     for msg in msgs:
         samples = msg.samples
