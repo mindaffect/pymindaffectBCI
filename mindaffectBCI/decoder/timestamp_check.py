@@ -25,13 +25,13 @@ def timestampPlot(filename=None):
     svr = np.array([ m.sts for m in dp])
     client = np.array([ m.timestamp for m in dp])
     samp = np.cumsum(samp)
+    samp2ms = np.median(np.diff(svr)/np.diff(samp))
 
-    lbt = lower_bound_tracker()
+    lbt = lower_bound_tracker(a0=samp2ms)
     svr_filt = np.zeros(svr.shape)
     for i in range(samp.shape[0]):
         svr_filt[i] = lbt.transform(samp[i],svr[i])
 
-    samp2ms = np.median(np.diff(svr)/np.diff(samp))
     print("samp2ms {}".format(samp2ms))
     print("{}".format(samp.shape))
     print("Sample : {}".format(samp[:10]))
@@ -56,7 +56,9 @@ def timestampPlot(filename=None):
 
 if __name__=="__main__":
     #filename = "~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
-    filename = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
+    #filename = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
+    filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
     #filename=None
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     timestampPlot(filename)

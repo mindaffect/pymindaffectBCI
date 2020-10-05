@@ -93,10 +93,15 @@ def read_mindaffectBCI_message(line):
         msg.clientip = read_clientip(line) # client ip-address
     return msg
 
-def datapackets2array(msgs):
+def datapackets2array(msgs,sample2timestamp=None):#'lower_bound_tracker'):#'linear_trend_tracker'):
     data=[]
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
-    tsfilt = timestamp_interpolation(sample2timestamp=linear_trend_tracker())
+    if sample2timestamp == 'linear_trend_tracker':
+        sample2timestamp = linear_trend_tracker(200,200,500)
+    elif sample2timestamp == 'lower_bound_tracker':
+        from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
+        sample2timestamp = lower_bound_tracker(200,2,10,3)
+    tsfilt = timestamp_interpolation(sample2timestamp=sample2timestamp)
     for msg in msgs:
         samples = msg.samples
         ts   = msg.timestamp
@@ -180,7 +185,7 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=True ):
         
     return msgs
 
-def read_mindaffectBCI_data_messages( fn:str, regress=True ):
+def read_mindaffectBCI_data_messages( fn:str, regress=False, **kwargs ):
     ''' read the data from a text-file save version into a dataarray and message list '''
     rawmsgs = read_mindaffectBCI_messages(fn, regress)
     # split into datapacket messages and others
@@ -199,7 +204,7 @@ def read_mindaffectBCI_data_messages( fn:str, regress=True ):
 
     # convert the data messages into a single numpy array,
     # with (interpolated) time-stamps in the final 'channel'
-    data = datapackets2array(data)
+    data = datapackets2array(data, **kwargs)
     
     return (data,msgs)
 
@@ -227,7 +232,7 @@ if __name__=="__main__":
     import os
     fileregexp = '../../../logs/mindaffectBCI*.txt'
     #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
-    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
+    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),os.path.expanduser(fileregexp))) # * means all if need specific format then *.csv
     fn = max(files, key=os.path.getctime)
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
