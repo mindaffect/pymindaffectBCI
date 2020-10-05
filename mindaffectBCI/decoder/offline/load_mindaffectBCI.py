@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(0,5.5),(25,-1)), order=4, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
     
     # load the data file
     Xfn = datadir
@@ -15,7 +15,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
         Xfn = os.path.join(Xfn, sessfn)
     sessdir = os.path.dirname(Xfn)
 
-    if verb > 1: print("Loading {}".format(Xfn))
+    if verb >= 0: print("Loading {}".format(Xfn))
     # TODO []: convert to use the on-line time-stamp code
     X, messages = read_mindaffectBCI_data_messages(Xfn, regress=regress)
 

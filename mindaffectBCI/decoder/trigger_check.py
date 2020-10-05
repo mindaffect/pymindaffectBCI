@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=200, offset_ms=-50):
     import glob
     import os
     if filename is None or filename == '-':
@@ -18,7 +18,12 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
         filename = max(files, key=os.path.getctime)
     print("Loading : {}\n".format(filename))    
 
-    X, Y, coords = load_mindaffectBCI(filename, stopband=(3,45,'bandpass'), ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=(1,15,'bandpass'), ofs=9999)
+    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    # size limit...
+    if X.shape[1]>2000:
+        X=X[:,:2000,...]
+        Y=Y[:,:2000,...]
     #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
@@ -27,8 +32,6 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
 
     print("training model")
     tau = int(fs*tau_ms/1000.0)
-    offset = int(fs*offset_ms/1000.0)
-    times = (np.arange(tau)+offset)*1000/fs
     # BODGE: for speed only use first 5 trials!
     clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
 
@@ -51,6 +54,10 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
     W = clsfr.W_[0,0,...] # (d,)
 
     plt.plot(W);plt.title('W');plt.show()
+
+    # slice the data w.r.t. the stimulus triggers to generate the visualization
+    offset = int(fs*offset_ms/1000.0)
+    times = (np.arange(tau)+offset)*1000/fs
     Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
     wXe = np.einsum("d,TEtd->TEt", W, Xe) # (nTrl, nSamp-tau, tau) apply the spatial filter
 
@@ -106,8 +113,8 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=100, offset_ms=0):
     plt.show()
 
 if __name__=="__main__":
-    #filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
+    filename="C:/Users/Developer/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename=None
-    filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename, evtlabs=('0','1'), tau_ms=200, offset_ms=0)
+    #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
+    triggerPlot(filename, evtlabs=('0','1'), tau_ms=200, offset_ms=-50)
 

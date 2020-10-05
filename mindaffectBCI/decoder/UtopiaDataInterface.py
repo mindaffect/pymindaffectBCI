@@ -36,7 +36,7 @@ class UtopiaDataInterface:
 
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
-                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp=None):
+                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker'):
         # rate control
         self.timeout_ms = timeout_ms
         self.mintime_ms = mintime_ms # minimum time to spend in update => max processing rate
@@ -169,9 +169,9 @@ class UtopiaDataInterface:
         if self.data_preprocessor:
             self.data_preprocessor.fit(np.array(databuf[0].samples)[0:1,:], fs=self.raw_fs)
         # use linear trend tracker to de-jitter the sample timestamps
-        if self.sample2timestamp is None or self.sample2timestamp == 'linear_trend_tracker':
+        if self.sample2timestamp is None or isinstance(self.sample2timestamp,str):
             self.sample2timestamp = timestamp_interpolation(fs=self.fs,
-                                                            sample2timestamp=linear_trend_tracker())
+                                                            sample2timestamp=self.sample2timestamp)
         for m in databuf:
             # apply the pre-processing again (this time with fs estimated)
             d = self.processDataPacket(m)
@@ -790,7 +790,13 @@ class timestamp_interpolation(TransformerMixin):
             sample2timestamp (transformer, optional): class to de-jitter timestamps based on sample-count. Defaults to None.
         """        
         self.fs=fs
-        self.sample2timestamp = sample2timestamp
+        # BODGE: special cases for particular mapping functions so can include the prior slope
+        if sample2timestamp=='lower_bound_tracker':
+            self.sample2timestamp = lower_bound_tracker(a0=1000/fs)
+        elif sample2timestamp=='linear_trend_tracker':
+            self.sample2timestamp = linear_trend_tracker(a0=1000/fs)
+        else:
+            self.sample2timestamp = sample2timestamp
         self.max_delta = max_delta
 
     def fit(self,ts,nsamp=1):
@@ -882,7 +888,7 @@ def testFileProxy(filename,fs_out=999):
     from sigViewer import sigViewer
     # test with a filter + downsampler
     #ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=fs_out)
-    ppfn= butterfilt_and_downsample(order=6, stopband=(.5,25,'bandpass'), fs_out=fs_out)
+    ppfn= butterfilt_and_downsample(order=4, stopband=(1,15,'bandpass'), fs_out=fs_out)
     #ppfn = None
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U)
     ui.connect()
@@ -957,6 +963,7 @@ if __name__ == "__main__":
     #testPP()
     #testERP()
     filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
+    filename="C:/Users/Developer/Downloads/trig_check/mindaffectBCI_cyton_brainflow_201002_2008.txt"
     testFileProxy(filename)
     #testFileProxy2(filename)
     # "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")
