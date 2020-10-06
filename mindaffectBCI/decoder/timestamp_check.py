@@ -43,9 +43,9 @@ def timestampPlot(filename=None):
     client_err = client - samp*samp2ms- client[0]
     svr_filt_err = svr_filt - samp*samp2ms- svr_filt[0]
     cent = np.median(svr_err); scale=np.median(np.abs(svr_err-cent))
-    plt.plot(samp*samp2ms,svr_err,label='samp*samp2ms - server')
-    plt.plot(samp*samp2ms,client_err,label='samp*samp2ms - client')
-    plt.plot(samp*samp2ms,svr_filt_err,label='samp*samp2ms - filt(server)')
+    plt.plot(samp*samp2ms,svr_err,'.-',label='samp*samp2ms - server')
+    plt.plot(samp*samp2ms,client_err,'.-',label='samp*samp2ms - client')
+    plt.plot(samp*samp2ms,svr_filt_err,'.-',label='samp*samp2ms - filt(server)')
     plt.ylim((cent-scale*samp2ms,cent+scale*samp2ms))
     plt.xlabel('Time (ms)')
     plt.ylabel('time stamp error (ms)')
@@ -57,8 +57,9 @@ def timestampPlot(filename=None):
 if __name__=="__main__":
     #filename = "~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
-    filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
+    #filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
+    #filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*khash2*.txt'
     #filename=None
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     timestampPlot(filename)
