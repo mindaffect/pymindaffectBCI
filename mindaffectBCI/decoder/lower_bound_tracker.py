@@ -53,60 +53,73 @@ class lower_bound_tracker():
 
     def update(self):
         if self.buffer.shape[0]>0 and self.buffer.shape[0] < self.warmup_size :
+            if self.buffer.shape[0]>2:
+                self.a = np.median(np.diff(self.buffer[:,1])/np.diff(self.buffer[:,0]))
             self.b = self.buffer[-1,1] - self.a * self.buffer[-1,0]
             return
 
         # get the data
         x = self.buffer[:,0]
+        mu_x  = np.median(x)
+        x = x - mu_x
         y = self.buffer[:,1]
-        # ls fit.
+        mu_y = np.median(y)
+        y = y - mu_y
+        # IRWLS fit to the data, with outlier suppression and asymetric huber loss
         # add constant feature  for the intercept
-        x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1)),1)
+        x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1),dtype=x.dtype),1)
         # weighted LS  solve
-        sqrt_w = np.ones((x.shape[0],),dtype=x.dtype)*.5 # square root of weight so can use linalg.lstsq
-        y_fit = y.copy()
+        sqrt_w = np.ones((x.shape[0],),dtype=x.dtype) # square root of weight so can use linalg.lstsq
+        # start from previous solution
+        a=self.a
+        b=self.b - self.a*mu_x + mu_y # shift bias to compensate for shift in x/y
+        # TODO[]: convergence criteria, to stop early
         for i in range(3):
-            # solve weighted least squares
-            ab,res,_,_ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y_fit*sqrt_w, rcond=-1)
-            y_est = x[:,0]*ab[0] + ab[1]
+            y_est = x[:,0]*a + b
             err = y - y_est # server > true, clip positive errors
-            scale = np.mean(np.abs(err))
+            mu_err = np.mean(err)
+            scale = np.mean(np.abs(err-mu_err))
 
             # 1 by default
-            sqrt_w[:] = .5
-            y_fit = y.copy()
+            sqrt_w[:] = 1.0
 
             if self.C is not None:
                 # sign based cost function
 
                 # postive errors
                 if self.C[0] is not None:
-                    pos_l1 = err>self.C[0]
+                    pos_l1 = err > self.C[0]
                     # wght = C/abs(err)
                     sqrt_w[pos_l1] = np.sqrt(self.C[0]/err[pos_l1])
 
                 if self.C[1] is not None:
-                    neg_l1 = err<-self.C[1]
+                    neg_l1 = err < -self.C[1]
                     sqrt_w[neg_l1] = np.sqrt(self.C[1]/-err[neg_l1])
 
             if self.outlier_thresh is not None:
 
                 if self.outlier_thresh[0] is not None:
                     # clip over-estimates
-                    pos_outlier = err > self.outlier_thresh[0]*scale
+                    pos_outlier = err-mu_err > self.outlier_thresh[0]*scale
                     sqrt_w[pos_outlier] = 0
                     #print("{} overestimates".format(np.sum(clipIdx)))
                     #y_fit[pos_outlier] = y_est[pos_outlier] + self.outlier_thresh[0]*scale
 
                 if self.outlier_thresh[1] is not None:
                     # clip under-estimates
-                    neg_outlier = err < -self.outlier_thresh[1]*scale
+                    neg_outlier = err-mu_err < -self.outlier_thresh[1]*scale
                     sqrt_w[neg_outlier] = 0
                     #print("{} underestimates".format(np.sum(clipIdx)))
                     #y_fit[neg_outlier] = y_est[neg_outlier] - self.outlier_thresh[1]*scale
+
+            # solve weighted least squares
+            ab, _, _, _ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y*sqrt_w, rcond=1e-30)
+            # extract parameters
+            a = ab[0]
+            b = ab[1]
                     
-        self.a = ab[0]
-        self.b = ab[1]        
+        self.a = a
+        self.b = b - self.a*mu_x + mu_y 
 
         # check for steps in the last part of the data - if enough data
         if err.shape[0]> 2*self.step_size:
@@ -124,34 +137,39 @@ class lower_bound_tracker():
         return self.a * x + self.b
 
     @staticmethod
-    def testcase():
-        X = np.arange(1000) + np.random.randn(1)*1e6
-        a = 1000/50 
-        b = 1000*np.random.randn(1)
-        Ytrue= a*X+b
-        Y    = Ytrue+ np.random.standard_normal(Ytrue.shape)*10
+    def testcase(savefile='-'):
+        if savefile is None:
+            np.random.seed(0) # make reproducable
+            X = np.arange(1000,dtype=np.float64) + np.random.randn(1)*1e6
+            a = 1000.0/50 
+            b = 1000*np.random.randn(1)
+            Ytrue= a*X+b
+            N = np.random.standard_normal(Ytrue.shape)
+            #Y    = Ytrue+ *10
+            Y = Ytrue + np.exp((N-3)*3)
 
-        import glob
-        import os
-        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
-        savefile = max(files, key=os.path.getctime)
-        #savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
-        #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
-        from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
-        from mindaffectBCI.utopiaclient import DataPacket
-        print("Loading: {}".format(savefile))
-        msgs = read_mindaffectBCI_messages(savefile,regress=None) # load without time-stamp fixing.
-        dp = [ m for m in msgs if isinstance(m,DataPacket)]
-        nsc = np.array([ (m.samples.shape[0],m.sts,m.timestamp) for m in dp])
-        X = np.cumsum(nsc[:,0])
-        Y = nsc[:,1]
-        Ytrue = nsc[:,2]
+        else: # load from file
+            import glob
+            import os
+            files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+            savefile = max(files, key=os.path.getctime)
+            #savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
+            #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
+            from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
+            from mindaffectBCI.utopiaclient import DataPacket
+            print("Loading: {}".format(savefile))
+            msgs = read_mindaffectBCI_messages(savefile,regress=None) # load without time-stamp fixing.
+            dp = [ m for m in msgs if isinstance(m,DataPacket)]
+            nsc = np.array([ (m.samples.shape[0],m.sts,m.timestamp) for m in dp])
+            X = np.cumsum(nsc[:,0])
+            Y = nsc[:,1]
+            Ytrue = nsc[:,2]
 
         #ltt = lower_bound_tracker(window_size=100, outlier_thresh=(.5,None), step_size=10, step_threshold=2)#, C=(.1,None))
         # differential loss.  Linear above, quadratic below
         #ltt = lower_bound_tracker(window_size=200, C=(.1,None), step_size=10, step_threshold=2)#, C=(.1,None))
         # both, lower-bound + clipping
-        ltt = lower_bound_tracker(window_size=200, outlier_thresh=(.5,None), C=(.01,None), step_size=10, step_threshold=2)#, C=(.1,None))
+        ltt = lower_bound_tracker(window_size=100, outlier_thresh=(None,None), C=(None,None), step_size=10, step_threshold=2)#, C=(.1,None))
         ltt.fit(X[0],Y[0]) # check scalar inputs
         step = 1
         idxs = list(range(1,X.shape[0],step))
@@ -174,11 +192,11 @@ class lower_bound_tracker():
         ab,res,_,_ = np.linalg.lstsq(np.append(X[:,np.newaxis],np.ones((X.shape[0],1)),1),Y,rcond=-1)
         ots = X*ab[0]+ab[1]        
         idx=range(X.shape[0])
-        plt.plot(Y[idx]- X[idx]*ab[0]-Y[0],'.-',label='server ts')
-        plt.plot(dts[idx] - X[idx]*ab[0]-Y[0],'.-',label='regressed ts (samp vs server)')
-        plt.plot(ots[idx] - X[idx]*ab[0]-Y[0],'.-',label='regressed ts (samp vs server) offline')
+        plt.plot((Y[idx]-Y[0])- (X[idx]-X[0])*ab[0],'.-',label='server ts')
+        plt.plot((dts[idx]-Y[0]) - (X[idx]-X[0])*ab[0],'.-',label='regressed ts (samp vs server)')
+        plt.plot((ots[idx]-Y[0]) - (X[idx]-X[0])*ab[0],'.-',label='regressed ts (samp vs server) offline')
 
-        err = Y - X*ab[0] - Y[0]
+        err = (Y-Y[0]) - (X-X[0])*ab[0]
         cent = np.median(err); scale=np.median(np.abs(err-cent))
         plt.ylim((cent-scale*5,cent+scale*5))
         plt.grid()
@@ -186,4 +204,4 @@ class lower_bound_tracker():
         plt.show()
 
 if __name__ == "__main__":
-    lower_bound_tracker.testcase()
+    lower_bound_tracker.testcase(None)
