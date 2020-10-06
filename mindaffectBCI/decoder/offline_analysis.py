@@ -11,6 +11,7 @@ savefile = '~/Downloads/mindaffectBCI_200701_1624[1].txt'
 savefile = '~/Downloads/mindaffectBCI_200701_2025_khash.txt'
 
 savefile = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
+savefile = '~/Desktop/mark/mindaffectBCI*.txt'
 
 import glob
 import os

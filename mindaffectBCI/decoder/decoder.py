@@ -98,8 +98,8 @@ def dataset_to_XY_ndarrays(dataset):
     print("Trlen: {}".format(trlen))
     print("Trstim: {}".format(trstim))
     # set array trial length to 90th percential length
-    trlen = int(np.percentile(trlen, 90))
-    trstim = max(20, int(np.percentile(trstim, 90)))
+    trlen = int(np.percentile(trlen, 75))
+    trstim = max(20, int(np.percentile(trstim, 75)))
     # filter the trials to only be the  ones long enough to be worth processing
     dataset = [d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2]
     if trlen == 0 or len(dataset) == 0:
@@ -543,7 +543,7 @@ if  __name__ == "__main__":
         #setattr(args,'savefile',"~/utopia/java/messagelib/UtopiaMessages_.log")
         #setattr(args,'savefile',"~/utopia/java/utopia2ft/UtopiaMessages_*1700.log")
         #setattr(args,'savefile',"~/Downloads/jason/UtopiaMessages_200923_1749_*.log")
-        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*ganglion*1404*.txt')
+        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*.txt')
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)

@@ -5,7 +5,7 @@ class lower_bound_tracker():
     """ sliding window linear trend tracker
     """   
 
-    def __init__(self, window_size=200, C=(.01,None), outlier_thresh=(1,None), step_size=.1, step_threshold=1.5, a0=1, b0=0, warmup_size=10):
+    def __init__(self, window_size=200, C=(.01,None), outlier_thresh=(1,None), step_size=10, step_threshold=2, a0=1, b0=0, warmup_size=10):
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
         self.a0 = a0 if a0 is not None else 1
@@ -26,7 +26,7 @@ class lower_bound_tracker():
             self.b = self.b0
 
     def fit(self,X,Y):
-        self.buffer = RingBuffer(self.window_size, (2,))
+        self.buffer = RingBuffer(self.window_size, (2,), dtype=X.dtype if isinstance(X,np.ndarray) else float)
         self.append(X,Y)
         self.a = self.a0
         self.b = self.buffer[-1,1] - self.a * self.buffer[-1,0]
@@ -59,25 +59,29 @@ class lower_bound_tracker():
             return
 
         # get the data
-        x = self.buffer[:,0]
+        x = self.buffer[:,0].astype(float)
+        y = self.buffer[:,1].astype(float)
+
+        # center the data to improve the numerical robustness
         mu_x  = np.median(x)
         x = x - mu_x
-        y = self.buffer[:,1]
         mu_y = np.median(y)
         y = y - mu_y
+
         # IRWLS fit to the data, with outlier suppression and asymetric huber loss
         # add constant feature  for the intercept
         x = np.append(x[:,np.newaxis],np.ones((x.shape[0],1),dtype=x.dtype),1)
         # weighted LS  solve
         sqrt_w = np.ones((x.shape[0],),dtype=x.dtype) # square root of weight so can use linalg.lstsq
         # start from previous solution
-        a=self.a
-        b=self.b - self.a*mu_x + mu_y # shift bias to compensate for shift in x/y
+        a = self.a
+        b = self.b + self.a*mu_x - mu_y # shift bias to compensate for shift in x/y
         # TODO[]: convergence criteria, to stop early
         for i in range(3):
             y_est = x[:,0]*a + b
             err = y - y_est # server > true, clip positive errors
             mu_err = np.mean(err)
+            #print('{} mu_err={}\n'.format(i,mu_err))
             scale = np.mean(np.abs(err-mu_err))
 
             # 1 by default
@@ -113,7 +117,7 @@ class lower_bound_tracker():
                     #y_fit[neg_outlier] = y_est[neg_outlier] - self.outlier_thresh[1]*scale
 
             # solve weighted least squares
-            ab, _, _, _ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y*sqrt_w, rcond=1e-30)
+            ab, _, _, _ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y*sqrt_w, rcond=-1)
             # extract parameters
             a = ab[0]
             b = ab[1]
@@ -141,12 +145,17 @@ class lower_bound_tracker():
         if savefile is None:
             np.random.seed(0) # make reproducable
             X = np.arange(1000,dtype=np.float64) + np.random.randn(1)*1e6
-            a = 1000.0/50 
-            b = 1000*np.random.randn(1)
+            a = np.random.uniform(0,1)*10+10 
+            b = 1000*np.random.randn(1) +.3
             Ytrue= a*X+b
+            # add some steps
+            for i in range(5):
+                stepi = np.random.randint(Ytrue.shape[0])
+                Ytrue[stepi:] += np.random.randint(3)*a
             N = np.random.standard_normal(Ytrue.shape)
             #Y    = Ytrue+ *10
-            Y = Ytrue + np.exp((N-3)*3)
+            Y = Ytrue + np.exp((N-1)*3)
+            print("{}) a={} b={}".format('true',a,b))
 
         else: # load from file
             import glob
@@ -169,12 +178,11 @@ class lower_bound_tracker():
         # differential loss.  Linear above, quadratic below
         #ltt = lower_bound_tracker(window_size=200, C=(.1,None), step_size=10, step_threshold=2)#, C=(.1,None))
         # both, lower-bound + clipping
-        ltt = lower_bound_tracker(window_size=100, outlier_thresh=(None,None), C=(None,None), step_size=10, step_threshold=2)#, C=(.1,None))
+        ltt = lower_bound_tracker(window_size=100, outlier_thresh=(1,None), C=(.1,None), step_size=10, step_threshold=2)
         ltt.fit(X[0],Y[0]) # check scalar inputs
         step = 1
         idxs = list(range(1,X.shape[0],step))
         ab = np.zeros((len(idxs),2))
-        print("{}) a={} b={}".format('true',a,b))
         dts = np.zeros((Y.shape[0],))
         dts[0] = ltt.getY(X[0])
         for i,j in enumerate(idxs):
@@ -204,4 +212,4 @@ class lower_bound_tracker():
         plt.show()
 
 if __name__ == "__main__":
-    lower_bound_tracker.testcase(None)
+    lower_bound_tracker.testcase('-')

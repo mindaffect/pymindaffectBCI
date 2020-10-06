@@ -229,17 +229,16 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     
     plt.figure(14)
     plot_decoding_curve(*res)
-    plt.suptitle("Decoding Curve")
 
     print("Plot Model")
     plt.figure(15);plt.clf()
     #filter2pattern(clsfr.sigma_,factored2full(clsfr.W_,clsfr.R_))
     if hasattr(clsfr,'A_'):
-        plt.suptitle("fwd-model")
         plot_erp(factored2full(clsfr.A_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
+        plt.suptitle("fwd-model")
     else:
-        plt.suptitle("bwd-model")
         plot_erp(factored2full(clsfr.W_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
+        plt.suptitle("bwd-model")
     plt.show()
 
 

@@ -116,10 +116,15 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
     plt.show()
 
+
+    # do a time-stamp check.
+    from mindaffectBCI.decoder.timestamp_check import timestampPlot
+    timestampPlot(filename)
+
 if __name__=="__main__":
     #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
-    filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-    #filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
+    #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
