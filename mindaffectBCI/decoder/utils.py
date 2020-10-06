@@ -102,13 +102,13 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     X_ts = X[:, -1] # last channel is timestamps
     # TODO: binary-search to make these searches more efficient!
     # search backwards for trial-start time-stamp
-    # TODO[] : use a bracketing test.. (better with wrap-arround)
-    bgn_samp = np.flatnonzero(np.logical_and(bgn_ts <= X_ts, X_ts != 0))
+    # TODO[X] : use a bracketing test.. (better with wrap-arround)
+    bgn_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < bgn_ts, bgn_ts <= X_ts[1:]))
     # get the index of this timestamp, guarding for after last sample
     bgn_samp = bgn_samp[0] if len(bgn_samp) > 0 else len(X_ts)+1
     # and just to be sure the trial-end timestamp
     if  end_ts is not None:
-        end_samp = np.flatnonzero(np.logical_and(X_ts < end_ts, X_ts != 0))
+        end_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < end_ts, end_ts <= X_ts[1:]))
         # get index of this timestamp, guarding for after last data sample
         end_samp = end_samp[-1] if len(end_samp) > 0 else len(X_ts)
     else: # until now
@@ -116,6 +116,27 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     # extract the trial data, and make copy (just to be sure)
     X = X[bgn_samp:end_samp+1, :].copy()
     return X
+
+def unwrap(x,range=None):
+    # unwrap the time-stamp wrapping due to data truncation
+    if range is None: 
+        range = 1<< int(np.ceil(np.log2(max(x))))
+    wrap_ind = np.diff(x) < -range/2
+    unwrap = np.zeros(x.shape)
+    unwrap[np.flatnonzero(wrap_ind)+1]=range
+    unwrap=np.cumsum(unwrap)
+    x = x + unwrap
+    return x
+
+def unwrap_test():
+    x = np.cumsum(np.random.rand(6000,1))
+    xw = x%(1<<10)
+    xuw = unwrap(x)
+    import matplotlib.pyplot as plt
+    plt.plot(x,label='x')
+    plt.plot(xw,label='x (wrapped)')
+    plt.plot(xuw,label='x (unwrapped')
+    plt.legend()
 
 # toy data generation
 
