@@ -124,4 +124,5 @@ if __name__=="__main__":
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     triggerPlot(filename, evtlabs=('0','1'), tau_ms=400, offset_ms=-50)
+    ##triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50)
 
