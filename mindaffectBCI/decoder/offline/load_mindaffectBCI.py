@@ -2,7 +2,7 @@ import os
 import numpy as np
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_data_messages
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
-from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
+from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
 def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
@@ -25,7 +25,8 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     pickle.dump(dict(data=X),open('raw_lmbci.pk','wb'))
 
     # strip the data time-stamp channel
-    data_ts = X[...,-1] # (nsamp,)
+    data_ts = X[...,-1].astype(np.float64) # (nsamp,)
+    data_ts = unwrap(data_ts)
     X = X[...,:-1] # (nsamp,nch)
     
     # estimate the sample rate from the data -- robustly?
@@ -66,6 +67,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
 
     # extract the stimulus sequence
     Me, stim_ts, objIDs, _ = devent2stimSequence(messages)
+    stim_ts = unwrap(stim_ts.astype(np.float64))
 
     import pickle
     pickle.dump(dict(data=np.append(X,data_ts[:,np.newaxis],-1),stim=np.append(Me,stim_ts[:,np.newaxis],-1)),open('pp_lmbci.pk','wb'))
@@ -86,6 +88,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
     trl_stim_idx = np.flatnonzero(isi > iti_ms)
     # get duration of stimulus in each trial
     trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
+    print('trl_dur: {}'.format(trl_dur))
     # estimate the best trial-length to use
     if trlen_ms is None:
         trlen_ms = np.median(trl_dur)
