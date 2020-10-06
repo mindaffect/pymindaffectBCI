@@ -196,7 +196,6 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 plt.suptitle('Factored Model')
                 plt.figure(2)
                 plot_decoding_curve(*decoding_curve)
-                plt.suptitle('Decoding Curve')
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
                 plt.figure(3) # plot the CCA info

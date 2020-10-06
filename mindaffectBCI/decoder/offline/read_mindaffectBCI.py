@@ -100,7 +100,6 @@ def datapackets2array(msgs,sample2timestamp='lower_bound_tracker'):
     for msg in msgs:
         samples = msg.samples
         ts   = msg.timestamp
-        ts   = ts % (1<<24)
         samples_ts = tsfilt.transform(ts,len(samples))
         samples = np.append(samples, samples_ts[:,np.newaxis], -1).astype(samples.dtype)
         data.append(samples)
