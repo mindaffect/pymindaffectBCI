@@ -20,13 +20,14 @@ files = glob.glob(os.path.expanduser(savefile));
 savefile = max(files, key=os.path.getctime)
 
 # load
-X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', ofs=100)
+X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', fs_out=100)
 # output is: X=eeg, Y=stimulus, coords=meta-info about dimensions of X and Y
 print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
 print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.shape))
 
 plt.close('all')
-debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')
+# train *only* on 1st 10 trials
+debug_test_dataset(X, Y, coords, cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')
 
 
 # do a time-stamp check.

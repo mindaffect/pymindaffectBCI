@@ -1,14 +1,14 @@
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import window_axis, block_randomize, butter_sosfilt
 import numpy as np
-def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, stopband=((45,65),(0,.5),(15,-1)), ofs=60, nvirt_out=30, verb=1):
+def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, stopband=((45,65),(0,.5),(15,-1)), fs_out=60, nvirt_out=30, verb=1):
     d = loadmat(datadir)
     X = d['EEG'] # (nSamp,d)
     Y = d[regressor] # (nSamp,e)
     Y = Y[:, np.newaxis, :] # (nSamp, nY, e)
     fs = d['Fs'][0][0]
-    if ofs is  None:
-        ofs = fs
+    if fs_out is  None:
+        fs_out = fs
 
     # preprocess -> spectral filter, in continuous time!
     if stopband is not None:
@@ -30,7 +30,7 @@ def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, stopband=((45,65),(0
         Y = [np.newaxis, ...]
 
     # preprocess -> downsample
-    resamprate = int(fs/ofs)
+    resamprate = int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
             print("resample: {}->{}hz rsrate={}".format(fs, fs/resamprate, resamprate))

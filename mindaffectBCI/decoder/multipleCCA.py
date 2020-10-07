@@ -109,7 +109,8 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
             isqrtCxxCxymisqrtCyy = isqrtCxxCxym
 
         # SVD for the double  whitened cross covariance
-        Rm, lm, Wm = np.linalg.svd(isqrtCxxCxymisqrtCyy, full_matrices=False)  #N.B. Rm=((nE*tau),rank),lm=(rank),Wm=(rank,d)
+        #N.B. Rm=((nE*tau),rank),lm=(rank),Wm=(rank,d)
+        Rm, lm, Wm = np.linalg.svd(isqrtCxxCxymisqrtCyy, full_matrices=False)  
         Wm = Wm.T  # (d,rank)
 
         # include relative component weighting directly in the  Left/Right singular values
