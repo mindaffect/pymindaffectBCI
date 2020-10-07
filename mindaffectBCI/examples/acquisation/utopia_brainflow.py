@@ -3,6 +3,8 @@ from brainflow.board_shim import BoardShim, BrainFlowInputParams
 from mindaffectBCI import utopiaclient 
 from time import time, sleep
 import traceback
+import numpy
+from struct import *
 
 PACKETRATE_HZ = 50
 LOGINTERVAL_S = 3
