@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, maxsize=6000):
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max_samp=6000, stopband=(.1,45,'bandpass'), fs_out=250):
     import glob
     import os
     if filename is None or filename == '-':
@@ -19,61 +19,75 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     print("Loading : {}\n".format(filename))    
 
     # TODO[] : correctly use the evtlabs
-
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=(5,25,'bandpass'), ofs=9999)
-    X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=stopband, fs_out=fs_out)
     # size limit...
-    if maxsize is not None and X.shape[1]>maxsize:
-        X=X[:,:maxsize,...]
-        Y=Y[:,:maxsize,...]
-    #X, Y, coords = load_mindaffectBCI(filename, stopband=None, ofs=9999)
+    if max_samp is not None and X.shape[1] > max_samp:
+        X=X[:,:max_samp,...]
+        Y=Y[:,:max_samp,...]
     X[...,:-1] = X[...,:-1] - np.mean(X[...,:-1],axis=-2,keepdims=True) # offset remove
     fs = coords[-2]['fs']
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
     print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:-1]]+['output'],Y.shape))
 
-
-    plt.clf();
+    plt.figure(1)
+    plt.clf()
     for i in range(min(X.shape[0],3)):
         plt.subplot(3,1,i+1)
         #plt.imshow(X[0,...].T,aspect='auto',label='X',extent=[0,X.shape[-2],0,X.shape[-1]]);
         for c in range(X.shape[-1]):
             tmp = X[i,...,c]
             tmp = (tmp - np.mean(tmp.ravel())) / max(1,np.std(tmp.ravel()))
-            plt.plot(tmp+2*c,label='X{}'.format(c));
-        plt.plot(Y[i,...,0],'k',label='Y');
+            plt.plot(tmp+2*c,label='X{}'.format(c))
+        plt.plot(Y[i,...,0],'k',label='Y')
         plt.title('Trl {}'.format(i))
     plt.legend()
     plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
     plt.show(block=False)
-    plt.pause(.1)
+    plt.pause(.1) # allow full redraw
 
     print("training model")
     tau = int(fs*tau_ms/1000.0)
     # BODGE: for speed only use first 5 trials!
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[:5,...],Y[:5,...])
+    # BODGE: reg with 1e-5 so only the strong channels are used..
+    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1,reg=(1e-2,None)).fit(X[:5,:1000,...],Y[:5,:1000,...])
 
-    clsfr.plot_model(fs=fs)
-    plt.show()
+    # get the event-coded version of Y
+    Ye = clsfr.stim2event(Y)
 
     print("applying spatial filter")
     W = clsfr.W_[0,0,...] # (d,)
+    print("W={}".format(W))
 
     # slice the data w.r.t. the stimulus triggers to generate the visualization
     offset = int(fs*offset_ms/1000.0)
     times = (np.arange(tau)+offset)*1000/fs
-    Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
-    wXe = np.einsum("d,TEtd->TEt", W, Xe) # (nTrl, nSamp-tau, tau) apply the spatial filter
+    wX = np.einsum("d,Ttd->Tt", W, X) # (nTrl, nSamp) apply the spatial filter
+
+    # add as line to the trl plot:
+    for i in range(min(X.shape[0],3)):
+        plt.subplot(3,1,i+1)
+        tmp = wX[i,...]
+        tmp = (tmp - np.mean(tmp.ravel())) / max(.01,np.std(tmp.ravel()))
+        plt.plot(tmp+2*(X.shape[-1]+1),label='wX')
+    plt.legend()
+
+    # model in a new figure
+    plt.figure(2)
+    clsfr.plot_model(fs=fs)
+    plt.show(block=False)
+    # allow full re-draw
+    plt.pause(.5)
 
     # slice out the responses for the trigger stimulus
     print('slicing data')
+    wXe = window_axis(wX, winsz=tau, axis=-1) # (nTrl, nSamp-tau, tau)
     # N.B. negative offset here as negative shift of Y is same as positive shift of X
-    Y_true = Y[...,-offset:Xe.shape[1]-offset,0] # (nTrl, nSamp-tau)
+    Y_true = Ye[...,-offset:wXe.shape[1]-offset,0,0] # (nTrl, nSamp-tau)
     wXeY = wXe[Y_true>0,:] # [ep,tau]
 
     # get a samp#, timestamp dataset
-    trl_ts = coords[0]['trl_ts'][:,:Xe.shape[1]]   # (nTrl, nSamp-tau)
-    trl_idx = coords[0]['trl_idx'][:,:Xe.shape[1]] # (nTrl, nSamp-tau)
+    trl_ts = coords[0]['trl_ts'][:,:wXe.shape[1]]   # (nTrl, nSamp-tau)
+    trl_idx = coords[0]['trl_idx'][:,:wXe.shape[1]] # (nTrl, nSamp-tau)
     samp2ms = np.median((np.diff(trl_ts,axis=-1)/np.maximum(1,np.diff(trl_idx,axis=-1))).ravel())
     samp2ms = 1000/fs #samp2ms*.99
     print("samp2ms={}".format(samp2ms))
@@ -83,6 +97,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     ts_errY = ts_err[Y_true>0] # (ep,) slice out the high-stimulus info (in seconds)
 
     print('generating plot')
+    plt.figure(3)
     mu = np.median(wXeY.ravel())
     scale = np.median( np.abs(wXeY.ravel()-mu) )
     fig, ax = plt.subplots()
@@ -92,7 +107,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     plt.colorbar()
     plt.ylabel('time (ms)')
     plt.xlabel('Epoch')
-    plt.title('{}'.format(filename[-50:]))
+    plt.title('{}\n{}'.format(evtlabs[0],filename[-50:]))
     plt.grid()
     #plt.colorbar()
 
@@ -114,20 +129,31 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
         ax.set_ylim(min(times[0],mu2-2*scale2),max(times[-1],mu2+2*scale2))
     plt.ylim(mu2-1*scale2,mu2+1*scale2)
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
-    plt.show()
+    plt.show(block=False)
 
+    # allow full re-draw
+    plt.pause(.5)
+
+    # now plot as lines
+    plt.figure(5)
+    tmp = wXeY.reshape((-1,wXeY.shape[-1]))[:100,:]
+    tmp = tmp - np.mean(tmp,-1,keepdims=True)
+    tmp = tmp / np.std(tmp.ravel())
+    plt.plot(tmp.T + np.arange(tmp.shape[0])[np.newaxis,:])
+    plt.title('1st {} {} evt trigger epochs time-series'.format(tmp.shape[0],evtlabs[0]))
 
     # do a time-stamp check.
     from mindaffectBCI.decoder.timestamp_check import timestampPlot
+    plt.figure(6)
     timestampPlot(filename)
 
 if __name__=="__main__":
     #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*_brainflow2.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*khash*.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename, evtlabs=('0','1'), tau_ms=400, offset_ms=-50)
+    triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50, stopband=(.5,45,'bandpass'), fs_out=250)
     ##triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50)
 

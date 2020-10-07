@@ -9,7 +9,7 @@ ERP_STIM_DUR = 80/1000 # 80ms
 MI_STIM_DUR = 4 # 3s
 SSVEP_STIM_DUR = 4
 
-def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True):
+def load_openBMI(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True):
     
     if offset_ms is None:
         offset_ms = (0, 0)
@@ -151,7 +151,7 @@ def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(
 
         
     # preprocess -> downsample
-    resamprate = int(fs/ofs)
+    resamprate = int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
             print("resample: {}->{}hz rsrate={}".format(fs, fs/resamprate, resamprate))
@@ -214,11 +214,11 @@ def testcase():
         sessfn = sys.argv[1]
 
     from load_openBMI import load_openBMI
-    X, Y, coords = load_openBMI(sessfn, CAR=True, offset_ms=(-400,1000), sessfn=sessfn, ofs=60, stopband=((0,1),(30,-1)))
+    X, Y, coords = load_openBMI(sessfn, CAR=True, offset_ms=(-400,1000), sessfn=sessfn, fs_out=60, stopband=((0,1),(30,-1)))
     fs = coords[1]['fs']
-    # CAR=False,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
-    # CAR=True,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
-    # CAR=True,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-8 : audc=36 Perr[-1]=.30
+    # CAR=False,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
+    # CAR=True,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
+    # CAR=True,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-8 : audc=36 Perr[-1]=.30
 
     
     if 'SSVEP' in sessfn:

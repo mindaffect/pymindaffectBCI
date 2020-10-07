@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 
-def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
+def load_mark_EMG(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
 
     fs=1000
     ch_names=None
@@ -70,10 +70,10 @@ def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),
     if plot:plt.figure(104);plt.plot(X[0,:,:]);plt.title("env")
         
     # preprocess -> downsample @60hz
-    resamprate=int(fs/ofs)
+    resamprate=int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
-            print("resample: {}->{}hz rsrate={}".format(fs,ofs,resamprate))
+            print("resample: {}->{}hz rsrate={}".format(fs,fs_out,resamprate))
         X = X[:, ::resamprate, :] # decimate X (trl, samp, d)
         fs = fs/resamprate
 
@@ -84,7 +84,7 @@ def load_mark_EMG(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),
     Yall = np.eye(Y_true.shape[-1],dtype=bool) # (nvirt,e)
     Yall = np.tile(Yall,(Y_true.shape[0],1,1)) # (nTrl,nvirt,e)
     Y = np.append(Y_true,Yall,axis=-2) # (nTrl,nvirt+1,e)
-    # upsample to ofs
+    # upsample to fs_out
     Y = np.tile(Y[:,np.newaxis,:,:],(1,X.shape[1],1,1)) #  (nTrl, nSamp, nY, e)
     Y = Y.astype(np.float32)
     
@@ -107,7 +107,7 @@ def testcase():
         sessfn = sys.argv[1]
  
     #from offline.load_mark_EMG import load_mark_EMG
-    oX, oY, coords = load_mark_EMG(sessfn, ofs=125, stopband=((0,10),(45,55),(95,105),(145,-1)), plot=False)
+    oX, oY, coords = load_mark_EMG(sessfn, fs_out=125, stopband=((0,10),(45,55),(95,105),(145,-1)), plot=False)
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
     X=oX.copy()

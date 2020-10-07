@@ -75,7 +75,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
     # fit the model
     if cv:
-        res = clsfr.cv_fit(X, Y)
+        res = clsfr.cv_fit(X, Y, cv=cv)
         Fy = res['estimator']
     else:
         print("Warning! overfitting...")
@@ -151,7 +151,7 @@ def flatten_decoding_curves(decoding_curves):
         st[di,:ll] = dc[4][:ll] 
     return il,pe,pee,se,st
 
-def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=('re', 'fe'), rank=1, model='cca', cv=True, preprocess_args=None, clsfr_args=dict(), **kwargs):
+def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=('re', 'fe'), rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
     fs = coords[1]['fs'] if coords is not None else fs
     tau = int(fs*tau_ms/1000)
     offset=int(offset_ms*fs/1000)    
@@ -297,17 +297,17 @@ def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, l
 
     plt.close('all')
 def run_analysis():    
-    #analyse_datasets("plos_one",loader_args=dict(ofs=60,stopband=((0,3),(30,-1))),
+    #analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
     #                 model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))
-    #"plos_one",loader_args=dict(ofs=120,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
-    #"plos_one",loader_args=dict(ofs=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
-    #"plos_one",loader_args=dict(ofs=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3)): ave-score:67
-    #"plos_one",loader_args=dict(ofs=60,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:674
-    #"plos_one",loader_args=dict(ofs=60,stopband=((0,2),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:61
+    #"plos_one",loader_args=dict(fs_out=120,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
+    #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
+    #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3)): ave-score:67
+    #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:674
+    #"plos_one",loader_args=dict(fs_out=60,stopband=((0,2),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:61
     #"plos_one",tau_ms=350,evtlabs=('re','fe'),rank=1 : ave-score=72  -- should be 83!!!
     # C: slightly larger freq range helps. rank doesn't.
 
-    #analyse_datasets("lowlands",loader_args=dict(ofs=60,stopband=((0,5),(25,-1))),
+    #analyse_datasets("lowlands",loader_args=dict(fs_out=60,stopband=((0,5),(25,-1))),
     #                  model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe')))#,badEpThresh=6))
     #"lowlands",clsfr_args=dict(tau_ms=550,evtlabs=('re','fe'),rank=1,badEpThresh=6,rcond=1e-6),loader_args=(stopband=((0,5),(25,-1))): ave-score=56
     #"lowlands",clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1,badEpThresh=6,rcond=1e-6),loader_args=(stopband=((0,5),(25,-1))): ave-score=56
@@ -327,33 +327,33 @@ def run_analysis():
 
     # N.B. ram limits the  tau size...
     # analyse_datasets("brainsonfire",
-    #                 loader_args=dict(ofs=30, subtriallen=10, stopband=((0,1),(12,-1))),
+    #                 loader_args=dict(fs_out=30, subtriallen=10, stopband=((0,1),(12,-1))),
     #                 model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=20))
-    #"brainsonfire",loader_args=dict(ofs=30, subtriallen=10, stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=5)) : score=.46
-    #"brainsonfire",loader_args=dict(ofs=30, subtriallen=10, stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=10)) : score=.53
+    #"brainsonfire",loader_args=dict(fs_out=30, subtriallen=10, stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=5)) : score=.46
+    #"brainsonfire",loader_args=dict(fs_out=30, subtriallen=10, stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=10)) : score=.53
 
     #analyse_datasets("twofinger",
     #                 model='cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=5), 
-    #                 loader_args=dict(ofs=60, subtriallen=10, stopband=((0,1),(25,-1))))
-    #"twofinger",'cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=5),loader_args=dict(ofs=60, subtriallen=10, stopband=((0,1),(25,-1)))): ave-score=.78
+    #                 loader_args=dict(fs_out=60, subtriallen=10, stopband=((0,1),(25,-1))))
+    #"twofinger",'cca',clsfr_args=dict(tau_ms=600, offset_ms=-300, evtlabs=None, rank=5),loader_args=dict(fs_out=60, subtriallen=10, stopband=((0,1),(25,-1)))): ave-score=.78
     # "twofinger",tau_ms=600, offset_ms=-300, rank=5,subtriallen=10, stopband=((0,1),(25,-1)))): ave-score: .85
     # C: slight benefit from pre-movement data
     
     # Note: max tau=500 due to memory limitation
     #analyse_datasets("cocktail",
     #                 clsfr_args=dict(tau_ms=500, evtlabs=None, rank=5, rcond=1e-4, center=False),
-    #                 loader_args=dict(ofs=60, subtriallen=10, stopband=((0,1),(25,-1))))
-    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'ofs':60, 'subtriallen':15,'passband':(5,25)}) : .78
-    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'ofs':60, 'subtriallen':15,'passband':(1,25)}) : .765
-    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'ofs':30, 'subtriallen':15,'passband':(1,25)}) : .765
-    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'ofs':30, 'subtriallen':15,'passband':(1,12)}) : .77
-    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=8,loader_args={'ofs':30, 'subtriallen':15,'passband':(1,12)}) : .818
-    #analyse_datasets("cocktail",tau_ms=700,evtlabs=None,rank=8,loader_args={'ofs':30, 'subtriallen':15,'passband':(1,12)}) : .826
-    #analyse_datasets("cocktail",tau_ms=700,evtlabs=None,rank=16,loader_args={'ofs':30, 'subtriallen':15,'passband':(1,12)}) : .854
-    #analyse_datasets("cocktail",tau_ms=500, evtlabs=None, rank=15,ofs=60, subtriallen=10, stopband=((0,1),(25,-1)) : ave-score:.80 (6-subtrials)
+    #                 loader_args=dict(fs_out=60, subtriallen=10, stopband=((0,1),(25,-1))))
+    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'fs_out':60, 'subtriallen':15,'passband':(5,25)}) : .78
+    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'fs_out':60, 'subtriallen':15,'passband':(1,25)}) : .765
+    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'fs_out':30, 'subtriallen':15,'passband':(1,25)}) : .765
+    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=4,loader_args={'fs_out':30, 'subtriallen':15,'passband':(1,12)}) : .77
+    #analyse_datasets("cocktail",tau_ms=500,evtlabs=None,rank=8,loader_args={'fs_out':30, 'subtriallen':15,'passband':(1,12)}) : .818
+    #analyse_datasets("cocktail",tau_ms=700,evtlabs=None,rank=8,loader_args={'fs_out':30, 'subtriallen':15,'passband':(1,12)}) : .826
+    #analyse_datasets("cocktail",tau_ms=700,evtlabs=None,rank=16,loader_args={'fs_out':30, 'subtriallen':15,'passband':(1,12)}) : .854
+    #analyse_datasets("cocktail",tau_ms=500, evtlabs=None, rank=15,fs_out=60, subtriallen=10, stopband=((0,1),(25,-1)) : ave-score:.80 (6-subtrials)
     # C: longer analysis window + higher rank is better.  Sample rate isn't too important
 
-    #analyse_datasets("openBMI_ERP",clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5),loader_args=dict(ofs=30,stopband=((0,1),(12,-1)),offset_ms=(-500,1000)))
+    #analyse_datasets("openBMI_ERP",clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5),loader_args=dict(fs_out=30,stopband=((0,1),(12,-1)),offset_ms=(-500,1000)))
     # "openBMI_ERP",tau_ms=700,evtlabs=('re'),rank=1,loader_args=dict(offset_ms=(-500,1000) Ave-score=0.758
     # "openBMI_ERP",tau_ms=700,evtlabs=('re','ntre'),rank=1,loader_args={'offset_ms':(-500,1000)}) Ave-score=0.822
     # "openBMI_ERP",tau_ms=700,evtlabs=('re','ntre'),rank=5,loader_args={'offset_ms':(-500,1000)}) Ave-score=0.894
@@ -370,48 +370,48 @@ def run_analysis():
     # "openBMI",tau_ms=600,evtlabs=('re'),rank=1,loader_args={'offset_ms':(-500,1000)} : score==.940
     # C: large-window, re, rank>1 : gives best fit?
     
-    #analyse_datasets("p300_prn",loader_args=dict(ofs=30,stopband=((0,1),(25,-1)),subtriallen=10),
+    #analyse_datasets("p300_prn",loader_args=dict(fs_out=30,stopband=((0,1),(25,-1)),subtriallen=10),
     #                 model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5))
-    #"p300_prn",model='cca',loader_args=dict(ofs=30,stopband=((0,2),(12,-1)),subtriallen=10),clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=15)) : score=.43
-    #"p300_prn",model='cca',loader_args=dict(ofs=60,stopband=((0,2),(25,-1)),subtriallen=10),clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=15)) : score=.47
+    #"p300_prn",model='cca',loader_args=dict(fs_out=30,stopband=((0,2),(12,-1)),subtriallen=10),clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=15)) : score=.43
+    #"p300_prn",model='cca',loader_args=dict(fs_out=60,stopband=((0,2),(25,-1)),subtriallen=10),clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=15)) : score=.47
 
-    #analyse_datasets("mTRF_audio", tau_ms=600, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(5, 25)})
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(.5, 15)}) : score=.86
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=2, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(.5, 15)}) : score=.85
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(5, 25)}) : score = .89
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(.5, 25)}) : score = .86
-    #analyse_datasets("mTRF_audio", tau_ms=100, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(5, 25)}) : score= .85
-    #analyse_datasets("mTRF_audio", tau_ms=20, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(5, 25)}) : score=.88
-    #analyse_datasets("mTRF_audio", tau_ms=600, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'ofs':64, 'passband':(5, 25)}) : score=.91
+    #analyse_datasets("mTRF_audio", tau_ms=600, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(5, 25)})
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(.5, 15)}) : score=.86
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=2, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(.5, 15)}) : score=.85
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(5, 25)}) : score = .89
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(.5, 25)}) : score = .86
+    #analyse_datasets("mTRF_audio", tau_ms=100, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(5, 25)}) : score= .85
+    #analyse_datasets("mTRF_audio", tau_ms=20, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(5, 25)}) : score=.88
+    #analyse_datasets("mTRF_audio", tau_ms=600, evtlabs=None, rank=5, loader_args={'regressor':'spectrogram', 'fs_out':64, 'passband':(5, 25)}) : score=.91
     
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'ofs':64, 'passband':(.5, 15)}) : score=.77
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'ofs':64, 'passband':(5, 25)}) : score=.77
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'ofs':128, 'passband':(5, 25)}) : score=.78
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=2, loader_args={'regressor':'envelope', 'ofs':128, 'passband':(5, 25)}) : score=.76
-    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=1, loader_args={'regressor':'envelope', 'ofs':128, 'passband':(5, 25)}) : score=.69
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'fs_out':64, 'passband':(.5, 15)}) : score=.77
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'fs_out':64, 'passband':(5, 25)}) : score=.77
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=5, loader_args={'regressor':'envelope', 'fs_out':128, 'passband':(5, 25)}) : score=.78
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=2, loader_args={'regressor':'envelope', 'fs_out':128, 'passband':(5, 25)}) : score=.76
+    #analyse_datasets("mTRF_audio", tau_ms=300, evtlabs=None, rank=1, loader_args={'regressor':'envelope', 'fs_out':128, 'passband':(5, 25)}) : score=.69
 
     # C: spectrogram (over envelope), rank>3, 5-25Hz, short tau is sufficient ~ 100ms
 
-    #analyse_datasets("tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),
+    #analyse_datasets("tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),
     #                 model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5))
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=10) : ave-score:51
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5) : ave-score:54
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=3) : ave-score:54
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=3) : ave-score:52
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=10) : ave-score:49
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=5) : ave-score:54
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=10) : ave-score:50
-    #"tactileP3",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re'),rank=5) : ave-score:44
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=10) : ave-score:51
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=5) : ave-score:54
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=3) : ave-score:54
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=3) : ave-score:52
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(12,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','ntre'),rank=10) : ave-score:49
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=5) : ave-score:54
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=10) : ave-score:50
+    #"tactileP3",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re'),rank=5) : ave-score:44
     # C: above chance for 8/9, low rank~3, slow response
     
-    #analyse_datasets("tactile_PatientStudy",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),
+    #analyse_datasets("tactile_PatientStudy",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),
     #                 model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=5))
-    #"tactile_PatientStudy",loader_args=dict(ofs=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=5) : ave-score:44
+    #"tactile_PatientStudy",loader_args=dict(fs_out=60,stopband=((0,1),(25,-1))),model='cca',clsfr_args=dict(tau_ms=700,evtlabs=('re','anyre'),rank=5) : ave-score:44
 
-    #analyse_datasets("ninapro_db2",loader_args=dict(stopband=((0,15), (45,55), (95,105), (250,-1)), ofs=60, nvirt=20, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),
+    #analyse_datasets("ninapro_db2",loader_args=dict(stopband=((0,15), (45,55), (95,105), (250,-1)), fs_out=60, nvirt=20, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),
     #                 model='cca',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=6))
-    #"ninapro_db2",loader_args=dict(subtrllen=10, stopband=((0,15), (45,55), (95,105), (250,-1)), ofs=60, nvirt=40, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),model='cca',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=20)): ave-score=65 (but dont' believe it)
-    #"ninapro_db2",loader_args=dict(subtrllen=10, stopband=((0,15), (45,55), (95,105), (250,-1)), ofs=60, nvirt=40, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),model='ridge',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=20)): ave-score=26 (but dont' believe it)
+    #"ninapro_db2",loader_args=dict(subtrllen=10, stopband=((0,15), (45,55), (95,105), (250,-1)), fs_out=60, nvirt=40, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),model='cca',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=20)): ave-score=65 (but dont' believe it)
+    #"ninapro_db2",loader_args=dict(subtrllen=10, stopband=((0,15), (45,55), (95,105), (250,-1)), fs_out=60, nvirt=40, whiten=True, rectify=True, log=True, plot=False, filterbank=None, zscore_y=True),model='ridge',clsfr_args=dict(tau_ms=40,evtlabs=None,rank=20)): ave-score=26 (but dont' believe it)
 
     #analyse_datasets("openBMI_MI",clsfr_args=dict(tau_ms=350,evtlabs=None,rank=6),loader_args=dict(offset_ms=(-500,1000)))
     pass
@@ -420,7 +420,7 @@ def run_analysis():
 if __name__=="__main__":
 
     #debug_test_single_dataset('p300_prn',dataset_args=dict(label='rc_5_flash'),
-    #              loader_args=dict(ofs=32,stopband=((0,1),(12,-1)),subtriallen=None),
+    #              loader_args=dict(fs_out=32,stopband=((0,1),(12,-1)),subtriallen=None),
     #              model='cca',tau_ms=750,evtlabs=('re','anyre'),rank=3,reg=.02)
 
     from offline.load_mindaffectBCI  import load_mindaffectBCI
@@ -437,7 +437,7 @@ if __name__=="__main__":
         import os
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
         savefile = max(files, key=os.path.getctime)
-    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(0,3),(25,-1)), ofs=60)
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(0,3),(25,-1)), fs_out=60)
     debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca')
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
