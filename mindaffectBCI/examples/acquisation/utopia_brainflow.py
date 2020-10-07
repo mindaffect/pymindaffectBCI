@@ -67,7 +67,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.prepare_session ()
     if board_id==0 or board_id==5:
         board.config_board ('<')
-
+    sleep(1)
     eeg_channels = BoardShim.get_eeg_channels (board_id)
     timestamp_channel = BoardShim.get_timestamp_channel(board_id)
     fSample = BoardShim.get_sampling_rate(board_id)
