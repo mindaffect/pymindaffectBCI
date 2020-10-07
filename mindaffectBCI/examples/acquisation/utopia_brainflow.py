@@ -38,13 +38,14 @@ def parse_args():
     parser.add_argument ('--serial-number', type = str, help  = 'serial number', required = False, default = '')
     parser.add_argument ('--board-id', type = int, help  = 'board id, check docs to get a list of supported boards', default = 1 )#required = True)
     parser.add_argument ('--log', type=int, help = ' set the brainflow logging level', default=1)
+    parser.add_argument ('--triggerCheck', type = int, help  = 'trigger check', required = False, default = 0)
     args = parser.parse_args ()
     return args
 
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0):
     global board, client
 
     # init the board params
@@ -67,6 +68,10 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     board = BoardShim (board_id , params)
     board.prepare_session ()
+    if triggerCheck:
+        print('trigger is enabled, trigger channel: 8')
+        board.config_board('x8020000X')
+    sleep(1)
     if board_id==0 or board_id==5:
         board.config_board ('<')
     sleep(1)
