@@ -65,6 +65,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     board = BoardShim (board_id , params)
     board.prepare_session ()
+    if board_id==0 or board_id==5:
+        board.config_board ('<')
 
     eeg_channels = BoardShim.get_eeg_channels (board_id)
     timestamp_channel = BoardShim.get_timestamp_channel(board_id)
@@ -94,6 +96,11 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     while True:
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
+        if board_id==0 or board_id==5
+        stamps=[]
+        for i in range(len(data[15])):
+            array=numpy.array([data[15][i],data[16][i],data[17][i],data[18][i]] , dtype=numpy.uint8)
+            stamps.append(unpack('>L',bytearray(array)))		
         if data.size == 0:
             sleep(.001)
             continue
@@ -105,7 +112,10 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
         # extract the info we want
         eeg = data[eeg_channels,:] # (channels,samples) 
-        timestamps = data[timestamp_channel,:] # (samples,)
+        if board_id==0 or board_id==5:
+            timestamps=numpy.array(stamps)
+        else:
+            timestamps = data[timestamp_channel,:] # (samples,)
 
         # forward the *EEG* data to the utopia client
         nSamp = nSamp + eeg.shape[1]
@@ -116,7 +126,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         if eeg.shape[0] < maxpacketsamples:
             # fit time-stamp into 32-bit int (with potential wrap-around)
             ts = timestamps[-1]
-            ts = (int(ts*1000))%(1<<31) 
+            if board_id !=0 and board_id !=5:
+                ts = (int(ts*1000))%(1<<31) 
             #ts = client.getTimeStamp()
             client.sendMessage(utopiaclient.DataPacket(ts, eeg))
             nBlock = nBlock + 1
@@ -129,7 +140,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
                 ts = max(ots,ts) if ots is not None else ts
                 ots = ts
                 # fit time-stamp into 32-bit int (with potential wrap-around)
-                ts = (int(ts*1000))%(1<<31) 
+                if board_id !=0 and board_id !=5:
+                    ts = (int(ts*1000))%(1<<31) 
                 #ts = client.getTimeStamp()
                 client.sendMessage(utopiaclient.DataPacket(ts, d))
                 nBlock = nBlock + 1
