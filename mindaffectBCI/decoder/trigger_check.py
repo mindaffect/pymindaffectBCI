@@ -103,7 +103,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     fig, ax = plt.subplots()
     plt.imshow(wXeY.T,origin='lower',aspect='auto',extent=[0,wXeY.shape[0],times[0],times[-1]])
     plt.clim(mu-scale,mu+scale)
-    plt.set_cmap('nipy_spectral')
+    plt.set_cmap('jet')#'gray')#'nipy_spectral')
     plt.colorbar()
     plt.ylabel('time (ms)')
     plt.xlabel('Epoch')
@@ -150,10 +150,9 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
 if __name__=="__main__":
     #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*khash*.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*mark*.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
     #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50, stopband=(.5,45,'bandpass'), fs_out=250)
-    ##triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50)
+    triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50, stopband=(0,.5), fs_out=250)
 
