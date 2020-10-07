@@ -512,7 +512,7 @@ class butterfilt_and_downsample(TransformerMixin):
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
         self.stopband = stopband
         self.fs = fs
-        self.fs_out = fs_out if fs_out < fs else fs
+        self.fs_out = fs_out if fs_out is not None and fs_out < fs else fs
         self.order = order
         self.axis = -2
         if not self.axis == -2:
@@ -547,7 +547,7 @@ class butterfilt_and_downsample(TransformerMixin):
             
         # preprocess -> downsample
         self.nsamp = 0
-        self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0
+        self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0 if self.fs_out is not None else 1
         self.out_fs_  = self.fs/self.resamprate_
         print("resample: {}->{}hz rsrate={}".format(self.fs, self.out_fs_, self.resamprate_))
 
@@ -899,9 +899,9 @@ def testFileProxy2(filename):
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
     U = FileProxyHub(filename)
     fs = 200
-    ofs = 200
+    fs_out = 200
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=ofs)
+    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=fs_out)
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
     ui.connect()
     # run in bits..

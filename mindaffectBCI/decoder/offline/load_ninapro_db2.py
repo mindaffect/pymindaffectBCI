@@ -5,14 +5,14 @@ from mindaffectBCI.decoder.multipleCCA import robust_whitener
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 import matplotlib.pyplot as plt
 
-def load_ninapro_db2(datadir, stopband=((0,15), (45,65), (95,125), (250,-1)), envelopeband=(10,-1), trlen_ms=None, ofs=60, nvirt=20, rectify=True, whiten=True, log=True, plot=False, filterbank=None, zscore_y=True, verb=1):
+def load_ninapro_db2(datadir, stopband=((0,15), (45,65), (95,125), (250,-1)), envelopeband=(10,-1), trlen_ms=None, fs_out=60, nvirt=20, rectify=True, whiten=True, log=True, plot=False, filterbank=None, zscore_y=True, verb=1):
     d = loadmat(datadir, variable_names=('emg', 'glove', 'stimulus'))
     X = d['emg'] # (nSamp,d)
     Y = d['glove'] # (nSamp,e)
     lab = d['stimulus'].ravel() # (nSamp,1) - use to slice out trials+labels
     fs = 2000
-    if ofs is  None:
-        ofs = fs
+    if fs_out is  None:
+        fs_out = fs
 
     # get trial start/end info
     trl_start = np.flatnonzero(np.diff(lab)>0)
@@ -62,7 +62,7 @@ def load_ninapro_db2(datadir, stopband=((0,15), (45,65), (95,125), (250,-1)), en
         if plot:plt.figure(104);plt.plot(X);plt.title("env")
 
     # preprocess -> downsample
-    resamprate = int(fs/ofs)
+    resamprate = int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
             print("resample: {}->{}hz rsrate={}".format(fs, fs/resamprate, resamprate))
@@ -114,8 +114,8 @@ def testcase():
     
     datadir = '/home/jadref/data/bci/external_data/ninapro/DB2_s1/S1_E1_A1.mat'
 
-    ofs = 30
-    X, Y, coords = load_ninapro_db2(datadir, ofs=ofs, envelopeband=((0,.01),(5,-1)), log=True)
+    fs_out = 30
+    X, Y, coords = load_ninapro_db2(datadir, fs_out=fs_out, envelopeband=((0,.01),(5,-1)), log=True)
     from analyse_datasets import debug_test_dataset
     debug_test_dataset(X,Y,coords, rank=5, evtlabs=None, tau_ms=120, offset_ms=0, model='cca')
     

@@ -531,12 +531,16 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             axA = plt.subplot(nrows, ncols, subploti+1) # share limits
             axA.set_xlabel("Space")
             axR.set_xlabel("time (s)")
+            axA.grid(True)
+            axR.grid(True)
             pA = axA
             pR = axR
         else: # normal plot
             pR = plt.subplot(nrows, ncols, subploti+2, sharex=axR, sharey=axR) 
             pA = plt.subplot(nrows, ncols, subploti+1, sharex=axA, sharey=axA) 
             plt.tick_params(labelbottom=False,labelleft=False) # no labels
+            pA.grid(True)
+            pR.grid(True)
 
         # make the spatial plot
         sign = np.sign(A[ci,np.argmax(np.abs(A[ci,:]))]) # normalize directions

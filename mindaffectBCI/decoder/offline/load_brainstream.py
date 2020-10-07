@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt
 
-def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=None, passband=None, stopband=((45,65),(0,5),(25,-1)), verb=0, ch_names=None):
+def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, passband=None, stopband=((45,65),(0,5),(25,-1)), verb=0, ch_names=None):
 
     # load the data file
     Xfn = datadir
@@ -82,8 +82,8 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=No
         else:
             fr = 60
     fs = ifs
-    if ofs is None:
-        ofs = ifs
+    if fs_out is None:
+        fs_out = ifs
         
     X  = X.astype("float32") # [ ch x samp x trl ]:float - raw eeg
     X  = np.moveaxis(X, (0, 1, 2), (2, 1, 0)) # (nTrl, nSamp, d)
@@ -107,7 +107,7 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=No
         X, _, _ = butter_sosfilt(X, stopband, fs, passband=passband)
     
     # preprocess -> downsample
-    resamprate = round(2*fs/ofs)/2 # round to nearest .5
+    resamprate = round(2*fs/fs_out)/2 # round to nearest .5
     if resamprate > 1:
         if 1 or verb > 0:
             print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
@@ -148,7 +148,7 @@ def testcase():
         fn = sys.argv[3]
 
     from load_brainstream import load_brainstream
-    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, ofs=60, stopband=((0,5.5),(24,-1)))
+    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, fs_out=60, stopband=((0,5.5),(24,-1)))
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
     

@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), regress=False):
     
     # load the data file
     Xfn = datadir
@@ -39,11 +39,11 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, ofs=100, stopband=((4
 
     # pre-process: spectral filter + downsample
     # incremental call in bits
-    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs, ftype=ftype)
+    ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=fs_out, ftype=ftype)
     #ppfn = None
     if ppfn is not None:
         if verb >= 0:
-            print("preFilter: {}th {} {}Hz & downsample {}->{}Hz".format(order,ftype,stopband,fs,ofs))
+            print("preFilter: {}th {} {}Hz & downsample {}->{}Hz".format(order,ftype,stopband,fs,fs_out))
         #ppfn.fit(X[0:1,:])
         # process in blocks to be like the on-line, use time-stamp as Y to get revised ts
         if False:
@@ -159,7 +159,7 @@ def testcase():
     #sessfn = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
     from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
     print("Loading: {}".format(sessfn))
-    X, Y, coords = load_mindaffectBCI(sessfn, ofs=100, regress=False)
+    X, Y, coords = load_mindaffectBCI(sessfn, fs_out=100, regress=False)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']

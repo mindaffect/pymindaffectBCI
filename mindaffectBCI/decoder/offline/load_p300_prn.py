@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt, window_axis, block_randomize
 
-def load_p300_prn(datadir, sessdir=None, sessfn=None, ofs=60, offset_ms=(-1000,1000), ifs=None, fr=None, stopband=((45,65), (0,1), (25,-1)), order=4, subtriallen=10, verb=0, nvirt=20, chidx=slice(64)):
+def load_p300_prn(datadir, sessdir=None, sessfn=None, fs_out=60, offset_ms=(-1000,1000), ifs=None, fr=None, stopband=((45,65), (0,1), (25,-1)), order=4, subtriallen=10, verb=0, nvirt=20, chidx=slice(64)):
 
     # load the data file
     Xfn = datadir
@@ -99,10 +99,10 @@ def load_p300_prn(datadir, sessdir=None, sessfn=None, ofs=60, offset_ms=(-1000,1
         X, _, _ = butter_sosfilt(X,stopband,fs,order=order)
     
     # preprocess -> downsample 
-    resamprate = int(round(fs/ofs))
+    resamprate = int(round(fs/fs_out))
     if resamprate > 1:
         if verb > 0:
-            print("resample: {}->{}hz rsrate={}".format(fs, ofs, resamprate))
+            print("resample: {}->{}hz rsrate={}".format(fs, fs_out, resamprate))
         X = X[:, ::resamprate, :] # decimate X (trl, samp, d)
         Y = Y[:, ::resamprate, :] # decimate Y (trl, samp, y)
         fs = fs/resamprate
@@ -141,7 +141,7 @@ def testcase():
     #sessfn = 'alex/20100722/jf_prep/alex_prn_10_flip.mat'
     
     from offline.load_p300_prn import load_p300_prn
-    X, Y, coords = load_p300_prn(datadir, sessdir, sessfn, ofs=32, stopband=((0,1),(12,-1)), order=6); oX=X.copy(); oY=Y.copy();
+    X, Y, coords = load_p300_prn(datadir, sessdir, sessfn, fs_out=32, stopband=((0,1),(12,-1)), order=6); oX=X.copy(); oY=Y.copy();
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
 

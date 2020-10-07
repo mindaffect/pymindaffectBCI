@@ -139,6 +139,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         # TODO [] : make more computationally efficient by pre-computing the updateSummaryStatistics etc.
         # TODO [] : conform to sklearn cross_validate signature
         # TODO [] : move into a wrapper class
+        if cv == True:  cv = 5
         if isinstance(cv, int):
             if X.shape[0] > 1:
                 cv = StratifiedKFold(n_splits=min(cv, X.shape[0])).split(np.zeros(X.shape[0]), np.zeros(Y.shape[0]))
@@ -191,7 +192,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     def plot_model(self, **kwargs):
         if not self.R_ is None:
             print("Plot Factored Model")
-            if False and hasattr(self, 'A_'):
+            if hasattr(self, 'A_'):
                 plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, **kwargs)
             else:
                 plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
