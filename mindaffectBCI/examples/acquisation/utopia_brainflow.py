@@ -97,10 +97,10 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
         if board_id==0 or board_id==5:
-        stamps=[]
-        for i in range(len(data[15])):
-            array=numpy.array([data[15][i],data[16][i],data[17][i],data[18][i]] , dtype=numpy.uint8)
-            stamps.append(unpack('>L',bytearray(array)))		
+            stamps=[]
+            for i in range(len(data[15])):
+                array=numpy.array([data[15][i],data[16][i],data[17][i],data[18][i]] , dtype=numpy.uint8)
+                stamps.append(unpack('>L',bytearray(array)))		
         if data.size == 0:
             sleep(.001)
             continue
