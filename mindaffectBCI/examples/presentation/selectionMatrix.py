@@ -680,6 +680,7 @@ class SelectionGridScreen(Screen):
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
         self.liveSelections = None
+        self.feedbackThreshold = 1
         self.waitKey=waitKey
 
     def reset(self):
@@ -799,6 +800,8 @@ class SelectionGridScreen(Screen):
                                         batch=self.batch, group=self.foreground)
 
     def is_done(self):
+        if self.isDone:
+            self.noisetag.modeChange('idle')
         return self.isDone
 
     # mapping from bci-stimulus-states to display color
@@ -851,6 +854,7 @@ class SelectionGridScreen(Screen):
             # set background color based on the stimulus state (if set)
             try:
                 self.objects[idx].color=self.state2color[stimulus_state[idx]]
+                self.labels[idx].color=(255,255,255,255) # reset labels
             except KeyError:
                 pass
 
@@ -859,12 +863,18 @@ class SelectionGridScreen(Screen):
         if self.liveFeedback:
             # get prediction info if any
             predMessage=self.noisetag.getLastPrediction()
-            if predMessage and predMessage.Yest in objIDs:
+            if predMessage and predMessage.Yest in objIDs and predMessage.Perr < self.feedbackThreshold:
                 predidx=objIDs.index(predMessage.Yest) # convert from objID -> objects index
-                # BODGE: manually mix in the feedback color as blue tint.
-                fbcol=self.objects[predidx].color
-                fbcol=(fbcol[0]*.6, fbcol[1]*.6, fbcol[2]*.6+255*(1-predMessage.Perr))
-                self.objects[predidx].color=fbcol
+                prederr=predMessage.Perr
+                # BODGE: manually mix in the feedback color as blue tint on the label
+                fbcol=list(self.labels[predidx].color)
+                fbcol[0]=fbcol[0]*.4 
+                if fbcol[0]>1: fbcol[0]=int(fbcol[0])
+                fbcol[1]=fbcol[1]*.4; 
+                if fbcol[1]>1: fbcol[1]=int(fbcol[1])
+                fbcol[2]=fbcol[2]*.4+255*(1-prederr)*.6; 
+                if fbcol[2]>1: fbcol[2]=int(fbcol[2])
+                self.labels[predidx].color=fbcol
 
         # disp opto-sensor if targetState is set
         if self.optosensor :
@@ -1243,7 +1253,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=False, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
