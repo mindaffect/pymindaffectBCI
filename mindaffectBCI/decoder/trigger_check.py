@@ -6,7 +6,19 @@ from mindaffectBCI.decoder.utils import window_axis
 import matplotlib.pyplot as plt
 import glob
 
-def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max_samp=6000, stopband=(.1,45,'bandpass'), fs_out=250):
+
+def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max_samp=6000, stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
+    """make a set of visualizations of the stimulus->measurement time-lock
+
+    Args:
+        filename ([type], optional): The name of the file to load. Defaults to None.
+        evtlabs (tuple, optional): The event coding to use for how stimulus changes map into trigger inputs. Defaults to ('0','1').
+        tau_ms (int, optional): The duration of the stimulus response. Defaults to 400.
+        offset_ms (int, optional): Offset of the start of the stimulus response w.r.t. the trigger time. Defaults to -50.
+        max_samp (int, optional): Limit in the number of samples for each trial. Defaults to 6000.
+        stopband (tuple, optional): Temporal filter used to pre-process the EEG. Defaults to (.1,45,'bandpass').
+        fs_out (int, optional): Sample rate of the EEG used for analysis. Defaults to 250.
+    """   
     import glob
     import os
     if filename is None or filename == '-':
@@ -15,11 +27,9 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
         filename = max(files, key=os.path.getctime)
     else:
         files = glob.glob(os.path.expanduser(filename))
-        filename = max(files, key=os.path.getctime)
-    print("Loading : {}\n".format(filename))    
+        filename = max(files, key=os.path.getctime)    
 
-    # TODO[] : correctly use the evtlabs
-    X, Y, coords = load_mindaffectBCI(filename, stopband=stopband, fs_out=fs_out)
+    X, Y, coords = load_mindaffectBCI(filename, stopband=stopband, fs_out=fs_out, **kwargs)
     # size limit...
     if max_samp is not None and X.shape[1] > max_samp:
         X=X[:,:max_samp,...]
@@ -111,12 +121,12 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     plt.grid()
     #plt.colorbar()
 
-    if X.shape[-1]>8 :
-        samp_cnt = X[...,-1] # sample count (%255)
-        samp_miss = samp_cnt[...,1:] - ((samp_cnt[...,:-1]+1) % 256)
-        samp_miss = samp_miss[...,:Xe.shape[1]]
-        samp_miss = samp_miss[Y_true>0]
-        plt.plot(samp_miss*samp2ms + 100,'k-')
+    # if X.shape[-1]>8 :
+    #     samp_cnt = X[...,-1] # sample count (%255)
+    #     samp_miss = samp_cnt[...,1:] - ((samp_cnt[...,:-1]+1) % 256)
+    #     samp_miss = samp_miss[...,:X.shape[1]]
+    #     samp_miss = samp_miss[Y_true>0]
+    #     plt.plot(samp_miss*samp2ms + 100,'k-')
 
     # over-plot the error
     ax2=ax.twinx()
@@ -150,9 +160,9 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
 if __name__=="__main__":
     #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*mark*.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*tschannel*.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
     #filename=None
-    #filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
-    triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50, stopband=(0,.5), fs_out=250)
+    filename='c:/Users/Developer/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
+    triggerPlot(filename, evtlabs=('re','fe'), tau_ms=400, offset_ms=-50, stopband=(0,.5), fs_out=250)#, timestamp_ch=8)
 
