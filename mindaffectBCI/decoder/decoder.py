@@ -477,7 +477,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=55) # 20hz updates
+                                 timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
     # use a multi-cca for the model-fitting
     if clsfr is None:
@@ -551,7 +551,7 @@ if  __name__ == "__main__":
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs) # 20hz updates
+                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='decoder') # 20hz updates
         # add the file-proxy ui as input argument
         setattr(args,'ui',ui)
     

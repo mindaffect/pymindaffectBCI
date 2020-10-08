@@ -26,8 +26,8 @@ class UtopiaController:
     '''controller class to manage the interaction with the Mindaffect decoder,
     setting up the connection, sending and recieving messages, and firing message
     event handlers'''
-    def __init__(self):
-        self.client = UtopiaClient()
+    def __init__(self, clientid=None):
+        self.client = UtopiaClient(clientid)
         self.msgs = []
         # callback list for new messages
         self.messageHandlers = []
