@@ -3,6 +3,8 @@ from brainflow.board_shim import BoardShim, BrainFlowInputParams
 from mindaffectBCI import utopiaclient 
 from time import time, sleep
 import traceback
+import numpy
+from struct import *
 
 PACKETRATE_HZ = 50
 LOGINTERVAL_S = 3
@@ -36,13 +38,14 @@ def parse_args():
     parser.add_argument ('--serial-number', type = str, help  = 'serial number', required = False, default = '')
     parser.add_argument ('--board-id', type = int, help  = 'board id, check docs to get a list of supported boards', default = 1 )#required = True)
     parser.add_argument ('--log', type=int, help = ' set the brainflow logging level', default=1)
+    parser.add_argument ('--triggerCheck', type = int, help  = 'trigger check', required = False, default = 0)
     args = parser.parse_args ()
     return args
 
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0):
     global board, client
 
     # init the board params
@@ -65,7 +68,13 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     board = BoardShim (board_id , params)
     board.prepare_session ()
-
+    if triggerCheck:
+        print('trigger is enabled, trigger channel: 8')
+        board.config_board('x8020000X')
+    sleep(1)
+    if board_id==0 or board_id==5:
+        board.config_board ('<')
+    sleep(1)
     eeg_channels = BoardShim.get_eeg_channels (board_id)
     timestamp_channel = BoardShim.get_timestamp_channel(board_id)
     fSample = BoardShim.get_sampling_rate(board_id)
@@ -94,6 +103,11 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     while True:
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
+        if board_id==0 or board_id==5:
+            stamps=[]
+            for i in range(len(data[15])):
+                array=numpy.array([data[15][i],data[16][i],data[17][i],data[18][i]] , dtype=numpy.uint8)
+                stamps.append(unpack('>L',bytearray(array)))		
         if data.size == 0:
             sleep(.001)
             continue
@@ -105,7 +119,10 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
         # extract the info we want
         eeg = data[eeg_channels,:] # (channels,samples) 
-        timestamps = data[timestamp_channel,:] # (samples,)
+        if board_id==0 or board_id==5:
+            timestamps=numpy.array(stamps)
+        else:
+            timestamps = data[timestamp_channel,:] # (samples,)
 
         # forward the *EEG* data to the utopia client
         nSamp = nSamp + eeg.shape[1]
@@ -116,7 +133,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         if eeg.shape[0] < maxpacketsamples:
             # fit time-stamp into 32-bit int (with potential wrap-around)
             ts = timestamps[-1]
-            ts = (int(ts*1000))%(1<<31) 
+            if board_id !=0 and board_id !=5:
+                ts = (int(ts*1000))%(1<<31) 
             #ts = client.getTimeStamp()
             client.sendMessage(utopiaclient.DataPacket(ts, eeg))
             nBlock = nBlock + 1
@@ -129,7 +147,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
                 ts = max(ots,ts) if ots is not None else ts
                 ots = ts
                 # fit time-stamp into 32-bit int (with potential wrap-around)
-                ts = (int(ts*1000))%(1<<31) 
+                if board_id !=0 and board_id !=5:
+                    ts = (int(ts*1000))%(1<<31) 
                 #ts = client.getTimeStamp()
                 client.sendMessage(utopiaclient.DataPacket(ts, d))
                 nBlock = nBlock + 1
@@ -143,7 +162,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
 if __name__ == "__main__":
     #run(board_id=1,serial_port='com3') # ganglion
-    run(board_id=0,serial_port='com4')
+    #run(board_id=0,serial_port='com4')
 
     args=parse_args()    
     try:
