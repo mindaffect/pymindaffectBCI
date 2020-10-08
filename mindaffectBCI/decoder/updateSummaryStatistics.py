@@ -477,7 +477,7 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None):
+def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, spatial_filter_type="Filter"):
     '''
     Make a multi-plot of a factored model
     A = (k,d)
@@ -552,7 +552,7 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             plt.colorbar(tt)
         else:
             pA.plot(ch_names,A[ci,:]*sign,'.-')
-        pA.title.set_text("Spatial Filter #{}".format(ci))
+        pA.title.set_text("Spatial {} #{}".format(spatial_filter_type,ci))
         # make the temporal plot, with labels, N.B. use loop so can set each lines label
         for e in range(R.shape[-2]):
             pR.plot(times,R[ci,e,:]*sign,'.-',label=evtlabs[e])

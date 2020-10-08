@@ -193,7 +193,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if not self.R_ is None:
             print("Plot Factored Model")
             if hasattr(self, 'A_'):
-                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, **kwargs)
+                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, spatial_filter_type='Pattern', **kwargs)
             else:
                 plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
         else:
