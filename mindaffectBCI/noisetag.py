@@ -408,7 +408,7 @@ class Noisetag:
      2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
      3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
      '''
-    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack=None):
+    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack=None,clientid:str=None):
         # global flicker stimulus sequence
         if stimFile is None:  stimFile = default_stimFile
         noisecode = StimSeq.fromFile(stimFile)
@@ -428,6 +428,7 @@ class Noisetag:
         self.stimulusStateMachineStack=stimulusStateMachineStack
         self.laststate=(None,None,None,None)
         self.objIDs=None
+        self.clientid=clientid
 
     def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=5000):
         if self.utopiaController is None :
@@ -435,7 +436,7 @@ class Noisetag:
             global uc
             if uc is None :
                 # auto-connect the global controller if none given
-                uc = UtopiaController()
+                uc = UtopiaController(clientid=self.clientid)
             self.utopiaController=uc
         if self.utopiaController.isConnected() :
             return True
@@ -629,8 +630,8 @@ class Noisetag:
 
 class sumstats:
     '''Utility class to record summary stastics for, e.g. frame flip timing'''
-    def __init__(self):
-        self.buf=[0]*(70*10) # ring-buffer, 700 entries
+    def __init__(self,bufsize:int=60*2):
+        self.buf=[0]*(bufsize) # ring-buffer, 700 entries
         self.N=0
         self.sx=0
         self.mu=-1
@@ -663,13 +664,18 @@ class sumstats:
             pp=''
         return pp
 
-    def __str__(self):
+    def update_statistics(self):
         import statistics
         buf = self.buf[:min(len(self.buf),self.N)]
-        mu = statistics.mean(buf)
-        med= statistics.median(buf)
-        sigma=statistics.stdev(buf) if len(buf)>2 else -1
-        return "%f,%f (%f,[%f,%f])"%(mu,med,sigma,min(self.buf),max(self.buf))
+        self.mu = statistics.mean(buf)
+        self.med= statistics.median(buf)
+        self.sigma=statistics.stdev(buf) if len(buf)>2 else -1
+        self.min = min(buf)
+        self.max = max(buf)
+
+    def __str__(self):
+        self.update_statistics()
+        return "%f,%f (%f,[%f,%f])"%(self.mu,self.median,self.sigma,self.min,self.max)
 
 def doFrame(t,stimState,tgtState=-1,objIDs=None,utopiaController=None):
     if tgtState>=0 :

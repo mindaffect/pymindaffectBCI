@@ -132,15 +132,26 @@ class MenuScreen(InstructionScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, valid_keys):
         super().__init__(window, text, 99999999, True)
+        self.menu_text = text
         self.valid_keys = valid_keys
         self.key_press = None
         print("Menu")
+
+    def set_message(self,message:str):
+        self.set_text(self.menu_text+'\n\n\n'+message)
 
     def is_done(self):
         # check termination conditions
         if not self.isRunning:
             self.isDone = False
             return self.isDone
+
+        # check if should update display
+        global flipstats
+        flipstats.update_statistics()
+        if flipstats.sigma > 1:
+            self.set_message("Frame-duration: {:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
+
         global last_key_press
         if self.window.last_key_press:
             self.key_press = self.window.last_key_press
@@ -1001,6 +1012,7 @@ class ExptScreenManager(Screen):
         if self.stage==self.ExptPhases.MainMenu: # main menu
             if self.fullscreen_stimulus==True :
                 self.window.set_fullscreen(fullscreen=False)
+
             print("main menu")
             self.menu.reset()
             self.screen = self.menu
@@ -1152,7 +1164,7 @@ def getTimeStamp():
 
 import types
 from mindaffectBCI.noisetag import sumstats
-flipstats=None;#sumstats(); 
+flipstats=sumstats(60)
 fliplogtime=0
 def timedflip(self):
     '''pseudo method type which records the timestamp for window flips'''
@@ -1162,10 +1174,10 @@ def timedflip(self):
     self.lastfliptime=getTimeStamp()
     if flipstats is not None:
         flipstats.addpoint(self.lastfliptime-olft)
-        if self.lastfliptime > fliplogtime:
-            fliplogtime=fliplogtime+5000
-            print("\nFlipTimes:"+str(flipstats))
-            print("Hist:\n"+flipstats.hist())
+        #if self.lastfliptime > fliplogtime:
+        #    fliplogtime=fliplogtime+5000
+        #    print("\nFlipTimes:"+str(flipstats))
+        #    print("Hist:\n"+flipstats.hist())
 
 def on_key_press(symbols, modifiers):
     '''main key-press handler, which stores the last key in a global variable'''
@@ -1273,7 +1285,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         fullscreen = not windowed
     if windowed:
         fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile)
+    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 

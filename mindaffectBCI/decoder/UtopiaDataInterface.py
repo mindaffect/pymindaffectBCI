@@ -36,7 +36,8 @@ class UtopiaDataInterface:
 
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
-                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker'):
+                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker',
+                 clientid=None):
         # rate control
         self.timeout_ms = timeout_ms
         self.mintime_ms = mintime_ms # minimum time to spend in update => max processing rate
@@ -46,7 +47,7 @@ class UtopiaDataInterface:
         # connect to the mindaffectDecoder
         self.host = None
         self.port = -1
-        self.U = UtopiaClient() if U is None else U
+        self.U = UtopiaClient(clientid) if U is None else U
         self.t0 = self.getTimeStamp()
         # init the buffers
 

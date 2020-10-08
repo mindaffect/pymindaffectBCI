@@ -109,15 +109,20 @@ class Heartbeat(UtopiaMessage):
     msgID=ord('H')
     msgName="HEARTBEAT"
     
-    def __init__(self, timestamp=None):
+    def __init__(self, timestamp=None, statemessage:str=None):
         super().__init__(Heartbeat.msgID, Heartbeat.msgName)
         self.timestamp=timestamp
+        self.statemessage = statemessage
+        if self.statemessage is not None: # v1 heartbeat with state message string
+            self.version = 1
 
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
         """
         S = struct.pack('<i', int(self.timestamp))
+        if self.statemessage is not None:
+            S = S + bytes(self.statemessage, 'utf8')
         return S
 
     @staticmethod
@@ -127,8 +132,11 @@ class Heartbeat(UtopiaMessage):
         if bufsize < 4:
             return (None, 0)
         (timestamp, ) = struct.unpack('<i', buf[0:4])
-        msg = Heartbeat(timestamp)
-        return (msg, 4)
+        if bufsize>4:
+            statemessage = buf[4:].decode('utf-8')
+            return (Heartbeat(timestamp,statemessage), len(buf))
+        else:
+            return (Heartbeat(timestamp), 4)
     
     def __str__(self):
         return "%c(%d) %s %i"%(self.msgID, self.msgID, self.msgName, self.timestamp)
@@ -688,7 +696,7 @@ class UtopiaClient:
     HEARTBEATINTERVALUDP_ms=200
     MAXMESSAGESIZE = 1024 * 1024
 
-    def __init__(self):
+    def __init__(self, clientstate=None):
         self.isConnected = False
         self.sock = []
         self.udpsock=None
@@ -698,6 +706,7 @@ class UtopiaClient:
         self.nextHeartbeatTime = self.getTimeStamp()
         self.nextHeartbeatTimeUDP = self.getTimeStamp()
         self.ssdpDiscover = None
+        self.clientstate = clientstate
 
     # time-stamp management
     def setTimeStampClock(self, tsClock):
@@ -834,10 +843,10 @@ class UtopiaClient:
             timestamp = self.getTimeStamp()
         if timestamp > self.nextHeartbeatTime:
             self.nextHeartbeatTime=timestamp+self.HEARTBEATINTERVAL_ms
-            self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(timestamp)).serialize())
+            self.sendRaw(RawMessage.fromUtopiaMessage(Heartbeat(timestamp,self.clientstate)).serialize())
         if timestamp > self.nextHeartbeatTimeUDP:
             self.nextHeartbeatTimeUDP=timestamp+self.HEARTBEATINTERVALUDP_ms
-            self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(timestamp)).serialize())
+            self.sendRawUDP(RawMessage.fromUtopiaMessage(Heartbeat(timestamp,self.clientstate)).serialize())
         
     def sendMessages(self, msgs):
         """sends single or multiple utopia-messages to the utopia server
@@ -882,10 +891,10 @@ class UtopiaClient:
         if not self.sendHeartbeats:
             print("Warning: not sending heartbeats as they are disabled!")
             return
-        self.sendMessage(Heartbeat(self.getTimeStamp()))
+        self.sendMessage(Heartbeat(self.getTimeStamp(),self.clientstate))
         for delay in delays_ms:
             time.sleep(delay/1000)
-            self.sendMessage(Heartbeat(self.getTimeStamp()))
+            self.sendMessage(Heartbeat(self.getTimeStamp(),self.clientstate))
     
     def messagelogger(self, timeout_ms=1000):
         """Simple message logger, infinite loop waiting for and printing messages from the server"""
