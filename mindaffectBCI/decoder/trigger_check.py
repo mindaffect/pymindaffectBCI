@@ -117,7 +117,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     plt.colorbar()
     plt.ylabel('time (ms)')
     plt.xlabel('Epoch')
-    plt.title('{}\n{}'.format(evtlabs[0],filename[-50:]))
+    plt.title('{} locked {} trials {:4.1f}min data\n{}'.format(evtlabs[0],X.shape[0],(trl_ts[-1,-1]-trl_ts[0,0])/1000/60,filename[-50:]))
     plt.grid()
     #plt.colorbar()
 
@@ -149,7 +149,7 @@ def triggerPlot(filename=None, evtlabs=('0','1'), tau_ms=400, offset_ms=-50, max
     tmp = wXeY.reshape((-1,wXeY.shape[-1]))[:100,:]
     tmp = tmp - np.mean(tmp,-1,keepdims=True)
     tmp = tmp / np.std(tmp.ravel())
-    plt.plot(tmp.T + np.arange(tmp.shape[0])[np.newaxis,:])
+    plt.plot(times, tmp.T + np.arange(tmp.shape[0])[np.newaxis,:])
     plt.title('1st {} {} evt trigger epochs time-series'.format(tmp.shape[0],evtlabs[0]))
 
     # do a time-stamp check.
