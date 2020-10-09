@@ -670,7 +670,7 @@ class SelectionGridScreen(Screen):
     def __init__(self, window, symbols, noisetag, objIDs=None,
                  bgFraction=.2, instruct="", 
                  clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True,
-                 waitKey=True):
+                 waitKey=True, stimulus_callback=None):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -693,6 +693,7 @@ class SelectionGridScreen(Screen):
         self.liveSelections = None
         self.feedbackThreshold = 1
         self.waitKey=waitKey
+        self.stimulus_callback = stimulus_callback
 
     def reset(self):
         self.isRunning=False
@@ -854,6 +855,10 @@ class SelectionGridScreen(Screen):
         # turn all off if no stim-state
         if stimulus_state is None:
             stimulus_state = [0]*len(self.objects)
+
+        # do the stimulus callback if wanted
+        if self.stimulus_callback is not None:
+            self.stimulus_callback(stimulus_state, target_state)
 
         # draw the white background onto the surface
         if self.clearScreen:
