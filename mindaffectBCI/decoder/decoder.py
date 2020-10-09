@@ -473,8 +473,10 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
         try:
+            from  scipy.signal import butter
             ppfn = butterfilt_and_downsample(order=order, stopband=stopband, fs_out=out_fs, ftype=ftype)
         except: # load filter from file
+            print("Warning: stopband specification *ignored*, using sos_filter_coeff.pk file...")
             ppfn = butterfilt_and_downsample(stopband='sos_filter_coeff.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
