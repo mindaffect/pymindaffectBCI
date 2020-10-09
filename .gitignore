@@ -10,3 +10,4 @@ __pycache__
 *.res
 .gradle/*
 logs/*
+build/*

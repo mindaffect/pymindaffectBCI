@@ -11,7 +11,9 @@ To install the code:
        git clone https://github.com/mindaffect/pymindaffectBCI
 
   #. Install the necessary bits to your local python path:
+
     1. change to the directory where you cloned the repository.
+
     #. Add this module to the python path, and install dependencies::
    
          pip install -e .

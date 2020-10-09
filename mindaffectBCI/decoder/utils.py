@@ -53,6 +53,7 @@ class RingBuffer:
         self.copysize = 0 # number entries to copy as a block
 
     def clear(self):
+        '''empty the ring-buffer and reset to empty'''
         self.pos=int(self.bufshape[0])
         self.n  =0
         self.copypos=0
@@ -96,7 +97,7 @@ class RingBuffer:
         return iter(self.unwrap())
 
 def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
-    ''' extract the data between start/end time stamps'''
+    ''' extract the data between start/end time stamps, from time-stamps contained in the last channel of a nd matrix'''
     # get the data / msgs from the ringbuffers
     X = rb.unwrap() # (nsamp,nch+1)
     X_ts = X[:, -1] # last channel is timestamps
@@ -118,7 +119,7 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     return X
 
 def unwrap(x,range=None):
-    # unwrap the time-stamp wrapping due to data truncation
+    ''' unwrap a list of numbers to correct for truncation due to limited bit-resolution, e.g. time-stamps stored in 24bit integers'''
     if range is None: 
         range = 1<< int(np.ceil(np.log2(max(x))))
     wrap_ind = np.diff(x) < -range/2
@@ -337,7 +338,6 @@ def lab2ind(lab,lab2class=None):
     return (Y,lab2class)
 
 
-
 def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
     '''identify and zero-out bad/outlying data
 
@@ -418,6 +418,18 @@ except:
         return butter_py(order,freq,btype,output)
 
 def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
+    '''Use some initial data to "warmup" a second-order-sections filter to reduce startup artifacts.
+
+    Args:
+        zi (np.ndarray): the sos filter, state
+        X ([type]): the warmup data
+        axis (int, optional): The filter axis in X. Defaults to -1.
+        sos ([type], optional): the sos filter coefficients. Defaults to None.
+
+    Returns:
+        [np.ndarray]: the warmed up filter coefficients
+    '''
+    
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # zi => (order,...,2,...)
@@ -440,7 +452,7 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
     return zi
 
 def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
-    ''' given a set of filter cutoffs return butterworth sos coefficients '''
+    ''' given a set of filter cutoffs return butterworth or bessel sos coefficients '''
 
     # convert to normalized frequency, Note: not to close to 0/1
     if stopband is None:
@@ -490,8 +502,25 @@ def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0
     sos = np.concatenate(sos,axis=0)
     return sos
 
-def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, verb=True, ftype='butter'):
-    ''' use a (cascade of) butterworth SOS filter(s) to band-pass and (cascade of) band stop X along axis '''
+def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, verb=True, ftype='butter'):
+    """use a (cascade of) butterworth SOS filter(s) filter X along axis
+
+    Args:
+        X (np.ndarray): the data to be filtered
+        stopband ([type]): the filter band specifications in Hz, as a list of lists of stopbands (given as (low-pass,high-pass)) or pass bands (given as (low-cut,high-cut,'bandpass'))
+        fs (float): the sampling rate of X
+        order (int, optional): the desired filter order. Defaults to 6.
+        axis (int, optional): the axis of X to filter along. Defaults to -2.
+        zi ([type], optional): the internal filter state -- propogate between calls for incremental filtering. Defaults to None.
+        verb (bool, optional): Verbosity level for logging. Defaults to True.
+        ftype (str, optional): The type of filter to make, one-of: 'butter', 'bessel'. Defaults to 'butter'.
+
+    Returns:
+        X [np.ndarray]: the filtered version of X
+        sos (np.ndarray): the designed filter coefficients
+        zi (np.ndarray): the filter state for propogation between calls
+
+    """    '''  '''
     if stopband is None: # deal with no filter case
         return (X,None,None)
     if axis < 0: # no neg axis
