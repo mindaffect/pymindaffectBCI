@@ -147,10 +147,10 @@ class MenuScreen(InstructionScreen):
             return self.isDone
 
         # check if should update display
+        # TODO[]: only update screen 1x / second
         global flipstats
         flipstats.update_statistics()
-        if flipstats.sigma > 1:
-            self.set_message("Frame-duration: {:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
+        self.set_message("Frame-duration: {:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
 
         global last_key_press
         if self.window.last_key_press:

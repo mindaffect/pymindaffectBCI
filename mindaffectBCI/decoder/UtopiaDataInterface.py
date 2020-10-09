@@ -21,12 +21,21 @@
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
 from collections import deque
-from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment, linear_trend_tracker
+from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment
 from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
+from mindaffectBCI.decoder.linear_trend_tracker import linear_trend_tracker
 from time import sleep
 import numpy as np
 
 class UtopiaDataInterface:
+    """Adaptor class for interfacing between the decoder logic and the data source
+
+    This class provides functionality to wrap a real time data and stimulus stream to make
+    it easier to implement standard machine learning pipelines.  In particular it provides streamed
+    pre-processing for both EEG and stimulus streams, and ring-buffers for the same with time-stamp based indexing.    
+    """
+
+
     # TODO [X] : infer valid data time-stamps
     # TODO [X] : smooth and de-jitter the data time-stamps
     # TODO [] : expose a (potentially blocking) message generator interface
@@ -339,10 +348,10 @@ class UtopiaDataInterface:
 
 
     def update(self, timeout_ms=None, mintime_ms=None):
-        '''Update the tracking state w.r.t. the utopia-hub.
+        '''Update the tracking state w.r.t. the data source
 
-        By adding data to the data_ringbuffer and (non-data) messages
-        to the messages ring buffer.
+        By adding data to the data_ringbuffer, stimulus info to the stimulus_ringbuffer, 
+        and other messages to the messages ring buffer.
 
         Args
          timeout_ms : int
@@ -444,14 +453,32 @@ class UtopiaDataInterface:
         return (newmsgs, nsamp, nstimulus)
 
     def push_back_newmsgs(self,oldmsgs):
-        '''put unprocessed messages back onto the  newmessages queue'''
+        '''put unprocessed messages back onto the newmessages queue'''
         # TODO []: ensure  this preserves message time-stamp order?
         self.newmsgs.extend(oldmsgs)
 
     def extract_data_segment(self, bgn_ts, end_ts=None):
+        """extract a segment of data based on a start and end time-stamp
+
+        Args:
+            bgn_ts (float): segment start time-stamp
+            end_ts (float, optional): segment end time-stamp. Defaults to None.
+
+        Returns:
+            (np.ndarray): the data between these time-stamps, or None if timestamps invalid
+        """        
         return extract_ringbuffer_segment(self.data_ringbuffer,bgn_ts,end_ts)
     
     def extract_stimulus_segment(self, bgn_ts, end_ts=None):
+        """extract a segment of the stimulus stream based on a start and end time-stamp
+
+        Args:
+            bgn_ts (float): segment start time-stamp
+            end_ts (float, optional): segment end time-stamp. Defaults to None.
+
+        Returns:
+            (np.ndarray): the stimulus events between these time-stamps, or None if timestamps invalid
+        """        
         return extract_ringbuffer_segment(self.stimulus_ringbuffer,bgn_ts,end_ts)
     
     def extract_msgs_segment(self, bgn_ts, end_ts=None):
@@ -510,6 +537,11 @@ except:
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
 class butterfilt_and_downsample(TransformerMixin):
+    """Incremental streaming transformer to provide filtering and downsampling data transformations
+
+    Args:
+        TransformerMixin ([type]): sklearn compatible transformer
+    """    
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
         self.stopband = stopband
         self.fs = fs
@@ -645,7 +677,10 @@ class butterfilt_and_downsample(TransformerMixin):
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.stim2event import stim2event
 class stim2eventfilt(TransformerMixin):
-    ''' transformer to transform a sequence of stimulus states to a brain event sequence '''
+    ''' Incremental streaming transformer to transform a sequence of stimulus states to a brain event sequence
+    
+    For example by transforming a sequence of stimulus intensities, to rising and falling edge events.
+    '''
     def __init__(self, evtlabs=None, histlen=20):
         self.evtlabs = evtlabs
         self.histlen = histlen
@@ -714,6 +749,12 @@ class stim2eventfilt(TransformerMixin):
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 class power_tracker(TransformerMixin):
+    """Incremental streaming transformer from raw n-channel data, to exponientially smoothed channel powers
+
+    Args:
+        TransformerMixin ([type]): sklearn compatiable transformer
+    """
+
     def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
         # convert to per-sample decay factor
         self.alpha_mu = self.hl2alpha(fs * halflife_mu_ms / 1000.0 ) 
@@ -780,7 +821,8 @@ class power_tracker(TransformerMixin):
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 class timestamp_interpolation(TransformerMixin):
-    """transform from per-packet time-stamps to per-sample timestamps (with de-jitter)
+    """Incremental streaming tranformer to transform from per-packet time-stamps to per-sample timestamps 
+    with time-stamp smoothing, de-jittering, and dropped-sample detection.
     """
 
     def __init__(self,fs=None,sample2timestamp=None, max_delta=200):
