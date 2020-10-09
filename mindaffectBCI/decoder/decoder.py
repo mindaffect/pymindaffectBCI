@@ -472,8 +472,10 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
 
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        ppfn = butterfilt_and_downsample(order=order, stopband=stopband, fs_out=out_fs, ftype=ftype)
-        #ppfn = butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
+        try:
+            ppfn = butterfilt_and_downsample(order=order, stopband=stopband, fs_out=out_fs, ftype=ftype)
+        except: # load filter from file
+            ppfn = butterfilt_and_downsample(stopband='sos_filter_coeff.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
