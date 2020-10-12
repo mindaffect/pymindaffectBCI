@@ -526,7 +526,7 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # TODO []: auto-order determination?
-    sos = iir_sosfilt_sos(stopband, fs, order, passband=passband, ftype=ftype)
+    sos = iir_sosfilt_sos(stopband, fs, order, ftype=ftype)
     sos = sos.astype(X.dtype) # keep as single precision
 
     if axis == X.ndim-2 and zi is None:
