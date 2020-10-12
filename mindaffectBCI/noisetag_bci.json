@@ -12,6 +12,10 @@
         "stopband" : [[45,65],[5.5,25,"bandpass"]],
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
+        "ftype":"butter",
+        "order":6,
+        "cv":5,
+        "label":"decoder",
         "tau_ms" : 450,
         "calplots" : true,
         "predplots" : false
