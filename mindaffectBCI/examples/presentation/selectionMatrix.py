@@ -691,7 +691,7 @@ class SelectionGridScreen(Screen):
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
         self.liveSelections = None
-        self.feedbackThreshold = 1
+        self.feedbackThreshold = .4
         self.waitKey=waitKey
         self.stimulus_callback = stimulus_callback
 

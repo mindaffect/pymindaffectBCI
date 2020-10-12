@@ -351,11 +351,20 @@ def crossautocov(X, Y, tau, offset=0):
     return Ctdtd
 
 def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=None, fs=None):
-    '''
-    Cxx =(d, d) updated data covariance
-    Cxy = (nY, nE, tau, d)  updated per output ERPs
-    Cyy = (nY, nE, tau, nE, tau) updated response covariance for each output
-    '''
+    """Visualize the summary statistics (Cxx, Cxy, Cyy) of a dataset
+
+    It is assumed the data has 'd' channels, with 'nE' different types of
+    trigger event, and a response length of 'tau' for each trigger.
+
+    Args:
+        Cxx (d,d): spatial covariance
+        Cxy (nY, nE, tau, d): per-output event related potentials (ERPs)
+        Cyy (nY, nE, tau, nE, tau): updated response covariance for each output
+        evtlabs ([type], optional): the labels for the event types. Defaults to None.
+        times ([type], optional): values for the time-points along tau. Defaults to None.
+        ch_names ([type], optional): textual names for the channels. Defaults to None.
+        fs ([type], optional): sampling rate for the data along tau (used to make times if not given). Defaults to None.
+    """    
     import matplotlib.pyplot as plt
     if times is None:
         times = np.arange(Cxy.shape[-2])
@@ -370,6 +379,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     # Cxx
     plt.subplot(311);
     plt.imshow(Cxx, origin='lower', extent=[0, Cxx.shape[0], 0, Cxx.shape[1]])
+    plt.colorbar()
     # TODO []: use the ch_names to add lables to the  axes
     plt.title('Cxx')
 
@@ -401,6 +411,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
     plt.subplot(313)
     plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
+    plt.colorbar()
     plt.title('Cyy')
 
 def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
