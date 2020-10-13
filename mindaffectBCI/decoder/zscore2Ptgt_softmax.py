@@ -1,14 +1,16 @@
 import numpy as np
 #@function
-def zscore2Ptgt_softmax(f, softmaxscale=2, validTgt=None, marginalizemodels=True):
+def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodels:bool=True):
     '''
     convert normalized output scores into target probabilities
-    Inputs:
-     f - (nM,nTrl,nDecis,nY)  normalized accumulated scores]
-     softmaxscale - float, slope to scale from scores to probabilities
-     validtgtTrl = (nTrl,nY):bool which targets are valid in which trials 
-    Outputs:
-     Ptgt - (nTrl,nY) - target probability for each trial
+
+    Args:
+     f (nM,nTrl,nDecis,nY):  normalized accumulated scores]
+     softmaxscale (float): slope to scale from scores to probabilities
+     validtgtTrl (bool nTrl,nY): which targets are valid in which trials 
+
+    Returns:
+     Ptgt (nTrl,nY): target probability for each trial
     '''
 
     # fix the nuisance parameters to get per-output per trial score
@@ -91,15 +93,17 @@ def softmax_nout_corr(n):
 def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
-    Inputs:
-     f - (nTrl,nDecis,nY) normalized accumulated scores]
-     validTgt = (nTrl,nY) [nY x #Trl]:bool which targets are valid in which trials
-     scales = set of possible soft-max scales to try
-     MINP - float, minimium P-value.  We clip the true-target p-val to this level as a way
+
+    Args:
+     f (nTrl,nDecis,nY): normalized accumulated scores]
+     validTgt(bool nTrl,nY): which targets are valid in which trials
+     scales (list:int): set of possible soft-max scales to try
+     MINP (float): minimium P-value.  We clip the true-target p-val to this level as a way
             of forcing the fit to concentrate on getting the p-val right when high, rather than
             over penalizing when it's wrong
-    Outputs:
-     softmaxscale - float, slope for softmax to return calibrated probabilities
+
+    Returns:
+     softmaxscale (float): slope for softmax to return calibrated probabilities
     '''
     if validTgt is None: # get which outputs are used in which trials..
         validTgt = np.any(f != 0, 1) # (nTrl,nY)
