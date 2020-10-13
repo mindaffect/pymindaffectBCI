@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mindaffectBCI package" href="mindaffectBCI.html" />
+    <link rel="prev" title="MindAffect BCI: 1st Run Tutorial" href="first_run.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mindaffectBCI</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html">mindaffectBCI package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>mindaffectBCI</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="mindaffectbci">
+<h1>mindaffectBCI<a class="headerlink" href="#mindaffectbci" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mindaffectBCI.html">mindaffectBCI package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.decoder.html">mindaffectBCI.decoder package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="mindaffectBCI.decoder.offline.html">mindaffectBCI.decoder.offline package</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#submodules">Submodules</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_brainsonfire">mindaffectBCI.decoder.offline.load_brainsonfire module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_brainstream">mindaffectBCI.decoder.offline.load_brainstream module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_cocktail">mindaffectBCI.decoder.offline.load_cocktail module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mTRF_audio">mindaffectBCI.decoder.offline.load_mTRF_audio module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mark_EMG">mindaffectBCI.decoder.offline.load_mark_EMG module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mindaffectBCI">mindaffectBCI.decoder.offline.load_mindaffectBCI module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_ninapro_db2">mindaffectBCI.decoder.offline.load_ninapro_db2 module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_openBMI">mindaffectBCI.decoder.offline.load_openBMI module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_p300_prn">mindaffectBCI.decoder.offline.load_p300_prn module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_twofinger">mindaffectBCI.decoder.offline.load_twofinger module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.read_buffer_offline">mindaffectBCI.decoder.offline.read_buffer_offline module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.read_mindaffectBCI">mindaffectBCI.decoder.offline.read_mindaffectBCI module</a></li>
+<li class="toctree-l6"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.FileProxyHub">mindaffectBCI.decoder.FileProxyHub module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.UtopiaDataInterface">mindaffectBCI.decoder.UtopiaDataInterface module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.analyse_datasets">mindaffectBCI.decoder.analyse_datasets module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.ccaViewer">mindaffectBCI.decoder.ccaViewer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-dataset-debugging-module">mindaffectBCI.decoder.dataset debugging module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.datasets">mindaffectBCI.decoder.datasets module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-dec-test-module">mindaffectBCI.decoder.dec_test module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decoder">mindaffectBCI.decoder.decoder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decodingCurveSupervised">mindaffectBCI.decoder.decodingCurveSupervised module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decodingSupervised">mindaffectBCI.decoder.decodingSupervised module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.devent2stimsequence">mindaffectBCI.decoder.devent2stimsequence module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.erpViewer">mindaffectBCI.decoder.erpViewer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.lower_bound_tracker">mindaffectBCI.decoder.lower_bound_tracker module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.model_fitting">mindaffectBCI.decoder.model_fitting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.multipleCCA">mindaffectBCI.decoder.multipleCCA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.multipleMCCA">mindaffectBCI.decoder.multipleMCCA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.normalizeOutputScores">mindaffectBCI.decoder.normalizeOutputScores module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.normalizeOutputScores_streamed">mindaffectBCI.decoder.normalizeOutputScores_streamed module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-offline-analysis-module">mindaffectBCI.decoder.offline_analysis module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.preprocess">mindaffectBCI.decoder.preprocess module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.readCapInf">mindaffectBCI.decoder.readCapInf module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.scoreOutput">mindaffectBCI.decoder.scoreOutput module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.scoreStimulus">mindaffectBCI.decoder.scoreStimulus module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.sigViewer">mindaffectBCI.decoder.sigViewer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.startUtopiaHub">mindaffectBCI.decoder.startUtopiaHub module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.stim2event">mindaffectBCI.decoder.stim2event module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.timestamp_check">mindaffectBCI.decoder.timestamp_check module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.trigger_check">mindaffectBCI.decoder.trigger_check module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.updateSummaryStatistics">mindaffectBCI.decoder.updateSummaryStatistics module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.utils">mindaffectBCI.decoder.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.zscore2Ptgt_softmax">mindaffectBCI.decoder.zscore2Ptgt_softmax module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.noisetag">mindaffectBCI.noisetag module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.online_bci">mindaffectBCI.online_bci module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.online_bci_pi">mindaffectBCI.online_bci_pi module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.ssdpDiscover">mindaffectBCI.ssdpDiscover module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.stimseq">mindaffectBCI.stimseq module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopia2output">mindaffectBCI.utopia2output module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopiaController">mindaffectBCI.utopiaController module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopiaclient">mindaffectBCI.utopiaclient module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mindaffectBCI.html" class="btn btn-neutral float-right" title="mindaffectBCI package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="first_run.html" class="btn btn-neutral float-left" title="MindAffect BCI: 1st Run Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
