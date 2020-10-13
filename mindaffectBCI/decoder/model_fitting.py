@@ -134,7 +134,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
-    def cv_fit(self, X, Y, cv=5, fit_params={}, verbose=0, return_estimator=True, calibrate_softmax=True, dedup0=True):
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
         # TODO [] : make more computationally efficient by pre-computing the updateSummaryStatistics etc.
         # TODO [] : conform to sklearn cross_validate signature
@@ -229,17 +229,83 @@ class MultiCCA(BaseSequence2Sequence):
         R = R.astype(X.dtype)
         self.W_ = W #(nM,rank,d)
         self.R_ = R #(nM,rank,e,tau)
+        self.fit_b(X) #(nM,e)
         # store A_ for plotting later
         self.A_ = np.einsum("de,Mkd->Mke",Cxx,W)
-        
+
+
+        return self
+
+    def fit_b(self,X):
+        """fit the bias parameter given the other parameters and a dataset
+
+        Args:
+            X (np.ndarray): the target data
+        """        
         if self.center: # use bias terms to correct for data centering
             muX = np.mean(X.reshape((-1,X.shape[-1])),0)
-            self.b_ = -np.einsum("Mkd,d,Mket->Me",W,muX,R) # (nM,d)
+            self.b_ = -np.einsum("Mkd,d,Mket->Me",self.W_,muX,self.R_) # (nM,e)
             self.b_ = self.b_[0,:] # strip model dim..
         else:
             self.b_ = None
-
         return self
+
+
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, ranks=None):
+        ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
+        if ranks is None or len(ranks)==1 :
+            return super().cv_fit(X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0)
+
+        # fast path for cross validation over rank
+        if cv == True:  cv = 5
+        if isinstance(cv, int):
+            if X.shape[0] > 1:
+                cv = StratifiedKFold(n_splits=min(cv, X.shape[0])).split(np.zeros(X.shape[0]), np.zeros(Y.shape[0]))
+            else: # single trial, train/test on all...
+                cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
+
+        if return_estimator:
+            Fy = np.zeros(Y.shape) if Y.ndim<=3 else np.zeros(Y.shape[:-1]) # (nTrl, nEp, nY)
+        else:
+            Fy = None
+        scores = []
+        if verbose > 0:
+            print("CV:", end='')
+
+        maxrank = max(ranks)
+        self.rank = maxrank
+        scores = [[] for i in range(len(ranks))]
+        for i, (train_idx, valid_idx) in enumerate(cv):
+            if verbose > 0:
+                print(".", end='', flush=True)
+            #print("trn={} val={}".format(train_idx,valid_idx))
+
+            # 1) fit with max-rank            
+            self.fit(X[train_idx, ...], Y[train_idx, ...], **fit_params)
+
+            # 2) Extract the desired rank-sub-models and predict with them
+            W = self.W_ #(nM,rank,d)
+            R = self.R_ #(nM,rank,e,tau)
+            for i,r in enumerate(ranks):
+                self.W_ = W[...,:r,:]
+                self.R_ = R[...,:r,:,:]
+                self.fit_b(X[train_idx,...])
+                # predict, forcing removal of copies of  tgt=0 so can score
+                Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
+                scores[i].append(self.audc_score(Fyi))
+        
+        #3) get the *best* rank
+        scores= np.mean(np.array(scores),axis=-1) # (ranks,folds) -> ranks
+        print("Rank score: " + ", ".join(["{}={:3.2f}".format(r,s) for (r,s) in zip(ranks,scores)]),end='')
+        maxri = np.argmax(scores)
+        self.rank = ranks[maxri]
+        print(" -> best={}".format(self.rank))
+
+        # final retrain with all the data
+        # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
+        res = self.cv_fit(X, Y)
+        return res
+
     
 class FwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using forward linear regression  X = A*Y '''
@@ -535,7 +601,7 @@ def testcase(dataset='toy',loader_args=dict()):
     # cca - cv-fit
     print("CV fitted")
     cca = MultiCCA(tau=tau, rank=1, reg=None, evtlabs=evtlabs)
-    cv_res = cca.cv_fit(X, Y)
+    cv_res = cca.cv_fit(X, Y, ranks=(1,2,3,5))
     Fy = cv_res['estimator']
     (_) = decodingCurveSupervised(Fy,priorsigma=(cca.sigma0_,cca.priorweight))
         
@@ -604,8 +670,7 @@ def testcase(dataset='toy',loader_args=dict()):
     
     plot_erp(factored2full(svc.W_, svc.R_), ch_names=ch_names, evtlabs=evtlabs)
     plt.savefig('W_svc.png')
-
-    
+   
     # hyper-parameter optimization with cross-validation
     from sklearn.model_selection import GridSearchCV
     tuned_parameters={'rank':[1, 2, 3, 5], 'tau':[int(dur*fs) for dur in [.2, .3, .5, .7]], 'evtlabs':[['re', 'fe'], ['re', 'ntre'], ['0','1']]}

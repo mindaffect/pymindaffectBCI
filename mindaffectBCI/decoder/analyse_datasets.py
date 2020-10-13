@@ -14,7 +14,7 @@ import re
 
 
 
-def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, **kwargs):
+def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, **kwargs):
     """ cross-validated training on a single datasets and decoing curve estimation
 
     Args:
@@ -77,7 +77,24 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
     # fit the model
     if cv:
-        res = clsfr.cv_fit(X, Y, cv=cv)
+        if tuned_parameters is not None:
+            # hyper-parameter optimization with cross-validation
+            from sklearn.model_selection import GridSearchCV
+            cv_clsfr = GridSearchCV(clsfr, tuned_parameters)
+            print('HyperParameter search: {}'.format(tuned_parameters))
+            cv_clsfr.fit(X, Y)
+            means = cv_clsfr.cv_results_['mean_test_score']
+            stds = cv_clsfr.cv_results_['std_test_score']
+            for mean, std, params in zip(means, stds, cv_clsfr.cv_results_['params']):
+                print("{:5.3f} (+/-{:5.3f}) for {}".format(mean, std * 2, params))
+
+            clsfr.set_params(**cv_clsfr.best_params_) # Note: **dict -> k,v argument array
+
+        # cross-validated parameter optimization
+        if ranks is not None and isinstance(clsfr,MultiCCA):
+            res = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks)
+        else:
+            res = clsfr.cv_fit(X, Y, cv=cv)
         Fy = res['estimator']
     else:
         print("Warning! overfitting...")
@@ -95,7 +112,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
 
 
-def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loader_args:dict=None, preprocess_args:dict=None, clsfr_args:dict=None):
+def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loader_args:dict=None, preprocess_args:dict=None, clsfr_args:dict=None, tuned_parameters:dict=None, **kwargs):
     """analyse a set of datasets (multiple subject) and generate a summary decoding plot.
 
     Args:
@@ -104,6 +121,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
         dataset_args ([dict], optional): additional arguments for get_dataset. Defaults to None.
         loader_args ([dict], optional): additional arguments for the dataset loader. Defaults to None.
         clsfr_args ([dict], optional): additional aguments for the model_fitter. Defaults to None.
+        tuned_parameters ([dict], optional): sets of hyper-parameters to tune by GridCVSearch
     """    
     if dataset_args is None: dataset_args = dict()
     if loader_args is None: loader_args = dict()
@@ -119,7 +137,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
             X, Y, coords = loader(fi, **loader_args)
             if preprocess_args is not None:
                 X, Y, coords = preprocess(X, Y, coords, **preprocess_args)
-            score, decoding_curve, _, _ = analyse_dataset(X, Y, coords, model, **clsfr_args)
+            score, decoding_curve, _, _ = analyse_dataset(X, Y, coords, model, tuned_parameters=tuned_parameters, **clsfr_args, **kwargs)
             nout.append(Y.shape[-1] if Y.ndim<=3 else Y.shape[-2])
             scores.append(score)
             decoding_curves.append(decoding_curve)
@@ -165,12 +183,14 @@ def flatten_decoding_curves(decoding_curves):
 def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
     fs = coords[1]['fs'] if coords is not None else fs
     if clsfr_args is not None:
-        if 'evtlabs' in clsfr_args and clsfr_args['evtlabs'] is not None:
-            evtlabs = clsfr_args['evtlabs']
         if 'tau_ms' in clsfr_args and clsfr_args['tau_ms'] is not None:
             tau_ms = clsfr_args['tau_ms']
         if 'offset_ms' in clsfr_args and clsfr_args['offset_ms'] is not None:
             offset_ms = clsfr_args['offset_ms']
+        if 'evtlabs' in clsfr_args and clsfr_args['evtlabs'] is not None:
+            evtlabs = clsfr_args['evtlabs']
+        if 'rank' in clsfr_args and clsfr_args['rank'] is not None:
+            rank = clsfr_args['rank']
     if evtlabs is None:
         evtlabs = ('re','fe')
 
@@ -439,27 +459,30 @@ def run_analysis():
 
 
 if __name__=="__main__":
+    from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
+    import glob
+    import os
 
     #debug_test_single_dataset('p300_prn',dataset_args=dict(label='rc_5_flash'),
     #              loader_args=dict(fs_out=32,stopband=((0,1),(12,-1)),subtriallen=None),
     #              model='cca',tau_ms=750,evtlabs=('re','anyre'),rank=3,reg=.02)
 
-    from offline.load_mindaffectBCI  import load_mindaffectBCI
     savefile = None
-    #savefile = '/Users/Developer/Desktop/UtopiaMessages_2007191_1558_brainproducts.log'
-    #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2152_testing_python.txt'
-    #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
-    #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2128_master.txt'
-    #savefile = '/Users/Developer/Desktop/mindaffectBCI_200720_2116_testing_gdx.txt'
-    #savefile = "/Users/Developer/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
+    #savefile = '~/Desktop/UtopiaMessages_2007191_1558_brainproducts.log'
+    #savefile = '~/Desktop/mindaffectBCI_200720_2152_testing_python.txt'
+    #savefile = '~/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
+    #savefile = '~/Desktop/mindaffectBCI_200720_2128_master.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
+    #savefile = "~/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
     if savefile is None:
-        # default to last log file if not given
-        import glob
-        import os
-        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
-        savefile = max(files, key=os.path.getctime)
-    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(0,3),(25,-1)), fs_out=60)
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca')
+        savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
+    
+    # default to last log file if not given
+    files = glob.glob(os.path.expanduser(savefile))
+    savefile = max(files, key=os.path.getctime)
+
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=100)
+    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()
