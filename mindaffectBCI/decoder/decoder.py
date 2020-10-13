@@ -146,7 +146,7 @@ def strip_unused(Y):
 
 
 def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
-                            cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None):
+                            cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None, ranks=(1,2,3,5)):
     ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
     X = None
     Y = None
@@ -172,7 +172,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         # now call the clsfr fit method, on the true-target info
         try:
             print("Training dataset = ({},{})".format(X.shape, Y.shape))
-            cvscores = clsfr.cv_fit(X, Y, cv=cv)
+            cvscores = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks)
             score = np.mean(cvscores['test_score'])
             print("clsfr={} => {}".format(clsfr, score))
         except:
@@ -550,6 +550,7 @@ if  __name__ == "__main__":
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
+        setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
