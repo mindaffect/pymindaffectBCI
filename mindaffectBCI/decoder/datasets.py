@@ -157,7 +157,7 @@ def testdataset(fn, **args):
 
 def mindaffectBCI(exptdir, **args):
     loader = load_mindaffectBCI
-    filenames = glob(os.path.join(exptdir, 'mindaffectBCI*.txt'))
+    filenames = glob(os.path.join(os.path.expanduser(exptdir), 'mindaffectBCI*.txt'))
     return (loader,filenames,exptdir)
 
 def toy():

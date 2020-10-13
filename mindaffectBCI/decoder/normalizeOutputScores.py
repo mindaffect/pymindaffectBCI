@@ -8,26 +8,28 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
                           priorsigma=None):
     '''
     normalize the raw output scores to feed into the Perr computation
-    Inputs:
-      Fy   - (nM,nTr,nEp,nY) [#Y x #Epoch x #Trials x nModels]:float
-      validTgt - (nM,nTr,nY) [ #Y x #Trials x nModels ]:bool indication of which outputs are used in each trial
-      badFyThresh - threshold for detction of bad Fy entry, in std-dev
-      centFy   - bool, do we center Fy before computing  *important*  (true)
-      nEpochCorrection - int, number of epochs to use a base for correction of number epochs in the sum.
+
+    Args:
+      Fy (nM,nTr,nEp,nY): float
+      validTgt (nM,nTr,nY): bool indication of which outputs are used in each trial
+      badFyThresh: threshold for detction of bad Fy entry, in std-dev
+      centFy (bool): do we center Fy before computing  *important*  (true)
+      nEpochCorrection (int): number of epochs to use a base for correction of number epochs in the sum.
                basically, nEpoch < nEpochCorrection have highly increased Perr, so unlikely to be selected
-      minDecisLen - int, number of epochs to use as base for distribution of time-based decision points.
+      minDecisLen (int): int, number of epochs to use as base for distribution of time-based decision points.
                          i.e. decisions at, [1,2,4,...2^n]*exptDistDecis
                     OR: minDecisLen<0 => decision point every abs(minDeicsLen) epochs
-      maxDecisLen   - maximum number of epochs for a decision
-      bwdAccumulate - [bool], accumulate data backwards from last epoch gathered
-      prior_sigma (float,float) - prior estimate of the variance and it's equivalent samples weight (sigma,N)
-    Outputs:
-      ssFy - (nM,nTr,nDecis,nY) [#Y x #decisPts x #Trials x #Models] scaled summed scores
-      sFy_scale - (nM,nTr,nDecis,1) [1 x #decisPts x #Trails x #Models] the normalization scaling factor
-      Nep - (nDecis) [ #decisPts x 1 ] number of epochs included in each score
-      nEp,nY - (nTrl) [ 1 x #Trials ] the detected number epoch/output for each trial
-    Copyright (c) MindAffect B.V. 2018
-    
+      maxDecisLen(int): maximum number of epochs for a decision
+      bwdAccumulate (bool): accumulate data backwards from last epoch gathered
+      prior_sigma (float,float): prior estimate of the variance and it's equivalent samples weight (sigma,N)
+
+    Returns:
+      ssFy (nM,nTr,nDecis,nY): scaled summed scores
+      sFy_scale (nM,nTr,nDecis,1): the normalization scaling factor
+      Nep (nDecis,): number of epochs included in each score
+      nEp,nY (nTrl): the detected number epoch/output for each trial
+
+    Copyright (c) MindAffect B.V. 2018    
     '''
     normSum = True
     if Fy is None or Fy.size == 0:

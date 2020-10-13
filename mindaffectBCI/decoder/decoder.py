@@ -192,10 +192,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
             #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model(fs=ui.fs)
-                plt.suptitle('Factored Model')
-                plt.figure(2)
+                clsfr.plot_model(fs=ui.fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
+                plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
+                plt.suptitle("Model + Decoding Performance")
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
                 plt.figure(3) # plot the CCA info
