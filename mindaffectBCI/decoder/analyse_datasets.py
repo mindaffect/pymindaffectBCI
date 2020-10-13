@@ -272,6 +272,7 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plot_decoding_curve(*res)
 
     print("Plot Model")
+    plt.figure(15)
     if hasattr(clsfr,'A_'):
         plot_erp(factored2full(clsfr.A_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
         plt.suptitle("fwd-model")
@@ -482,7 +483,8 @@ if __name__=="__main__":
     savefile = max(files, key=os.path.getctime)
 
     X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=100)
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
+    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
+    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', ranks=(1,2,3,5))
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()
