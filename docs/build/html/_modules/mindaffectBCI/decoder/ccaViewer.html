@@ -1,0 +1,458 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.ccaViewer &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.ccaViewer</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.ccaViewer</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.UtopiaDataInterface</span> <span class="kn">import</span> <span class="n">UtopiaDataInterface</span><span class="p">,</span> <span class="n">stim2eventfilt</span><span class="p">,</span> <span class="n">butterfilt_and_downsample</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.updateSummaryStatistics</span> <span class="kn">import</span> <span class="n">updateSummaryStatistics</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.multipleCCA</span> <span class="kn">import</span> <span class="n">multipleCCA</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.stim2event</span> <span class="kn">import</span> <span class="n">stim2event</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.devent2stimsequence</span> <span class="kn">import</span> <span class="n">upsample_stimseq</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.gridspec</span> <span class="k">as</span> <span class="nn">gridspec</span>
+
+<div class="viewcode-block" id="ccaViewer"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.ccaViewer.ccaViewer">[docs]</a><span class="k">def</span> <span class="nf">ccaViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">:</span> <span class="n">UtopiaDataInterface</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">tau_ms</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>
+              <span class="n">offset_ms</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">15</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ch_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">nstimulus_events</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">reg</span><span class="o">=.</span><span class="mi">02</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; simple sig-viewer using the ring-buffer for testing &#39;&#39;&#39;</span>
+
+
+    <span class="k">if</span> <span class="n">evtlabs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">evtlabs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="s1">&#39;fe&#39;</span><span class="p">)</span>
+
+    <span class="n">ui</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c1"># compute the size of the erp slice</span>
+    <span class="n">irf_range_ms</span> <span class="o">=</span> <span class="p">(</span><span class="n">offset_ms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tau_ms</span><span class="o">+</span><span class="n">offset_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">irflen_ms</span> <span class="o">=</span> <span class="n">irf_range_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">irf_range_ms</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">irflen_samp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">irflen_ms</span> <span class="o">*</span> <span class="n">ui</span><span class="o">.</span><span class="n">fs</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">))</span>
+    <span class="n">irf_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">irf_range_ms</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">irf_range_ms</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">irflen_samp</span><span class="p">)</span>
+
+    <span class="c1"># initialize the arrays to hold the stimulus responses, and their label info, and a current cursor</span>
+    <span class="n">irf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nstimulus_events</span><span class="p">,</span> <span class="n">irflen_samp</span><span class="p">,</span> <span class="n">ui</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="c1"># (nERP,irflen,d)</span>
+    <span class="n">irf_lab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nstimulus_events</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># (nErp,nstim)</span>
+    <span class="n">nY</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># store for the summary statistics</span>
+    <span class="n">Cxx</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">Cxy</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">Cyy</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="c1"># initialize the plot window</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+    <span class="c1"># main spec, inc titles</span>
+    <span class="n">outer_grid</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_gridspec</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">6</span><span class="p">])</span>
+
+    <span class="c1"># right-sub-spec for the ERPs</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="o">.</span><span class="mi">25</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span><span class="s1">&#39;ERPs&#39;</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="c1"># get grid-spec to layout the plots, 1 for spatial, 1 for temporal</span>
+    <span class="n">gs</span> <span class="o">=</span> <span class="n">outer_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">subgridspec</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">),</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">erp_ax</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">))]</span>
+    <span class="n">erp_lines</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">))]</span>
+    <span class="n">erp_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">ei</span><span class="p">,</span><span class="n">lab</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">ei</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">erp_ax</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (ms)&quot;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Space&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="n">ei</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="n">erp_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharey</span><span class="o">=</span><span class="n">erp_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">erp_lines</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">irf</span><span class="p">[</span><span class="n">ei</span><span class="p">,:,:]</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">,</span><span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span><span class="n">extent</span><span class="o">=</span><span class="p">(</span><span class="n">irf_times</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">irf_times</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="mi">0</span><span class="p">,</span><span class="n">irf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">lab</span><span class="p">)</span>
+        <span class="n">erp_ax</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span>
+
+    <span class="c1"># left-sub-spec for the decomposition</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figtext</span><span class="p">(</span><span class="o">.</span><span class="mi">75</span><span class="p">,</span><span class="o">.</span><span class="mi">9</span><span class="p">,</span><span class="s1">&#39;CCA Decomposition&#39;</span><span class="p">,</span><span class="n">ha</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">)</span>
+    <span class="c1"># get grid-spec to layout the plots, 1 for spatial, 1 for temporal</span>
+    <span class="n">gs</span> <span class="o">=</span> <span class="n">outer_grid</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">subgridspec</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">width_ratios</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">spatial_ax</span> <span class="o">=</span> <span class="p">[</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">)]</span>
+    <span class="n">spatial_lines</span> <span class="o">=</span> <span class="p">[</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">)]</span> 
+    <span class="n">temporal_ax</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">)]</span>
+    <span class="n">temporal_lines</span> <span class="o">=</span> <span class="p">[[</span><span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">))]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">)]</span>
+
+    <span class="c1"># make the bottom 2 axs already so can share their limits.</span>
+    <span class="n">temporal_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">spatial_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">ri</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">):</span>
+        <span class="c1"># single temporal plot for all ranks</span>
+        <span class="k">if</span> <span class="n">ri</span><span class="o">==</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># tick-plot</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">temporal_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="n">temporal_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharey</span><span class="o">=</span><span class="n">temporal_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># setup the lines</span>
+        <span class="k">for</span> <span class="n">ei</span><span class="p">,</span> <span class="n">lab</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">):</span>
+            <span class="c1"># component range</span>
+            <span class="n">temporal_lines</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="n">ei</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">irf_times</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">irf_times</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="n">lab</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># len(evtlabs))))</span>
+            <span class="c1">#temporal_lines[ri][ei].set_label(evtlabs[ei])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Comp #</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ri</span><span class="p">))</span>    
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1">#ax.autoscale(axis=&#39;y&#39;)</span>
+        <span class="k">if</span> <span class="n">ri</span><span class="o">==</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (ms)&quot;</span><span class="p">)</span> 
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">temporal_ax</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span>
+
+        <span class="c1"># spatial-plot</span>
+        <span class="k">if</span> <span class="n">ri</span><span class="o">==</span><span class="n">rank</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="c1"># tick-plot</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">spatial_ax</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Space&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="n">spatial_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharey</span><span class="o">=</span><span class="n">spatial_ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">spatial_ax</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span>
+        <span class="n">spatial_lines</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">irf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+
+    <span class="c1"># add a reset ERP button</span>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;reset called&#39;</span><span class="p">)</span>
+        <span class="k">nonlocal</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span>
+        <span class="n">Cxx</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">Cxy</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">Cyy</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">nY</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">matplotlib.widgets</span> <span class="kn">import</span> <span class="n">Button</span>
+    <span class="n">butax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_axes</span><span class="p">([</span><span class="o">.</span><span class="mi">05</span><span class="p">,</span><span class="o">.</span><span class="mi">85</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">,</span><span class="o">.</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">breset</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span><span class="n">butax</span><span class="p">,</span><span class="s1">&#39;Reset&#39;</span><span class="p">)</span>
+    <span class="n">breset</span><span class="o">.</span><span class="n">on_clicked</span><span class="p">(</span><span class="n">reset</span><span class="p">)</span>
+
+    <span class="c1"># tidy up the axes locations</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    <span class="c1"># start the render loop</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+    <span class="n">block_start_ts</span> <span class="o">=</span> <span class="n">t0</span>
+    <span class="n">oM</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># last few stimulus states, for correct transformation of later events</span>
+    <span class="k">while</span> <span class="n">ui</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">t0</span><span class="o">+</span><span class="n">timeout_ms</span><span class="p">:</span>
+
+        <span class="c1"># exit if figure is closed..</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">plt</span><span class="o">.</span><span class="n">fignum_exists</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">quit</span><span class="p">()</span>
+
+        <span class="c1"># re-draw the display</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">flush_events</span><span class="p">()</span>
+        <span class="c1">#plt.pause(.001)</span>
+
+        <span class="c1"># Update the records</span>
+        <span class="n">nmsgs</span><span class="p">,</span> <span class="n">ndata</span><span class="p">,</span> <span class="n">nstim</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">timeout_ms</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nstim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        
+        <span class="c1"># last time for which we have full response for a stimulus</span>
+        <span class="n">valid_end_ts</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">ui</span><span class="o">.</span><span class="n">stimulus_timestamp</span> <span class="o">+</span> <span class="n">irflen_ms</span><span class="p">,</span> <span class="n">ui</span><span class="o">.</span><span class="n">data_timestamp</span><span class="p">)</span>
+
+        <span class="c1"># skip if no new data to process</span>
+        <span class="k">if</span> <span class="n">block_start_ts</span> <span class="o">+</span> <span class="n">irflen_ms</span> <span class="o">&gt;</span> <span class="n">valid_end_ts</span><span class="p">:</span>
+            <span class="k">continue</span> 
+
+        <span class="n">block_end_ts</span> <span class="o">=</span> <span class="n">valid_end_ts</span>
+
+        <span class="c1"># extract and apply to this block</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extract block: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="s2"> = </span><span class="si">{}</span><span class="s2">ms&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">block_start_ts</span><span class="p">,</span> <span class="n">block_end_ts</span><span class="p">,</span> <span class="n">block_end_ts</span><span class="o">-</span><span class="n">block_start_ts</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">extract_data_segment</span><span class="p">(</span><span class="n">block_start_ts</span><span class="p">,</span> <span class="n">block_end_ts</span><span class="p">)</span>
+        <span class="n">stimulus</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">extract_stimulus_segment</span><span class="p">(</span><span class="n">block_start_ts</span><span class="p">,</span> <span class="n">block_end_ts</span><span class="p">)</span>
+        <span class="n">block_start_ts</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="n">irflen_samp</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="c1"># block_end_ts - irflen_ms</span>
+
+        <span class="c1"># skip if no data/stimulus to process</span>
+        <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">stimulus</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># upsample stimulus to sample rate</span>
+        <span class="n">X_ts</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">M_ts</span> <span class="o">=</span> <span class="n">stimulus</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">stimulus</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">M</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">upsample_stimseq</span><span class="p">(</span><span class="n">X_ts</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">M_ts</span><span class="p">)</span>
+
+        <span class="c1"># TODO[]: limit to active outputs</span>
+
+        <span class="c1"># and transform to irf trigger events</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">evtypes</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">oM</span><span class="o">=</span><span class="n">oM</span><span class="p">)</span>  <span class="c1"># (nsamp,nstim,e)</span>
+        <span class="c1"># record the last bit before the processed M for next time, i.e. </span>
+        <span class="n">oM</span> <span class="o">=</span> <span class="n">M</span><span class="p">[:</span><span class="o">-</span><span class="n">irflen_samp</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="c1"># strip to only the objID==0 output</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># (nsamp,1,nE)</span>
+        <span class="c1"># count the numbers each type of event</span>
+        <span class="n">nY</span> <span class="o">=</span> <span class="n">nY</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="c1"># incrementally update the summary statistics</span>
+        <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span> <span class="o">=</span> <span class="n">updateSummaryStatistics</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">tau</span><span class="o">=</span><span class="n">irflen_samp</span><span class="p">)</span>
+
+        <span class="c1"># debug plot summary statistics.</span>
+        <span class="n">erp_lim</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">Cxy</span><span class="o">.</span><span class="n">ravel</span><span class="p">()),</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Cxy</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">ei</span><span class="p">,</span><span class="n">lab</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">):</span>
+            <span class="n">erp_lines</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">Cxy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">ei</span><span class="p">,:,:]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+            <span class="n">erp_lines</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span><span class="o">.</span><span class="n">set_clim</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">erp_lim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">vmax</span><span class="o">=</span><span class="n">erp_lim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1">#erp_ax[ei].imshow(Cxy[0,ei,:,:].T/nY[ei],aspect=&#39;auto&#39;,extent=(irf_times[0],irf_times[-1],0,Cxy.shape[-1]))</span>
+            <span class="n">erp_ax</span><span class="p">[</span><span class="n">ei</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> (n=</span><span class="si">{}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lab</span><span class="p">,</span><span class="n">nY</span><span class="p">[</span><span class="n">ei</span><span class="p">]))</span>
+
+        <span class="c1"># update the cca decomposition</span>
+        <span class="n">J</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">R</span> <span class="o">=</span> <span class="n">multipleCCA</span><span class="p">(</span><span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">reg</span><span class="o">=</span><span class="n">reg</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">)</span>
+        <span class="c1"># strip the model dimension</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="n">J</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">]</span>
+
+        <span class="n">R_lim</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">R</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">R_lim</span> <span class="o">=</span> <span class="p">[</span> <span class="n">d</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">R_lim</span> <span class="p">]</span> <span class="c1"># guard</span>
+
+        <span class="n">W_lim</span> <span class="o">=</span> <span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">*</span><span class="mi">2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">W</span><span class="o">.</span><span class="n">ravel</span><span class="p">()))</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">W_lim</span> <span class="o">=</span> <span class="p">[</span> <span class="n">d</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">W_lim</span> <span class="p">]</span> <span class="c1"># guard</span>
+
+        <span class="c1"># Update the plots for each event type</span>
+        <span class="k">for</span> <span class="n">ri</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rank</span><span class="p">):</span>
+            <span class="n">sign</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">ri</span><span class="p">,:]))])</span> <span class="c1"># normalize directions</span>
+
+            <span class="c1"># plot the temporal responses</span>
+            <span class="k">for</span> <span class="n">ei</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">)):</span>
+                <span class="n">temporal_lines</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="n">ei</span><span class="p">]</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">R</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span><span class="n">ei</span><span class="p">,:]</span><span class="o">*</span><span class="n">sign</span><span class="p">)</span>
+            <span class="n">temporal_ax</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span> <span class="n">R_lim</span> <span class="p">)</span>
+
+            <span class="c1"># plot the spatial patterns</span>
+            <span class="c1"># TODO[]: as a topographic plot</span>
+            <span class="n">spatial_lines</span><span class="p">[</span><span class="n">ri</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">ri</span><span class="p">,:]</span><span class="o">*</span><span class="n">sign</span><span class="p">)</span>
+            <span class="n">spatial_ax</span><span class="p">[</span><span class="n">ri</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">W_lim</span><span class="p">)</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">argparse</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--host&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;address (IP) of the utopia-hub&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--evtlabs&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;comma separated list of stimulus even types to use&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;re,fe&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--rank&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;rank of decomposition to use&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--ch_names&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;list of channel names, or capfile&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">hostname</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">host</span>
+    <span class="n">evtlabs</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">evtlabs</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">rank</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">rank</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;evtlabs=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">evtlabs</span><span class="p">))</span>
+    <span class="n">ch_names</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">ch_names</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">ch_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">data_preprocessor</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">data_preprocessor</span> <span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">45</span><span class="p">,</span><span class="mi">65</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">fs_out</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">ui</span><span class="o">=</span><span class="n">UtopiaDataInterface</span><span class="p">(</span><span class="n">data_preprocessor</span><span class="o">=</span><span class="n">data_preprocessor</span><span class="p">,</span> <span class="n">send_signalquality</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">hostname</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;Qt4Cairo&#39;</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="n">ccaViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">ch_names</span><span class="o">=</span><span class="n">ch_names</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

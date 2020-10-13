@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.zscore2Ptgt_softmax &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.zscore2Ptgt_softmax</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.zscore2Ptgt_softmax</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="c1">#@function</span>
+<div class="viewcode-block" id="zscore2Ptgt_softmax"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.zscore2Ptgt_softmax.zscore2Ptgt_softmax">[docs]</a><span class="k">def</span> <span class="nf">zscore2Ptgt_softmax</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">softmaxscale</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">validTgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marginalizemodels</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    convert normalized output scores into target probabilities</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">     f - (nM,nTrl,nDecis,nY)  normalized accumulated scores]</span>
+<span class="sd">     softmaxscale - float, slope to scale from scores to probabilities</span>
+<span class="sd">     validtgtTrl = (nTrl,nY):bool which targets are valid in which trials </span>
+<span class="sd">    Outputs:</span>
+<span class="sd">     Ptgt - (nTrl,nY) - target probability for each trial</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="c1"># fix the nuisance parameters to get per-output per trial score</span>
+    <span class="c1"># pick the model</span>
+
+    <span class="c1"># make 4d-&gt;3d for simplicity</span>
+    <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">origf</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># WARNING: assume that have unique model for each output..</span>
+            <span class="c1"># WARNING: f must have same mean and scale for this to be valid!!</span>
+            <span class="n">f</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="k">for</span> <span class="n">mi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">origf</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">f</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">mi</span><span class="p">]</span><span class="o">=</span><span class="n">origf</span><span class="p">[</span><span class="n">mi</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="n">mi</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">f</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">elif</span> <span class="n">f</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="c1"># Now : f= (nTrl,nDecis,nY)</span>
+
+    <span class="k">if</span> <span class="n">validTgt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># get which outputs are used in which trials..</span>
+        <span class="n">validTgt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">f</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># (nTrl,nY)</span>
+    <span class="k">elif</span> <span class="n">validTgt</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">validTgt</span> <span class="o">=</span> <span class="n">validTgt</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+
+    <span class="n">noutcorr</span> <span class="o">=</span> <span class="n">softmax_nout_corr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">validTgt</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># (nTrl,)</span>
+    <span class="n">softmaxscale</span> <span class="o">=</span> <span class="n">softmaxscale</span> <span class="o">*</span> <span class="n">noutcorr</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="c1">#(nTrl,1,1)</span>
+
+    <span class="c1"># get the prob each output conditioned on the model</span>
+    <span class="n">Ptgteptimdl</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">softmaxscale</span><span class="p">,</span><span class="n">validTgt</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">marginalizemodels</span> <span class="ow">and</span>
+        <span class="p">(</span><span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="c1"># mulitple decis points </span>
+        <span class="p">(</span><span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">))):</span> <span class="c1"># multiple models</span>
+        <span class="c1"># need to remove the nusiance parameters to get per-trial Y-prob</span>
+        <span class="n">ftgt</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span> <span class="c1"># (nTrl,nY) [ nY x nTrl]</span>
+        <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Ptgteptimdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span> <span class="c1"># loop over trials</span>
+            <span class="n">Ptgtepmdl</span> <span class="o">=</span> <span class="n">Ptgteptimdl</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="c1"># (nDecis,nY) [ nY x nDecis ]</span>
+            <span class="c1"># compute entropy over outputs for each decision point</span>
+            <span class="n">ent</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ptgtepmdl</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">Ptgtepmdl</span><span class="p">,</span> <span class="mf">1e-08</span><span class="p">)),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">Ptgtepmdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># (nDecis)</span>
+            <span class="c1"># find when hit max-ent decison</span>
+            <span class="n">epidx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ent</span><span class="p">)</span>
+            <span class="n">wght</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">Ptgtepmdl</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="c1"># [ nDecis ]</span>
+            <span class="n">wght</span><span class="p">[:</span><span class="n">epidx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># BODGE 1: just do weighted sum over decis points with more data than max-ent point</span>
+            <span class="n">ftgt</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">wght</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">wght</span><span class="p">)</span>
+
+        <span class="n">Ptgt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">softmaxscale</span><span class="o">*</span><span class="p">(</span><span class="n">ftgt</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ftgt</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span> <span class="c1"># (nTrl,nY) [ nY x nTrl ]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">validTgt</span><span class="p">):</span>
+            <span class="n">Ptgt</span> <span class="o">=</span> <span class="n">Ptgt</span><span class="o">*</span><span class="n">validTgt</span>
+        <span class="n">Ptgt</span> <span class="o">=</span> <span class="n">Ptgt</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># [nY x nTrl ]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">Ptgt</span> <span class="o">=</span> <span class="n">Ptgteptimdl</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Ptgt</span><span class="o">.</span><span class="n">ravel</span><span class="p">())):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">Ptgt</span><span class="o">.</span><span class="n">ravel</span><span class="p">())):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error NaNs in target probabilities&#39;</span><span class="p">)</span>
+        <span class="n">Ptgt</span><span class="p">[:]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">Ptgt</span></div>
+
+
+<div class="viewcode-block" id="softmax"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.zscore2Ptgt_softmax.softmax">[docs]</a><span class="k">def</span> <span class="nf">softmax</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">validTgt</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; simple softmax over final dim of input array, with compensation for missing inputs with validTgt mask. &#39;&#39;&#39;</span>
+    <span class="n">Ptgteptimdl</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">f</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="c1"># (nTrl,nDecis,nY) [ nY x nDecis x nTrl ]</span>
+    <span class="c1"># cancel out the missing outputs</span>
+    <span class="k">if</span> <span class="n">validTgt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">validTgt</span><span class="o">.</span><span class="n">ravel</span><span class="p">()):</span>
+        <span class="n">Ptgteptimdl</span> <span class="o">=</span> <span class="n">Ptgteptimdl</span> <span class="o">*</span> <span class="n">validTgt</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="c1"># convert to softmax, with guard for div by zero</span>
+    <span class="n">Ptgteptimdl</span> <span class="o">=</span> <span class="n">Ptgteptimdl</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">Ptgteptimdl</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span><span class="mf">1e-6</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Ptgteptimdl</span></div>
+
+<div class="viewcode-block" id="softmax_nout_corr"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.zscore2Ptgt_softmax.softmax_nout_corr">[docs]</a><span class="k">def</span> <span class="nf">softmax_nout_corr</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; approximate correction factor for probabilities out of soft-max to correct for number of outputs&#39;&#39;&#39;</span>
+    <span class="c1">#return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1">#np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45</span></div>
+
+
+<div class="viewcode-block" id="calibrate_softmaxscale"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.zscore2Ptgt_softmax.calibrate_softmaxscale">[docs]</a><span class="k">def</span> <span class="nf">calibrate_softmaxscale</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">validTgt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scales</span><span class="o">=</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mf">2.5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mf">3.5</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">),</span> <span class="n">MINP</span><span class="o">=.</span><span class="mi">01</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    attempt to calibrate the scale for a softmax decoder to return calibrated probabilities</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">     f - (nTrl,nDecis,nY) normalized accumulated scores]</span>
+<span class="sd">     validTgt = (nTrl,nY) [nY x #Trl]:bool which targets are valid in which trials</span>
+<span class="sd">     scales = set of possible soft-max scales to try</span>
+<span class="sd">     MINP - float, minimium P-value.  We clip the true-target p-val to this level as a way</span>
+<span class="sd">            of forcing the fit to concentrate on getting the p-val right when high, rather than</span>
+<span class="sd">            over penalizing when it&#39;s wrong</span>
+<span class="sd">    Outputs:</span>
+<span class="sd">     softmaxscale - float, slope for softmax to return calibrated probabilities</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">validTgt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># get which outputs are used in which trials..</span>
+        <span class="n">validTgt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">f</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># (nTrl,nY)</span>
+    <span class="k">elif</span> <span class="n">validTgt</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">validTgt</span> <span class="o">=</span> <span class="n">validTgt</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="c1"># include the nout correction on a per-trial basis</span>
+    <span class="n">noutcorr</span> <span class="o">=</span> <span class="n">softmax_nout_corr</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">validTgt</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span> <span class="c1"># (nTrl,)</span>
+
+    <span class="c1"># simply try a load of scales - as input are normalized shouldn&#39;t need more than this</span>
+    <span class="n">Ed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">scales</span><span class="p">),)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">scales</span><span class="p">):</span>
+        <span class="n">softmaxscale</span> <span class="o">=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">noutcorr</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="c1">#(nTrl,1,1)</span>
+
+        <span class="c1"># apply the soft-max with this scaling</span>
+        <span class="n">Ptgt</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">f</span><span class="o">*</span><span class="n">softmaxscale</span><span class="p">,</span><span class="n">validTgt</span><span class="p">)</span>
+        <span class="c1"># Compute the loss = cross-entropy.  </span>
+        <span class="c1"># As Y==0 is *always* the true-class, this becomes simply sum log this class </span>
+        <span class="n">Ed</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">MINP</span><span class="p">)))</span>
+        <span class="c1">#print(&quot;{}) scale={} Ed={}&quot;.format(i,s,Ed[i]))</span>
+    <span class="c1"># use the max-entropy scale</span>
+    <span class="n">mini</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">Ed</span><span class="p">)</span>
+    <span class="n">softmaxscale</span> <span class="o">=</span> <span class="n">scales</span><span class="p">[</span><span class="n">mini</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;softmaxscale=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">softmaxscale</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">softmaxscale</span></div>
+
+<span class="c1">#@function</span>
+<div class="viewcode-block" id="testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.zscore2Ptgt_softmax.testcase">[docs]</a><span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="n">nY</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">nM</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">nEp</span> <span class="o">=</span> <span class="mi">340</span>
+    <span class="n">nTrl</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">nM</span><span class="p">,</span><span class="n">nTrl</span><span class="p">,</span><span class="n">nEp</span><span class="p">,</span><span class="n">nY</span><span class="p">))</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">noise</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+
+    <span class="n">sigamp</span><span class="o">=</span><span class="mf">0.25</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">noise</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="c1"># [ nEp ]</span>
+    <span class="c1"># no signal ast the start of the trial</span>
+  <span class="c1">#startupNoise_samp=nEp*.5;</span>
+  <span class="c1">#sigamp((1:size(sigamp,2))&lt;startupNoise_samp)=0;</span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">noise</span><span class="p">)</span>
+    <span class="c1"># add the signal</span>
+    <span class="n">Fy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">Fy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">sigamp</span>
+    <span class="c1">#print(&quot;Fy={}&quot;.format(Fy))</span>
+    
+    <span class="n">sFy</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">normalizeOutputScores</span> <span class="kn">import</span> <span class="n">normalizeOutputScores</span>
+    <span class="n">ssFy</span><span class="p">,</span><span class="n">scale_sFy</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="o">=</span><span class="n">normalizeOutputScores</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="n">minDecisLen</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">filtLen</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1">#print(&#39;ssFy={}&#39;.format(ssFy.shape))</span>
+    <span class="kn">from</span> <span class="nn">zscore2Ptgt_softmax</span> <span class="kn">import</span> <span class="n">zscore2Ptgt_softmax</span><span class="p">,</span> <span class="n">softmax</span>
+    <span class="n">smax</span> <span class="o">=</span> <span class="n">softmax</span><span class="p">(</span><span class="n">ssFy</span><span class="p">)</span>
+    <span class="c1">#print(&quot;{}&quot;.format(smax.shape))</span>
+    <span class="n">Ptgt</span><span class="o">=</span><span class="n">zscore2Ptgt_softmax</span><span class="p">(</span><span class="n">ssFy</span><span class="p">,</span><span class="n">marginalizemodels</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># (nTrl,nEp,nY)</span>
+    <span class="c1">#print(&quot;Ptgt={}&quot;.format(Ptgt.shape))</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">tri</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">411</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sFy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">tri</span><span class="p">,:,:])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">scale_sFy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">tri</span><span class="p">,:],</span><span class="s1">&#39;k&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ssFy&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">412</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ssFy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">tri</span><span class="p">,:,:])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;ssFy&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">413</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">smax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="n">tri</span><span class="p">,:,:])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;softmax&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">414</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">[</span><span class="n">tri</span><span class="p">,:,:])</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Ptgt&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    
+    <span class="n">maxP</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># (nTrl,nEp) [ nEp x nTrl ]</span>
+    <span class="n">estopi</span><span class="o">=</span><span class="p">[</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">maxP</span><span class="p">[</span><span class="n">tri</span><span class="p">,:]</span><span class="o">&gt;.</span><span class="mi">9</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">tri</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Ptgt</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">testcase</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
