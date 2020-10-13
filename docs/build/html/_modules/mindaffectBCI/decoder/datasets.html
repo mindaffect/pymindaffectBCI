@@ -1,0 +1,420 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.datasets &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.datasets</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.datasets</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_mark_EMG</span> <span class="kn">import</span> <span class="n">load_mark_EMG</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_brainstream</span> <span class="kn">import</span> <span class="n">load_brainstream</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_p300_prn</span> <span class="kn">import</span> <span class="n">load_p300_prn</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_openBMI</span> <span class="kn">import</span> <span class="n">load_openBMI</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_cocktail</span> <span class="kn">import</span> <span class="n">load_cocktail</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_mTRF_audio</span> <span class="kn">import</span> <span class="n">load_mTRF_audio</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_twofinger</span> <span class="kn">import</span> <span class="n">load_twofinger</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_brainsonfire</span> <span class="kn">import</span> <span class="n">load_brainsonfire</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_ninapro_db2</span> <span class="kn">import</span> <span class="n">load_ninapro_db2</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.offline.load_mindaffectBCI</span> <span class="kn">import</span> <span class="n">load_mindaffectBCI</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">testSignal</span>
+
+<div class="viewcode-block" id="plos_one"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.plos_one">[docs]</a><span class="k">def</span> <span class="nf">plos_one</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;generate the directory+filename info for the plos_one noisetagging dataset&#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_brainstream</span> <span class="c1"># function to call to load the dataset</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/own_experiments/noisetagging_v3&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s1">&#39;D:/own_experiments/noisetagging_v3/&#39;</span>
+    <span class="n">sessdir</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="s1">&#39;s[0-9]*&#39;</span><span class="p">))</span>
+    <span class="c1">#sessdir = [&#39;s{:d}&#39;.format(i) for i in range(1, 12)]</span>
+    <span class="n">sessfn</span> <span class="o">=</span> <span class="s1">&#39;traindata.mat&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">sessfn</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">sessdir</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="lowlands"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.lowlands">[docs]</a><span class="k">def</span> <span class="nf">lowlands</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;generate the directory+filename info for the lowlands noisetagging dataset&#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_brainstream</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+    	<span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/own_experiments/lowlands&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s1">&#39;D:/own_experiments/lowlands/&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="s1">&#39;*_tr_train_1.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="p300_prn"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.p300_prn">[docs]</a><span class="k">def</span> <span class="nf">p300_prn</span><span class="p">(</span><span class="n">label</span><span class="p">:</span><span class="nb">str</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;generate dataset+filename for p300-prn2&#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_p300_prn</span> <span class="c1"># function to call to load the dataset</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s1">&#39;D:/&#39;</span>
+    <span class="n">expt</span> <span class="o">=</span> <span class="s1">&#39;own_experiments/visual/p300_prn_2&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">expt</span><span class="p">,</span> <span class="s1">&#39;*/*/jf_prep/*flash.mat&#39;</span><span class="p">))</span> <span class="o">+</span> \
+                <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">expt</span><span class="p">,</span> <span class="s1">&#39;*/*/jf_prep/*flip.mat&#39;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filenames</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="n">f</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tactileP3"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.tactileP3">[docs]</a><span class="k">def</span> <span class="nf">tactileP3</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;generate dataset+filename for tactile P3&#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_p300_prn</span> <span class="c1"># function to call to load the dataset</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s1">&#39;D:/&#39;</span>
+    <span class="n">expt</span> <span class="o">=</span> <span class="s1">&#39;own_experiments/tactile/P3speller&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">expt</span><span class="p">,</span> <span class="s1">&#39;*/*/jf_prep/*offline.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tactile_PatientStudy"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.tactile_PatientStudy">[docs]</a><span class="k">def</span> <span class="nf">tactile_PatientStudy</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;generate dataset+filename for p300-prn2&#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_p300_prn</span> <span class="c1"># function to call to load the dataset</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s1">&#39;D:/&#39;</span>
+    <span class="n">expt</span> <span class="o">=</span> <span class="s1">&#39;own_experiments/tactile/PatientStudy&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">expt</span><span class="p">,</span> <span class="s1">&#39;*/*/jf_prep/*offline.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="openBMI"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.openBMI">[docs]</a><span class="k">def</span> <span class="nf">openBMI</span><span class="p">(</span><span class="n">dstype</span><span class="o">=</span><span class="s2">&quot;SSVEP&quot;</span><span class="p">):</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_openBMI</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/external_data/gigadb/openBMI&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/external_data/gigadb/openBMI&#39;</span><span class="p">)</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="s1">&#39;sess*/s*/sml_*&#39;</span><span class="o">+</span> <span class="n">dstype</span> <span class="o">+</span> <span class="s1">&#39;.mat&#39;</span><span class="p">))</span> <span class="o">+</span> \
+                <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="s1">&#39;sml_*&#39;</span><span class="o">+</span> <span class="n">dstype</span> <span class="o">+</span> <span class="s1">&#39;.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="twofinger"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.twofinger">[docs]</a><span class="k">def</span> <span class="nf">twofinger</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_twofinger</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/&#39;</span><span class="p">)</span>
+    <span class="n">exptdir</span> <span class="o">=</span> <span class="s1">&#39;external_data/twente/twofinger&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span>  <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;S??.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="brains_on_fire_online"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.brains_on_fire_online">[docs]</a><span class="k">def</span> <span class="nf">brains_on_fire_online</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_brainsonfire</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/&#39;</span><span class="p">)</span>
+    <span class="n">exptdir</span> <span class="o">=</span> <span class="s1">&#39;own_experiments/motor_imagery/brainsonfire/brains_on_fire_online&#39;</span>
+    <span class="n">filenames</span> <span class="o">=</span>  <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;subject*/raw_buffer/0001&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mTRF_audio"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.mTRF_audio">[docs]</a><span class="k">def</span> <span class="nf">mTRF_audio</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_mTRF_audio</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/external_data/mTRF&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/external_data/mTRF&#39;</span><span class="p">)</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="s1">&#39;speech_data.mat&#39;</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ninapro_db2"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.ninapro_db2">[docs]</a><span class="k">def</span> <span class="nf">ninapro_db2</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_ninapro_db2</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">&quot;~/data&quot;</span><span class="p">)):</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span> <span class="o">=</span> <span class="s2">&quot;D:/&quot;</span>
+    <span class="n">exptdir</span><span class="o">=</span><span class="s2">&quot;external_data/ninapro&quot;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;s*&#39;</span><span class="p">,</span> <span class="s1">&#39;*E1*.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="cocktail"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.cocktail">[docs]</a><span class="k">def</span> <span class="nf">cocktail</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_cocktail</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/&#39;</span><span class="p">)</span>
+    <span class="n">exptdir</span><span class="o">=</span><span class="s2">&quot;external_data/dryad/Cocktail Party&quot;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;EEG&#39;</span><span class="p">,</span> <span class="s1">&#39;Subject*&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span><span class="n">filenames</span><span class="p">,</span><span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mark_EMG"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.mark_EMG">[docs]</a><span class="k">def</span> <span class="nf">mark_EMG</span><span class="p">():</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_mark_EMG</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci&#39;</span><span class="p">)):</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~/data/bci/&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dataroot</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;D:/&#39;</span><span class="p">)</span>
+    <span class="n">exptdir</span><span class="o">=</span><span class="s2">&quot;own_experiments/emg/facial&quot;</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataroot</span><span class="p">,</span> <span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;training_data_SV_*.mat&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span><span class="n">filenames</span><span class="p">,</span><span class="n">dataroot</span><span class="p">)</span>    </div>
+
+<div class="viewcode-block" id="testdataset"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.testdataset">[docs]</a><span class="k">def</span> <span class="nf">testdataset</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;  a conforming toy dataset loader&#39;&#39;&#39;</span>
+    <span class="n">fs</span><span class="o">=</span><span class="mi">10</span>
+    <span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">st</span><span class="p">,</span><span class="n">A</span><span class="p">,</span><span class="n">B</span><span class="o">=</span><span class="n">testSignal</span><span class="p">(</span><span class="o">**</span><span class="n">args</span><span class="p">)</span>
+    <span class="c1"># make coords array for the meta-info about the dimensions of X</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;trial&#39;</span><span class="p">}</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;time&#39;</span><span class="p">,</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span><span class="s1">&#39;ms&#39;</span><span class="p">,</span> \
+                 <span class="s1">&#39;coords&#39;</span><span class="p">:[</span><span class="n">i</span><span class="o">*</span><span class="mi">1000</span><span class="o">/</span><span class="n">fs</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])],</span> \
+                 <span class="s1">&#39;fs&#39;</span><span class="p">:</span><span class="n">fs</span><span class="p">}</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span><span class="s1">&#39;coords&#39;</span><span class="p">:</span><span class="kc">None</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="mindaffectBCI"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.mindaffectBCI">[docs]</a><span class="k">def</span> <span class="nf">mindaffectBCI</span><span class="p">(</span><span class="n">exptdir</span><span class="p">,</span> <span class="o">**</span><span class="n">args</span><span class="p">):</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">load_mindaffectBCI</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exptdir</span><span class="p">,</span> <span class="s1">&#39;mindaffectBCI*.txt&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span><span class="n">filenames</span><span class="p">,</span><span class="n">exptdir</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="toy"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.toy">[docs]</a><span class="k">def</span> <span class="nf">toy</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39; make a toy dataset for testing &#39;&#39;&#39;</span>
+    <span class="n">loader</span> <span class="o">=</span> <span class="n">testdataset</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+    <span class="n">dataroot</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loader</span><span class="p">,</span><span class="n">filenames</span><span class="p">,</span><span class="n">dataroot</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="dataset_generator"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.dataset_generator">[docs]</a><span class="k">def</span> <span class="nf">dataset_generator</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; generator for individual datasets from the given set of datasets &#39;&#39;&#39;</span>
+    <span class="n">loadfn</span><span class="p">,</span>  <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span> <span class="o">=</span> <span class="n">get_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span> <span class="o">=</span> <span class="n">loadfn</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">fn</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="test_loader"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.test_loader">[docs]</a><span class="k">def</span> <span class="nf">test_loader</span><span class="p">(</span><span class="n">loadfn</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span> <span class="n">loadfn</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ds=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">X(</span><span class="si">{}</span><span class="s2">)=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">Y=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">],</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ds=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">FAILED</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">ex</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="get_dataset"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.get_dataset">[docs]</a><span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span><span class="n">dsname</span><span class="p">,</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">dsname</span> <span class="o">==</span> <span class="s1">&#39;openBMI_SSVEP&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">openBMI</span><span class="p">(</span><span class="s2">&quot;SSVEP&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dsname</span> <span class="o">==</span> <span class="s1">&#39;openBMI_ERP&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">openBMI</span><span class="p">(</span><span class="s2">&quot;ERP&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">dsname</span> <span class="o">==</span> <span class="s1">&#39;openBMI_MI&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">openBMI</span><span class="p">(</span><span class="s2">&quot;MI&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">dsname</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;don&#39;t know dataset </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dsname</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.datasets.testcase">[docs]</a><span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+    <span class="n">datasets</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;openBMI_MI&quot;</span><span class="p">,</span><span class="s2">&quot;tactileP3&quot;</span><span class="p">,</span><span class="s2">&quot;toy&quot;</span><span class="p">,</span><span class="s2">&quot;mark_EMG&quot;</span><span class="p">,</span><span class="s2">&quot;brainsonfire&quot;</span><span class="p">,</span><span class="s2">&quot;twofinger&quot;</span><span class="p">,</span><span class="s2">&quot;ninapro_db2&quot;</span><span class="p">,</span><span class="s2">&quot;openBMI_MI&quot;</span><span class="p">,</span><span class="s2">&quot;openBMI_ERP&quot;</span><span class="p">,</span><span class="s2">&quot;openBMI_SSVEP&quot;</span><span class="p">,</span><span class="s2">&quot;cocktail&quot;</span><span class="p">,</span><span class="s2">&quot;lowlands&quot;</span><span class="p">,</span><span class="s2">&quot;plos_one&quot;</span><span class="p">,</span><span class="s1">&#39;p300_prn&#39;</span><span class="p">,</span><span class="s2">&quot;mTRF_audio&quot;</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">datasets</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="c1">#try:</span>
+        <span class="n">loadfn</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span>  <span class="n">dataroot</span> <span class="o">=</span> <span class="n">get_dataset</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">test_loader</span><span class="p">(</span><span class="n">loadfn</span><span class="p">,</span> <span class="n">filenames</span><span class="p">,</span> <span class="n">dataroot</span><span class="p">)</span></div>
+        <span class="c1">#except:</span>
+        <span class="c1">#    print(&quot;Error with dataset {}&quot;.format(d))</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">testcase</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

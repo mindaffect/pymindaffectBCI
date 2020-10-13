@@ -1,0 +1,386 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.offline.load_brainsonfire &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/jquery.js"></script>
+        <script src="../../../../_static/underscore.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.offline.load_brainsonfire</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.offline.load_brainsonfire</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">.read_buffer_offline</span> <span class="kn">import</span> <span class="n">read_buffer_offline_data</span><span class="p">,</span> <span class="n">read_buffer_offline_events</span><span class="p">,</span> <span class="n">read_buffer_offline_header</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">block_randomize</span><span class="p">,</span> <span class="n">butter_sosfilt</span><span class="p">,</span> <span class="n">upsample_codebook</span><span class="p">,</span> <span class="n">lab2ind</span><span class="p">,</span> <span class="n">window_axis</span>
+
+<span class="n">trigger_event</span><span class="o">=</span><span class="s1">&#39;stimulus.note.play&#39;</span> <span class="c1"># the actual times the user hit the button</span>
+
+<div class="viewcode-block" id="load_brainsonfire"><a class="viewcode-back" href="../../../../mindaffectBCI.decoder.offline.html#mindaffectBCI.decoder.offline.load_brainsonfire.load_brainsonfire">[docs]</a><span class="k">def</span> <span class="nf">load_brainsonfire</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span> <span class="n">sessdir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sessfn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ofs</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">45</span><span class="p">,</span><span class="mi">65</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">25</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">subtriallen</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">nvirt</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">chIdx</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">verb</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+    
+    <span class="c1"># load the data file</span>
+    <span class="n">Xfn</span> <span class="o">=</span> <span class="n">datadir</span>
+    <span class="k">if</span> <span class="n">sessdir</span><span class="p">:</span>
+        <span class="n">Xfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Xfn</span><span class="p">,</span> <span class="n">sessdir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sessfn</span><span class="p">:</span>
+        <span class="n">Xfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Xfn</span><span class="p">,</span> <span class="n">sessfn</span><span class="p">)</span>
+    <span class="n">sessdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">Xfn</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading header&quot;</span><span class="p">)</span>
+    <span class="n">hdr</span><span class="o">=</span><span class="n">read_buffer_offline_header</span><span class="p">(</span><span class="n">Xfn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading data&quot;</span><span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">read_buffer_offline_data</span><span class="p">(</span><span class="n">Xfn</span><span class="p">,</span><span class="n">hdr</span><span class="p">)</span> <span class="c1"># (nsamp,nch)</span>
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading events&quot;</span><span class="p">)</span>
+    <span class="n">evts</span><span class="o">=</span><span class="n">read_buffer_offline_events</span><span class="p">(</span><span class="n">Xfn</span><span class="p">)</span>
+
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">fs</span>
+    <span class="n">ch_names</span> <span class="o">=</span> <span class="n">hdr</span><span class="o">.</span><span class="n">labels</span>
+
+    <span class="k">if</span> <span class="n">chIdx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span> <span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">chIdx</span><span class="p">]</span>
+        <span class="n">ch_names</span> <span class="o">=</span> <span class="n">ch_names</span><span class="p">[</span><span class="n">chIdx</span><span class="p">]</span> <span class="k">if</span> <span class="n">ch_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># pre-resample to save memory</span>
+    <span class="n">rsrate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs</span><span class="o">//</span><span class="mi">120</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">rsrate</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pre-re-sample by </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="s2">Hz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rsrate</span><span class="p">,</span><span class="n">fs</span><span class="p">,</span><span class="n">fs</span><span class="o">/</span><span class="n">rsrate</span><span class="p">))</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span> <span class="p">[::</span><span class="n">rsrate</span><span class="p">,:]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">evts</span><span class="p">:</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">sample</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">sample</span><span class="o">/</span><span class="n">rsrate</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span><span class="o">/</span><span class="n">rsrate</span>
+
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;X=</span><span class="si">{}</span><span class="s2"> @</span><span class="si">{}</span><span class="s2">Hz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">fs</span><span class="p">),</span><span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># extract the trigger info</span>
+    <span class="n">trigevts</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">evts</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">trigger_event</span><span class="p">]</span>
+    <span class="n">trig_samp</span><span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e</span><span class="o">.</span><span class="n">sample</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">trigevts</span><span class="p">],</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">trig_val</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">trigevts</span><span class="p">]</span>
+    <span class="n">trig_ind</span><span class="p">,</span> <span class="n">lab2class</span> <span class="o">=</span> <span class="n">lab2ind</span><span class="p">(</span><span class="n">trig_val</span><span class="p">)</span> <span class="c1"># convert to indicator (ntrig,ncls)</span>
+    <span class="c1"># up-sample to stim rate</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">trig_ind</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">Y</span><span class="p">[</span><span class="n">trig_samp</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">trig_ind</span>
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Y=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    
+    <span class="c1"># BODGE: trim to useful data range</span>
+    <span class="k">if</span> <span class="o">.</span><span class="mi">1</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">trig_samp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">fs</span><span class="p">)</span><span class="o">/</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span><span class="n">trig_samp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">fs</span><span class="p">)</span><span class="o">/</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">.</span><span class="mi">9</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verb</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Trimming range: </span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1">s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trig_samp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">fs</span><span class="p">,</span><span class="n">trig_samp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">fs</span><span class="p">))</span>
+        <span class="c1"># limit to the useful data range</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">trig_samp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">fs</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">trig_samp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">fs</span><span class="p">))</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">rng</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="n">rng</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;X=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Y=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="c1"># preprocess -&gt; spectral filter, in continuous time!</span>
+    <span class="k">if</span> <span class="n">stopband</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;preFilter: </span><span class="si">{}</span><span class="s2">Hz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">stopband</span><span class="p">))</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">butter_sosfilt</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">stopband</span><span class="p">,</span><span class="n">fs</span><span class="p">)</span>
+    
+    <span class="c1"># preprocess -&gt; downsample</span>
+    <span class="n">resamprate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fs</span><span class="o">/</span><span class="n">ofs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">resamprate</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;resample by </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="s2">Hz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">resamprate</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">fs</span><span class="o">/</span><span class="n">resamprate</span><span class="p">))</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">::</span><span class="n">resamprate</span><span class="p">,</span> <span class="p">:]</span> <span class="c1"># decimate X (trl, samp, d)</span>
+        <span class="c1"># re-sample Y, being sure to keep any events in the re-sample window</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">window_axis</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">winsz</span><span class="o">=</span><span class="n">resamprate</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="n">resamprate</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># (trl, samp, win, e)</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># (trl,samp,e)  N.B. use max so don&#39;t loose single sample events</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span><span class="o">/</span><span class="n">resamprate</span>
+
+    <span class="c1"># make virtual targets</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span> <span class="c1"># (nsamp,1,e)</span>
+    <span class="n">Y_virt</span> <span class="o">=</span> <span class="n">block_randomize</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">nvirt</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span> <span class="c1"># (nsamp,nvirt,e)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">Y</span><span class="p">,</span> <span class="n">Y_virt</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="c1"># (nsamp,1+nvirt,e)</span>
+    <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Y=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="c1"># cut into sub-trials</span>
+    <span class="n">nsubtrials</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">fs</span><span class="o">/</span><span class="n">subtriallen</span>
+    <span class="k">if</span> <span class="n">nsubtrials</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">winsz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">//</span><span class="n">nsubtrials</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;subtrial winsz=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">winsz</span><span class="p">))</span>
+        <span class="c1"># slice into sub-trials</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">window_axis</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">winsz</span><span class="o">=</span><span class="n">winsz</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="n">winsz</span><span class="p">)</span> <span class="c1"># (trl,win,d)</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">window_axis</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">winsz</span><span class="o">=</span><span class="n">winsz</span><span class="p">,</span><span class="n">step</span><span class="o">=</span><span class="n">winsz</span><span class="p">)</span> <span class="c1"># (trl,win,nY)</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;X=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">verb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Y=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    
+    <span class="c1"># make coords array for the meta-info about the dimensions of X</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;trial&#39;</span><span class="p">}</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;time&#39;</span><span class="p">,</span><span class="s1">&#39;unit&#39;</span><span class="p">:</span><span class="s1">&#39;ms&#39;</span><span class="p">,</span> \
+                 <span class="s1">&#39;coords&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">fs</span><span class="p">,</span> \
+                 <span class="s1">&#39;fs&#39;</span><span class="p">:</span><span class="n">fs</span><span class="p">}</span>
+    <span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="s1">&#39;channel&#39;</span><span class="p">,</span><span class="s1">&#39;coords&#39;</span><span class="p">:</span><span class="n">ch_names</span><span class="p">}</span>
+    <span class="c1"># return data + metadata</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="testcase"><a class="viewcode-back" href="../../../../mindaffectBCI.decoder.offline.html#mindaffectBCI.decoder.offline.load_brainsonfire.testcase">[docs]</a><span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+    <span class="kn">import</span> <span class="nn">sys</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="s1">&#39;D:\external_data&#39;</span><span class="p">):</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="s1">&#39;D:/own_experiments/&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">datadir</span> <span class="o">=</span> <span class="s1">&#39;/home/jadref/data/bci/own_experiments&#39;</span>
+    <span class="n">sessfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">datadir</span><span class="p">,</span><span class="s1">&#39;motor_imagery/brainsonfire/brains_on_fire_online/subject01/raw_buffer/0001&#39;</span><span class="p">)</span>
+    <span class="c1"># command-line, for testing</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">sessfn</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+ 
+    <span class="kn">from</span> <span class="nn">load_brainsonfire</span> <span class="kn">import</span> <span class="n">load_brainsonfire</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sessfn</span><span class="p">))</span>
+    <span class="n">oX</span><span class="p">,</span> <span class="n">oY</span><span class="p">,</span> <span class="n">coords</span> <span class="o">=</span> <span class="n">load_brainsonfire</span><span class="p">(</span><span class="n">sessfn</span><span class="p">,</span> <span class="n">ofs</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">]</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;fs&#39;</span><span class="p">]</span>
+    <span class="n">ch_names</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;coords&#39;</span><span class="p">]</span>
+    <span class="n">X</span><span class="o">=</span><span class="n">oX</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">Y</span><span class="o">=</span><span class="n">oY</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;X(</span><span class="si">{}</span><span class="s2">)</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">],</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Y=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fs=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fs</span><span class="p">))</span>
+
+    <span class="n">tau</span><span class="o">=</span><span class="n">fs</span><span class="o">*.</span><span class="mi">3</span>
+    <span class="n">evtlabs</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">times</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">tau</span><span class="p">))</span><span class="o">/</span><span class="n">fs</span>
+    <span class="n">rank</span><span class="o">=</span><span class="mi">10</span>
+
+    <span class="c1"># visualize the dataset</span>
+    <span class="kn">from</span> <span class="nn">stim2event</span> <span class="kn">import</span> <span class="n">stim2event</span>
+    <span class="kn">from</span> <span class="nn">updateSummaryStatistics</span> <span class="kn">import</span> <span class="n">updateSummaryStatistics</span><span class="p">,</span> <span class="n">plot_erp</span><span class="p">,</span> <span class="n">plot_summary_statistics</span><span class="p">,</span> <span class="n">idOutliers</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    
+    <span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span> <span class="o">=</span> <span class="n">updateSummaryStatistics</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;summary stats&quot;</span><span class="p">)</span>
+    <span class="n">plot_summary_statistics</span><span class="p">(</span><span class="n">Cxx</span><span class="p">,</span> <span class="n">Cxy</span><span class="p">,</span> <span class="n">Cyy</span><span class="p">,</span> <span class="n">evtlabs</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">ch_names</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ERP&quot;</span><span class="p">)</span>
+    <span class="n">plot_erp</span><span class="p">(</span><span class="n">Cxy</span><span class="p">,</span> <span class="n">ch_names</span><span class="o">=</span><span class="n">ch_names</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="n">times</span><span class="p">,</span> <span class="n">plottype</span><span class="o">=</span><span class="s1">&#39;plot&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">model_fitting</span> <span class="kn">import</span> <span class="n">MultiCCA</span>
+    <span class="kn">from</span> <span class="nn">decodingCurveSupervised</span> <span class="kn">import</span> <span class="n">decodingCurveSupervised</span>
+    <span class="n">cca</span> <span class="o">=</span> <span class="n">MultiCCA</span><span class="p">(</span><span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">)</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">cca</span><span class="o">.</span><span class="n">cv_fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="s1">&#39;estimator&#39;</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fy=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="p">(</span><span class="n">_</span><span class="p">)</span><span class="o">=</span><span class="n">decodingCurveSupervised</span><span class="p">(</span><span class="n">Fy</span><span class="p">)</span>
+
+    <span class="c1"># plot the solution</span>
+    <span class="kn">from</span> <span class="nn">scoreStimulus</span> <span class="kn">import</span> <span class="n">factored2full</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Plot Model&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">plot_erp</span><span class="p">(</span><span class="n">factored2full</span><span class="p">(</span><span class="n">cca</span><span class="o">.</span><span class="n">W_</span><span class="p">,</span> <span class="n">cca</span><span class="o">.</span><span class="n">R_</span><span class="p">),</span> <span class="n">ch_names</span><span class="o">=</span><span class="n">ch_names</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">times</span><span class="o">=</span><span class="n">times</span><span class="p">)</span>
+    <span class="c1">#   plot Fy</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">25</span><span class="p">)):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="n">ti</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">),</span><span class="n">aspect</span><span class="o">=</span><span class="s1">&#39;auto&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+    
+    
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">testcase</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

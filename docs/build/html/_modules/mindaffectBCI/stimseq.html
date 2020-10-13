@@ -1,0 +1,443 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.stimseq &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.stimseq</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.stimseq</h1><div class="highlight"><pre>
+<span></span><span class="c1">#  Copyright (c) 2019 MindAffect B.V. </span>
+<span class="c1">#  Author: Jason Farquhar &lt;jason@mindaffect.nl&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1"># </span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+
+
+
+<div class="viewcode-block" id="StimSeq"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq">[docs]</a><span class="k">class</span> <span class="nc">StimSeq</span> <span class="p">:</span>
+    <span class="n">stimSeq</span>     <span class="o">=</span> <span class="kc">None</span> <span class="c1"># [ nEvent x nSymb ] stimulus code for each time point for each stimulus</span>
+    <span class="n">stimTime_ms</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># time stim i ends, i.e. stimulus i is on screen from stimTime_ms[i-1]-stimTime_ms[i]</span>
+    <span class="n">eventSeq</span>    <span class="o">=</span> <span class="kc">None</span> <span class="c1"># events to send at each stimulus point</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">st</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">ss</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">es</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span>     <span class="o">=</span> <span class="n">ss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span> <span class="o">=</span> <span class="n">st</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eventSeq</span>    <span class="o">=</span> <span class="n">es</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="s2">&quot;#stimTimes: &quot;</span><span class="p">;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="s2">&quot;(1,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">res</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>
+            <span class="n">res</span><span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">+=</span> <span class="s2">&quot;&lt;null&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">res</span><span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="n">res</span> <span class="o">+=</span> <span class="s2">&quot;#stimSeq : &quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">+=</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;)</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                    <span class="n">res</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span>                
+                <span class="n">res</span><span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">j</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">res</span><span class="o">+=</span> <span class="s2">&quot;&lt;null&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">res</span><span class="o">+=</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">res</span>
+
+<div class="viewcode-block" id="StimSeq.convertstimSeq2int"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.convertstimSeq2int">[docs]</a>    <span class="k">def</span> <span class="nf">convertstimSeq2int</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">float2int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StimSeq.float2int"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.float2int">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">float2int</span><span class="p">(</span><span class="n">stimSeq</span><span class="p">,</span><span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">minval</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">maxval</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;convert float list of lists to integer&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">stimSeq</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">float</span> <span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stimSeq</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stimSeq</span><span class="p">[</span><span class="n">i</span><span class="p">])):</span>
+                    <span class="n">v</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">stimSeq</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">minval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">v</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">minval</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">maxval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="n">v</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">minval</span><span class="p">,</span><span class="n">v</span><span class="p">)</span>
+                    <span class="n">stimSeq</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">return</span> <span class="n">stimSeq</span></div>
+
+<div class="viewcode-block" id="StimSeq.setStimRate"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.setStimRate">[docs]</a>    <span class="k">def</span> <span class="nf">setStimRate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rate</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;rewrite the stimtimes to equal given rate in hz&#39;&#39;&#39;</span>
+        <span class="n">setStimRate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span><span class="p">,</span><span class="n">rate</span><span class="p">)</span></div>
+        
+<div class="viewcode-block" id="StimSeq.readArray"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.readArray">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">readArray</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="n">width</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">array</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">nEmpty</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">();</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span> <span class="p">:</span>
+                <span class="n">nEmpty</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">nEmpty</span><span class="o">&gt;</span><span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">array</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">:</span> <span class="k">break</span> <span class="c1"># double empty means end-of-array</span>
+                <span class="k">else</span><span class="p">:</span> <span class="k">continue</span> 
+            <span class="k">elif</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;#&quot;</span> <span class="p">:</span> <span class="k">continue</span> <span class="c1"># comment line</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">();</span>
+            <span class="k">if</span> <span class="n">width</span><span class="o">&lt;</span><span class="mi">0</span> <span class="p">:</span> <span class="n">width</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">width</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span> <span class="o">==</span> <span class="n">width</span> <span class="p">:</span> 
+                <span class="k">raise</span> <span class="ne">Exception</span>
+            <span class="n">cols</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cols</span> <span class="p">]</span> <span class="c1"># convert string to numeric</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cols</span><span class="p">)</span> <span class="c1"># add to the stimSeq</span>
+        <span class="k">return</span> <span class="n">array</span></div>
+
+<div class="viewcode-block" id="StimSeq.fromString"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.fromString">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fromString</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;read a stimulus-sequence definition from a string&quot;&quot;&quot;</span>
+        <span class="n">st</span><span class="o">=</span><span class="n">StimSeq</span><span class="o">.</span><span class="n">readArray</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="c1"># read the stim times</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">st</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># un-nest</span>
+        <span class="n">ss</span> <span class="o">=</span> <span class="n">StimSeq</span><span class="o">.</span><span class="n">readArray</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">st</span><span class="p">))</span>  <span class="c1"># read stim-seq - check same length</span>
+        <span class="c1"># transpose ss to have time in the major dimension</span>
+        <span class="n">ss</span> <span class="o">=</span> <span class="n">transpose</span><span class="p">(</span><span class="n">ss</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">StimSeq</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">ss</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StimSeq.fromFile"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.fromFile">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">fromFile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;read a stimulus-sequence from a file on disk&quot;&quot;&quot;</span>
+        <span class="kn">import</span> <span class="nn">os.path</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fname</span><span class="p">):</span>
+            <span class="n">pydir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;pydir=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pydir</span><span class="p">))</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pydir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pydir</span><span class="p">,</span> <span class="n">fname</span><span class="p">))</span> <span class="k">else</span> <span class="n">fname</span>
+        <span class="k">if</span> <span class="s1">&#39;.png&#39;</span> <span class="ow">in</span> <span class="n">fname</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># try to load from the png</span>
+                <span class="kn">from</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">import</span> <span class="n">imread</span>
+                <span class="n">array</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">ss</span> <span class="o">=</span> <span class="n">StimSeq</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">ss</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">ss</span> <span class="o">=</span> <span class="n">StimSeq</span><span class="o">.</span><span class="n">fromString</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ss</span></div>
+
+<div class="viewcode-block" id="StimSeq.toFile"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.StimSeq.toFile">[docs]</a>    <span class="k">def</span> <span class="nf">toFile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;.png&#39;</span> <span class="ow">in</span> <span class="n">fname</span><span class="p">:</span>
+            <span class="c1"># write out as a .png file</span>
+            <span class="c1"># convert to byte with range 0-255</span>
+            <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+            <span class="kn">import</span> <span class="nn">matplotlib</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">)</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">array</span> <span class="o">*</span> <span class="mi">255</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">array</span><span class="p">[:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span> <span class="c1"># convert to rgb</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">matplotlib</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="n">array</span><span class="p">,</span><span class="n">dpi</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="c1"># ensure has stimTimes</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stimTime_ms</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimSeq</span><span class="p">)))</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="transpose"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.transpose">[docs]</a><span class="k">def</span> <span class="nf">transpose</span><span class="p">(</span><span class="n">M</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[[</span><span class="n">row</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">M</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="mi">0</span><span class="p">]))]</span></div>
+
+<div class="viewcode-block" id="setStimRate"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.setStimRate">[docs]</a><span class="k">def</span> <span class="nf">setStimRate</span><span class="p">(</span><span class="n">stimTime_ms</span><span class="p">,</span><span class="n">framerate</span><span class="p">):</span>
+    <span class="c1"># rewrite the stim-times to a new frequency</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stimTime_ms</span><span class="p">)):</span>
+        <span class="n">stimTime_ms</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="mi">1000</span><span class="o">/</span><span class="n">framerate</span>
+    <span class="k">return</span> <span class="n">stimTime_ms</span></div>
+
+
+<div class="viewcode-block" id="mkRowCol"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.mkRowCol">[docs]</a><span class="k">def</span> <span class="nf">mkRowCol</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Make a row-column stimulus sequence</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        width (int, optional): width of the matrix. Defaults to 5.</span>
+<span class="sd">        height (int, optional): height of the matrix. Defaults to 5.</span>
+<span class="sd">        repeats (int, optional): number of random row-&gt;col repeats. Defaults to 10.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        [StimSeq]: The generated stimulus sequence</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">repeats</span><span class="p">,</span><span class="n">width</span><span class="o">+</span><span class="n">height</span><span class="p">,</span><span class="n">width</span><span class="p">,</span><span class="n">height</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">ri</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeats</span><span class="p">):</span>
+        <span class="n">ei</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">width</span><span class="p">):</span>
+            <span class="n">array</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span><span class="n">ei</span><span class="p">,:,</span><span class="n">r</span><span class="p">]</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">ei</span><span class="o">=</span><span class="n">ei</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">height</span><span class="p">):</span>
+            <span class="n">array</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span><span class="n">ei</span><span class="p">,</span><span class="n">c</span><span class="p">,:]</span><span class="o">=</span><span class="mi">1</span>
+            <span class="n">ei</span><span class="o">=</span><span class="n">ei</span><span class="o">+</span><span class="mi">1</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">repeats</span><span class="o">*</span><span class="p">(</span><span class="n">width</span><span class="o">+</span><span class="n">height</span><span class="p">),</span><span class="n">width</span><span class="o">*</span><span class="n">height</span><span class="p">))</span> <span class="c1"># (e,(w*h)) = (nEvent,nStim)</span>
+    <span class="k">return</span> <span class="n">StimSeq</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="n">array</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mkFreqTag"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.mkFreqTag">[docs]</a><span class="k">def</span> <span class="nf">mkFreqTag</span><span class="p">(</span><span class="n">period_phase</span><span class="o">=</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">2</span><span class="p">),(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">4</span><span class="p">),(</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">5</span><span class="p">),(</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">)),</span><span class="n">nEvent</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">isbinary</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Generate a frequency tagging stimulus sequence</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        period_phase (list, optional): List of stimulus periods and phase offsets expressed in events. Defaults to all phases from 2-5 long.</span>
+<span class="sd">        nEvent (int, optional): total length of the sequence to generate. (To avoid steps should be LCM of periods) Defaults to 120.</span>
+<span class="sd">        isbinary (bool, optional): flag if we generate a binary sequence or continuous</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nEvent</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">period_phase</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">period_phase</span><span class="p">):</span>
+        <span class="c1"># extract desired length and phase</span>
+        <span class="n">l</span><span class="p">,</span><span class="n">o</span> <span class="o">=</span> <span class="n">e</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="s1">&#39;__iter__&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># generate the sequence</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="n">o</span><span class="o">+</span><span class="mf">1e-6</span><span class="p">)</span><span class="o">/</span><span class="n">l</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">isbinary</span><span class="p">:</span>
+            <span class="n">array</span><span class="p">[</span><span class="n">s</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">array</span><span class="p">[:,</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+    <span class="k">return</span> <span class="n">StimSeq</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="n">array</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span><span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mkCodes"><a class="viewcode-back" href="../../mindaffectBCI.html#mindaffectBCI.stimseq.mkCodes">[docs]</a><span class="k">def</span> <span class="nf">mkCodes</span><span class="p">():</span>
+    <span class="c1"># test generators</span>
+    <span class="n">rc</span><span class="o">=</span><span class="n">mkRowCol</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">repeats</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">rc</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="s1">&#39;rc5x5.png&#39;</span><span class="p">)</span>
+    <span class="n">rc</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="s1">&#39;rc5x5.txt&#39;</span><span class="p">)</span>
+
+    <span class="n">ssvep</span><span class="o">=</span><span class="n">mkFreqTag</span><span class="p">()</span>
+    <span class="n">ssvep</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="s1">&#39;ssvep.png&#39;</span><span class="p">)</span>
+    <span class="n">ssvep</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="s1">&#39;ssvep.txt&#39;</span><span class="p">)</span></div>
+
+<span class="c1"># testcase code</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># loading text version</span>
+    <span class="nb">print</span><span class="p">((</span><span class="s2">&quot;gold(txt): &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">StimSeq</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s2">&quot;mgold_65_6532_psk_60hz.txt&quot;</span><span class="p">))))</span>
+
+    <span class="c1"># loading png version</span>
+    <span class="nb">print</span><span class="p">((</span><span class="s2">&quot;gold(png): &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">StimSeq</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s2">&quot;mgold_61_6521_psk_60hz.png&quot;</span><span class="p">))))</span>
+    
+    <span class="c1"># test writing to file</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">StimSeq</span><span class="o">.</span><span class="n">fromFile</span><span class="p">(</span><span class="s2">&quot;mgold_65_6532_psk_60hz.txt&quot;</span><span class="p">)</span>
+    <span class="n">ss</span><span class="o">.</span><span class="n">toFile</span><span class="p">(</span><span class="s2">&quot;mgold_65_6532_psk_60hz.png&quot;</span><span class="p">)</span>
+
+    <span class="c1"># make codebooks</span>
+    <span class="n">mkCodes</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
