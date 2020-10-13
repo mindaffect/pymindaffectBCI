@@ -2,6 +2,10 @@ mindaffectBCI
 =============
 This repository contains the python SDK code for the Brain Computer Interface (BCI) developed by the company `Mindaffect <https://mindaffect.nl>`_.
 
+Online Documentation and Tuturials
+----------------------------------
+Available at: https://mindaffect-bci.readthedocs.io/
+
 Installation
 ------------
 
