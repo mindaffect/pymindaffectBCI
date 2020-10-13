@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt
 
-def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, passband=None, stopband=((45,65),(0,5),(25,-1)), verb=0, ch_names=None):
+def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, stopband=((45,65),(5,25,'bandpass')), verb=0, ch_names=None):
 
     # load the data file
     Xfn = datadir
@@ -104,7 +104,7 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr
         X = X - X[...,0:1,:]
         if verb > 0:
             print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X, stopband, fs, passband=passband)
+        X, _, _ = butter_sosfilt(X, stopband, fs)
     
     # preprocess -> downsample
     resamprate = round(2*fs/fs_out)/2 # round to nearest .5
