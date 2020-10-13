@@ -5,7 +5,7 @@
 
 MindAffect Open Source BCI.
 ======================================================
-
+This page contains the documentation of the open source Brain Computer Interface (BCI) developed by the company `Mindaffect <https://mindaffect.nl>`_.
 
 .. toctree::
    :maxdepth: 2

@@ -1,0 +1,535 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.scoreOutput &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.scoreOutput</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.scoreOutput</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">window_axis</span>
+<span class="c1">#@function</span>
+<div class="viewcode-block" id="scoreOutput"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.scoreOutput">[docs]</a><span class="k">def</span> <span class="nf">scoreOutput</span><span class="p">(</span><span class="n">Fe</span><span class="p">,</span> <span class="n">Ye</span><span class="p">,</span> <span class="n">dedup0</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">R</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">outputscore</span><span class="o">=</span><span class="s1">&#39;ip&#39;</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    score each output given information on which stim-sequences corrospend to which inputs</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">      Fe  = (nM,nTrl,nSamp,nE) similarity score for each event type for each stimulus</span>
+<span class="sd">      Ye  = (nTrl,nSamp,nY,nE) Indicator for which events occured for which outputs</span>
+<span class="sd">               nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process</span>
+<span class="sd">      R = (nM,nfilt,nE,tau) FWD-model (impulse response) for each of the event types, used to correct the </span>
+<span class="sd">            scores for correlated responses.</span>
+<span class="sd">      dedup0 = bool - remove duplicate copies of output O (used when cross validating calibration data)</span>
+<span class="sd">    Outputs:</span>
+<span class="sd">      Fy  = (nM,nTrl,nEp,nY) similarity score for each input epoch for each output</span>
+<span class="sd">    </span>
+<span class="sd">    Copyright (c) MindAffect B.V. 2018</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">Fe</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">Fy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">Fe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Fe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">Fe</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">Ye</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Fy</span>
+    <span class="k">if</span> <span class="n">Ye</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># ensure 4-d</span>
+        <span class="n">Ye</span> <span class="o">=</span> <span class="n">Ye</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">Ye</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span><span class="o">+</span><span class="n">Ye</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>    
+    <span class="k">if</span> <span class="n">dedup0</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># remove duplicate copies output=0</span>
+        <span class="n">Ye</span> <span class="o">=</span> <span class="n">dedupY0</span><span class="p">(</span><span class="n">Ye</span><span class="p">)</span>
+
+    <span class="c1"># inner-product score    </span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;mTEe,TEYe-&gt;mTEY&quot;</span><span class="p">,</span> <span class="n">Fe</span><span class="p">,</span> <span class="n">Ye</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Fe</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">Fy</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">Fe</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+    <span class="c1"># add correction for other measures</span>
+    <span class="k">if</span> <span class="n">outputscore</span> <span class="o">==</span> <span class="s1">&#39;sse&#39;</span><span class="p">:</span>
+        <span class="n">YR</span> <span class="o">=</span> <span class="n">convYR</span><span class="p">(</span><span class="n">Ye</span><span class="p">,</span><span class="n">R</span><span class="p">,</span><span class="n">offset</span><span class="p">)</span> <span class="c1"># (nM,nTrl,nSamp,nY,nFilt)</span>
+        <span class="c1"># Apply the correction:</span>
+        <span class="c1">#  SSE = (wX-Yr).^2</span>
+        <span class="c1">#      = wX**2 - 2 wXYr + Yr**2</span>
+        <span class="c1">#      = wX**2 = wX**2 - 2 Fe*Y + Yr**2</span>
+        <span class="c1">#      = wX**2 - 2Fy + Yr**2</span>
+        <span class="c1">#  take negative, so big (i.e. 0) is good, and drop constant over Y and divide by 2 -&gt;</span>
+        <span class="c1">#  -SSE = fY  = Fe*Y - .5* Yr**2</span>
+        <span class="n">Fy</span> <span class="o">=</span> <span class="n">Fy</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">YR</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+
+    <span class="k">elif</span> <span class="n">outputscore</span> <span class="o">==</span> <span class="s1">&#39;corr&#39;</span><span class="p">:</span> <span class="c1"># correlation based scoring...</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+    
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">outputscore</span> <span class="o">==</span> <span class="s1">&#39;ip&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;output scoring with </span><span class="si">{}</span><span class="s2"> isn&#39;t supported&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outputscore</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">Fy</span></div>
+
+<div class="viewcode-block" id="dedupY0"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.dedupY0">[docs]</a><span class="k">def</span> <span class="nf">dedupY0</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">zerodup</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">yfeatdim</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; remove outputs which are duplicates of the first (objID==0) output</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">      Y=(tr,ep,Y,e)</span>
+<span class="sd">      zerodup : bool</span>
+<span class="sd">         if True, then if mi is the duplicate, then zero the  duplicate, i.e. of Y[...,mi,:]=0</span>
+<span class="sd">         else, we zero out ojID==0, i.e. Y[...,0,:]=0</span>
+<span class="sd">    Outputs:</span>
+<span class="sd">      Y=(tr,ep,Y,e) version of Y with duplicates of 1st row of Y set to 0&#39;&#39;&#39;</span>
+
+    <span class="c1"># record input shape so can get it back later</span>
+    <span class="n">Yshape</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1">#print(&quot;Y={}&quot;.format(Yshape))</span>
+    
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span> <span class="c1"># copy so can modify, w/o killing orginal</span>
+    <span class="c1"># make the shape we want</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">yfeatdim</span><span class="p">:</span> <span class="c1"># hack in feature dim</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Yshape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">Y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># add trial dim if not there</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:,</span> <span class="p">:]</span>
+        
+    <span class="k">for</span> <span class="n">ti</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="c1"># Note: horrible numpy hacks to make work &amp; only for idx==0</span>
+        <span class="n">sim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">Y</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">:,</span> <span class="p">:]),</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="c1">#print(&quot;sim={}&quot;.format(sim))</span>
+        <span class="n">mi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sim</span><span class="p">[</span><span class="n">mi</span><span class="p">]</span> <span class="o">&gt;</span> <span class="o">.</span><span class="mi">95</span><span class="p">:</span>
+            <span class="c1">#print(&quot;{}) dup {}={}&quot;.format(ti,0,mi+1))</span>
+            <span class="k">if</span> <span class="n">zerodup</span><span class="p">:</span> <span class="c1"># zero out the duplicate of objId=0</span>
+                <span class="n">Y</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="n">mi</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># zero out the objId==0 line</span>
+                <span class="n">Y</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                
+    <span class="c1"># reshape back to input shape</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">Yshape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Y</span></div>
+
+
+<div class="viewcode-block" id="convWX"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.convWX">[docs]</a><span class="k">def</span> <span class="nf">convWX</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">W</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; apply spatial filter W  to X &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">W</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">W</span><span class="o">=</span><span class="n">W</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">-</span><span class="n">W</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span><span class="o">+</span><span class="n">W</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span><span class="o">*</span><span class="p">(</span><span class="mi">3</span><span class="o">-</span><span class="n">X</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span><span class="o">+</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">WX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;TSd,mfd-&gt;mTSf&quot;</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="n">W</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">WX</span> <span class="c1">#(nM,nTrl,nSamp,nfilt)</span></div>
+
+<div class="viewcode-block" id="convYR"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.convYR">[docs]</a><span class="k">def</span> <span class="nf">convYR</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">R</span><span class="p">,</span><span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; compute the convolution of Y with R &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">R</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Y</span>
+    <span class="k">if</span> <span class="n">R</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># ensure 4-d</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">R</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span><span class="o">+</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1"># (nM,nfilt,nE,tau)</span>
+    <span class="k">if</span> <span class="n">Y</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># ensure 4-d</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">1</span><span class="p">,)</span><span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="o">-</span><span class="n">Y</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span><span class="o">+</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="c1"># (nTr,nSamp,nY,nE)</span>
+    <span class="c1">#print(&quot;R={}&quot;.format(R.shape))</span>
+    <span class="c1">#print(&quot;Y={}&quot;.format(Y.shape))</span>
+    
+    <span class="c1"># Compute the &#39;template&#39; response</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">window_axis</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">winsz</span><span class="o">=</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">3</span><span class="p">)</span> <span class="c1"># (nTr,nSamp,tau,nY,nE)</span>
+    <span class="c1">#print(&quot;Yt={} (TStYe)&quot;.format(Yt.shape))</span>
+    <span class="c1">#print(&quot;R={} (mfet)&quot;.format(R[...,::-1].shape))</span>
+    <span class="c1"># TODO []: check treating filters correctly</span>
+    <span class="c1"># TODO []: check if need to time-reverse IRF - A: YES!</span>
+    <span class="n">YtR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;TStYe,mfet-&gt;mTSYf&quot;</span><span class="p">,</span> <span class="n">Yt</span><span class="p">,</span> <span class="n">R</span><span class="p">[</span><span class="o">...</span><span class="p">,::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="c1"># (nM,nTr,nSamp,nY,nE)</span>
+    <span class="c1">#print(&quot;YtR={} (mTSYf)&quot;.format(YtR.shape))</span>
+    <span class="c1"># TODO []: correct edge effect correction, rather than zero-padding....</span>
+    <span class="c1"># zero pad to keep the output size</span>
+    <span class="c1"># TODO[]: pad with the *actual* values...</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">YtR</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="p">(</span><span class="n">Y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">],)</span><span class="o">+</span><span class="n">YtR</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:])</span>
+    <span class="c1">#print(&quot;tmp={}&quot;.format(tmp.shape))</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">offset</span><span class="p">:</span><span class="n">YtR</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">R</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="o">-</span><span class="n">offset</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">YtR</span>
+    <span class="n">YtR</span> <span class="o">=</span> <span class="n">tmp</span>
+    <span class="c1">#print(&quot;YtR={}&quot;.format(YtR.shape))</span>
+    <span class="k">return</span> <span class="n">YtR</span> <span class="c1">#(nM,nTrl,nSamp,nY,nfilt)</span></div>
+
+<div class="viewcode-block" id="convXYR"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.convXYR">[docs]</a><span class="k">def</span> <span class="nf">convXYR</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">,</span><span class="n">offset</span><span class="p">):</span>
+    <span class="n">WX</span><span class="o">=</span><span class="n">convWX</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">W</span><span class="p">)</span> <span class="c1"># (nTr,nSamp,nfilt)</span>
+    <span class="n">YR</span><span class="o">=</span><span class="n">convYR</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="n">R</span><span class="p">,</span><span class="n">offset</span><span class="p">)</span> <span class="c1"># (nTr,nSamp,nY,nfilt)</span>
+    <span class="c1"># Sum out  filt dimesion</span>
+    <span class="n">WXYR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">WX</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span><span class="o">*</span><span class="n">YR</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="c1">#(nTr,nSamp,nY)</span>
+    <span class="k">return</span> <span class="n">WXYR</span><span class="p">,</span><span class="n">WX</span><span class="p">,</span><span class="n">YR</span></div>
+
+<span class="c1">#@function</span>
+<div class="viewcode-block" id="testcases"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.testcases">[docs]</a><span class="k">def</span> <span class="nf">testcases</span><span class="p">():</span>
+    <span class="c1">#   Fe  = [nE x nEpoch x nTrl x nM ] similarity score for each event type for each stimulus</span>
+    <span class="c1">#   Ye  = [nE x nY x nEpoch x nTrl ] Indicator for which events occured for which outputs</span>
+    <span class="n">nE</span><span class="o">=</span><span class="mi">2</span>
+    <span class="n">nEpoch</span><span class="o">=</span><span class="mi">100</span>
+    <span class="n">nTrl</span><span class="o">=</span><span class="mi">30</span>
+    <span class="n">nY</span><span class="o">=</span><span class="mi">20</span>
+    <span class="n">nM</span><span class="o">=</span><span class="mi">20</span>
+    <span class="n">Fe</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">nM</span><span class="p">,</span><span class="n">nTrl</span><span class="p">,</span><span class="n">nEpoch</span><span class="p">,</span><span class="n">nE</span><span class="p">))</span>
+    <span class="n">Ye</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">nTrl</span><span class="p">,</span><span class="n">nEpoch</span><span class="p">,</span><span class="n">nY</span><span class="p">,</span><span class="n">nE</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fe=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Fe</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Ye=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Ye</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">Fy</span><span class="o">=</span><span class="n">scoreOutput</span><span class="p">(</span><span class="n">Fe</span><span class="p">,</span><span class="n">Ye</span><span class="p">)</span> <span class="c1"># (nM,nTrl,nEp,nY)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fy=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="n">sFy</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sFy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,:,:]);</span><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;epoch&#39;</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;output&#39;</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+    <span class="c1"># more complex example with actual signal/noise</span>
+    <span class="kn">from</span> <span class="nn">utils</span> <span class="kn">import</span> <span class="n">testSignal</span>
+    <span class="kn">from</span> <span class="nn">scoreOutput</span> <span class="kn">import</span> <span class="n">scoreOutput</span><span class="p">,</span> <span class="n">plot_outputscore</span><span class="p">,</span> <span class="n">convWX</span><span class="p">,</span> <span class="n">convYR</span><span class="p">,</span> <span class="n">convXYR</span>
+    <span class="kn">from</span> <span class="nn">scoreStimulus</span> <span class="kn">import</span> <span class="n">scoreStimulus</span>
+    <span class="kn">from</span> <span class="nn">decodingSupervised</span> <span class="kn">import</span> <span class="n">decodingSupervised</span>
+    <span class="kn">from</span> <span class="nn">normalizeOutputScores</span> <span class="kn">import</span> <span class="n">normalizeOutputScores</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="n">irf</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">st</span><span class="p">,</span><span class="n">W</span><span class="p">,</span><span class="n">R</span> <span class="o">=</span> <span class="n">testSignal</span><span class="p">(</span><span class="n">nTrl</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">nSamp</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span><span class="n">d</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">nE</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">nY</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">isi</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">irf</span><span class="o">=</span><span class="n">irf</span><span class="p">,</span><span class="n">noise2signal</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">plot_outputscore</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">,:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,:],</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">)</span>
+    
+    <span class="c1"># add a correlated output</span>
+    <span class="n">Y</span><span class="p">[:,:,</span><span class="mi">1</span><span class="p">,:]</span><span class="o">=</span><span class="n">Y</span><span class="p">[:,:,</span><span class="mi">0</span><span class="p">,:]</span><span class="o">*.</span><span class="mi">5</span>
+    <span class="n">plot_outputscore</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">,:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">3</span><span class="p">,:],</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">)</span></div>
+    
+
+<div class="viewcode-block" id="datasettest"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.datasettest">[docs]</a><span class="k">def</span> <span class="nf">datasettest</span><span class="p">():</span>
+    <span class="c1"># N.B. imports in function to avoid import loop..</span>
+    <span class="kn">from</span> <span class="nn">datasets</span> <span class="kn">import</span> <span class="n">get_dataset</span>
+    <span class="kn">from</span> <span class="nn">model_fitting</span> <span class="kn">import</span> <span class="n">MultiCCA</span><span class="p">,</span> <span class="n">BwdLinearRegression</span><span class="p">,</span> <span class="n">FwdLinearRegression</span>
+    <span class="kn">from</span> <span class="nn">analyse_datasets</span> <span class="kn">import</span> <span class="n">debug_test_dataset</span>
+    <span class="kn">from</span> <span class="nn">scoreOutput</span> <span class="kn">import</span> <span class="n">plot_outputscore</span>
+    <span class="kn">from</span> <span class="nn">decodingCurveSupervised</span> <span class="kn">import</span> <span class="n">decodingCurveSupervised</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">tau_ms</span><span class="o">=</span><span class="mi">300</span>
+        <span class="n">offset_ms</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">rank</span><span class="o">=</span><span class="mi">1</span>
+        <span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">l</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">_</span><span class="o">=</span><span class="n">get_dataset</span><span class="p">(</span><span class="s1">&#39;twofinger&#39;</span><span class="p">)</span>
+        <span class="n">oX</span><span class="p">,</span><span class="n">oY</span><span class="p">,</span><span class="n">coords</span><span class="o">=</span><span class="n">l</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tau_ms</span><span class="o">=</span><span class="mi">20</span>
+        <span class="n">offset_ms</span><span class="o">=</span><span class="mi">0</span>
+        <span class="n">rank</span><span class="o">=</span><span class="mi">8</span>
+        <span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">l</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">_</span><span class="o">=</span><span class="n">get_dataset</span><span class="p">(</span><span class="s1">&#39;mark_EMG&#39;</span><span class="p">)</span>
+        <span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">coords</span><span class="o">=</span><span class="n">l</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">whiten</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">),(</span><span class="mi">45</span><span class="p">,</span><span class="mi">55</span><span class="p">),(</span><span class="mi">200</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span><span class="n">filterbank</span><span class="o">=</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">),(</span><span class="mi">20</span><span class="p">,</span><span class="mi">45</span><span class="p">),(</span><span class="mi">55</span><span class="p">,</span><span class="mi">95</span><span class="p">),(</span><span class="mi">105</span><span class="p">,</span><span class="mi">200</span><span class="p">)))</span>
+        <span class="n">oX</span><span class="o">=</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">oY</span><span class="o">=</span><span class="n">Y</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="n">X</span><span class="o">=</span><span class="n">oX</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">Y</span><span class="o">=</span><span class="n">oY</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="c1"># test with reduced number  classes?</span>
+    <span class="n">nY</span><span class="o">=</span><span class="mi">8</span>
+    <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">[:,:,:</span><span class="n">nY</span><span class="o">+</span><span class="mi">1</span><span class="p">,:</span><span class="n">nY</span><span class="p">]</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+    <span class="n">debug_test_dataset</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">tau_ms</span><span class="o">=</span><span class="n">tau_ms</span><span class="p">,</span> <span class="n">offset_ms</span><span class="o">=</span><span class="n">offset_ms</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">outputscore</span><span class="o">=</span><span class="s1">&#39;ip&#39;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;cca&#39;</span><span class="p">)</span>
+        
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;fs&#39;</span><span class="p">]</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span><span class="nb">int</span><span class="p">(</span><span class="n">tau_ms</span><span class="o">*</span><span class="n">fs</span><span class="o">/</span><span class="mi">1000</span><span class="p">))</span>
+    <span class="n">offset</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">offset_ms</span><span class="o">*</span><span class="n">fs</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">cca</span> <span class="o">=</span> <span class="n">MultiCCA</span><span class="p">(</span><span class="n">tau</span><span class="o">=</span><span class="n">tau</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="n">evtlabs</span><span class="p">)</span>
+    <span class="n">cca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">cca</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">dedup0</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">decodingCurveSupervised</span><span class="p">(</span><span class="n">Fy</span><span class="p">)</span>
+    <span class="n">W</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">W_</span>
+    <span class="n">R</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">R_</span>
+    <span class="n">b</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">b_</span>
+
+    <span class="n">plot_outputscore</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">Y</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">)</span></div>
+
+       
+<div class="viewcode-block" id="plot_Fy"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.plot_Fy">[docs]</a><span class="k">def</span> <span class="nf">plot_Fy</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="n">cumsum</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="sd">&#39;&#39;&#39;plot the output score function&#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">cumsum</span><span class="p">:</span>
+        <span class="n">Fy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+    <span class="n">nPlts</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span> <span class="o">&gt;</span> <span class="n">nPlts</span><span class="p">:</span>
+        <span class="n">tis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">nPlts</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">nPlts</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">ncols</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">nPlts</span><span class="p">)))</span>
+    <span class="n">nrows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">nPlts</span><span class="o">/</span><span class="n">ncols</span><span class="p">))</span>
+    <span class="c1">#fig, plts = plt.subplots(nrows, ncols, sharex=&#39;all&#39;, sharey=&#39;all&#39;, squeeze=False)</span>
+    <span class="n">axploti</span> <span class="o">=</span> <span class="n">ncols</span><span class="o">*</span><span class="p">(</span><span class="n">nrows</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">nrows</span><span class="p">,</span><span class="n">ncols</span><span class="p">,</span><span class="n">axploti</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ci</span><span class="p">,</span><span class="n">ti</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tis</span><span class="p">):</span>
+        <span class="c1"># make the axis</span>
+        <span class="k">if</span> <span class="n">ci</span><span class="o">==</span><span class="n">axploti</span><span class="p">:</span> <span class="c1"># common axis plot</span>
+            <span class="n">pl</span> <span class="o">=</span> <span class="n">ax</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># normal plot</span>
+            <span class="n">pl</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">nrows</span><span class="p">,</span><span class="n">ncols</span><span class="p">,</span><span class="n">ci</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">sharex</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span> <span class="c1"># share limits</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelbottom</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">labelleft</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="c1"># no labels        </span>
+        <span class="c1">#pl = plts[ci//ncols, ci%ncols]</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fy</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fy</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">],</span><span class="s1">&#39;k&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ti</span><span class="p">))</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">pl</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">Fy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s1">&#39;cumsum Fy&#39;</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="plot_Fycomparsion"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.plot_Fycomparsion">[docs]</a><span class="k">def</span> <span class="nf">plot_Fycomparsion</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="n">Fys</span><span class="p">,</span><span class="n">ti</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>    
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="kn">from</span> <span class="nn">normalizeOutputScores</span> <span class="kn">import</span> <span class="n">normalizeOutputScores</span>
+    <span class="kn">from</span> <span class="nn">decodingSupervised</span> <span class="kn">import</span> <span class="n">decodingSupervised</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">231</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fy</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fy&#39;</span><span class="p">);</span>  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Inner-product&#39;</span><span class="p">);</span> 
+
+    <span class="c1"># Ptgt every sample, accum from trial start</span>
+    <span class="n">ssFy</span><span class="p">,</span><span class="n">varsFy</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">nEp</span><span class="p">,</span><span class="n">nY</span><span class="o">=</span><span class="n">normalizeOutputScores</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span> <span class="n">minDecisLen</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">filtLen</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">232</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;sFy&#39;</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">varsFy</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span><span class="mi">1</span><span class="p">:],</span><span class="s1">&#39;k-&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;scale&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;cumsum(Inner-product)&#39;</span><span class="p">);</span>  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;cumsum(Inner-product)&#39;</span><span class="p">);</span>
+    <span class="n">Yest</span><span class="p">,</span><span class="n">Perr</span><span class="p">,</span><span class="n">Ptgt</span><span class="p">,</span><span class="n">decismdl</span><span class="p">,</span><span class="n">decisEp</span><span class="o">=</span><span class="n">decodingSupervised</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span> <span class="n">minDecisLen</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">marginalizemodels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">filtLen</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">233</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Ptgt&#39;</span><span class="p">);</span>  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Ptgt&#39;</span><span class="p">);</span>
+
+    <span class="c1">#X2 = np.sum(X**2,axis=-1,keepdims=True); Fys=Fys-X2/2     #  include norm of X to be sure.</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">234</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Fys</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;sFy&#39;</span><span class="p">);</span>  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;-SSE&#39;</span><span class="p">);</span> 
+
+    <span class="c1"># Ptgt every sample, accum from trial start</span>
+    <span class="n">ssFy</span><span class="p">,</span><span class="n">varsFy</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="n">nEp</span><span class="p">,</span><span class="n">nY</span><span class="o">=</span><span class="n">normalizeOutputScores</span><span class="p">(</span><span class="n">Fys</span><span class="p">,</span> <span class="n">minDecisLen</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">filtLen</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">Yest</span><span class="p">,</span><span class="n">Perr</span><span class="p">,</span><span class="n">Ptgt</span><span class="p">,</span><span class="n">decismdl</span><span class="p">,</span><span class="n">decisEp</span><span class="o">=</span><span class="n">decodingSupervised</span><span class="p">(</span><span class="n">Fys</span><span class="p">,</span> <span class="n">minDecisLen</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">marginalizemodels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">filtLen</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">235</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fys</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;sFy&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">varsFy</span><span class="p">[</span><span class="n">ti</span><span class="p">,</span><span class="mi">1</span><span class="p">:],</span><span class="s1">&#39;k-&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;scale&#39;</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;cumsum(-SSE)&#39;</span><span class="p">);</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">236</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ptgt</span><span class="p">[</span><span class="n">ti</span><span class="p">,:,:],</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Ptgt&#39;</span><span class="p">);</span>  <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Ptgt(-SSE)&#39;</span><span class="p">);</span> </div>
+
+
+<div class="viewcode-block" id="plot_outputscore"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.scoreOutput.plot_outputscore">[docs]</a><span class="k">def</span> <span class="nf">plot_outputscore</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">W</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">R</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="kn">from</span> <span class="nn">model_fitting</span> <span class="kn">import</span> <span class="n">MultiCCA</span>
+    <span class="kn">from</span> <span class="nn">scoreStimulus</span> <span class="kn">import</span> <span class="n">scoreStimulus</span>
+    <span class="kn">from</span> <span class="nn">scoreOutput</span> <span class="kn">import</span> <span class="n">scoreOutput</span>
+    <span class="kn">from</span> <span class="nn">decodingCurveSupervised</span> <span class="kn">import</span> <span class="n">decodingCurveSupervised</span>
+    <span class="sd">&#39;&#39;&#39; plot the factored model to visualize the fit and the scoring functions&#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">W</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cca</span> <span class="o">=</span> <span class="n">MultiCCA</span><span class="p">(</span><span class="n">tau</span><span class="o">=</span><span class="n">R</span><span class="p">,</span><span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span> <span class="c1"># BODGE:</span>
+            <span class="n">cca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="o">...</span><span class="p">],</span> <span class="n">Y</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span><span class="o">...</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cca</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">W</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">W_</span>
+        <span class="n">R</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">R_</span>
+
+        <span class="n">Fy</span><span class="o">=</span><span class="n">cca</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="o">=</span> <span class="n">decodingCurveSupervised</span><span class="p">(</span><span class="n">Fy</span><span class="p">)</span>
+
+        
+    <span class="n">WXYR</span><span class="p">,</span><span class="n">WX</span><span class="p">,</span><span class="n">YR</span><span class="o">=</span><span class="n">convXYR</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">,</span><span class="n">offset</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">();</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">511</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">WX</span><span class="p">));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;WX&quot;</span><span class="p">);</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">512</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;Y&#39;</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">R</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">,</span><span class="s1">&#39;k&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;R&#39;</span><span class="p">,</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">);</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">513</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">YR</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="mi">0</span><span class="p">]));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;YR&quot;</span><span class="p">);</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">10</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">WXYR</span><span class="p">));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;WXYR&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">11</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">WXYR</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;cumsum(WXYR)&quot;</span><span class="p">)</span>
+
+    <span class="n">err</span> <span class="o">=</span> <span class="n">WX</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span><span class="o">-</span><span class="n">YR</span>
+    <span class="n">sse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">err</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">12</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="n">sse</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;cumsum(sse)&quot;</span><span class="p">)</span>
+
+    <span class="n">cor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">WXYR</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">YR</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="o">-</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">12</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="o">-</span><span class="n">sse</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;corr&quot;</span><span class="p">)</span>
+
+    <span class="n">Fe</span> <span class="o">=</span> <span class="n">scoreStimulus</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">W</span><span class="p">,</span><span class="n">R</span><span class="p">)</span>
+    <span class="n">Fy</span> <span class="o">=</span> <span class="n">scoreOutput</span><span class="p">(</span><span class="n">Fe</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span><span class="n">outputscore</span><span class="o">=</span><span class="s1">&#39;ip&#39;</span><span class="p">)</span>
+    <span class="n">Fys</span> <span class="o">=</span> <span class="n">scoreOutput</span><span class="p">(</span><span class="n">Fe</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">R</span><span class="o">=</span><span class="n">R</span><span class="p">,</span><span class="n">outputscore</span><span class="o">=</span><span class="s1">&#39;sse&#39;</span><span class="p">)</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">13</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">Fy</span><span class="p">));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Fy&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">14</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">Fy</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;cumsum(Fy)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">15</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">Fys</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)));</span><span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">();</span><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;cumsum(Fy(sse))&quot;</span><span class="p">)</span></div>
+    
+<span class="k">if</span> <span class="vm">__name__</span><span class="o">==</span><span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">testcases</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

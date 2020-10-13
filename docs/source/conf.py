@@ -34,7 +34,7 @@ release = '-'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon', 'recommonmark','nbsphinx','sphinx.ext.mathjax', "sphinx_rtd_theme"
+extensions = ['sphinx.ext.autodoc','sphinx.ext.napoleon','recommonmark','sphinx.ext.linkcode','nbsphinx','sphinx.ext.mathjax', "sphinx_rtd_theme"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -59,3 +59,12 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# code links to github
+def linkcode_resolve(domain, info):
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+    filename = info['module'].replace('.', '/')
+    return "https://github.com/mindaffect/pymindaffectBCI/tree/open_source/%s.py" % filename
