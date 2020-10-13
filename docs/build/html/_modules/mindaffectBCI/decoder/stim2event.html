@@ -1,0 +1,367 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.stim2event &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.stim2event</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.stim2event</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">equals_subarray</span>
+<div class="viewcode-block" id="stim2event"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.stim2event.stim2event">[docs]</a><span class="k">def</span> <span class="nf">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">evtypes</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span><span class="s1">&#39;fe&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">oM</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    convert per-sample stimulus sequence into per-sample event sequence (e.g. rising/falling edge, or long/short flash)</span>
+<span class="sd">    Inputs:</span>
+<span class="sd">     M      - (...samp) or (...,samp,nY) for and/non-target features</span>
+<span class="sd">     evnames - [nE]:str list of strings:</span>
+<span class="sd">        &quot;0&quot;, &quot;1&quot;, &quot;00&quot;, &quot;11&quot;, &quot;01&quot; (aka. &#39;re&#39;), &quot;10&quot; (aka, fe), &quot;010&quot; (aka. short), &quot;0110&quot; (aka long)</span>
+<span class="sd">        &quot;nt&quot;+evtname : non-target event, i.e. evtname occured for any other target</span>
+<span class="sd">        &quot;any&quot;+evtname: any event, i.e. evtname occured for *any* target</span>
+<span class="sd">        &quot;rest&quot; - not any of the other event types, N.B. must be *last* in event list</span>
+<span class="sd">        &quot;raw&quot; - unchanged input intensity coding</span>
+<span class="sd">        &quot;grad&quot; - 1st temporal derivative of the raw intensity</span>
+<span class="sd">     axis - (-1) the axis of M which runs along &#39;time&#39;</span>
+<span class="sd">     oM - (...osamp) or (...,osamp,nY) prefix stimulus values of M, used to incrementally compute the  stimulus features</span>
+<span class="sd">    Outputs:</span>
+<span class="sd">     evt    - (M.shape,nE) event sequence</span>
+<span class="sd">    Examples:</span>
+<span class="sd">      #For a P300 bci, with target vs. non-target response use:</span>
+<span class="sd">        M = np.array([[1,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,0],[0,0,0,0,1,0,0,0]]).T</span>
+<span class="sd">        E = stim2event(M,evtypes=[&#39;re&#39;,&#39;ntre&#39;], axis=-2)</span>
+<span class="sd">      #Or modeling as two responses, target-stim-response and any-stim-response</span>
+<span class="sd">        E = stim2event(M,evtypes=(&#39;re&#39;,&#39;anyre&#39;), axis=-2)</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># ensure axis is positive!</span>
+        <span class="n">axis</span><span class="o">=</span><span class="n">M</span><span class="o">.</span><span class="n">ndim</span><span class="o">+</span><span class="n">axis</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">evtypes</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">evtypes</span> <span class="o">=</span> <span class="p">[</span><span class="n">evtypes</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">evtypes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">M</span><span class="p">[:,:,:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">oM</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1">#  include the prefix</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">oM</span><span class="p">,</span><span class="n">M</span><span class="p">,</span><span class="n">axis</span><span class="p">)</span>
+
+    <span class="c1"># Copyright (c) MindAffect B.V. 2018</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="o">+</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">evtypes</span><span class="p">),</span> <span class="p">),</span> <span class="n">M</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="c1"># list event types</span>
+    <span class="c1">#print(&quot;E.dtype={}&quot;.format(E.dtype))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># guard empty inputs</span>
+        <span class="k">return</span> <span class="n">E</span>
+    <span class="k">for</span> <span class="n">ei</span><span class="p">,</span> <span class="n">etype</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">evtypes</span><span class="p">):</span>
+        <span class="n">modifier</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">etype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;nt&quot;</span><span class="p">):</span>
+            <span class="n">modifier</span> <span class="o">=</span> <span class="s2">&quot;nt&quot;</span>
+            <span class="n">etype</span> <span class="o">=</span> <span class="n">etype</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">modifier</span><span class="p">):]</span>
+        <span class="k">if</span> <span class="n">etype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;any&quot;</span><span class="p">):</span>
+            <span class="n">modifier</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span>
+            <span class="n">etype</span> <span class="o">=</span> <span class="n">etype</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">modifier</span><span class="p">):]</span>
+            
+        <span class="c1"># 1-bit</span>
+        <span class="k">if</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;flash&quot;</span> <span class="ow">or</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">M</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;0&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="p">(</span><span class="n">M</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># 2-bit</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;00&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;re&quot;</span> <span class="ow">or</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;01&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;fe&quot;</span> <span class="ow">or</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;10&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;11&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="c1"># 3-bit</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;000&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;001&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;010&quot;</span> <span class="ow">or</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;short&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;011&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;100&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;101&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;110&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;111&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="c1"># 4-bit</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;0110&quot;</span> <span class="ow">or</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;long&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">equals_subarray</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="c1"># diff</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;diff&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+            <span class="c1"># pad missing entry</span>
+            <span class="n">padshape</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">shape</span><span class="p">);</span> <span class="n">padshape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">padshape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">F</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s2">&quot;rest&quot;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;raw&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">E</span>
+        <span class="k">elif</span> <span class="n">etype</span> <span class="o">==</span> <span class="s1">&#39;grad&#39;</span><span class="p">:</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognised evttype:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">etype</span><span class="p">))</span>
+
+        <span class="c1"># apply any modifiers wanted</span>
+        <span class="k">if</span> <span class="n">modifier</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+            <span class="c1"># non-target, means true when OTHER targets are high, i.e. or over other outputs</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">axis</span> <span class="o">==</span> <span class="n">M</span><span class="o">.</span><span class="n">ndim</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;non-target only for axis==-2&quot;</span><span class="p">)</span>
+            <span class="n">anyevt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">F</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># any stim event type</span>
+            <span class="k">for</span> <span class="n">yi</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="c1"># non-target if target for *any* Y except this one</span>
+                <span class="n">F</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">yi</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">F</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">yi</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">anyevt</span><span class="p">)</span>
+                
+        <span class="k">elif</span> <span class="n">modifier</span> <span class="o">==</span> <span class="s2">&quot;any&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">axis</span> <span class="o">==</span> <span class="n">M</span><span class="o">.</span><span class="n">ndim</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;any feature only for axis==-2&quot;</span><span class="p">)</span>   
+            <span class="c1"># any, means true if any target is true, N.B. use logical_or to broadcast</span>
+            <span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logical_or</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">F</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="n">E</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ei</span><span class="p">]</span> <span class="o">=</span> <span class="n">F</span>
+
+    <span class="k">if</span> <span class="n">oM</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># strip the prefix</span>
+        <span class="c1"># build index expression to get the  post-fix along axis</span>
+        <span class="n">idx</span><span class="o">=</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span><span class="o">*</span><span class="n">E</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="n">idx</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">oM</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">],</span><span class="n">E</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">])</span>
+        <span class="c1"># get  the postfix</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span>
+    <span class="c1">#print(&quot;E.dtype={}&quot;.format(E.dtype))</span>
+    <span class="k">return</span> <span class="n">E</span></div>
+
+<div class="viewcode-block" id="testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.stim2event.testcase">[docs]</a><span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">stim2event</span> <span class="kn">import</span> <span class="n">stim2event</span>
+    <span class="c1"># M = (samp,Y)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span>
+    
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Raw  :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">M</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;flash&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span>     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;flash:</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;re   :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;fe&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;fe   :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;diff&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span>      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;diff :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="s1">&#39;ntre&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span>      <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ntre :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="s1">&#39;fe&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;refe :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">M</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span> <span class="s1">&#39;fe&#39;</span><span class="p">,</span> <span class="s1">&#39;rest&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">);</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;referest :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span>
+
+    <span class="c1"># test incremental calling, propogating prefix between calls</span>
+    <span class="n">oM</span><span class="o">=</span> <span class="kc">None</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">bi</span><span class="p">,</span><span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">M</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="mi">2</span><span class="p">)):</span>
+        <span class="n">bM</span> <span class="o">=</span> <span class="n">M</span><span class="p">[:,</span><span class="n">b</span><span class="p">:</span><span class="n">b</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">eb</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">bM</span><span class="p">,(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span><span class="s1">&#39;fe&#39;</span><span class="p">),</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">oM</span><span class="o">=</span><span class="n">oM</span><span class="p">)</span>
+        <span class="n">e</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eb</span><span class="p">)</span>
+        <span class="n">oM</span><span class="o">=</span><span class="n">bM</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;increfe :</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">))</span></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">testcase</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

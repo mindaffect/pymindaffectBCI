@@ -1,0 +1,1182 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.UtopiaDataInterface &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="../../../_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.UtopiaDataInterface</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for mindaffectBCI.decoder.UtopiaDataInterface</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1">#  Copyright (c) 2019 MindAffect B.V. </span>
+<span class="c1">#  Author: Jason Farquhar &lt;jason@mindaffect.nl&gt;</span>
+<span class="c1">#</span>
+<span class="c1"># Permission is hereby granted, free of charge, to any person obtaining a copy</span>
+<span class="c1"># of this software and associated documentation files (the &quot;Software&quot;), to deal</span>
+<span class="c1"># in the Software without restriction, including without limitation the rights</span>
+<span class="c1"># to use, copy, modify, merge, publish, distribute, sublicense, and/or sell</span>
+<span class="c1"># copies of the Software, and to permit persons to whom the Software is</span>
+<span class="c1"># furnished to do so, subject to the following conditions:</span>
+<span class="c1">#</span>
+<span class="c1"># The above copyright notice and this permission notice shall be included in all</span>
+<span class="c1"># copies or substantial portions of the Software.</span>
+<span class="c1"># </span>
+<span class="c1"># THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR</span>
+<span class="c1"># IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,</span>
+<span class="c1"># FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE</span>
+<span class="c1"># AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER</span>
+<span class="c1"># LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,</span>
+<span class="c1"># OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE</span>
+<span class="c1"># SOFTWARE.</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.utopiaclient</span> <span class="kn">import</span> <span class="n">UtopiaClient</span><span class="p">,</span> <span class="n">Subscribe</span><span class="p">,</span> <span class="n">StimulusEvent</span><span class="p">,</span> <span class="n">NewTarget</span><span class="p">,</span> <span class="n">Selection</span><span class="p">,</span> <span class="n">DataPacket</span><span class="p">,</span> <span class="n">UtopiaMessage</span><span class="p">,</span> <span class="n">SignalQuality</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">deque</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">RingBuffer</span><span class="p">,</span> <span class="n">extract_ringbuffer_segment</span><span class="p">,</span> <span class="n">linear_trend_tracker</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.lower_bound_tracker</span> <span class="kn">import</span> <span class="n">lower_bound_tracker</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="UtopiaDataInterface"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface">[docs]</a><span class="k">class</span> <span class="nc">UtopiaDataInterface</span><span class="p">:</span>
+    <span class="c1"># TODO [X] : infer valid data time-stamps</span>
+    <span class="c1"># TODO [X] : smooth and de-jitter the data time-stamps</span>
+    <span class="c1"># TODO [] : expose a (potentially blocking) message generator interface</span>
+    <span class="c1"># TODO [X] : ring-buffer for the stimulus-state also, so fast random access</span>
+    <span class="c1"># TODO [X] : rate limit waiting to reduce computational load</span>
+    <span class="n">VERBOSITY</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">datawindow_ms</span><span class="o">=</span><span class="mi">60000</span><span class="p">,</span> <span class="n">msgwindow_ms</span><span class="o">=</span><span class="mi">60000</span><span class="p">,</span>
+                 <span class="n">data_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stimulus_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">send_signalquality</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+                 <span class="n">timeout_ms</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">mintime_ms</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample2timestamp</span><span class="o">=</span><span class="s1">&#39;lower_bound_tracker&#39;</span><span class="p">):</span>
+        <span class="c1"># rate control</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timeout_ms</span> <span class="o">=</span> <span class="n">timeout_ms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mintime_ms</span> <span class="o">=</span> <span class="n">mintime_ms</span> <span class="c1"># minimum time to spend in update =&gt; max processing rate</span>
+        <span class="c1"># amout of data in the ring-buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">datawindow_ms</span> <span class="o">=</span> <span class="n">datawindow_ms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msgwindow_ms</span> <span class="o">=</span> <span class="n">msgwindow_ms</span>
+        <span class="c1"># connect to the mindaffectDecoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">U</span> <span class="o">=</span> <span class="n">UtopiaClient</span><span class="p">()</span> <span class="k">if</span> <span class="n">U</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">U</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+        <span class="c1"># init the buffers</span>
+
+        <span class="c1"># Messages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span> <span class="o">=</span> <span class="n">deque</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg_timestamp</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># ts of most recent processed message</span>
+
+        <span class="c1"># DataPackets</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># init later...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># ts of last data packet seen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="n">sample2timestamp</span> <span class="c1"># sample tracker to de-jitter time-stamp information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span> <span class="o">=</span> <span class="n">data_preprocessor</span> <span class="c1"># function to pre-process the incomming data</span>
+
+        <span class="c1"># StimulusEvents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># init later...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_timestamp</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># ts of most recent processed data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_preprocessor</span> <span class="o">=</span> <span class="n">stimulus_preprocessor</span> <span class="c1"># function to pre-process the incomming data</span>
+
+        <span class="c1"># Info about the data sample rate -- estimated from packet rates..</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span> <span class="o">=</span> <span class="n">fs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newmsgs</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># list new unprocssed messages since last update call</span>
+
+        <span class="c1"># BODGE: running statistics for sig2noise estimation</span>
+        <span class="c1"># TODO []: move into it&#39;s own Sig2Noise computation class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_signalquality</span> <span class="o">=</span> <span class="n">send_signalquality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_log_ts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_sigquality_interval</span> <span class="o">=</span> <span class="mi">1000</span> <span class="c1"># send signal qualities every 1000ms = 1Hz</span>
+        <span class="c1"># noise2sig estimate halflife_ms, running-offset, de-trended power</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise2sig_halflife_ms</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5000</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span> <span class="c1"># 10s for offset, .5s for power</span>
+        <span class="c1"># TODO [x]: move into a exp-move-ave power est class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_power</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preproc_power</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="UtopiaDataInterface.connect"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">queryifhostnotfound</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;make a connection to the utopia host&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">host</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="k">if</span> <span class="n">port</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">autoconnect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">queryifhostnotfound</span><span class="o">=</span><span class="n">queryifhostnotfound</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">isConnected</span><span class="p">:</span>
+            <span class="c1"># subscribe to messages: data, stim, mode, selection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">Subscribe</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;DEMSN&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">isConnected</span></div>
+    
+<div class="viewcode-block" id="UtopiaDataInterface.isConnected"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.isConnected">[docs]</a>    <span class="k">def</span> <span class="nf">isConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">isConnected</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.getTimeStamp"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.getTimeStamp">[docs]</a>    <span class="k">def</span> <span class="nf">getTimeStamp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;get the current timeStamp&#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.sendMessage"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.sendMessage">[docs]</a>    <span class="k">def</span> <span class="nf">sendMessage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">UtopiaMessage</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; send a UtopiaMessage to the utopia hub&#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.getNewMessages"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.getNewMessages">[docs]</a>    <span class="k">def</span> <span class="nf">getNewMessages</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; get new messages from the UtopiaHub &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">getNewMessages</span><span class="p">(</span><span class="n">timeout_ms</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.initDataRingBuffer"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.initDataRingBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">initDataRingBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.&#39;&#39;&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;geting some initial data to setup the ring buffer&quot;</span><span class="p">)</span>
+        <span class="c1"># get some initial data to get data shape and sample rate</span>
+        <span class="n">databuf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nmsg</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="nb">iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">data_start_ts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">data_ts</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">data_start_ts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">data_ts</span> <span class="o">-</span> <span class="n">data_start_ts</span> <span class="o">&lt;</span> <span class="mi">3000</span><span class="p">:</span>
+            <span class="n">msgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNewMessages</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">msgs</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_message</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">msgID</span> <span class="o">==</span> <span class="n">DataPacket</span><span class="o">.</span><span class="n">msgID</span><span class="p">:</span> <span class="c1"># data-packets are special</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">databuf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="c1"># append raw data</span>
+                        <span class="k">if</span> <span class="n">data_start_ts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">data_start_ts</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+                        <span class="n">data_ts</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Huh? got empty data packet: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg_timestamp</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+                    <span class="n">nmsg</span> <span class="o">=</span> <span class="n">nmsg</span><span class="o">+</span><span class="mi">1</span>
+        <span class="n">nsamp</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">databuf</span><span class="p">]</span>
+        <span class="n">data_ts</span> <span class="o">=</span> <span class="p">[</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">databuf</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nsamp</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">data_ts</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimated sample rate </span><span class="si">{}</span><span class="s1"> samp in </span><span class="si">{}</span><span class="s1"> s =</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">nsamp</span><span class="p">),(</span><span class="n">data_ts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">data_ts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="p">))</span>
+
+        <span class="c1"># init the pre-processor (if one)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">databuf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">samples</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">fs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="p">)</span> <span class="c1"># tell it the sample rate</span>
+
+        <span class="c1"># apply the data packet pre-processing -- to get the info</span>
+        <span class="c1"># on the data state after pre-processing</span>
+        <span class="n">tmpdatabuf</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">processDataPacket</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">databuf</span><span class="p">]</span>
+        <span class="c1"># strip empty packets</span>
+        <span class="n">tmpdatabuf</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">tmpdatabuf</span> <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># estimate the sample rate of the pre-processed data</span>
+        <span class="n">pp_nsamp</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">tmpdatabuf</span><span class="p">]</span>
+        <span class="n">pp_ts</span> <span class="o">=</span> <span class="p">[</span> <span class="n">m</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">tmpdatabuf</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pp_nsamp</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>  <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">pp_ts</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1000.0</span><span class="p">)</span><span class="c1"># fs = nSamp/time</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Estimated pre-processed sample rate=</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">))</span>
+
+        <span class="c1"># create the ring buffer, big enough to store the pre-processed data</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: re-init data ring buffer&quot;</span><span class="p">)</span>
+        <span class="c1"># TODO []: why does the datatype of the ring buffer matter so much? Is it because of uss?</span>
+        <span class="c1">#  Answer[]: it&#39;s the time-stamps, float32 rounds time-stamps to 24bits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span> <span class="o">=</span> <span class="n">RingBuffer</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">datawindow_ms</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">tmpdatabuf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># insert the warmup data into the ring buffer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span><span class="o">=</span><span class="kc">None</span> <span class="c1"># reset last seen data</span>
+        <span class="n">nsamp</span><span class="o">=</span><span class="mi">0</span>
+        <span class="c1"># re-init the preprocessor for consistency with off-line</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">databuf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">samples</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:],</span> <span class="n">fs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="p">)</span>
+        <span class="c1"># use linear trend tracker to de-jitter the sample timestamps</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="n">timestamp_interpolation</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span>
+                                                            <span class="n">sample2timestamp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">databuf</span><span class="p">:</span>
+            <span class="c1"># apply the pre-processing again (this time with fs estimated)</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processDataPacket</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">nsamp</span> <span class="o">=</span> <span class="n">nsamp</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">nsamp</span><span class="p">,</span> <span class="n">nmsg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.initStimulusRingBuffer"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.initStimulusRingBuffer">[docs]</a>    <span class="k">def</span> <span class="nf">initStimulusRingBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.&#39;&#39;&#39;</span>
+        <span class="c1"># TODO []: more efficient memory use, with different dtype for &#39;real&#39; data and the time-stamps?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span> <span class="o">=</span> <span class="n">RingBuffer</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">datawindow_ms</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">257</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.preprocess_message"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.preprocess_message">[docs]</a>    <span class="k">def</span> <span class="nf">preprocess_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span><span class="n">UtopiaMessage</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; apply pre-processing to topia message before any more work &#39;&#39;&#39;</span>
+        <span class="c1">#  WARNING BODGE: fit time-stamp in 24bits for float32 ring buffer</span>
+        <span class="c1">#  Note: this leads to wrap-arroung in (1&lt;&lt;24)/1000/3600 = 4.6 hours</span>
+        <span class="c1">#        but that shouldn&#39;t matter.....</span>
+        <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="mi">24</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">m</span></div>
+    
+<div class="viewcode-block" id="UtopiaDataInterface.processDataPacket"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.processDataPacket">[docs]</a>    <span class="k">def</span> <span class="nf">processDataPacket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">DataPacket</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;pre-process a datapacket message ready to be inserted into the ringbuffer&#39;&#39;&#39;</span>
+        <span class="c1">#print(&quot;DP: {}&quot;.format(m))</span>
+        <span class="c1"># extract the raw data</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="c1"># process as singles</span>
+        <span class="c1"># apply the pre-processor, if one was given</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="p">:</span>
+            <span class="n">d_raw</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># warning-- with agressive downsample this may not produce any data!</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_preprocessor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+            <span class="c1"># BODGE: running estimate of the electrode-quality, ONLY after initialization!</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_signalquality</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_and_send_ElectrodeQualities</span><span class="p">(</span><span class="n">d_raw</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span>
+
+                <span class="c1">#if self.VERBOSITY &gt; 0 and self.data_ringbuffer is not None:</span>
+                <span class="c1">#    self.plot_raw_preproc_data(d_raw,d,m.timestamp)</span>
+
+        <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">:</span>
+            <span class="c1"># If have data to add to the ring-buffer, guarding for time-stamp wrap-around</span>
+            <span class="c1"># TODO [ ]: de-jitter and better timestamp interpolation</span>
+            <span class="c1"># guard for wrap-around!</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: Time-stamp wrap-around detected!!&quot;</span><span class="p">)</span>
+
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_sample_timestamps</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="n">m</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
+
+        <span class="c1"># update the last time-stamp tracking</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span><span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.add_sample_timestamps"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.add_sample_timestamps">[docs]</a>    <span class="k">def</span> <span class="nf">add_sample_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">d</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span><span class="n">timestamp</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="n">fs</span><span class="p">:</span><span class="nb">float</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;add per-sample timestamp information to the data matrix</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            d (np.ndarray): (t,d) the data matrix to attach time stamps to</span>
+<span class="sd">            timestamp (float): the timestamp of the last sample of d</span>
+<span class="sd">            fs (float): the nomional sample rate of d</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: (t,d+1) data matrix with attached time-stamp channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span><span class="p">,</span><span class="nb">str</span><span class="p">):</span>
+            <span class="n">sample_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1"># all the same ts</span>
+            <span class="n">sample_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">),),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">*</span><span class="n">timestamp</span>
+        <span class="c1"># combine data with timestamps, ensuring type is preserved</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">d</span><span class="p">),</span> <span class="n">sample_ts</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.plot_raw_preproc_data"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.plot_raw_preproc_data">[docs]</a>    <span class="k">def</span> <span class="nf">plot_raw_preproc_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_raw</span><span class="p">,</span> <span class="n">d_preproc</span><span class="p">,</span> <span class="n">ts</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;debugging function to check the diff between the raw and pre-processed data&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;rawringbuffer&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preprocringbuffer</span><span class="o">=</span><span class="n">RingBuffer</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">d_preproc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rawringbuffer</span><span class="o">=</span><span class="n">RingBuffer</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="o">*</span><span class="mi">3</span><span class="p">,</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">d_raw</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="n">d_preproc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_sample_timestamps</span><span class="p">(</span><span class="n">d_preproc</span><span class="p">,</span><span class="n">ts</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preprocringbuffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d_preproc</span><span class="p">)</span>
+        <span class="n">d_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_sample_timestamps</span><span class="p">(</span><span class="n">d_raw</span><span class="p">,</span><span class="n">ts</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawringbuffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d_raw</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ts</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_sigquality_interval</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span><span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">();</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rawringbuffer</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">211</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rawringbuffer</span><span class="p">[</span><span class="n">idx</span><span class="p">:,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">rawringbuffer</span><span class="p">[</span><span class="n">idx</span><span class="p">:,:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocringbuffer</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">212</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocringbuffer</span><span class="p">[</span><span class="n">idx</span><span class="p">:,</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">preprocringbuffer</span><span class="p">[</span><span class="n">idx</span><span class="p">:,:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="UtopiaDataInterface.processStimulusEvent"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.processStimulusEvent">[docs]</a>    <span class="k">def</span> <span class="nf">processStimulusEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">StimulusEvent</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;pre-process a StimulusEvent message ready to be inserted into the stimulus ringbuffer&#39;&#39;&#39;</span>
+        <span class="c1"># get the vector to hold the stimulus info</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">257</span><span class="p">,),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># hold value of used objIDs from previous time stamp</span>
+            <span class="n">d</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,:]</span>
+
+        <span class="c1"># insert the  updated state</span>
+        <span class="n">d</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">objIDs</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">objState</span>
+        <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+        <span class="c1"># apply the pre-processor, if one was given</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_preprocessor</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_preprocessor</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="c1"># update the last time-stamp tracking</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_timestamp</span><span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+        <span class="k">return</span> <span class="n">d</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.update_and_send_ElectrodeQualities"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.update_and_send_ElectrodeQualities">[docs]</a>    <span class="k">def</span> <span class="nf">update_and_send_ElectrodeQualities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_raw</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">d_preproc</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ts</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; compute running estimate of electrode qality and stream it &#39;&#39;&#39;</span>
+        <span class="n">raw_power</span><span class="p">,</span> <span class="n">preproc_power</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_electrode_powers</span><span class="p">(</span><span class="n">d_raw</span><span class="p">,</span> <span class="n">d_preproc</span><span class="p">)</span>
+
+        <span class="c1"># convert to average amplitude</span>
+        <span class="n">raw_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">raw_power</span><span class="p">)</span>
+        <span class="n">preproc_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">preproc_power</span><span class="p">)</span>
+
+        <span class="c1"># noise2signal estimated as removed raw amplitude (assumed=noise) to preprocessed amplitude (assumed=signal)</span>
+        <span class="n">noise2sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">raw_amp</span> <span class="o">-</span> <span class="n">preproc_amp</span><span class="p">))</span> <span class="o">/</span>  <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mf">1e-8</span><span class="p">),</span><span class="n">preproc_amp</span><span class="p">)</span>
+
+        <span class="c1"># hack - detect disconnected channels</span>
+        <span class="n">noise2sig</span><span class="p">[</span> <span class="n">raw_power</span> <span class="o">&lt;</span> <span class="mf">1e-6</span> <span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+
+        <span class="c1"># hack - detect filter artifacts = preproc power is too big..</span>
+        <span class="n">noise2sig</span><span class="p">[</span> <span class="n">preproc_amp</span> <span class="o">&gt;</span> <span class="n">raw_amp</span><span class="o">*</span><span class="mi">10</span> <span class="p">]</span> <span class="o">=</span> <span class="mi">100</span>
+
+        <span class="c1"># hack - cap to 100</span>
+        <span class="n">noise2sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">noise2sig</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="c1"># rate limit sending of signal-quality messages</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ts</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_sigquality_interval</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SigQ:</span><span class="se">\n</span><span class="s2">raw_power=(</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">pp_power=(</span><span class="si">{}</span><span class="s2">/</span><span class="si">{}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">noise2sig=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                   <span class="n">raw_amp</span><span class="p">,</span><span class="n">d_raw</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                   <span class="n">preproc_amp</span><span class="p">,</span><span class="n">d_preproc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                   <span class="n">noise2sig</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Q&quot;</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="c1"># N.B. use *our* time-stamp for outgoing messages!</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sendMessage</span><span class="p">(</span><span class="n">SignalQuality</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">noise2sig</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_sigquality_ts</span> <span class="o">=</span> <span class="n">ts</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">VERBOSITY</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># plot the sample time-stamp jitter...</span>
+                <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+                <span class="n">ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="p">[:,</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">ts</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]:]</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">211</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">ts</span><span class="p">));</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;diff time-sample&#39;</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">212</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">cla</span><span class="p">();</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="n">ts</span><span class="o">-</span><span class="n">ts</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">))</span><span class="o">*</span><span class="mf">1000.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">);</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;regression against sample-number&#39;</span><span class="p">)</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.update_electrode_powers"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.update_electrode_powers">[docs]</a>    <span class="k">def</span> <span class="nf">update_electrode_powers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d_raw</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">d_preproc</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; track exp-weighted-moving average centered power for 2 input streams &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_power</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mu_hl</span><span class="p">,</span> <span class="n">pow_hl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise2sig_halflife_ms</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_power</span> <span class="o">=</span> <span class="n">power_tracker</span><span class="p">(</span><span class="n">mu_hl</span><span class="p">,</span> <span class="n">pow_hl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_fs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">preproc_power</span> <span class="o">=</span> <span class="n">power_tracker</span><span class="p">(</span><span class="n">mu_hl</span><span class="p">,</span> <span class="n">pow_hl</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_power</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">d_raw</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preproc_power</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">d_preproc</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_power</span><span class="o">.</span><span class="n">power</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">preproc_power</span><span class="o">.</span><span class="n">power</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="UtopiaDataInterface.update"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.update">[docs]</a>    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mintime_ms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Update the tracking state w.r.t. the utopia-hub.</span>
+
+<span class="sd">        By adding data to the data_ringbuffer and (non-data) messages</span>
+<span class="sd">        to the messages ring buffer.</span>
+
+<span class="sd">        Args</span>
+<span class="sd">         timeout_ms : int</span>
+<span class="sd">             max block waiting for messages before returning</span>
+<span class="sd">         mintime_ms : int</span>
+<span class="sd">             min time to accumulate messages before returning</span>
+<span class="sd">        Returns</span>
+<span class="sd">          newmsgs : [newMsgs :UtopiaMessage]</span>
+<span class="sd">             list of the *new* utopia messages from the server</span>
+<span class="sd">          nsamp: int</span>
+<span class="sd">             number of new data samples in this call</span>
+<span class="sd">             Note: use data_ringbuffer[-nsamp:,...] to get the new data</span>
+<span class="sd">          nstimulus : int</span>
+<span class="sd">             number of new stimulus events in this call</span>
+<span class="sd">             Note: use stimulus_ringbuffer[-nstimulus:,...] to get the new data</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">timeout_ms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">timeout_ms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeout_ms</span>
+        <span class="k">if</span> <span class="n">mintime_ms</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mintime_ms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mintime_ms</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isConnected</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isConnected</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">[],</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span>
+
+        <span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+        <span class="n">nsamp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">nmsg</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">nstimulus</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># do special init stuff if not done</span>
+            <span class="n">nsamp</span><span class="p">,</span> <span class="n">nmsg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initDataRingBuffer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># do special init stuff if not done</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initStimulusRingBuffer</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_log_ts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_log_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">t0</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+
+        <span class="c1"># record the list of new messages from this call</span>
+        <span class="n">newmsgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">newmsgs</span> <span class="c1"># start with any left-overs from old calls </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newmsgs</span><span class="o">=</span><span class="p">[]</span> <span class="c1"># clear the  left-over messages stack</span>
+        
+        <span class="n">ttg</span> <span class="o">=</span> <span class="n">timeout_ms</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="c1"># time-to-go in the update loop</span>
+        <span class="k">while</span> <span class="n">ttg</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="c1"># rate limit</span>
+            <span class="k">if</span> <span class="n">ttg</span> <span class="o">&gt;=</span> <span class="n">mintime_ms</span><span class="p">:</span>
+                <span class="n">sleep</span><span class="p">(</span><span class="n">mintime_ms</span><span class="o">/</span><span class="mf">1000.0</span><span class="p">)</span>
+                <span class="n">ttg</span> <span class="o">=</span> <span class="n">timeout_ms</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span> <span class="c1"># udate time-to-go</span>
+                
+            <span class="c1"># get the new messages</span>
+            <span class="n">msgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getNewMessages</span><span class="p">(</span><span class="n">ttg</span><span class="p">)</span>
+
+            <span class="c1"># process the messages - basically to split datapackets from the rest</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="c1">#print(&quot;{} in {}&quot;.format(len(msgs),self.getTimeStamp()-t0),end=&#39;&#39;,flush=True)</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">msgs</span><span class="p">:</span>
+                <span class="n">m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">preprocess_message</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{:c}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">msgID</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                
+                <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">msgID</span> <span class="o">==</span> <span class="n">DataPacket</span><span class="o">.</span><span class="n">msgID</span><span class="p">:</span> <span class="c1"># data-packets are special</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processDataPacket</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="c1"># (samp x ...)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                    <span class="n">nsamp</span> <span class="o">=</span> <span class="n">nsamp</span> <span class="o">+</span> <span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    
+                <span class="k">elif</span> <span class="n">m</span><span class="o">.</span><span class="n">msgID</span> <span class="o">==</span> <span class="n">StimulusEvent</span><span class="o">.</span><span class="n">msgID</span><span class="p">:</span> <span class="c1"># as are stmiuluse events</span>
+                    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processStimulusEvent</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="c1"># (nY x ...)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                    <span class="n">nstimulus</span> <span class="o">=</span> <span class="n">nstimulus</span> <span class="o">+</span> <span class="mi">1</span>
+                    
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># NewTarget/Selection are also special in that they clear stimulus state...</span>
+                    <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">msgID</span> <span class="o">==</span> <span class="n">NewTarget</span><span class="o">.</span><span class="n">msgID</span> <span class="ow">or</span> <span class="n">m</span><span class="o">.</span><span class="n">msgID</span> <span class="o">==</span> <span class="n">Selection</span><span class="o">.</span><span class="n">msgID</span> <span class="p">:</span>
+                        <span class="c1"># Make a dummy stim-event to reset all objIDs to off</span>
+                        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processStimulusEvent</span><span class="p">(</span><span class="n">StimulusEvent</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
+                                                                    <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
+                                                                    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)))</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">stimulus_timestamp</span><span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+                    
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">0</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">msgwindow_ms</span><span class="p">:</span> <span class="c1"># slide msg buffer</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                    <span class="n">newmsgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+                    <span class="n">nmsg</span> <span class="o">=</span> <span class="n">nmsg</span><span class="o">+</span><span class="mi">1</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">msg_timestamp</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span>
+                
+            <span class="c1"># update time-to-go</span>
+            <span class="n">ttg</span> <span class="o">=</span> <span class="n">timeout_ms</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span><span class="p">)</span>
+
+        <span class="c1"># new line</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_log_ts</span> <span class="o">+</span> <span class="mi">2000</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_log_ts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+        
+        <span class="c1"># return new messages, and count new samples/stimulus </span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">newmsgs</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">nstimulus</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.push_back_newmsgs"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.push_back_newmsgs">[docs]</a>    <span class="k">def</span> <span class="nf">push_back_newmsgs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">oldmsgs</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;put unprocessed messages back onto the  newmessages queue&#39;&#39;&#39;</span>
+        <span class="c1"># TODO []: ensure  this preserves message time-stamp order?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">newmsgs</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">oldmsgs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.extract_data_segment"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.extract_data_segment">[docs]</a>    <span class="k">def</span> <span class="nf">extract_data_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bgn_ts</span><span class="p">,</span> <span class="n">end_ts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">extract_ringbuffer_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="p">,</span><span class="n">bgn_ts</span><span class="p">,</span><span class="n">end_ts</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="UtopiaDataInterface.extract_stimulus_segment"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.extract_stimulus_segment">[docs]</a>    <span class="k">def</span> <span class="nf">extract_stimulus_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bgn_ts</span><span class="p">,</span> <span class="n">end_ts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">extract_ringbuffer_segment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span><span class="p">,</span><span class="n">bgn_ts</span><span class="p">,</span><span class="n">end_ts</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="UtopiaDataInterface.extract_msgs_segment"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.extract_msgs_segment">[docs]</a>    <span class="k">def</span> <span class="nf">extract_msgs_segment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bgn_ts</span><span class="p">,</span> <span class="n">end_ts</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; extract the messages between start/end time stamps&#39;&#39;&#39;</span>
+        <span class="n">msgs</span> <span class="o">=</span> <span class="p">[]</span> <span class="c1"># store the trial stimEvents</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">msg_ringbuffer</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&lt;=</span> <span class="n">bgn_ts</span><span class="p">:</span>
+                <span class="c1"># stop as soon as earlier than bgn_ts</span>
+                <span class="k">break</span>
+            <span class="k">if</span> <span class="n">end_ts</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">m</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&lt;</span> <span class="n">end_ts</span><span class="p">:</span>
+                <span class="n">msgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="c1"># reverse back to input order</span>
+        <span class="n">msgs</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">msgs</span></div>
+
+<div class="viewcode-block" id="UtopiaDataInterface.run"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.UtopiaDataInterface.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout_ms</span><span class="o">=</span><span class="mi">30000</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;test run the interface forever, just getting and storing data&#39;&#39;&#39;</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span>
+        <span class="c1"># test getting 5s data</span>
+        <span class="n">tstart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span>
+        <span class="n">trlen_ms</span> <span class="o">=</span> <span class="mi">5000</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">getTimeStamp</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">t0</span><span class="o">+</span><span class="n">timeout_ms</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="c1"># test getting a data segment</span>
+            <span class="k">if</span> <span class="n">tstart</span> <span class="ow">is</span> <span class="kc">None</span> <span class="p">:</span>
+                <span class="n">tstart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span>
+            <span class="k">if</span> <span class="n">tstart</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span> <span class="o">&gt;</span> <span class="n">tstart</span> <span class="o">+</span> <span class="n">trlen_ms</span><span class="p">:</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_data_segment</span><span class="p">(</span><span class="n">tstart</span><span class="p">,</span> <span class="n">tstart</span><span class="o">+</span><span class="n">trlen_ms</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Got data: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tstart</span><span class="p">,</span> <span class="n">tstart</span><span class="o">+</span><span class="n">trlen_ms</span><span class="p">,</span> <span class="n">X</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_stimulus_segment</span><span class="p">(</span><span class="n">tstart</span><span class="p">,</span> <span class="n">tstart</span><span class="o">+</span><span class="n">trlen_ms</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Got stimulus: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tstart</span><span class="p">,</span> <span class="n">tstart</span><span class="o">+</span><span class="n">trlen_ms</span><span class="p">,</span> <span class="n">Y</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">tstart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_timestamp</span> <span class="o">+</span> <span class="mi">5000</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div></div>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">sklearn.base</span> <span class="kn">import</span> <span class="n">TransformerMixin</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="c1"># fake the class if sklearn is not available, e.g. Android/iOS</span>
+    <span class="k">class</span> <span class="nc">TransformerMixin</span><span class="p">:</span>
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">():</span>
+            <span class="k">pass</span>
+        <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">X</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">X</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+
+
+
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.utils</span> <span class="kn">import</span> <span class="n">sosfilt</span><span class="p">,</span> <span class="n">butter_sosfilt</span><span class="p">,</span> <span class="n">sosfilt_zi_warmup</span>
+<div class="viewcode-block" id="butterfilt_and_downsample"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.butterfilt_and_downsample">[docs]</a><span class="k">class</span> <span class="nc">butterfilt_and_downsample</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),(</span><span class="mi">5</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">order</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">fs</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">fs_out</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;butter&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopband</span> <span class="o">=</span> <span class="n">stopband</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs_out</span> <span class="o">=</span> <span class="n">fs_out</span> <span class="k">if</span> <span class="n">fs_out</span> <span class="o">&lt;</span> <span class="n">fs</span> <span class="k">else</span> <span class="n">fs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;axis != -2 is not yet supported!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ftype</span> <span class="o">=</span> <span class="n">ftype</span>
+
+<div class="viewcode-block" id="butterfilt_and_downsample.fit"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.butterfilt_and_downsample.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">fs</span><span class="p">:</span><span class="nb">float</span> <span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">zi</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># parameter overrides stored fs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span>
+
+        <span class="c1"># preprocess -&gt; spectral filter</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopband</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">pickle</span>
+            <span class="kn">import</span> <span class="nn">os</span>
+            <span class="c1"># load coefficients from file -- when scipy isn&#39;t available</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stopband</span><span class="p">):</span>
+                <span class="n">fn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopband</span> 
+            <span class="k">else</span><span class="p">:</span> <span class="c1"># try relative to our py file</span>
+                <span class="n">fn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)),</span><span class="bp">self</span><span class="o">.</span><span class="n">stopband</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sos_</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zi_</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1"># tweak the shape/scale of zi to the actual data shape</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">zi_</span> <span class="o">=</span> <span class="n">sosfilt_zi_warmup</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zi_</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;X=</span><span class="si">{}</span><span class="s2"> zi=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">zi_</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># estimate them from the given information</span>
+            <span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sos_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zi_</span> <span class="o">=</span> <span class="n">butter_sosfilt</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopband</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span> <span class="n">zi</span><span class="o">=</span><span class="n">zi</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ftype</span><span class="p">)</span>
+            
+        <span class="c1"># preprocess -&gt; downsample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamp</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">*</span><span class="mf">2.0</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fs_out</span><span class="p">))</span><span class="o">/</span><span class="mf">2.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_fs_</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;resample: </span><span class="si">{}</span><span class="s2">-&gt;</span><span class="si">{}</span><span class="s2">hz rsrate=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_fs_</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="butterfilt_and_downsample.transform"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.butterfilt_and_downsample.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># propogate the filter coefficients between calls</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;sos_&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:])</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sos_</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">zi_</span> <span class="o">=</span> <span class="n">sosfilt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sos_</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">,</span> <span class="n">zi</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">zi_</span><span class="p">)</span>
+
+        <span class="n">nsamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamp</span> <span class="o">+</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span> <span class="c1"># track *raw* sample counter</span>
+
+        <span class="c1"># preprocess -&gt; downsample @60hz</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># number samples through this cycle due to remainder of last block</span>
+            <span class="n">resamp_start</span> <span class="o">=</span> <span class="n">nsamp</span><span class="o">%</span><span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span>
+            <span class="c1"># convert to number samples needed to complete this cycle</span>
+            <span class="c1"># this is then the sample to take for the next cycle</span>
+            <span class="k">if</span> <span class="n">resamp_start</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">resamp_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span> <span class="o">-</span> <span class="n">resamp_start</span>
+            
+            <span class="c1"># allow non-integer resample rates</span>
+            <span class="n">idx</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">resamp_start</span><span class="p">,</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">],</span><span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">resamprate_</span><span class="o">%</span><span class="mi">1</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">idx</span><span class="o">.</span><span class="n">size</span><span class="o">&gt;</span><span class="mi">0</span> <span class="p">:</span> <span class="c1"># non-integer re-sample, interpolate</span>
+                <span class="n">idx_l</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="c1"># sample above</span>
+                <span class="n">idx_u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="c1"># sample below</span>
+                <span class="c1"># BODGE: guard for packet ending at sample boundary.</span>
+                <span class="n">idx_u</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx_u</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">idx_u</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">&lt;</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span> <span class="k">else</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>
+                <span class="n">w_u</span>   <span class="o">=</span> <span class="n">idx</span> <span class="o">-</span> <span class="n">idx_l</span> <span class="c1"># linear weight of the upper sample</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">idx_u</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">w_u</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">idx_l</span><span class="p">,:]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">w_u</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span> <span class="c1"># linear interpolation</span>
+                <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">idx_u</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">w_u</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="o">+</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span><span class="n">idx_l</span><span class="p">,:]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">w_u</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                <span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="p">:]</span> <span class="c1"># decimate X (trl, samp, d)</span>
+                <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="p">:]</span> <span class="c1"># decimate Y (trl, samp, y)</span>
+        
+        <span class="k">return</span> <span class="n">X</span> <span class="k">if</span> <span class="n">Y</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="butterfilt_and_downsample.testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.butterfilt_and_downsample.testcase">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+        <span class="sd">&#39;&#39;&#39; test the filt+downsample transformation filter by incremental calling &#39;&#39;&#39;</span>
+        <span class="c1">#X=np.cumsum(np.random.randn(100,1),axis=0)</span>
+        <span class="n">X</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">xs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+        <span class="c1"># high-pass and decimate</span>
+        <span class="n">bands</span> <span class="o">=</span> <span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="s1">&#39;bandpass&#39;</span><span class="p">))</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">fs_out</span> <span class="o">=</span> <span class="mi">130</span>
+        <span class="n">fds</span> <span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">stopband</span><span class="o">=</span><span class="n">bands</span><span class="p">,</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span><span class="n">fs_out</span><span class="o">=</span><span class="n">fs_out</span><span class="p">)</span>
+
+        
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;single step&quot;</span><span class="p">)</span>
+        <span class="n">fds</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:])</span>
+        <span class="n">m0</span><span class="p">,</span><span class="n">xs0</span> <span class="o">=</span> <span class="n">fds</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">xs</span><span class="p">)</span> <span class="c1"># (samp,ny,ne)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;M0 -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m0</span><span class="p">[:</span><span class="mi">20</span><span class="p">]))</span>
+
+        <span class="n">step</span><span class="o">=</span><span class="mi">6</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step size = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">step</span><span class="p">))</span>
+        <span class="n">fds</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,:])</span>
+        <span class="n">m1</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m0</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">m0</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">xs1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">xs0</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">xs0</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">t</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span><span class="n">step</span><span class="p">):</span>
+            <span class="n">idx</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="nb">min</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="n">step</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span>
+            <span class="n">mm</span><span class="p">,</span> <span class="n">idx1</span><span class="o">=</span><span class="n">fds</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">idx</span><span class="p">,:],</span><span class="n">idx</span><span class="p">[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">])</span>
+            <span class="n">m1</span><span class="p">[</span><span class="n">t</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="n">mm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],:]</span><span class="o">=</span><span class="n">mm</span>
+            <span class="n">xs1</span><span class="p">[</span><span class="n">t</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="n">mm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="n">idx1</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span><span class="n">mm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;M1 -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m1</span><span class="p">[:</span><span class="mi">20</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;diff: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">m0</span><span class="o">-</span><span class="n">m1</span><span class="p">))))</span>
+
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span> 
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span><span class="n">X</span><span class="p">,</span><span class="s1">&#39;*-&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs0</span><span class="p">,</span><span class="n">m0</span><span class="p">,</span><span class="s1">&#39;*-&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">-&gt;</span><span class="si">{}</span><span class="s1">Hz single&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bands</span><span class="p">,</span><span class="n">fs</span><span class="p">,</span><span class="n">fs_out</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xs1</span><span class="p">,</span><span class="n">m1</span><span class="p">,</span><span class="s1">&#39;*-&#39;</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">-&gt;</span><span class="si">{}</span><span class="s1">Hz incremental&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bands</span><span class="p">,</span><span class="n">fs</span><span class="p">,</span><span class="n">fs_out</span><span class="p">))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+
+
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.stim2event</span> <span class="kn">import</span> <span class="n">stim2event</span>
+<div class="viewcode-block" id="stim2eventfilt"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.stim2eventfilt">[docs]</a><span class="k">class</span> <span class="nc">stim2eventfilt</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; transformer to transform a sequence of stimulus states to a brain event sequence &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">histlen</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evtlabs</span> <span class="o">=</span> <span class="n">evtlabs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">histlen</span> <span class="o">=</span> <span class="n">histlen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="stim2eventfilt.fit"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.stim2eventfilt.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="stim2eventfilt.transform"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.stim2eventfilt.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;transform Stimulus-encoded to brain-encoded&#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        
+        <span class="c1"># keep old fitler state for the later transformation call</span>
+        <span class="n">prevX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span>
+
+        <span class="c1"># grab the new filter state (if wanted)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">histlen</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="c1">#print(&#39;prevX={}&#39;.format(prevX))</span>
+            <span class="c1">#print(&quot;X={}&quot;.format(X))</span>
+            <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">histlen</span> <span class="ow">or</span> <span class="n">prevX</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span> <span class="o">=</span> <span class="n">X</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prevX</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># only keep the last bit -- copy in case gets changed in-place</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prevX</span><span class="p">[</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">histlen</span><span class="p">:,:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1">#print(&#39;new_prevX={}&#39;.format(self.prevX))</span>
+
+        <span class="c1"># convert from stimulus coding to brain response coding, with old state</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">stim2event</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">evtlabs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">,</span> <span class="n">oM</span><span class="o">=</span><span class="n">prevX</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">X</span></div>
+
+<div class="viewcode-block" id="stim2eventfilt.testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.stim2eventfilt.testcase">[docs]</a>    <span class="k">def</span> <span class="nf">testcase</span><span class="p">():</span>
+        <span class="sd">&#39;&#39;&#39; test the stimulus transformation filter by incremental calling &#39;&#39;&#39;</span>
+        <span class="n">M</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])[:,</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span> <span class="c1"># samp,nY</span>
+        <span class="n">s2ef</span> <span class="o">=</span> <span class="n">stim2eventfilt</span><span class="p">(</span><span class="n">evtlabs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;re&#39;</span><span class="p">,</span><span class="s1">&#39;fe&#39;</span><span class="p">),</span><span class="n">histlen</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;single step&quot;</span><span class="p">)</span>
+        <span class="n">m0</span><span class="o">=</span><span class="n">s2ef</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">M</span><span class="p">)</span> <span class="c1"># (samp,ny,ne)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="n">m0</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step size = 1&quot;</span><span class="p">)</span>
+        <span class="n">m1</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m0</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">m0</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">)):</span>
+            <span class="n">idx</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">mm</span><span class="o">=</span><span class="n">s2ef</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">idx</span><span class="p">,:])</span>
+            <span class="n">m1</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="o">...</span><span class="p">]</span><span class="o">=</span><span class="n">mm</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">M</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">mm</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Step size=4&quot;</span><span class="p">)</span>
+        <span class="n">m4</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">m0</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">m0</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">M</span><span class="p">),</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">idx</span><span class="o">=</span><span class="nb">slice</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">mm</span><span class="o">=</span><span class="n">s2ef</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">M</span><span class="p">[</span><span class="n">idx</span><span class="p">,:])</span>
+            <span class="n">m4</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="o">...</span><span class="p">]</span><span class="o">=</span><span class="n">mm</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> -&gt; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">M</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">mm</span><span class="p">))</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;m0=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">m1=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">,m4=</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m0</span><span class="p">,</span><span class="n">m1</span><span class="p">,</span><span class="n">m4</span><span class="p">))</span></div></div>
+            
+
+
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="power_tracker"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker">[docs]</a><span class="k">class</span> <span class="nc">power_tracker</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">halflife_mu_ms</span><span class="p">,</span> <span class="n">halflife_power_ms</span><span class="p">,</span> <span class="n">fs</span><span class="p">):</span>
+        <span class="c1"># convert to per-sample decay factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hl2alpha</span><span class="p">(</span><span class="n">fs</span> <span class="o">*</span> <span class="n">halflife_mu_ms</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="p">)</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_power</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hl2alpha</span><span class="p">(</span><span class="n">fs</span> <span class="o">*</span> <span class="n">halflife_power_ms</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX_N</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="power_tracker.hl2alpha"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.hl2alpha">[docs]</a>    <span class="k">def</span> <span class="nf">hl2alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hl</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="o">.</span><span class="mi">5</span><span class="p">)</span><span class="o">/</span><span class="n">hl</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="power_tracker.fit"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX_N</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">X</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sX</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="power_tracker.transform"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39; compute the exponientially weighted centered power of X &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sX</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="c1"># not fitted yet!</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="c1"># compute updated mean</span>
+        <span class="n">alpha_mu</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_mu</span> <span class="o">**</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span><span class="o">*</span><span class="n">alpha_mu</span> <span class="o">+</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sX</span>    <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sX</span><span class="o">*</span><span class="n">alpha_mu</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># center and compute updated power</span>
+        <span class="n">alpha_pow</span>  <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_power</span> <span class="o">**</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX_N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sXX_N</span><span class="o">*</span><span class="n">alpha_pow</span> <span class="o">+</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sXX</span>   <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sXX</span><span class="o">*</span><span class="n">alpha_pow</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">X</span><span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sX</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>       
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">()</span></div>
+    
+<div class="viewcode-block" id="power_tracker.mean"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sX_N</span></div>
+<div class="viewcode-block" id="power_tracker.power"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.power">[docs]</a>    <span class="k">def</span> <span class="nf">power</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sXX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sXX_N</span></div>
+    
+<div class="viewcode-block" id="power_tracker.testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.power_tracker.testcase">[docs]</a>    <span class="k">def</span> <span class="nf">testcase</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">10000</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1">#X = np.cumsum(X,axis=0)</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">power_tracker</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;All at once: power=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)))</span>  <span class="c1"># all at once</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">power_tracker</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;alpha_mu=</span><span class="si">{}</span><span class="s2"> alpha_pow=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">alpha_mu</span><span class="p">,</span><span class="n">pt</span><span class="o">.</span><span class="n">alpha_power</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="mi">30</span>
+        <span class="n">idxs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">step</span><span class="p">,</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">step</span><span class="p">))</span>
+        <span class="n">powers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">),</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">mus</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">idxs</span><span class="p">),</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idxs</span><span class="p">):</span>
+            <span class="n">powers</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">pt</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="n">step</span><span class="p">:</span><span class="n">j</span><span class="p">,:]))</span>
+            <span class="n">mus</span><span class="p">[</span><span class="n">i</span><span class="p">,:]</span><span class="o">=</span><span class="n">pt</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span><span class="mi">1</span><span class="p">,</span><span class="n">d</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span><span class="n">d</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span><span class="n">mus</span><span class="p">[:,</span><span class="n">d</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span><span class="n">powers</span><span class="p">[:,</span><span class="n">d</span><span class="p">])</span></div></div>
+
+
+
+
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<span class="c1">#--------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="timestamp_interpolation"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.timestamp_interpolation">[docs]</a><span class="k">class</span> <span class="nc">timestamp_interpolation</span><span class="p">(</span><span class="n">TransformerMixin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;transform from per-packet time-stamps to per-sample timestamps (with de-jitter)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">sample2timestamp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_delta</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;tranform from per-packet (i.e. multiple-samples) to per-sample timestamps</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            fs (float): default sample rate, used when no other timing info is available</span>
+<span class="sd">            sample2timestamp (transformer, optional): class to de-jitter timestamps based on sample-count. Defaults to None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="mi">1000</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span>
+         <span class="c1"># BODGE: special cases for particular mapping functions so can include the prior slope</span>
+        <span class="k">if</span> <span class="n">sample2timestamp</span><span class="o">==</span><span class="s1">&#39;lower_bound_tracker&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="n">lower_bound_tracker</span><span class="p">(</span><span class="n">a0</span><span class="o">=</span><span class="n">a0</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">sample2timestamp</span><span class="o">==</span><span class="s1">&#39;linear_trend_tracker&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="n">linear_trend_tracker</span><span class="p">(</span><span class="n">a0</span><span class="o">=</span><span class="n">a0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="n">sample2timestamp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_delta</span> <span class="o">=</span> <span class="n">max_delta</span>
+
+<div class="viewcode-block" id="timestamp_interpolation.fit"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.timestamp_interpolation.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ts</span><span class="p">,</span><span class="n">nsamp</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_sample_timestamp_</span> <span class="o">=</span> <span class="n">ts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="timestamp_interpolation.transform"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.timestamp_interpolation.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">timestamp</span><span class="p">:</span><span class="nb">float</span><span class="p">,</span><span class="n">nsamp</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;add per-sample timestamp information to the data matrix</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timestamp (float): the timestamp of the last sample of d</span>
+<span class="sd">            nsamp(int): number of samples to interpolate</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: (nsamp) the interpolated time-stamps</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="s1">&#39;last_sample_timestamp_&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span><span class="n">nsamp</span><span class="p">)</span>
+
+        <span class="c1"># update tracking number samples processed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_</span> <span class="o">+</span> <span class="n">nsamp</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sample_timestamp_</span> <span class="o">&lt;</span> <span class="n">timestamp</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># update the tracker for the sample-number to sample timestamp mapping</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1">#print(&quot;n={} ts={}&quot;.format(n,timestamp))</span>
+                <span class="n">newtimestamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample2timestamp</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">)</span>
+                <span class="c1">#print(&quot;ts={} newts={} diff={}&quot;.format(timestamp,newtimestamp,timestamp-newtimestamp))</span>
+                <span class="c1"># use the corrected de-jittered time-stamp -- if it&#39;s not tooo different</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">timestamp</span><span class="o">-</span><span class="n">newtimestamp</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_delta</span><span class="p">:</span>
+                    <span class="n">timestamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">newtimestamp</span><span class="p">)</span>
+
+            <span class="c1"># simple linear interpolation for the sample time-stamps</span>
+            <span class="n">samples_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">last_sample_timestamp_</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">nsamp</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">samples_ts</span> <span class="o">=</span> <span class="n">samples_ts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fs</span> <span class="p">:</span>
+                <span class="c1"># interpolate with the estimated sample rate                    </span>
+                <span class="n">samples_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="n">nsamp</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1000</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">fs</span><span class="p">)</span> <span class="o">+</span> <span class="n">timestamp</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># give all same timestamp</span>
+                <span class="n">samples_ts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">nsamp</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span><span class="o">*</span><span class="n">timestamp</span>
+
+        <span class="c1"># update the tracking info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_sample_timestamp_</span> <span class="o">=</span> <span class="n">timestamp</span>
+
+        <span class="k">return</span> <span class="n">samples_ts</span></div>
+
+<div class="viewcode-block" id="timestamp_interpolation.testcase"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.timestamp_interpolation.testcase">[docs]</a>    <span class="k">def</span> <span class="nf">testcase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">npkt</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+        <span class="c1"># generate random packet sizes</span>
+        <span class="n">nsamp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_integers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">npkt</span><span class="p">,))</span>
+        <span class="c1"># generate true sample timestamps</span>
+        <span class="n">ts_true</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nsamp</span><span class="p">))</span><span class="o">*</span><span class="mi">1000</span><span class="o">/</span><span class="n">fs</span>
+        <span class="c1"># packet end indices</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">nsamp</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+        <span class="c1"># packet end time-stamps</span>
+        <span class="n">pkt_ts</span> <span class="o">=</span> <span class="n">ts_true</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="c1"># add some time-stamp jitter, always positive..</span>
+        <span class="n">pkt_ts</span> <span class="o">=</span> <span class="n">pkt_ts</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">.</span><span class="mi">5</span><span class="o">*</span><span class="mi">1000</span><span class="o">/</span><span class="n">fs</span><span class="p">,</span><span class="n">size</span><span class="o">=</span><span class="n">pkt_ts</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c1"># apply the time-stamp interplotation</span>
+        <span class="n">sts</span><span class="o">=</span><span class="p">[]</span>
+        <span class="n">tsfn</span> <span class="o">=</span> <span class="n">timestamp_interpolation</span><span class="p">(</span><span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span><span class="n">sample2timestamp</span> <span class="o">=</span> <span class="s1">&#39;lower_bound_tracker&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,(</span><span class="n">n</span><span class="p">,</span><span class="n">t</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">nsamp</span><span class="p">,</span><span class="n">pkt_ts</span><span class="p">)):</span>
+            <span class="n">samp_ts</span> <span class="o">=</span> <span class="n">tsfn</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+            <span class="n">sts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">samp_ts</span><span class="p">)</span>
+        <span class="c1"># plot the result.</span>
+        <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ts_true</span> <span class="o">-</span> <span class="n">sts</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="testRaw"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testRaw">[docs]</a><span class="k">def</span> <span class="nf">testRaw</span><span class="p">():</span>
+    <span class="c1"># test with raw</span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="p">()</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="n">sigViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span><span class="mi">30000</span><span class="p">)</span> <span class="c1"># 30s sigviewer</span></div>
+
+<div class="viewcode-block" id="testPP"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testPP">[docs]</a><span class="k">def</span> <span class="nf">testPP</span><span class="p">():</span>
+    <span class="kn">from</span> <span class="nn">sigViewer</span> <span class="kn">import</span> <span class="n">sigViewer</span>
+    <span class="c1"># test with a filter + downsampler</span>
+    <span class="n">ppfn</span><span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">25</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">fs_out</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="c1">#ppfn= butterfilt_and_downsample(order=4, stopband=&#39;butter_stopband((0, 5), (25, -1))_fs200.pk&#39;, fs_out=80)     </span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="p">(</span><span class="n">data_preprocessor</span><span class="o">=</span><span class="n">ppfn</span><span class="p">,</span> <span class="n">stimulus_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="n">sigViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="testFileProxy"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testFileProxy">[docs]</a><span class="k">def</span> <span class="nf">testFileProxy</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="n">fs_out</span><span class="o">=</span><span class="mi">999</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.FileProxyHub</span> <span class="kn">import</span> <span class="n">FileProxyHub</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">FileProxyHub</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">sigViewer</span> <span class="kn">import</span> <span class="n">sigViewer</span>
+    <span class="c1"># test with a filter + downsampler</span>
+    <span class="c1">#ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=fs_out)</span>
+    <span class="n">ppfn</span><span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="s1">&#39;bandpass&#39;</span><span class="p">),</span> <span class="n">fs_out</span><span class="o">=</span><span class="n">fs_out</span><span class="p">)</span>
+    <span class="c1">#ppfn = None</span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="p">(</span><span class="n">data_preprocessor</span><span class="o">=</span><span class="n">ppfn</span><span class="p">,</span> <span class="n">stimulus_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mintime_ms</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">)</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="n">sigViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="testFileProxy2"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testFileProxy2">[docs]</a><span class="k">def</span> <span class="nf">testFileProxy2</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">mindaffectBCI.decoder.FileProxyHub</span> <span class="kn">import</span> <span class="n">FileProxyHub</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="n">FileProxyHub</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">ofs</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="c1"># test with a filter + downsampler</span>
+    <span class="n">ppfn</span><span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="p">((</span><span class="mi">45</span><span class="p">,</span><span class="mi">65</span><span class="p">),(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">25</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span> <span class="n">fs_out</span><span class="o">=</span><span class="n">ofs</span><span class="p">)</span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="p">(</span><span class="n">data_preprocessor</span><span class="o">=</span><span class="n">ppfn</span><span class="p">,</span> <span class="n">stimulus_preprocessor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mintime_ms</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">U</span><span class="o">=</span><span class="n">U</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">)</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="c1"># run in bits..</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">stim</span><span class="o">=</span><span class="p">[]</span>
+    <span class="n">emptycount</span> <span class="o">=</span> <span class="mi">0</span> 
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">newmsg</span><span class="p">,</span> <span class="n">nsamp</span><span class="p">,</span> <span class="n">nstim</span> <span class="o">=</span> <span class="n">ui</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">newmsg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">nsamp</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">nstim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> 
+            <span class="n">emptycount</span> <span class="o">=</span> <span class="n">emptycount</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">emptycount</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">emptycount</span><span class="o">=</span><span class="mi">0</span>
+        <span class="k">if</span> <span class="n">nsamp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ui</span><span class="o">.</span><span class="n">data_ringbuffer</span><span class="p">[</span><span class="o">-</span><span class="n">nsamp</span><span class="p">:,:]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">nstim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">stim</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ui</span><span class="o">.</span><span class="n">stimulus_ringbuffer</span><span class="p">[</span><span class="o">-</span><span class="n">nstim</span><span class="p">:,:]</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+    <span class="c1"># convert to single data block</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">stim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">stim</span><span class="p">)</span>
+    <span class="c1"># dump as pickle</span>
+    <span class="kn">import</span> <span class="nn">pickle</span>
+    <span class="k">if</span> <span class="n">ppfn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span><span class="n">stim</span><span class="o">=</span><span class="n">stim</span><span class="p">),</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;raw_udi.pk&#39;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span><span class="n">stim</span><span class="o">=</span><span class="n">stim</span><span class="p">),</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;pp_udi.pk&#39;</span><span class="p">,</span><span class="s1">&#39;wb&#39;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="testERP"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testERP">[docs]</a><span class="k">def</span> <span class="nf">testERP</span><span class="p">():</span>
+    <span class="n">ui</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="p">()</span>
+    <span class="n">ui</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="n">erpViewer</span><span class="p">(</span><span class="n">ui</span><span class="p">,</span><span class="n">evtlabs</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="c1"># 30s sigviewer</span></div>
+
+<div class="viewcode-block" id="testElectrodeQualities"><a class="viewcode-back" href="../../../mindaffectBCI.decoder.html#mindaffectBCI.decoder.UtopiaDataInterface.testElectrodeQualities">[docs]</a><span class="k">def</span> <span class="nf">testElectrodeQualities</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">fs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span><span class="n">pktsize</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="c1"># recurse if more dims than we want...</span>
+    <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">ndim</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+        <span class="n">sigq</span><span class="o">=</span><span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">sigqi</span> <span class="o">=</span> <span class="n">testElectrodeQualities</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="o">...</span><span class="p">],</span><span class="n">fs</span><span class="p">,</span><span class="n">pktsize</span><span class="p">)</span>
+            <span class="n">sigq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigqi</span><span class="p">)</span>
+        <span class="n">sigq</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">sigq</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sigq</span>
+    
+    <span class="n">ppfn</span><span class="o">=</span> <span class="n">butterfilt_and_downsample</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">stopband</span><span class="o">=</span><span class="s1">&#39;butter_stopband((0, 5), (25, -1))_fs200.pk&#39;</span><span class="p">,</span> <span class="n">fs_out</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">ppfn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">[:</span><span class="mi">10</span><span class="p">,:],</span><span class="n">fs</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+    <span class="n">noise2sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">pktsize</span><span class="p">),</span><span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">pkti</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">noise2sig</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">pkti</span><span class="o">*</span><span class="n">pktsize</span>
+        <span class="n">Xi</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">t</span><span class="p">:</span><span class="n">t</span><span class="o">+</span><span class="n">pktsize</span><span class="p">,:]</span>
+        <span class="n">Xip</span> <span class="o">=</span> <span class="n">ppfn</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">Xi</span><span class="p">)</span>
+        <span class="n">raw_power</span><span class="p">,</span> <span class="n">preproc_power</span> <span class="o">=</span> <span class="n">UtopiaDataInterface</span><span class="o">.</span><span class="n">update_electrode_powers</span><span class="p">(</span><span class="n">Xi</span><span class="p">,</span><span class="n">Xip</span><span class="p">)</span>
+        <span class="n">noise2sig</span><span class="p">[</span><span class="n">pkti</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">),</span> <span class="p">(</span><span class="n">raw_power</span> <span class="o">-</span> <span class="n">preproc_power</span><span class="p">))</span> <span class="o">/</span>  <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mf">1e-8</span><span class="p">),</span><span class="n">preproc_power</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">noise2sig</span></div>
+
+    
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1">#timestamp_interpolation().testcase()</span>
+    <span class="c1">#butterfilt_and_downsample.testcase()</span>
+    <span class="c1">#testRaw()</span>
+    <span class="c1">#testPP()</span>
+    <span class="c1">#testERP()</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt&quot;</span>
+    <span class="n">filename</span><span class="o">=</span><span class="s2">&quot;C:/Users/Developer/Downloads/trig_check/mindaffectBCI_cyton_brainflow_201002_2008.txt&quot;</span>
+    <span class="n">testFileProxy</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="c1">#testFileProxy2(filename)</span>
+    <span class="c1"># &quot;C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt&quot;)</span>
+    <span class="c1">#&quot;..\..\Downloads\khash\mindaffectBCI_noisetag_bci_200907_1433.txt&quot;</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
