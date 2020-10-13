@@ -32,18 +32,18 @@ def zscore2Ptgt_softmax(f, softmaxscale=2, validTgt=None, marginalizemodels=True
     # Now : f= (nTrl,nDecis,nY)
 
     if validTgt is None: # get which outputs are used in which trials..
-        validTgt = np.any(f != 0, 1) # (nTrl,nY)
+        validTgt = np.any(f != 0, 1) # (nM,nTrl,nY)
     elif validTgt.ndim == 1:
         validTgt = validTgt[np.newaxis, :]
 
-    noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
+    noutcorr = softmax_nout_corr(np.sum(validTgt,-1)) # (nTrl,)
     softmaxscale = softmaxscale * noutcorr[:,np.newaxis,np.newaxis] #(nTrl,1,1)
 
     # get the prob each output conditioned on the model
-    Ptgteptimdl = softmax(f*softmaxscale,validTgt)
+    Ptgteptimdl = softmax(f*softmaxscale,validTgt) # (nTrl,nDecis,nY) 
     
     if (marginalizemodels and
-        (Ptgteptimdl.shape[1] > 1 or # mulitple decis points 
+        (Ptgteptimdl.shape[-2] > 1 or # mulitple decis points 
         (Ptgteptimdl.ndim > 3 and Ptgteptimdl.shape[0] > 1))): # multiple models
         # need to remove the nusiance parameters to get per-trial Y-prob
         ftgt=np.zeros((Ptgteptimdl.shape[0], Ptgteptimdl.shape[2])) # (nTrl,nY) [ nY x nTrl]

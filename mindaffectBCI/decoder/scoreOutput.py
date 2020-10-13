@@ -218,7 +218,7 @@ def datasettest():
     plot_outputscore(X[0,...],Y[0,...],W,R)
 
        
-def plot_Fy(Fy,cumsum=True):
+def plot_Fy(Fy,cumsum=True, legend=False):
     import matplotlib.pyplot as plt
     import numpy as np
     '''plot the output score function'''
@@ -247,7 +247,8 @@ def plot_Fy(Fy,cumsum=True):
         pl.plot(Fy[ti,:,0:1],'k',linewidth=5)
         pl.set_title("{}".format(ti))
         pl.grid(True)
-    pl.legend(range(Fy.shape[-1]-1))
+    if legend:
+        pl.legend(range(Fy.shape[-1]-1))
     plt.suptitle('cumsum Fy')
     
 def plot_Fycomparsion(Fy,Fys,ti=0):    

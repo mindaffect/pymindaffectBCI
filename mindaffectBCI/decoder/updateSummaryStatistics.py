@@ -488,7 +488,7 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, spatial_filter_type="Filter"):
+def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, spatial_filter_type="Filter", ncol=2):
     '''
     Make a multi-plot of a factored model
     A = (k,d)
@@ -531,7 +531,7 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
     print("A={} R={}".format(A.shape, R.shape))
     
     # plot per component
-    ncols = 2 #int(np.ceil(np.sqrt(A.shape[0])))
+    ncols = ncol #int(np.ceil(np.sqrt(A.shape[0])))
     nrows = A.shape[0] #int(np.ceil(A.shape[0]/ncols))
     # start at the bottom to share the axis
     for ci in range(A.shape[0]):
@@ -542,7 +542,6 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             axA = plt.subplot(nrows, ncols, subploti+1) # share limits
             axA.set_xlabel("Space")
             axR.set_xlabel("time (s)")
-            axA.grid(True)
             axR.grid(True)
             pA = axA
             pR = axR
@@ -550,19 +549,25 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             pR = plt.subplot(nrows, ncols, subploti+2, sharex=axR, sharey=axR) 
             pA = plt.subplot(nrows, ncols, subploti+1, sharex=axA, sharey=axA) 
             plt.tick_params(labelbottom=False,labelleft=False) # no labels
-            pA.grid(True)
             pR.grid(True)
 
         # make the spatial plot
         sign = np.sign(A[ci,np.argmax(np.abs(A[ci,:]))]) # normalize directions
-        if not ch_pos is None:
+        if not ch_pos is None: # make as topoplot
             cRng= np.max(np.abs(A.reshape((-1))))
             levels = np.linspace(-cRng,cRng,20)
             tt=pA.tricontourf(ch_pos[:,0],ch_pos[:,1],A[ci,:]*sign,levels=levels,cmap='Spectral')
-            pA.plot(ch_pos[:,0],ch_pos[:,1],'ko',markersize=5)
+            for i,n in enumerate(ch_names):
+                #pA.plot(ch_pos[i,0],ch_pos[i,1],'.',markersize=5) # marker
+                pA.text(ch_pos[i,0],ch_pos[i,1],n,ha='center',va='center') # label
+            pA.set_aspect(aspect='equal')
+            pA.set_frame_on(False) # no frame
+            plt.tick_params(labelbottom=False,labelleft=False,which='both',bottom=False,left=False) # no labels, ticks
             plt.colorbar(tt)
         else:
             pA.plot(ch_names,A[ci,:]*sign,'.-')
+            pA.grid(True)
+
         pA.title.set_text("Spatial {} #{}".format(spatial_filter_type,ci))
         # make the temporal plot, with labels, N.B. use loop so can set each lines label
         for e in range(R.shape[-2]):
