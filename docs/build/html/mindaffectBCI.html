@@ -1,0 +1,1810 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI package &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="mindaffectBCI.decoder package" href="mindaffectBCI.decoder.html" />
+    <link rel="prev" title="mindaffectBCI" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">mindaffectBCI</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mindaffectBCI package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.html">mindaffectBCI.decoder package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.noisetag">mindaffectBCI.noisetag module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.online_bci">mindaffectBCI.online_bci module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.online_bci_pi">mindaffectBCI.online_bci_pi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.ssdpDiscover">mindaffectBCI.ssdpDiscover module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.stimseq">mindaffectBCI.stimseq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.utopia2output">mindaffectBCI.utopia2output module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.utopiaController">mindaffectBCI.utopiaController module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI.utopiaclient">mindaffectBCI.utopiaclient module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mindaffectBCI">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">mindaffectBCI</a> &raquo;</li>
+        
+      <li>mindaffectBCI package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mindaffectBCI.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="mindaffectbci-package">
+<h1>mindaffectBCI package<a class="headerlink" href="#mindaffectbci-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mindaffectBCI.decoder.html">mindaffectBCI.decoder package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.decoder.offline.html">mindaffectBCI.decoder.offline package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_brainsonfire">mindaffectBCI.decoder.offline.load_brainsonfire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_brainstream">mindaffectBCI.decoder.offline.load_brainstream module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_cocktail">mindaffectBCI.decoder.offline.load_cocktail module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mTRF_audio">mindaffectBCI.decoder.offline.load_mTRF_audio module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mark_EMG">mindaffectBCI.decoder.offline.load_mark_EMG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_mindaffectBCI">mindaffectBCI.decoder.offline.load_mindaffectBCI module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_ninapro_db2">mindaffectBCI.decoder.offline.load_ninapro_db2 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_openBMI">mindaffectBCI.decoder.offline.load_openBMI module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_p300_prn">mindaffectBCI.decoder.offline.load_p300_prn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.load_twofinger">mindaffectBCI.decoder.offline.load_twofinger module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.read_buffer_offline">mindaffectBCI.decoder.offline.read_buffer_offline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline.read_mindaffectBCI">mindaffectBCI.decoder.offline.read_mindaffectBCI module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mindaffectBCI.decoder.offline.html#module-mindaffectBCI.decoder.offline">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.FileProxyHub">mindaffectBCI.decoder.FileProxyHub module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.UtopiaDataInterface">mindaffectBCI.decoder.UtopiaDataInterface module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.analyse_datasets">mindaffectBCI.decoder.analyse_datasets module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.ccaViewer">mindaffectBCI.decoder.ccaViewer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-dataset-debugging-module">mindaffectBCI.decoder.dataset debugging module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.datasets">mindaffectBCI.decoder.datasets module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-dec-test-module">mindaffectBCI.decoder.dec_test module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decoder">mindaffectBCI.decoder.decoder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decodingCurveSupervised">mindaffectBCI.decoder.decodingCurveSupervised module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.decodingSupervised">mindaffectBCI.decoder.decodingSupervised module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.devent2stimsequence">mindaffectBCI.decoder.devent2stimsequence module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.erpViewer">mindaffectBCI.decoder.erpViewer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.lower_bound_tracker">mindaffectBCI.decoder.lower_bound_tracker module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.model_fitting">mindaffectBCI.decoder.model_fitting module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.multipleCCA">mindaffectBCI.decoder.multipleCCA module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.multipleMCCA">mindaffectBCI.decoder.multipleMCCA module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.normalizeOutputScores">mindaffectBCI.decoder.normalizeOutputScores module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.normalizeOutputScores_streamed">mindaffectBCI.decoder.normalizeOutputScores_streamed module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#mindaffectbci-decoder-offline-analysis-module">mindaffectBCI.decoder.offline_analysis module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.preprocess">mindaffectBCI.decoder.preprocess module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.readCapInf">mindaffectBCI.decoder.readCapInf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.scoreOutput">mindaffectBCI.decoder.scoreOutput module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.scoreStimulus">mindaffectBCI.decoder.scoreStimulus module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.sigViewer">mindaffectBCI.decoder.sigViewer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.startUtopiaHub">mindaffectBCI.decoder.startUtopiaHub module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.stim2event">mindaffectBCI.decoder.stim2event module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.timestamp_check">mindaffectBCI.decoder.timestamp_check module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.trigger_check">mindaffectBCI.decoder.trigger_check module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.updateSummaryStatistics">mindaffectBCI.decoder.updateSummaryStatistics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.utils">mindaffectBCI.decoder.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder.zscore2Ptgt_softmax">mindaffectBCI.decoder.zscore2Ptgt_softmax module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mindaffectBCI.decoder.html#module-mindaffectBCI.decoder">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mindaffectBCI.noisetag">
+<span id="mindaffectbci-noisetag-module"></span><h2>mindaffectBCI.noisetag module<a class="headerlink" href="#module-mindaffectBCI.noisetag" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.CalibrationPhase">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">CalibrationPhase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nTrials</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stimulusStateStack</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.CalibrationPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>do a complete calibration phase with nTrials x CalibrationTrial</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.CalibrationPhase.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.CalibrationPhase.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.Experiment">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">Experiment</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objIDs</span></em>, <em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nCal</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">nPred</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">selectionThreshold</span><span class="o">=</span><span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">cuedprediction</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stimulusStateStack</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">duration</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">calduration</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">predduration</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>do a complete experiment, with calibration -&gt; prediction</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Experiment.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Experiment.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.FSM">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">FSM</code><a class="headerlink" href="#mindaffectBCI.noisetag.FSM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>simple finite state machine, using a generator-like pattern</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.FSM.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.FSM.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the current state, for this set of active objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.FSM.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.FSM.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.Flicker">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">Flicker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">0.06666666666666667</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">sendEvents</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">framesperbit</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Flicker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>do a normal flicker sequence</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Flicker.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Flicker.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the current state, for this set of active objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Flicker.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Flicker.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Flicker.update_ss">
+<code class="sig-name descname">update_ss</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Flicker.update_ss" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.FlickerWithSelection">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">FlickerWithSelection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">0.06666666666666667</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">framesperbit</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">sendEvents</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.FlickerWithSelection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.Flicker" title="mindaffectBCI.noisetag.Flicker"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.Flicker</span></code></a></p>
+<p>do a normal flicker sequence, with early stopping selection</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.FlickerWithSelection.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.FlickerWithSelection.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.GSM">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">GSM</code><a class="headerlink" href="#mindaffectBCI.noisetag.GSM" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>Generalized state machine with stack of states</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.GSM.clear">
+<code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.GSM.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.GSM.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.GSM.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the current state, for this set of active objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.GSM.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.GSM.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the next stimulus state to shown</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.GSM.pop">
+<code class="sig-name descname">pop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.GSM.pop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.GSM.push">
+<code class="sig-name descname">push</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.GSM.push" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.HighlightObject">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">HighlightObject</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">0.03333333333333333</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">tgtState</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">sendEvents</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">numblinkframes</span><span class="o">=</span><span class="default_value">30</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.HighlightObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.Flicker" title="mindaffectBCI.noisetag.Flicker"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.Flicker</span></code></a></p>
+<p>Highlight a single object for a number of frames</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.Noisetag">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">Noisetag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimFile</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stimulusStateMachineStack</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>noisetag abstraction layer to handle <em>both</em> the sequencing of the stimulus
+flicker, <em>and</em> the communications with the Mindaffect decoder.  Clients can
+use this class to implement BCI control by:</p>
+<blockquote>
+<div><ol class="arabic simple" start="0">
+<li><p>setting the flicker sequence to use (method: startFlicker, startFlickerWithSelection, startCalibration, startPrediction, startExpt)</p></li>
+<li><p>getting the current stimulus state (method: getStimulusState), and using that to draw the display</p></li>
+<li><p>telling Noisetag when <em>exactly</em> the stimulus update took place (method: sendStimulusState)</p></li>
+<li><p>getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())</p></li>
+</ol>
+</div></blockquote>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.addMessageHandler">
+<code class="sig-name descname">addMessageHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.addMessageHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.addPredictionHandler">
+<code class="sig-name descname">addPredictionHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.addPredictionHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.addSelectionHandler">
+<code class="sig-name descname">addSelectionHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.addSelectionHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.addSubscription">
+<code class="sig-name descname">addSubscription</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.addSubscription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.clearLastPrediction">
+<code class="sig-name descname">clearLastPrediction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.clearLastPrediction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.clearLastSelection">
+<code class="sig-name descname">clearLastSelection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.clearLastSelection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.clearLastSignalQuality">
+<code class="sig-name descname">clearLastSignalQuality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.clearLastSignalQuality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.connect">
+<code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">queryifhostnotfound</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">5000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getLastPrediction">
+<code class="sig-name descname">getLastPrediction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getLastPrediction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getLastSelection">
+<code class="sig-name descname">getLastSelection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getLastSelection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getLastSignalQuality">
+<code class="sig-name descname">getLastSignalQuality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getLastSignalQuality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getNewMessages">
+<code class="sig-name descname">getNewMessages</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getNewMessages" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getStimulusState">
+<code class="sig-name descname">getStimulusState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getStimulusState" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.getTimeStamp">
+<code class="sig-name descname">getTimeStamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.getTimeStamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.gethostport">
+<code class="sig-name descname">gethostport</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.gethostport" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.isConnected">
+<code class="sig-name descname">isConnected</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.isConnected" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.log">
+<code class="sig-name descname">log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.modeChange">
+<code class="sig-name descname">modeChange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newmode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.modeChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>manually change the decoder mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.removeSubscription">
+<code class="sig-name descname">removeSubscription</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.removeSubscription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.sendStimulusState">
+<code class="sig-name descname">sendStimulusState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.sendStimulusState" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.setActiveObjIDs">
+<code class="sig-name descname">setActiveObjIDs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objIDs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.setActiveObjIDs" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the set of active objects we send info to decoder about</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.setTimeStampClock">
+<code class="sig-name descname">setTimeStampClock</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tsclock</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.setTimeStampClock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.setnumActiveObjIDs">
+<code class="sig-name descname">setnumActiveObjIDs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nobj</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.setnumActiveObjIDs" title="Permalink to this definition">¶</a></dt>
+<dd><p>update to say number active objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startCalibration">
+<code class="sig-name descname">startCalibration</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nTrials</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startCalibration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startExpt">
+<code class="sig-name descname">startExpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nCal</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nPred</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">selectionThreshold</span><span class="o">=</span><span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">cuedprediction</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startExpt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startFlicker">
+<code class="sig-name descname">startFlicker</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startFlicker" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startFlickerWithSelection">
+<code class="sig-name descname">startFlickerWithSelection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startFlickerWithSelection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startPrediction">
+<code class="sig-name descname">startPrediction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nTrials</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startPrediction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.startSingleTrial">
+<code class="sig-name descname">startSingleTrial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">tgtidx</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.startSingleTrial" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.subscribe">
+<code class="sig-name descname">subscribe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.Noisetag.updateStimulusState">
+<code class="sig-name descname">updateStimulusState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.Noisetag.updateStimulusState" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.PredictionPhase">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">PredictionPhase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objIDs</span></em>, <em class="sig-param"><span class="n">stimSeq</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nTrials</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stimulusStateStack</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">selectionThreshold</span><span class="o">=</span><span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">cuedprediction</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.PredictionPhase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>do complete prediction phase with nTrials x trials with early-stopping feedback</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.PredictionPhase.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.PredictionPhase.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.SingleTrial">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">SingleTrial</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimSeq</span></em>, <em class="sig-param"><span class="n">tgtidx</span></em>, <em class="sig-param"><span class="n">utopiaController</span></em>, <em class="sig-param"><span class="n">stimulusStateStack</span></em>, <em class="sig-param"><span class="n">numframes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">framesperbit</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">selectionThreshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">duration</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">cueduration</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">feedbackduration</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">waitduration</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">cueframes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">feedbackframes</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">waitframes</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.SingleTrial" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>do a complete single trial with: cue-&gt;wait-&gt;flicker-&gt;feedback</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.SingleTrial.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.SingleTrial.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.WaitFor">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">WaitFor</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.WaitFor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.noisetag.FSM" title="mindaffectBCI.noisetag.FSM"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.noisetag.FSM</span></code></a></p>
+<p>wait for given number of frames to pass</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.WaitFor.get">
+<code class="sig-name descname">get</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.WaitFor.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the current state, for this set of active objects</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.WaitFor.next">
+<code class="sig-name descname">next</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.WaitFor.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>update the current state, return the new state, raise StopIteration exception when done</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.noisetag.doFrame">
+<code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">doFrame</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">stimState</span></em>, <em class="sig-param"><span class="n">tgtState</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">utopiaController</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.doFrame" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.noisetag.mkBlinkingSequence">
+<code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">mkBlinkingSequence</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">numframes</span></em>, <em class="sig-param"><span class="n">tgtidx</span></em>, <em class="sig-param"><span class="n">tgtState</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.mkBlinkingSequence" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.noisetag.sumstats">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.noisetag.</code><code class="sig-name descname">sumstats</code><a class="headerlink" href="#mindaffectBCI.noisetag.sumstats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Utility class to record summary stastics for, e.g. frame flip timing</p>
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.sumstats.addpoint">
+<code class="sig-name descname">addpoint</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.sumstats.addpoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.noisetag.sumstats.hist">
+<code class="sig-name descname">hist</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.noisetag.sumstats.hist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.online_bci">
+<span id="mindaffectbci-online-bci-module"></span><h2>mindaffectBCI.online_bci module<a class="headerlink" href="#module-mindaffectBCI.online_bci" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci.parse_args">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci.</code><code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci.run">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci.</code><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">acquisation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">acq_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">decoder</span><span class="o">=</span><span class="default_value">'decoder'</span></em>, <em class="sig-param"><span class="n">decoder_args</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">presentation</span><span class="o">=</span><span class="default_value">'selectionMatrix'</span></em>, <em class="sig-param"><span class="n">presentation_args</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>[summary]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – string label for the saved data file. Defaults to ‘’.</p></li>
+<li><p><strong>acquisation</strong> (<em>str</em><em>, </em><em>optional</em>) – the name of the acquisation driver to use. Defaults to None.</p></li>
+<li><p><strong>acq_args</strong> (<em>dict</em><em>, </em><em>optional</em>) – dictionary of optoins to pass to the acquisation driver. Defaults to None.</p></li>
+<li><p><strong>decoder</strong> (<em>str</em><em>, </em><em>optional</em>) – the name of the decoder function to use.  Defaults to ‘decoder’.</p></li>
+<li><p><strong>decoder_args</strong> (<em>dict</em><em>, </em><em>optional</em>) – dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.</p></li>
+<li><p><strong>presentation</strong> (<em>str</em><em>, </em><em>optional</em>) – the name of the presentation function to use.  Defaults to: ‘selectionMatrix’</p></li>
+<li><p><strong>presentation_args</strong> (<em>dict</em><em>, </em><em>optional</em>) – dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><strong>ValueError</strong> – invalid options, e.g. unrecognised acq_driver</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci.startAcquisationProcess">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci.</code><code class="sig-name descname">startAcquisationProcess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">acquisation</span></em>, <em class="sig-param"><span class="n">acq_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci.startAcquisationProcess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci.startDecoderProcess">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci.</code><code class="sig-name descname">startDecoderProcess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">decoder</span></em>, <em class="sig-param"><span class="n">decoder_args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci.startDecoderProcess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci.startHubProcess">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci.</code><code class="sig-name descname">startHubProcess</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">label</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci.startHubProcess" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.online_bci_pi">
+<span id="mindaffectbci-online-bci-pi-module"></span><h2>mindaffectBCI.online_bci_pi module<a class="headerlink" href="#module-mindaffectBCI.online_bci_pi" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci_pi.noisetag">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci_pi.</code><code class="sig-name descname">noisetag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fakedata</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci_pi.noisetag" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci_pi.p300">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci_pi.</code><code class="sig-name descname">p300</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fakedata</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci_pi.p300" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.online_bci_pi.parse_args">
+<code class="sig-prename descclassname">mindaffectBCI.online_bci_pi.</code><code class="sig-name descname">parse_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.online_bci_pi.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.ssdpDiscover">
+<span id="mindaffectbci-ssdpdiscover-module"></span><h2>mindaffectBCI.ssdpDiscover module<a class="headerlink" href="#module-mindaffectBCI.ssdpDiscover" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.discoverOrIPscan">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">discoverOrIPscan</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">port</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">8400</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">15000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.discoverOrIPscan" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.get_all_ips">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">get_all_ips</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.get_all_ips" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.get_ip_address">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">get_ip_address</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">NICname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.get_ip_address" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.get_local_ip">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">get_local_ip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.get_local_ip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.get_remote_ip">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">get_remote_ip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.get_remote_ip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.ip_is_local">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">ip_is_local</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ip_string</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ip_is_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses a regex to determine if the input ip is on a local network. Returns a boolean.
+It’s safe here, but never use a regex for IP verification if from a potentially dangerous source.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.ipscanDiscover">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">ipscanDiscover</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">port</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">ip</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">0.5</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ipscanDiscover" title="Permalink to this definition">¶</a></dt>
+<dd><p>scan for service by trying all 255 possible final ip-addresses</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.nic_info">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">nic_info</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.nic_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list with tuples containing NIC and IPv4 address</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">ssdpDiscover</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">servicetype</span><span class="o">=</span><span class="default_value">'ssdp:all'</span></em>, <em class="sig-param"><span class="n">discoverytimeout</span><span class="o">=</span><span class="default_value">3</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.discover">
+<code class="sig-name descname">discover</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">0.001</span></em>, <em class="sig-param"><span class="n">querytimeout</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">v6</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.discover" title="Permalink to this definition">¶</a></dt>
+<dd><p>auto-discover the utopia-hub using ssdp discover messages,
+timeout is time to wait for a response.  query timeout is time between re-sending the ssdp-discovery query message.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.initSocket">
+<code class="sig-name descname">initSocket</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v6</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.initSocket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.makeDiscoveryMessage">
+<code class="sig-name descname">makeDiscoveryMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ssdpgroup</span></em>, <em class="sig-param"><span class="n">servicetype</span></em>, <em class="sig-param"><span class="n">timeout</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.makeDiscoveryMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.msearchTemplate">
+<code class="sig-name descname">msearchTemplate</code><em class="property"> = 'M-SEARCH * HTTP/1.1\r\nHOST: {0}:{1}\r\nMAN: &quot;ssdp:discover&quot;\r\nST: {st}\r\nMX: {mx}\r\n\r\n'</em><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.msearchTemplate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpgroup">
+<code class="sig-name descname">ssdpgroup</code><em class="property"> = None</em><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpgroup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpv4group">
+<code class="sig-name descname">ssdpv4group</code><em class="property"> = ('239.255.255.250', 1900)</em><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpv4group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpv6group">
+<code class="sig-name descname">ssdpv6group</code><em class="property"> = ('FF08::C', 1900)</em><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.ssdpv6group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.ssdpDiscover.ssdpDiscover.wait_msearch_response">
+<code class="sig-name descname">wait_msearch_response</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.ssdpDiscover.wait_msearch_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.ssdpDiscover.testIncrementalScanning">
+<code class="sig-prename descclassname">mindaffectBCI.ssdpDiscover.</code><code class="sig-name descname">testIncrementalScanning</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.ssdpDiscover.testIncrementalScanning" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.stimseq">
+<span id="mindaffectbci-stimseq-module"></span><h2>mindaffectBCI.stimseq module<a class="headerlink" href="#module-mindaffectBCI.stimseq" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.stimseq.StimSeq">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">StimSeq</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">st</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ss</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">es</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.convertstimSeq2int">
+<code class="sig-name descname">convertstimSeq2int</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.convertstimSeq2int" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.stimseq.StimSeq.eventSeq">
+<code class="sig-name descname">eventSeq</code><em class="property"> = None</em><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.eventSeq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.float2int">
+<em class="property">static </em><code class="sig-name descname">float2int</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimSeq</span></em>, <em class="sig-param"><span class="n">scale</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">minval</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">maxval</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.float2int" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert float list of lists to integer</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.fromFile">
+<em class="property">static </em><code class="sig-name descname">fromFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.fromFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>read a stimulus-sequence from a file on disk</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.fromString">
+<em class="property">static </em><code class="sig-name descname">fromString</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.fromString" title="Permalink to this definition">¶</a></dt>
+<dd><p>read a stimulus-sequence definition from a string</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.readArray">
+<em class="property">static </em><code class="sig-name descname">readArray</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em>, <em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.readArray" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.setStimRate">
+<code class="sig-name descname">setStimRate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">rate</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.setStimRate" title="Permalink to this definition">¶</a></dt>
+<dd><p>rewrite the stimtimes to equal given rate in hz</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.stimseq.StimSeq.stimSeq">
+<code class="sig-name descname">stimSeq</code><em class="property"> = None</em><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.stimSeq" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.stimseq.StimSeq.stimTime_ms">
+<code class="sig-name descname">stimTime_ms</code><em class="property"> = None</em><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.stimTime_ms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.stimseq.StimSeq.toFile">
+<code class="sig-name descname">toFile</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.StimSeq.toFile" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.stimseq.mkCodes">
+<code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">mkCodes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.mkCodes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.stimseq.mkFreqTag">
+<code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">mkFreqTag</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">period_phase</span><span class="o">=</span><span class="default_value">3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 3, 1, 4, 1, 5, 1, 6, 1, 7, 1, 3, 2, 4, 2, 5, 2, 6, 2, 7, 2, 4, 3, 5, 3, 6, 3, 7, 3, 5, 4, 6, 4, 7, 4, 6, 5, 7, 5, 7, 6</span></em>, <em class="sig-param"><span class="n">nEvent</span><span class="o">=</span><span class="default_value">120</span></em>, <em class="sig-param"><span class="n">isbinary</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.mkFreqTag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a frequency tagging stimulus sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>period_phase</strong> (<em>list</em><em>, </em><em>optional</em>) – List of stimulus periods and phase offsets expressed in events. Defaults to all phases from 2-5 long.</p></li>
+<li><p><strong>nEvent</strong> (<em>int</em><em>, </em><em>optional</em>) – total length of the sequence to generate. (To avoid steps should be LCM of periods) Defaults to 120.</p></li>
+<li><p><strong>isbinary</strong> (<em>bool</em><em>, </em><em>optional</em>) – flag if we generate a binary sequence or continuous</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.stimseq.mkRowCol">
+<code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">mkRowCol</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">width</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">height</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">repeats</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.mkRowCol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a row-column stimulus sequence</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>width</strong> (<em>int</em><em>, </em><em>optional</em>) – width of the matrix. Defaults to 5.</p></li>
+<li><p><strong>height</strong> (<em>int</em><em>, </em><em>optional</em>) – height of the matrix. Defaults to 5.</p></li>
+<li><p><strong>repeats</strong> (<em>int</em><em>, </em><em>optional</em>) – number of random row-&gt;col repeats. Defaults to 10.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The generated stimulus sequence</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>[<a class="reference internal" href="#mindaffectBCI.stimseq.StimSeq" title="mindaffectBCI.stimseq.StimSeq">StimSeq</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.stimseq.setStimRate">
+<code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">setStimRate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimTime_ms</span></em>, <em class="sig-param"><span class="n">framerate</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.setStimRate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.stimseq.transpose">
+<code class="sig-prename descclassname">mindaffectBCI.stimseq.</code><code class="sig-name descname">transpose</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">M</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.stimseq.transpose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.utopia2output">
+<span id="mindaffectbci-utopia2output-module"></span><h2>mindaffectBCI.utopia2output module<a class="headerlink" href="#module-mindaffectBCI.utopia2output" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopia2output.</code><code class="sig-name descname">Utopia2Output</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">outputPressThreshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">outputReleaseThreshold</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objectID2Action</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Example class for a utopia OUTPUT module.  Connects to the utopia server
+and then either, depending on mode:</p>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li><p>listens for output which exceed it’s probability threshold before</p></li>
+</ol>
+</div></blockquote>
+<p>then printing them and using NEWTARGET to indicated the output has taken
+place</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output.connect">
+<code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">30000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output.doOutput">
+<code class="sig-name descname">doOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objID</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output.doOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is run when objID has sufficiently low error to mean that
+and output should be generated for this objID.
+N.B. Override/Replace this function with your specific output method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output.perrModeOutput">
+<code class="sig-name descname">perrModeOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output.perrModeOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>process a perr-message generating appropriate output.
+To avoid ‘key-bounce’ we use a press-release semantics, where the output is ‘Pressed’
+so the output is generated when the Perr &lt; outputPressThreshold, then further
+output is inhibited until Perr &gt; outputReleaseThreshold.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output.run">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">3000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>mainloop of utopia-to-output mapping
+runs an infinite loop, waiting for new messages from utopia, filtering out
+those mesages which contain an output prediction (i.e. PREDICTEDTARGETPROB message)
+and if the output prediction is sufficiently confident forwarding this to the output
+device and sending a NEWTARGET to the recogniser to indicate the output was sent</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopia2output.Utopia2Output.selectionModeOutput">
+<code class="sig-name descname">selectionModeOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopia2output.Utopia2Output.selectionModeOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process selection message to generate output.
+Basically generate output if the messages objectID is one of the ones
+we are tasked with generating output for</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.utopiaController">
+<span id="mindaffectbci-utopiacontroller-module"></span><h2>mindaffectBCI.utopiaController module<a class="headerlink" href="#module-mindaffectBCI.utopiaController" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaController.UtopiaController">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaController.</code><code class="sig-name descname">UtopiaController</code><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>controller class to manage the interaction with the Mindaffect decoder,
+setting up the connection, sending and recieving messages, and firing message
+event handlers</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.addMessageHandler">
+<code class="sig-name descname">addMessageHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.addMessageHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.addPredictionHandler">
+<code class="sig-name descname">addPredictionHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.addPredictionHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.addSelectionHandler">
+<code class="sig-name descname">addSelectionHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.addSelectionHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.addSignalQualityHandler">
+<code class="sig-name descname">addSignalQualityHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">cb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.addSignalQualityHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.addSubscription">
+<code class="sig-name descname">addSubscription</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.addSubscription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.autoconnect">
+<code class="sig-name descname">autoconnect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">8400</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">5000</span></em>, <em class="sig-param"><span class="n">localhostifhostnotfound</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">queryifhostnotfound</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">scanifhostnotfound</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.autoconnect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.clearLastPrediction">
+<code class="sig-name descname">clearLastPrediction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.clearLastPrediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>clear the last predicted target</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.getLastPrediction">
+<code class="sig-name descname">getLastPrediction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.getLastPrediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>check for new predictions from the utopia-decoder</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.getLastSelection">
+<code class="sig-name descname">getLastSelection</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.getLastSelection" title="Permalink to this definition">¶</a></dt>
+<dd><p>check if any object prediction is high enough for it to be selected</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.getLastSignalQuality">
+<code class="sig-name descname">getLastSignalQuality</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.getLastSignalQuality" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.getNewMessages">
+<code class="sig-name descname">getNewMessages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.getNewMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>get new messages from the utopia-hub, and store the list of new</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.getTimeStamp">
+<code class="sig-name descname">getTimeStamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.getTimeStamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>get a (relative) wall-time stamp <em>in milliseconds</em></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.gethostport">
+<code class="sig-name descname">gethostport</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.gethostport" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.isConnected">
+<code class="sig-name descname">isConnected</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.isConnected" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.log">
+<code class="sig-name descname">log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.mkStimulusEvent">
+<code class="sig-name descname">mkStimulusEvent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimulusState</span></em>, <em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">targetState</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.mkStimulusEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>make a valid stimulus event for the given stimulus state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.modeChange">
+<code class="sig-name descname">modeChange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">newmode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.modeChange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.newTarget">
+<code class="sig-name descname">newTarget</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.newTarget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.removeSubscription">
+<code class="sig-name descname">removeSubscription</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.removeSubscription" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.selection">
+<code class="sig-name descname">selection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objID</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.selection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.sendStimulusEvent">
+<code class="sig-name descname">sendStimulusEvent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stimulusState</span></em>, <em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">targetState</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.sendStimulusEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a message to the Utopia-HUB informing of the current stimulus state</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.setTimeStampClock">
+<code class="sig-name descname">setTimeStampClock</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tsclock</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.setTimeStampClock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaController.UtopiaController.subscribe">
+<code class="sig-name descname">subscribe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.UtopiaController.subscribe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaController.injectERP">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaController.</code><code class="sig-name descname">injectERP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">amp</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">'localhost'</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">8300</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.injectERP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaController.newMessageHandler">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaController.</code><code class="sig-name descname">newMessageHandler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaController.newMessageHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.utopiaclient">
+<span id="mindaffectbci-utopiaclient-module"></span><h2>mindaffectBCI.utopiaclient module<a class="headerlink" href="#module-mindaffectBCI.utopiaclient" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.DataHeader">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">DataHeader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fsample</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">nchannels</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the DATAHEADER utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.DataHeader.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataHeader.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a HEADER class from a <strong>PAYLOAD</strong> byte-stream, return created object and the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.DataHeader.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 65</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataHeader.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.DataHeader.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'DATAHEADER'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataHeader.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.DataHeader.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataHeader.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts this message to a string representation to send over the network</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.DataPacket">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">DataPacket</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">samples</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataPacket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the DATAPACKET utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.DataPacket.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataPacket.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a STIMULUSEVENT class from a <strong>PAYLOAD</strong> byte-stream, return created object and the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.DataPacket.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 68</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataPacket.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.DataPacket.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'DATAPACKET'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataPacket.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.DataPacket.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.DataPacket.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts this message to a string representation to send over the network</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.Heartbeat">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">Heartbeat</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Heartbeat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the HEARTBEAT utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Heartbeat.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Heartbeat.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a HEARTBEAT class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Heartbeat.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 72</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Heartbeat.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Heartbeat.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'HEARTBEAT'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Heartbeat.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Heartbeat.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Heartbeat.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.Log">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">Log</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">logmsg</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the LOG utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Log.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Log.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a MODECHANGE class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Log.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 76</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Log.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Log.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'LOG'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Log.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Log.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Log.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.ModeChange">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">ModeChange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">newmode</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.ModeChange" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the MODECHANGE utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.ModeChange.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.ModeChange.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a MODECHANGE class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.ModeChange.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 77</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.ModeChange.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.ModeChange.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'MODECHANGE'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.ModeChange.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.ModeChange.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.ModeChange.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.NewTarget">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">NewTarget</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.NewTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the NEWTARGET utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.NewTarget.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.NewTarget.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a HEARTBEAT class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.NewTarget.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 78</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.NewTarget.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.NewTarget.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'NEWTARGET'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.NewTarget.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.NewTarget.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.NewTarget.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetDist">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">PredictedTargetDist</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">pTgt</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetDist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the PredictedTargetDist utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetDist.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetDist.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a PREDICTEDTARGETDIST class from a <strong>PAYLOAD</strong> byte-stream, return created object and the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetDist.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 70</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetDist.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetDist.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'PREDICTEDTARGETDIST'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetDist.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetDist.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetDist.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts this message to a string representation to send over the network</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetProb">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">PredictedTargetProb</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">Yest</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">Perr</span><span class="o">=</span><span class="default_value">1.0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetProb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the PREDICTEDTARGETPROB utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetProb.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetProb.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a MODECHANGE class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetProb.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 80</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetProb.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetProb.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'PREDICTEDTARGETPROB'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetProb.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.PredictedTargetProb.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.PredictedTargetProb.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.RawMessage">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">RawMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgID</span></em>, <em class="sig-param"><span class="n">version</span></em>, <em class="sig-param"><span class="n">payload</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.RawMessage.deserialize">
+<em class="property">classmethod </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a raw message from a byte-buffer, return the read message and the number of bytes used from the bytebuffer, or None, 0 if message is mal-formed</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.RawMessage.deserializeMany">
+<em class="property">classmethod </em><code class="sig-name descname">deserializeMany</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage.deserializeMany" title="Permalink to this definition">¶</a></dt>
+<dd><p>decode multiple RawMessages from the byte-buffer of data, return the length of data consumed.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.RawMessage.fromUtopiaMessage">
+<em class="property">classmethod </em><code class="sig-name descname">fromUtopiaMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage.fromUtopiaMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a raw-message wrapper from a normal payload message</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.RawMessage.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'RAW'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage.msgName" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for a raw utopia message, i.e. decoded header but raw payload</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.RawMessage.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.RawMessage.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert the raw message to the string to make it network ready</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.Reset">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">Reset</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Reset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the RESET utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Reset.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Reset.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a HEARTBEAT class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Reset.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 82</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Reset.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Reset.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'RESET'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Reset.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Reset.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Reset.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.Selection">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">Selection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objID</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Selection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the SELECTION utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Selection.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Selection.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a SELECTION class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Selection.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 83</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Selection.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Selection.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'SELECTION'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Selection.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Selection.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Selection.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.SignalQuality">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">SignalQuality</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">signalQuality</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.SignalQuality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the SIGNALQUALITY utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.SignalQuality.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.SignalQuality.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a SIGNALQUALIYT class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.SignalQuality.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 81</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.SignalQuality.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.SignalQuality.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'SIGNALQUALITY'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.SignalQuality.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.SignalQuality.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.SignalQuality.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.StimulusEvent">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">StimulusEvent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objIDs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">objState</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.StimulusEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the STIMULUEVENT utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.StimulusEvent.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.StimulusEvent.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a STIMULUSEVENT class from a <strong>PAYLOAD</strong> byte-stream, return created object and the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.StimulusEvent.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 69</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.StimulusEvent.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.StimulusEvent.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'STIMULUSEVENT'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.StimulusEvent.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.StimulusEvent.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.StimulusEvent.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts this message to a string representation to send over the network</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.Subscribe">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">Subscribe</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">messageIDs</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Subscribe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="mindaffectBCI.utopiaclient.UtopiaMessage"><code class="xref py py-class docutils literal notranslate"><span class="pre">mindaffectBCI.utopiaclient.UtopiaMessage</span></code></a></p>
+<p>the SUBSCRIBE utopia message class</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Subscribe.deserialize">
+<em class="property">static </em><code class="sig-name descname">deserialize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buf</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Subscribe.deserialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static method to create a SIGNALQUALITY class from a <strong>PAYLOAD</strong> byte-stream, return the number of bytes consumed from buf</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Subscribe.msgID">
+<code class="sig-name descname">msgID</code><em class="property"> = 66</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Subscribe.msgID" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.Subscribe.msgName">
+<code class="sig-name descname">msgName</code><em class="property"> = 'SUBSCRIBE'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.Subscribe.msgName" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.Subscribe.serialize">
+<code class="sig-name descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.Subscribe.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the contents of this event as a string, ready to send over the network,
+or None in case of conversion problems.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.TimeStampClock">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">TimeStampClock</code><a class="headerlink" href="#mindaffectBCI.utopiaclient.TimeStampClock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for time-stamp sources.  Match this prototype to replace the default timestamp source</p>
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.TimeStampClock.getTimeStamp">
+<code class="sig-name descname">getTimeStamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.TimeStampClock.getTimeStamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>get the time-stamp in milliseconds ! N.B. <strong>must</strong> fit in an int32!</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">UtopiaClient</code><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for managing a client connection to a UtopiaServer.</p>
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.DEFAULTHOST">
+<code class="sig-name descname">DEFAULTHOST</code><em class="property"> = 'localhost'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.DEFAULTHOST" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.DEFAULTPORT">
+<code class="sig-name descname">DEFAULTPORT</code><em class="property"> = 8400</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.DEFAULTPORT" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.HEARTBEATINTERVALUDP_ms">
+<code class="sig-name descname">HEARTBEATINTERVALUDP_ms</code><em class="property"> = 200</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.HEARTBEATINTERVALUDP_ms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.HEARTBEATINTERVAL_ms">
+<code class="sig-name descname">HEARTBEATINTERVAL_ms</code><em class="property"> = 1000</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.HEARTBEATINTERVAL_ms" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.MAXMESSAGESIZE">
+<code class="sig-name descname">MAXMESSAGESIZE</code><em class="property"> = 1048576</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.MAXMESSAGESIZE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.UTOPIA_SSDP_SERVICE">
+<code class="sig-name descname">UTOPIA_SSDP_SERVICE</code><em class="property"> = 'utopia/1.1'</em><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.UTOPIA_SSDP_SERVICE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.autoconnect">
+<code class="sig-name descname">autoconnect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hostname</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">5000</span></em>, <em class="sig-param"><span class="n">queryifhostnotfound</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">localhostifhostnotfound</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">scanifhostnotfound</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.autoconnect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.connect">
+<code class="sig-name descname">connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hostname</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">8400</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>connect([hostname, port]) – make a connection, default host:port is localhost:1972</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.disableHeartbeats">
+<code class="sig-name descname">disableHeartbeats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.disableHeartbeats" title="Permalink to this definition">¶</a></dt>
+<dd><p>‘ stop sending hearbeat messages. Use, e.g. when you want to use your own time-stamp clock.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.disconnect">
+<code class="sig-name descname">disconnect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>disconnect() – close a connection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.enableHeartbeats">
+<code class="sig-name descname">enableHeartbeats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.enableHeartbeats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.getNewMessages">
+<code class="sig-name descname">getNewMessages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">250</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.getNewMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for new messages from the utopia-server (with optional timeout), decode them and return the list of new messages</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.getTimeStamp">
+<code class="sig-name descname">getTimeStamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.getTimeStamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the time-stamp for the current time</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.gethostport">
+<code class="sig-name descname">gethostport</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.gethostport" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.initClockAlign">
+<code class="sig-name descname">initClockAlign</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">delays_ms</span><span class="o">=</span><span class="default_value">[50, 50, 50, 50, 50, 50, 50, 50, 50, 50]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.initClockAlign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send some initial heartbeat messages to seed the alignment of the server clock with
+our local clock</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.messagePingPong">
+<code class="sig-name descname">messagePingPong</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">500</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.messagePingPong" title="Permalink to this definition">¶</a></dt>
+<dd><p>Testing system sending 20 messages and printing any responses</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.messagelogger">
+<code class="sig-name descname">messagelogger</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.messagelogger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simple message logger, infinite loop waiting for and printing messages from the server</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.recvall">
+<code class="sig-name descname">recvall</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.recvall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all the data from the socket immeaditely or block for timeout_ms if nothing to do.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.sendHeartbeatIfTimeout">
+<code class="sig-name descname">sendHeartbeatIfTimeout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">timestamp</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.sendHeartbeatIfTimeout" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.sendMessage">
+<code class="sig-name descname">sendMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.sendMessage" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.sendMessages">
+<code class="sig-name descname">sendMessages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.sendMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>sends single or multiple utopia-messages to the utopia server</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.sendRaw">
+<code class="sig-name descname">sendRaw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.sendRaw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send all bytes of the string ‘request’ out to socket.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.sendRawUDP">
+<code class="sig-name descname">sendRawUDP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.sendRawUDP" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.setTimeStampClock">
+<code class="sig-name descname">setTimeStampClock</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">tsClock</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.setTimeStampClock" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="mindaffectBCI.utopiaclient.UtopiaClient.try_connect">
+<code class="sig-name descname">try_connect</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">hostname</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout_ms</span><span class="o">=</span><span class="default_value">5000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaClient.try_connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.utopiaclient.UtopiaMessage">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">UtopiaMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgID</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">msgName</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">version</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.UtopiaMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class for a generic UtopiaMessage, i.e. the common structure of all messages</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaclient.decodeRawMessage">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">decodeRawMessage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msg</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.decodeRawMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>decode utopia RawMessages into actual message objects</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaclient.decodeRawMessages">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">decodeRawMessages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.decodeRawMessages" title="Permalink to this definition">¶</a></dt>
+<dd><p>decode utopia RawMessages into actual message objects</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaclient.ssdpDiscover">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">ssdpDiscover</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">servicetype</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">timeout</span><span class="o">=</span><span class="default_value">3</span></em>, <em class="sig-param"><span class="n">numretries</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.ssdpDiscover" title="Permalink to this definition">¶</a></dt>
+<dd><p>auto-discover the utopia-hub using ssdp discover messages</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaclient.testSending">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">testSending</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.testSending" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.utopiaclient.testSerialization">
+<code class="sig-prename descclassname">mindaffectBCI.utopiaclient.</code><code class="sig-name descname">testSerialization</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.utopiaclient.testSerialization" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mindaffectBCI" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mindaffectBCI.decoder.html" class="btn btn-neutral float-right" title="mindaffectBCI.decoder package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral float-left" title="mindaffectBCI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

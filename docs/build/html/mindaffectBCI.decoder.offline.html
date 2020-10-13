@@ -1,0 +1,546 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mindaffectBCI.decoder.offline package &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Printing Your Own Headset" href="printing_guide.html" />
+    <link rel="prev" title="mindaffectBCI.decoder package" href="mindaffectBCI.decoder.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="OnlineBCI_quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">mindaffectBCI</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="mindaffectBCI.html">mindaffectBCI package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mindaffectBCI.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="mindaffectBCI.decoder.html">mindaffectBCI.decoder package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.noisetag">mindaffectBCI.noisetag module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.online_bci">mindaffectBCI.online_bci module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.online_bci_pi">mindaffectBCI.online_bci_pi module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.ssdpDiscover">mindaffectBCI.ssdpDiscover module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.stimseq">mindaffectBCI.stimseq module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopia2output">mindaffectBCI.utopia2output module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopiaController">mindaffectBCI.utopiaController module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI.utopiaclient">mindaffectBCI.utopiaclient module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mindaffectBCI.html#module-mindaffectBCI">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="printing_guide.html">Printing Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="modules.html">mindaffectBCI</a> &raquo;</li>
+        
+          <li><a href="mindaffectBCI.html">mindaffectBCI package</a> &raquo;</li>
+        
+          <li><a href="mindaffectBCI.decoder.html">mindaffectBCI.decoder package</a> &raquo;</li>
+        
+      <li>mindaffectBCI.decoder.offline package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mindaffectBCI.decoder.offline.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="mindaffectbci-decoder-offline-package">
+<h1>mindaffectBCI.decoder.offline package<a class="headerlink" href="#mindaffectbci-decoder-offline-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_brainsonfire">
+<span id="mindaffectbci-decoder-offline-load-brainsonfire-module"></span><h2>mindaffectBCI.decoder.offline.load_brainsonfire module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_brainsonfire" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_brainsonfire.load_brainsonfire">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_brainsonfire.</code><code class="sig-name descname">load_brainsonfire</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 1, 25, - 1</span></em>, <em class="sig-param"><span class="n">subtriallen</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">nvirt</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">chIdx</span><span class="o">=</span><span class="default_value">slice(None, 64, None)</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_brainsonfire.load_brainsonfire" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_brainsonfire.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_brainsonfire.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_brainsonfire.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_brainstream">
+<span id="mindaffectbci-decoder-offline-load-brainstream-module"></span><h2>mindaffectBCI.decoder.offline.load_brainstream module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_brainstream" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_brainstream.load_brainstream">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_brainstream.</code><code class="sig-name descname">load_brainstream</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">ifs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fr</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">passband</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 5, 25, - 1</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">ch_names</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_brainstream.load_brainstream" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_brainstream.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_brainstream.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_brainstream.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_cocktail">
+<span id="mindaffectbci-decoder-offline-load-cocktail-module"></span><h2>mindaffectBCI.decoder.offline.load_cocktail module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_cocktail" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_cocktail.argsort">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_cocktail.</code><code class="sig-name descname">argsort</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">l</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_cocktail.argsort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_cocktail.load_cocktail">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_cocktail.</code><code class="sig-name descname">load_cocktail</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 5, 25, - 1</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">trlen_ms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">subtriallen</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_cocktail.load_cocktail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_cocktail.squeeze">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_cocktail.</code><code class="sig-name descname">squeeze</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">v</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_cocktail.squeeze" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_cocktail.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_cocktail.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_cocktail.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_mTRF_audio">
+<span id="mindaffectbci-decoder-offline-load-mtrf-audio-module"></span><h2>mindaffectBCI.decoder.offline.load_mTRF_audio module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_mTRF_audio" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_mTRF_audio.load_mTRF_audio">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_mTRF_audio.</code><code class="sig-name descname">load_mTRF_audio</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">regressor</span><span class="o">=</span><span class="default_value">'envelope'</span></em>, <em class="sig-param"><span class="n">ntrl</span><span class="o">=</span><span class="default_value">15</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 0.5, 15, - 1</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">nvirt_out</span><span class="o">=</span><span class="default_value">30</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_mTRF_audio.load_mTRF_audio" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_mark_EMG">
+<span id="mindaffectbci-decoder-offline-load-mark-emg-module"></span><h2>mindaffectBCI.decoder.offline.load_mark_EMG module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_mark_EMG" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_mark_EMG.load_mark_EMG">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_mark_EMG.</code><code class="sig-name descname">load_mark_EMG</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 10, 45, 55, 95, 105, 145, - 1</span></em>, <em class="sig-param"><span class="n">filterbank</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">log</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">whiten</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_mark_EMG.load_mark_EMG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_mark_EMG.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_mark_EMG.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_mark_EMG.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_mindaffectBCI">
+<span id="mindaffectbci-decoder-offline-load-mindaffectbci-module"></span><h2>mindaffectBCI.decoder.offline.load_mindaffectBCI module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_mindaffectBCI" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_mindaffectBCI.load_mindaffectBCI">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_mindaffectBCI.</code><code class="sig-name descname">load_mindaffectBCI</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">100</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 5.5, 25, 'bandpass'</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">6</span></em>, <em class="sig-param"><span class="n">ftype</span><span class="o">=</span><span class="default_value">'butter'</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">iti_ms</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">trlen_ms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">offset_ms</span><span class="o">=</span><span class="default_value">- 500, 500</span></em>, <em class="sig-param"><span class="n">regress</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_mindaffectBCI.load_mindaffectBCI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_mindaffectBCI.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_mindaffectBCI.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_mindaffectBCI.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_ninapro_db2">
+<span id="mindaffectbci-decoder-offline-load-ninapro-db2-module"></span><h2>mindaffectBCI.decoder.offline.load_ninapro_db2 module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_ninapro_db2" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_ninapro_db2.load_ninapro_db2">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_ninapro_db2.</code><code class="sig-name descname">load_ninapro_db2</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">0, 15, 45, 65, 95, 125, 250, - 1</span></em>, <em class="sig-param"><span class="n">envelopeband</span><span class="o">=</span><span class="default_value">10, - 1</span></em>, <em class="sig-param"><span class="n">trlen_ms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">nvirt</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">rectify</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">whiten</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">log</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">plot</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">filterbank</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">zscore_y</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_ninapro_db2.load_ninapro_db2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_ninapro_db2.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_ninapro_db2.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_ninapro_db2.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_openBMI">
+<span id="mindaffectbci-decoder-offline-load-openbmi-module"></span><h2>mindaffectBCI.decoder.offline.load_openBMI module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_openBMI" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_openBMI.get_trl_ep_idx">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_openBMI.</code><code class="sig-name descname">get_trl_ep_idx</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">trl_idx</span></em>, <em class="sig-param"><span class="n">iti</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_openBMI.get_trl_ep_idx" title="Permalink to this definition">¶</a></dt>
+<dd><p>convert set stimulus times into trials and epochs</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_openBMI.load_openBMI">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_openBMI.</code><code class="sig-name descname">load_openBMI</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 1, 25, - 1</span></em>, <em class="sig-param"><span class="n">CAR</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">trlen_ms</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">offset_ms</span><span class="o">=</span><span class="default_value">0, 0</span></em>, <em class="sig-param"><span class="n">ppMI</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_openBMI.load_openBMI" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_openBMI.make_ssvep_ref_signals">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_openBMI.</code><code class="sig-name descname">make_ssvep_ref_signals</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nsample</span></em>, <em class="sig-param"><span class="n">freqs</span></em>, <em class="sig-param"><span class="n">phases</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">binarize</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_openBMI.make_ssvep_ref_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>make periodic reference signals</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_openBMI.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_openBMI.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_openBMI.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_p300_prn">
+<span id="mindaffectbci-decoder-offline-load-p300-prn-module"></span><h2>mindaffectBCI.decoder.offline.load_p300_prn module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_p300_prn" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_p300_prn.load_p300_prn">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_p300_prn.</code><code class="sig-name descname">load_p300_prn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">offset_ms</span><span class="o">=</span><span class="default_value">- 1000, 1000</span></em>, <em class="sig-param"><span class="n">ifs</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fr</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 1, 25, - 1</span></em>, <em class="sig-param"><span class="n">order</span><span class="o">=</span><span class="default_value">4</span></em>, <em class="sig-param"><span class="n">subtriallen</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">nvirt</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">chidx</span><span class="o">=</span><span class="default_value">slice(None, 64, None)</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_p300_prn.load_p300_prn" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_p300_prn.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_p300_prn.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_p300_prn.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.load_twofinger">
+<span id="mindaffectbci-decoder-offline-load-twofinger-module"></span><h2>mindaffectBCI.decoder.offline.load_twofinger module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.load_twofinger" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_twofinger.load_twofinger">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_twofinger.</code><code class="sig-name descname">load_twofinger</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datadir</span></em>, <em class="sig-param"><span class="n">sessdir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sessfn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fs_out</span><span class="o">=</span><span class="default_value">60</span></em>, <em class="sig-param"><span class="n">stopband</span><span class="o">=</span><span class="default_value">45, 65, 0, 1, 25, - 1</span></em>, <em class="sig-param"><span class="n">subtriallen</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">nvirt</span><span class="o">=</span><span class="default_value">20</span></em>, <em class="sig-param"><span class="n">verb</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">ch_idx</span><span class="o">=</span><span class="default_value">slice(None, 32, None)</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_twofinger.load_twofinger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.load_twofinger.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.load_twofinger.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.load_twofinger.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.read_buffer_offline">
+<span id="mindaffectbci-decoder-offline-read-buffer-offline-module"></span><h2>mindaffectBCI.decoder.offline.read_buffer_offline module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.read_buffer_offline" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.ftevent">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">ftevent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">s</span></em>, <em class="sig-param"><span class="n">t</span></em>, <em class="sig-param"><span class="n">v</span></em>, <em class="sig-param"><span class="n">o</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">d</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.ftevent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.ftheader">
+<em class="property">class </em><code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">ftheader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nch</span></em>, <em class="sig-param"><span class="n">nsamp</span></em>, <em class="sig-param"><span class="n">nevt</span></em>, <em class="sig-param"><span class="n">fs</span></em>, <em class="sig-param"><span class="n">data_type</span></em>, <em class="sig-param"><span class="n">labels</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.ftheader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_data">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">read_buffer_offline_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em>, <em class="sig-param"><span class="n">hdr</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_events">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">read_buffer_offline_events</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_header">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">read_buffer_offline_header</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">f</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.read_buffer_offline_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_buffer_offline.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_buffer_offline.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_buffer_offline.testcase" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline.read_mindaffectBCI">
+<span id="mindaffectbci-decoder-offline-read-mindaffectbci-module"></span><h2>mindaffectBCI.decoder.offline.read_mindaffectBCI module<a class="headerlink" href="#module-mindaffectBCI.decoder.offline.read_mindaffectBCI" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.datapackets2array">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">datapackets2array</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em>, <em class="sig-param"><span class="n">sample2timestamp</span><span class="o">=</span><span class="default_value">'lower_bound_tracker'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.datapackets2array" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_DataPacket">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_DataPacket</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_DataPacket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_ModeChange">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_ModeChange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_ModeChange" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_NewTarget">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_NewTarget</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_NewTarget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_Selection">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_Selection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_Selection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_StimulusEvent">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_StimulusEvent</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_StimulusEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>read a stimulus event message from a text-file save version</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_clientip">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_clientip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_clientip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_clientts">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_clientts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_clientts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_data_messages">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_mindaffectBCI_data_messages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fn</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">regress</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_data_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>read the data from a text-file save version into a dataarray and message list</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_message">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_mindaffectBCI_message</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_messages">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_mindaffectBCI_messages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fn</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">regress</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_mindaffectBCI_messages" title="Permalink to this definition">¶</a></dt>
+<dd><p>read the data from a text-file save version into a list of messages,
+WARNING: this reads the  messages as raw, and does <em>not</em> try to time-stamp clocks</p>
+<blockquote>
+<div><p>w.r.t.  the message source.  To compare messages between clients you will
+need to do this manually!</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.read_serverts">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">read_serverts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">line</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.read_serverts" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.rewrite_timestamps2servertimestamps">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">rewrite_timestamps2servertimestamps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">msgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.rewrite_timestamps2servertimestamps" title="Permalink to this definition">¶</a></dt>
+<dd><p>rewrite message time-stamps  to best-fit server time-stamps</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="mindaffectBCI.decoder.offline.read_mindaffectBCI.testcase">
+<code class="sig-prename descclassname">mindaffectBCI.decoder.offline.read_mindaffectBCI.</code><code class="sig-name descname">testcase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#mindaffectBCI.decoder.offline.read_mindaffectBCI.testcase" title="Permalink to this definition">¶</a></dt>
+<dd><p>testcase, load reference datafile</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mindaffectBCI.decoder.offline">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mindaffectBCI.decoder.offline" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="printing_guide.html" class="btn btn-neutral float-right" title="Printing Your Own Headset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mindaffectBCI.decoder.html" class="btn btn-neutral float-left" title="mindaffectBCI.decoder package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Quickstart &mdash; mindaffectBCI - documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorials" href="tutorials.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> mindaffectBCI
+          
+
+          
+            
+            <img src="_static/MindAffect_Logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Getting started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Quickstart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-mindaffect-bci-software">Running the MindAffect BCI software</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-mindaffect-bci">Using the MindAffect BCI:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#going-further">Going Further</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alternative-amplifiers">Alternative Amplifiers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#alternative-bci-types-stimulus">Alternative BCI types / Stimulus</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#change-decoder-parameters">Change Decoder parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#other-bci-types">Other BCI types.</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">mindaffectBCI</a></li>
+</ul>
+<p class="caption"><span class="caption-text">The headset</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="printing_guide.html">Print Your Own Headset</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fitting_guide.html">Setup &amp; fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="headset_layout.html">Headset layout</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">mindaffectBCI</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Quickstart</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/OnlineBCI_quickstart.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="quickstart">
+<h1>Quickstart<a class="headerlink" href="#quickstart" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="running-the-mindaffect-bci-software">
+<h2>Running the MindAffect BCI software<a class="headerlink" href="#running-the-mindaffect-bci-software" title="Permalink to this headline">¶</a></h2>
+<p>The system consists of 4 main components as illustrated here:</p>
+<p><img alt="mindaffect BCI system architecture" src="_images/SystemArchitecture.png" /></p>
+<p>To actually run the BCI we need to start each of these components:</p>
+<ul class="simple">
+<li><p>UtopiaHub: This component is the central server which coordinates all the other pieces, and saves the data for offline analysis</p></li>
+<li><p>Acquisition: This component talks to the <em>EEG Headset</em> and streams the data to the Hub</p></li>
+<li><p>Decoder: This component analysis the EEG data to fit the subject specific model and generate predictions</p></li>
+<li><p>Presentation: This component presents the User-Interface to the user, including any BCI specific stimuli which need to be presented. It also selects outputs when the BCI is sufficiently confident and generates the appropriate output. This 1st run tutorial will use the python based Selection Matrix as its presentation component</p></li>
+</ul>
+<p>To launch all these components at once:</p>
+<ol class="simple">
+<li><p>Power on the  OpenBCI Ganglion. (toggle on/off button)</p></li>
+<li><p>Open a command prompt / your Anaconda virtual python environment</p></li>
+<li><p>Run the BCI by typing: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">mindaffectBCI.online_bci</span></code></p></li>
+</ol>
+<p>If all is installed it should start the selection matrix with all the other components in the background.</p>
+<p>When the blue light on the ganglion does not turn solid after starting the BCI you most likely have to change the com port for your bluetooth dongle. You can specify the correct serial port to use in the acq_args section of the <a class="reference external" href="mindaffectBCI/online_bci.json"><code class="docutils literal notranslate"><span class="pre">online_bci.json</span></code></a> system configuration file.  You can find the used com port as described on the installation page.</p>
+</div>
+<div class="section" id="using-the-mindaffect-bci">
+<h2>Using the MindAffect BCI:<a class="headerlink" href="#using-the-mindaffect-bci" title="Permalink to this headline">¶</a></h2>
+<p>Now that the system is up and running, you can go through the following steps to use the BCI!</p>
+<ol>
+<li><p>EEG headset Setup</p>
+<p>Prepare a headset such that it follows the <a class="reference external" href="https://github.com/mindaffect/Headset/blob/master/MindAffect%20headset%20layout.pdf">MindAffect headset layout.pdf</a>) in our Headset repository or prepare the headset delivered with your kit by following <a class="reference external" href="https://github.com/mindaffect/Headset/raw/master/MindAffect%20Headset%20Set%20up%20instructions.pdf">MindAffect headset setup.pdf</a>)</p>
+</li>
+<li><p>Signal Quality</p>
+<p>Check the signal quality by pressing 0 in the main menu. Try to adjust the headset until all electrodes are green, or noise to signal ratio is below 5.</p>
+<p>You can try to improve the signal for an electrode by pressing it firmly into your head. After releasing pressure, wait a few seconds to see if the signal improves. If not, remove the electrode, and apply more water to the sponge. The sponges should feel wet on your scalp.</p>
+<p>If  the noise to signal ratio does not improve by adjusting the headset, try to distance yourself from power outlets and other electronics.</p>
+</li>
+<li><p>Calibration</p>
+<p>Start calibration by pressing 1 in the main menu. Continue to follow the on-screen instructions.</p>
+</li>
+<li><p>Feedback</p>
+<p>You are now ready to try out the BCI by either selecting Copy-spelling (2) or Free-spelling (1)!</p>
+</li>
+</ol>
+</div>
+<div class="section" id="going-further">
+<h2>Going Further<a class="headerlink" href="#going-further" title="Permalink to this headline">¶</a></h2>
+<p>You can run the BCI in different modes by specifying different arguments on the command line.  Or by modifying the basic configuration file  <a class="reference external" href="mindaffectBCI/online_bci.json">online_bci.json</a></p>
+<div class="section" id="alternative-amplifiers">
+<h3>Alternative Amplifiers<a class="headerlink" href="#alternative-amplifiers" title="Permalink to this headline">¶</a></h3>
+<p>This online_bci uses <a class="reference external" href="http://brainflow.org">brainflow</a> by default for interfacing with the EEG amplifier.  Specificially the file in <a class="reference external" href="mindaffectBCI/examples/acquisation/utopia_brainflow.py">examples\acquisation\utopia_brainflow.py</a> is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the <code class="docutils literal notranslate"><span class="pre">board_id</span></code> and and additional parameters as discussed in the <a class="reference external" href="https://brainflow.readthedocs.io/en/stable/SupportedBoards.html">brainflow documentation</a>.</p>
+<p>You can specify the configuration for your amplifer in the <code class="docutils literal notranslate"><span class="pre">acq_args</span></code> section of the configuration file <a class="reference external" href="mindaffectBCI/online_bci.json">online_bci.json</a>.  For example to specify to use a simulated board use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="s2">&quot;acq_args&quot;</span><span class="p">:{</span> <span class="s2">&quot;board_id&quot;</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Or to use the openBCI Cyton on com-port 4:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>   <span class="s2">&quot;acq_args&quot;</span><span class="p">:{</span> 
+       <span class="s2">&quot;board_id&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+       <span class="s2">&quot;serial_port&quot;</span><span class="p">:</span><span class="s2">&quot;COM4&quot;</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alternative-bci-types-stimulus">
+<h3>Alternative BCI types / Stimulus<a class="headerlink" href="#alternative-bci-types-stimulus" title="Permalink to this headline">¶</a></h3>
+<p>By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol letter matrix for presentation.  You can easily try different types of stimulus and selection matrices by modifying the <code class="docutils literal notranslate"><span class="pre">symbols</span></code> and <code class="docutils literal notranslate"><span class="pre">stimfile</span></code> in <code class="docutils literal notranslate"><span class="pre">presentation_args</span></code> section of the configuration file <a class="reference external" href="mindaffectBCI/online_bci.json"><code class="docutils literal notranslate"><span class="pre">online_bci.json</span></code></a>.  Where:</p>
+<ul>
+<li><p><em>symbols</em> : can either by a list-of-lists of the actual text to show, for example for a 2x2 grid of sentences:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;presentation_args&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;symbols&quot;</span><span class="p">:[</span> <span class="p">[</span><span class="s2">&quot;I&#39;m happy&quot;</span><span class="p">,</span><span class="s2">&quot;I&#39;m sad&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;I want to play&quot;</span><span class="p">,</span><span class="s2">&quot;I want to sleep&quot;</span><span class="p">]</span> <span class="p">],</span>
+    <span class="s2">&quot;stimfile&quot;</span><span class="p">:</span><span class="s2">&quot;mgold_65_6532_psk_60hz.png&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;framesperbit&quot;</span><span class="p">:</span><span class="mi">1</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>or a file from which to load the set of symbols as a <em>comma-separated</em> list of strings like the file <a class="reference external" href="mindaffectBCI/examples/presentation/symbols.txt">symbols.txt</a>.</p>
+</li>
+<li><p><em>stimfile</em> : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in ‘x’ and time in ‘y’ like:</p></li>
+</ul>
+<p><img alt="rc5x5.png" src="mindaffectBCI/rc5x5.png" /></p>
+</div>
+<div class="section" id="change-decoder-parameters">
+<h3>Change Decoder parameters<a class="headerlink" href="#change-decoder-parameters" title="Permalink to this headline">¶</a></h3>
+<p>The decoder is the core of the BCI at it takes in the raw EEG and stimulus information and generates predictions about which stimulus the user is attending to.  Generating these predictions relies on signal processing and machine learning techniques to learn the best decoding parameters for each user.   However, ensuring best performance means the settings for the decoder should be appropriate for the particular BCI being used.  The default decoder parameters are found in the configuration file <a class="reference external" href="mindaffectBCI/online_bci.json"><code class="docutils literal notranslate"><span class="pre">online_bci.json</span></code></a> in the <code class="docutils literal notranslate"><span class="pre">decoder_args</span></code> section, and are setup for a noisetagging BCI.</p>
+<p>The default settings for noisetagging are:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>    <span class="s2">&quot;decoder_args&quot;</span><span class="p">:{</span>
+        <span class="s2">&quot;stopband&quot;</span> <span class="p">:</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">25</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span>
+        <span class="s2">&quot;out_fs&quot;</span> <span class="p">:</span> <span class="mi">80</span><span class="p">,</span>
+        <span class="s2">&quot;evtlabs&quot;</span> <span class="p">:</span> <span class="p">[</span><span class="s2">&quot;re&quot;</span><span class="p">,</span><span class="s2">&quot;fe&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;tau_ms&quot;</span> <span class="p">:</span> <span class="mi">450</span><span class="p">,</span>
+        <span class="s2">&quot;calplots&quot;</span> <span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+        <span class="s2">&quot;predplots&quot;</span> <span class="p">:</span> <span class="n">false</span>
+    <span class="p">},</span>
+</pre></div>
+</div>
+<p>The key parameters here are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stopband</span></code>: this is a <a class="reference external" href="https://en.wikipedia.org/wiki/Filter_(signal_processing)">temporal filter</a> which is applied as a pre-processing step to the incomming data.  This is important to remove external noise so the decoder can focus on the target brain signals.   Here the filter is specified as a list of <a class="reference external" href="https://en.wikipedia.org/wiki/Band-stop_filter">band stop</a> filters, which specify which signal frequencies should be suppressed, (where, in classic python fashion -1 indicates the max-possible frequency).  Thus, in this example all frequencies below 3Hz and above 25Hz are removed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">out_fs</span></code>: this specifies the post-filtering sampling rate of the data.  This reduces the amount of data which will be processed by the rest of the decoder.  Thus, in this example after filtering the data is re-sampled to 80Hz.  (Note: to avoid <a class="reference external" href="#"></a> out_fs should be greater than 2x the maximum frequency passed by the stop-band).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">evtlabs</span></code>: this specifies the stimulus properties (or event labels) the decoder will try to predict from the brain responses.  The input to the decoder (and the brain) is the raw-stimulus intensity (i.e. it’s brightness, or loudness).  However, depending on the task the user is performing, the brain may <em>not</em> respond directly to the brightness, but some other property of the stimulus.  For example, in the classic <a class="reference external" href="https://en.wikipedia.org/wiki/P300_(neuroscience)#Applications">P300 ‘odd-ball’ BCI</a>, the brain responds not to the raw intensity, but to the start of <em>surprising</em> stimuli.  The design of the P300 matrix-speller BCI means this response happens when the users choosen output ‘flashes’, or gets bright.  Thus, in the P300 BCI the brain responses to the <a class="reference external" href="https://en.wikipedia.org/wiki/Signal_edge">rising-edge</a> of the stimulus intensity.   Knowing, exactly what stimulus property the brain is responding to is a well studied neuroscientific research question, with examples including, stimulus-onset (a.k.a. rising-edge, or ‘re’), stimulus-offset (a.k.a. falling-edge, or ‘fe’), stimulus intensity (‘flash’), stimulus-duration etc.  Getting the right stimulus-coding is critical for BCI peformance, see <a class="reference external" href="mindaffectBCI/decoder/stim2event.py"><code class="docutils literal notranslate"><span class="pre">stim2event.py</span></code></a> for more information on supported event types.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tau_ms</span></code>: this specifies the maximum duration of the expected brain response to a triggering event in <em>milliseconds</em>.  As with the trigger type, the length of the brian response to a triggering event depends on the type of response expected.  For example for the P300 the response is between 300 and 600 ms after the trigger, whereas for a VEP the response is between 100 and 400 ms.   Ideally, the response window should be as small as possible, so the learning system only gets the brain response, and not a lot of non-response containing noise which could lead the machine learning component to <a class="reference external" href="https://en.wikipedia.org/wiki/Overfitting">overfitt</a>.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="other-bci-types">
+<h2>Other BCI types.<a class="headerlink" href="#other-bci-types" title="Permalink to this headline">¶</a></h2>
+<p>We provide exmaple configuration files for 3 basic types of visual BCIs:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="mindaffectBCI/noisetag_bci.json"><code class="docutils literal notranslate"><span class="pre">noisetag.json</span></code></a> : example for a <a class="reference external" href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0133797">noise-tagging</a> (or c-VEP) BCI</p></li>
+<li><p><a class="reference external" href="mindaffectBCI/rc5x5_bci.json"><code class="docutils literal notranslate"><span class="pre">rc5x5.json</span></code></a> : example for a classic visual P300 odd-ball type BCI with row-column stimulus.</p></li>
+<li><p><a class="reference external" href="mindaffectBCI/ssvep_bci.json"><code class="docutils literal notranslate"><span class="pre">ssvep.json</span></code></a> : example for a classic <a class="reference external" href="https://arxiv.org/abs/2002.01171">steady-state-visual-response</a> BCI.</p></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tutorials.html" class="btn btn-neutral float-right" title="Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Mark van Kesteren
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
