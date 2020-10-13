@@ -177,10 +177,10 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     # generate the brain source
     A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
     if irf is None:
-        B  = np.zeros((tau),dtype=np.float32)
+        B  = np.zeros((tau), dtype=np.float32)
         B[-3] = 1;         # true response filter (shift by 10 samples)
     else:
-        B = np.array(irf,dtype=np.float32)
+        B = np.array(irf, dtype=np.float32)
     Ytrue = Y[..., 0, :] # (nTrl, nSamp, nE)
 
     if True:
@@ -204,6 +204,8 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
     X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d) #[d x nSamp]
     return (X, Y, stimTimes_samp, A, B)
+
+
 
 def testtestSignal():
     import matplotlib.pyplot as plt

@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import gc
 import re
 
+
+
 def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, **kwargs):
     """ cross-validated training on a single datasets and decoing curve estimation
 
@@ -90,6 +92,9 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
     return score,dc,Fy,clsfr
 
+
+
+
 def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loader_args:dict=None, preprocess_args:dict=None, clsfr_args:dict=None):
     """analyse a set of datasets (multiple subject) and generate a summary decoding plot.
 
@@ -133,6 +138,9 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     plt.savefig("{}_decoding_curve.png".format(dataset))
     plt.show()
 
+
+
+
 def flatten_decoding_curves(decoding_curves):
     ''' take list of (potentially variable length) decoding curves and make into a single array '''
     il = np.zeros((len(decoding_curves),decoding_curves[0][0].size))
@@ -151,8 +159,21 @@ def flatten_decoding_curves(decoding_curves):
         st[di,:ll] = dc[4][:ll] 
     return il,pe,pee,se,st
 
-def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=('re', 'fe'), rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
+
+
+
+def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
     fs = coords[1]['fs'] if coords is not None else fs
+    if clsfr_args is not None:
+        if 'evtlabs' in clsfr_args and clsfr_args['evtlabs'] is not None:
+            evtlabs = clsfr_args['evtlabs']
+        if 'tau_ms' in clsfr_args and clsfr_args['tau_ms'] is not None:
+            tau_ms = clsfr_args['tau_ms']
+        if 'offset_ms' in clsfr_args and clsfr_args['offset_ms'] is not None:
+            offset_ms = clsfr_args['offset_ms']
+    if evtlabs is None:
+        evtlabs = ('re','fe')
+
     tau = int(fs*tau_ms/1000)
     offset=int(offset_ms*fs/1000)    
     times = np.arange(offset,tau+offset)/fs
@@ -231,8 +252,6 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plot_decoding_curve(*res)
 
     print("Plot Model")
-    plt.figure(15);plt.clf()
-    #filter2pattern(clsfr.sigma_,factored2full(clsfr.W_,clsfr.R_))
     if hasattr(clsfr,'A_'):
         plot_erp(factored2full(clsfr.A_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
         plt.suptitle("fwd-model")
@@ -241,13 +260,11 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
         plt.suptitle("bwd-model")
     plt.show()
 
-
-    if not clsfr.R_ is None:
-        print("Plot Factored Model")
-        plt.figure(18)
-        plt.clf()
-        clsfr.plot_model(fs=fs)
-        plt.show()
+    print("Plot Factored Model")
+    plt.figure(18)
+    plt.clf()
+    clsfr.plot_model(fs=fs,ch_names=ch_names)
+    plt.show()
     
     print("plot Fe")
     plt.figure(16);plt.clf()
@@ -276,6 +293,9 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
 
     return clsfr,res
 
+
+
+
 def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, loader_args=None, *args,**kwargs):
     """run the debug_test_dataset for a single subject from dataset
 
@@ -295,7 +315,8 @@ def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, l
     return debug_test_dataset(X,Y,coords,*args,**kwargs)
 
 
-    plt.close('all')
+
+
 def run_analysis():    
     #analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
     #                 model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))

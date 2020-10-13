@@ -182,12 +182,12 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             Perr = args[6-2].copy() #(nTrl,nInt)
             Perr[Yerr==True]=np.NaN # disable points where it was in error
             # est when was correct
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(objID == 0)')
+            plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
             plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
             # est when incorrect..
             Perr = args[6-2].copy() #(nTrl,nInt)
             Perr[Yerr==False]=np.NaN # disable points where it was in error
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(objID ~= 0)')
+            plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
             plt.title('Decoding Curve (nTrl={})'.format(Yerr.shape[0]))
 
