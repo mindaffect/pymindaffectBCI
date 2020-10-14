@@ -75,10 +75,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, Y):
         '''fit model mapping 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)'''
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_fitted(self):
         return hasattr(self,"W_")
+
+    def clear(self):
+        if hasattr(self,"W_"): delattr(self,'W_')
+        if hasattr(self,"R_"): delattr(self,'R_')
+        if hasattr(self,"A_"): delattr(self,'A_')
+        if hasattr(self,"b_"): delattr(self,'b_')
 
     def predict(self, X, Y, dedup0=None, prevY=None):
         '''make predictions on multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)

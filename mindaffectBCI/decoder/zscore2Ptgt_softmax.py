@@ -109,7 +109,15 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,
         validTgt = np.any(f != 0, 1) # (nTrl,nY)
     elif validTgt.ndim == 1:
         validTgt = validTgt[np.newaxis, :]
-    # include the nout correction on a per-trial basis
+
+    # remove trials with no-true-label info
+    keep = np.any(f[:, :, 0], (-2, -1)) # [ nTrl ]
+    if not np.all(keep):
+        Fy = Fy[keep, :, :]
+        if validTgt.shape[0] > 1 :
+            validTgt = validTgt[keep,:]
+ 
+     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
 
     # simply try a load of scales - as input are normalized shouldn't need more than this

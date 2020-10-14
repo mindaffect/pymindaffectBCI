@@ -503,6 +503,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
 
         elif current_mode.lower() in ("reset"):
             calibration_dataset = None
+            clsfr.clear()
 
         # check for new mode-messages
         newmsgs, nsamp, nstim = ui.update()
