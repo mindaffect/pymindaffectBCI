@@ -140,8 +140,26 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
-    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True):
-        ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True):
+        """Cross-validated fit the model for generalization performance estimation
+
+        N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.
+
+        Args:
+            X ([type]): [description]
+            Y ([type]): [description]
+            cv (int, optional): the number of folds to use, or a fold generator. Defaults to 5.
+            fit_params (dict, optional): additional parameters to pass to the self.fit(X,Y,...) function. Defaults to dict().
+            verbose (bool, optional): flag for model fitting verbosity. Defaults to 0.
+            return_estimator (bool, optional): should we return the cross-validated predictions. Defaults to True.
+            calibrate_softmax (bool, optional): after fitting the model, should we use the cross-validated predictions to calibrate the probability estimates. Defaults to True.
+            dedup0 (bool, optional): should we de-duplicate copies of the 'true-target'. Defaults to True.
+            retrain_on_all (bool, optional): should we retrain the model on all the data after the cv folds. Defaults to True.
+
+        Returns:
+            results (dict): dictionary with the results
+        """        
+
         # TODO [] : make more computationally efficient by pre-computing the updateSummaryStatistics etc.
         # TODO [] : conform to sklearn cross_validate signature
         # TODO [] : move into a wrapper class
@@ -174,7 +192,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             scores.append(self.audc_score(Fyi))
 
         # final retrain with all the data
-        self.fit(X, Y, **fit_params)
+        if retrain_on_all:
+            self.fit(X, Y, **fit_params)
 
         self.sigma0_ = None
         self.softmaxscale_ = None
@@ -194,7 +213,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
                 self.softmaxscale_ = calibrate_softmaxscale(nFy)
 
         return {'estimator': Fy, 'test_score': scores}
-    
+
+
     def plot_model(self, **kwargs):
         if not self.R_ is None:
             print("Plot Factored Model")
@@ -218,6 +238,7 @@ class MultiCCA(BaseSequence2Sequence):
         self.center = center
         self.CCA = CCA
 
+
     def fit(self, X, Y, stimTimes=None):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, Y)'''
         # map to event sequence
@@ -239,8 +260,8 @@ class MultiCCA(BaseSequence2Sequence):
         # store A_ for plotting later
         self.A_ = np.einsum("de,Mkd->Mke",Cxx,W)
 
-
         return self
+
 
     def fit_b(self,X):
         """fit the bias parameter given the other parameters and a dataset
@@ -258,10 +279,10 @@ class MultiCCA(BaseSequence2Sequence):
 
 
     def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, 
-               return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, ranks=None):
+               return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True, ranks=None):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
-        if ranks is None or len(ranks)==1 :
-            return super(MultiCCA,self).cv_fit(X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0)
+        if ranks is None :
+            return super(MultiCCA,self).cv_fit(X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0,retrain_on_all)
 
         # fast path for cross validation over rank
         cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
@@ -311,7 +332,7 @@ class MultiCCA(BaseSequence2Sequence):
 
         # final retrain with all the data
         # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
-        res = super(MultiCCA,self).cv_fit(X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0)
+        res = super(MultiCCA,self).cv_fit(X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
         return res
 
     

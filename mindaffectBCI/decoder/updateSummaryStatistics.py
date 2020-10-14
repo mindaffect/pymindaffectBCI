@@ -494,6 +494,8 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
     A = (k,d)
     R = (k,e,tau)
     '''
+    A=A.copy()
+    R=R.copy()
     if A.ndim > 2:
         if A.shape[0]>1 :
             print("Warning: only the 1st set ERPs is plotted")
