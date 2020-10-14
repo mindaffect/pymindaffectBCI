@@ -266,10 +266,15 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     clsfr_args['fs']=fs
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
-    score, res, Fy, clsfr = analyse_dataset(X,Y,coords,model,**clsfr_args,**kwargs)
+    score, res, Fy, clsfr = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
     
     plt.figure(14)
     plot_decoding_curve(*res)
+
+    plt.figure(19)
+    plt.imshow(res[33],aspect='auto')
+    plt.xlabel('time (samples)')
+    plt.ylabel('Trial#')
 
     print("Plot Model")
     plt.figure(15)
