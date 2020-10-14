@@ -273,7 +273,8 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         centFy (bool, optional): flag if we should center over outputs before computing variance. Defaults to True.
         detrendFy (bool, optional): flag if we should detrend Fy before computing it's variance. Defaults to True.
         priorsigma ([type], optional): Prior estimate for the variance. Defaults to None.
-    returns:
+        
+    Returns:
         sigma2 ([np.ndarray]): (nTr, nDecis) estimated variance per sample at each decision point
     """
     if decisIdx is None:

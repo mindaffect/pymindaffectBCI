@@ -670,7 +670,7 @@ class SelectionGridScreen(Screen):
     def __init__(self, window, symbols, noisetag, objIDs=None,
                  bgFraction=.2, instruct="", 
                  clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True,
-                 waitKey=True, stimulus_callback=None):
+                 waitKey=True, stimulus_callback=None, framerate_display=True):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -687,6 +687,7 @@ class SelectionGridScreen(Screen):
         self.symbols = symbols
         self.objIDs = objIDs
         self.optosensor = optosensor
+        self.framerate_display = framerate_display
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
@@ -736,6 +737,14 @@ class SelectionGridScreen(Screen):
         self.sentence.begin_update()
         self.sentence.text=text
         self.sentence.end_update()
+    
+    def set_framerate(self, text):
+        '''set/update the text to show in the frame rate box'''
+        if type(text) is list:
+            text = "\n".join(text)
+        self.framerate.begin_update()
+        self.framerate.text=text
+        self.framerate.end_update()
 
     def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here"):
         '''set/update the grid of symbols to be selected from'''
@@ -809,6 +818,12 @@ class SelectionGridScreen(Screen):
         self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2,
                                         color=(255, 255, 255, 255),
                                         anchor_x='left', anchor_y='center',
+                                        batch=self.batch, group=self.foreground)
+
+        # add the framerate box
+        self.framerate=pyglet.text.Label("", font_size=12, x=winw, y=winh,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='right', anchor_y='top',
                                         batch=self.batch, group=self.foreground)
 
     def is_done(self):
@@ -912,6 +927,12 @@ class SelectionGridScreen(Screen):
             logstr="FrameIdx:%d FlipTime:%d FlipLB:%d FlipUB:%d Opto:%d"%(nframe, self.framestart, self.framestart, self.frameend, opto)
             self.noisetag.log(logstr)
 
+        # add the frame rate info
+        # TODO[]: limit update rate..
+        if self.framerate_display:
+            global flipstats
+            flipstats.update_statistics()
+            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
 
 
 
@@ -1270,7 +1291,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=False, simple_calibration=False, host=None):
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:

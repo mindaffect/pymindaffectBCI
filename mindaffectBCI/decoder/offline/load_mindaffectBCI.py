@@ -86,26 +86,29 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=
     # get trial indices in stimulus messages as sufficiently large inter-stimulus gap
     # N.B. this is the index in stim_ts of the *start* of the new trial
     trl_stim_idx = np.flatnonzero(isi > iti_ms)
-    # get duration of stimulus in each trial
+    # get duration of stimulus in each trial, in milliseconds (rather than number of stimulus events)
     trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
-    print('trl_dur: {}'.format(trl_dur))
     # estimate the best trial-length to use
     if trlen_ms is None:
         trlen_ms = np.median(trl_dur)
     # strip any trial too much shorter than trlen_ms (50%)
-    keep = np.flatnonzero(trl_dur>trlen_ms*.5)
+    keep = np.flatnonzero(trl_dur>trlen_ms*.4)
+    print('Got {} trials, keeping {}'.format(len(trl_stim_idx)-1,len(keep)))
     # re-compute the trlen_ms for the good trials
     trl_stim_idx = trl_stim_idx[keep]
-    
+
+    # get the trial starts as indices & ms into the data array
+    trl_samp_idx = stim_samp[trl_stim_idx]
+    trl_ts       = stim_ts[trl_stim_idx]   
+
+    print('{} trl_dur (samp): {}'.format(len(trl_samp_idx),np.diff(trl_samp_idx)))
+    print('{} trl_dur (ms) : {}'.format(len(trl_ts),np.diff(trl_ts)))
+
     # compute the trial start/end relative to the trial-start
     trlen_samp  = int(trlen_ms *  fs / 1000)
     offset_samp = [int(o*fs/1000) for o in offset_ms]
     bgnend_samp = (offset_samp[0], trlen_samp+offset_samp[1]) # start end slice window
     xlen_samp = bgnend_samp[1]-bgnend_samp[0]
-    
-    # get the trial starts as indices & ms into the data array
-    trl_samp_idx = stim_samp[trl_stim_idx]
-    trl_ts       = stim_ts[trl_stim_idx]
     
     # extract the slices
     Xraw = X.copy()
@@ -117,10 +120,17 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=
     ep_idx = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
     for ti, si in enumerate(trl_samp_idx):
-        idx = range(si+bgnend_samp[0],min(Xraw.shape[0],si+bgnend_samp[1]))
+        bgn_idx = si+bgnend_samp[0]
+        end_idx_x = min(Xraw.shape[0],si+bgnend_samp[1])
+        idx = range(si+bgnend_samp[0],end_idx_x)
         nsamp = len(idx) #min(si+bgnend_samp[1],Xraw.shape[0])-(si+bgnend_samp[0])
         X[ti, :nsamp, :] = Xraw[idx, :]
         Xe_ts[ti,:nsamp] = data_ts[idx]
+
+        # ignore stimuli after end of this trial
+        end_idx_y = min(end_idx_x,trl_samp_idx[ti+1]) if ti+1 < len(trl_samp_idx) else end_idx_x
+        idx = range(si+bgnend_samp[0],end_idx_y)
+        nsamp = len(idx) #min(si+bgnend_samp[1],Xraw.shape[0])-(si+bgnend_samp[0])
         Y[ti, :nsamp, :] = Yraw[idx, :]
         Ye_ts[ti,:nsamp] = Y_ts[idx]
         ep_idx[ti,:nsamp] = list(idx)

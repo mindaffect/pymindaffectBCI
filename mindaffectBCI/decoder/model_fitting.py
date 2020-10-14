@@ -168,7 +168,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             scores.append(self.audc_score(Fyi))
 
         # final retrain with all the data
-        self.fit(X, Y)
+        self.fit(X, Y, **fit_params)
 
         self.sigma0_ = None
         self.softmaxscale_ = None
@@ -179,7 +179,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             # N.B. need to match the filter used in the decoder..
             self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)  # per-trial
             #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
-            self.sigma0_ = np.median(self.sigma0_.ravel())  # ave
+            self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
             print('Sigma0 = {}'.format(self.sigma0_))
 
             if calibrate_softmax:
@@ -298,7 +298,7 @@ class MultiCCA(BaseSequence2Sequence):
         
         #3) get the *best* rank
         scores= np.mean(np.array(scores),axis=-1) # (ranks,folds) -> ranks
-        print("Rank score: " + ", ".join(["{}={:3.2f}".format(r,s) for (r,s) in zip(ranks,scores)]),end='')
+        print("Rank score: " + ", ".join(["{}={:4.3f}".format(r,s) for (r,s) in zip(ranks,scores)]),end='')
         maxri = np.argmax(scores)
         self.rank = ranks[maxri]
         print(" -> best={}".format(self.rank))

@@ -484,7 +484,8 @@ if __name__=="__main__":
 
     X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=100)
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', ranks=(1,2,3,5))
+    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', cv=[(slice(10),slice(10,None))], ranks=(1,2,3,5))
+
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()
