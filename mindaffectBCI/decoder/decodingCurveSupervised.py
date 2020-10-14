@@ -17,8 +17,8 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         ProbErrEst (float (nInt,)) : decoder estimate of the error rate for each integeration length
         StopPerr (nInt,) : error rate at this average trial length when using ProbErrEst-thresholding based stopping
         StopThresh (nInt,) : ProbErrEst threshold used to get this average trial length.
-        Yerr (bool (nTrl,nInt)) : flag if estimate was correct at this integeration length for this trial 
-        Perr (float (nTrl,nInt)) : compute probability of error for this integeration length and trial
+        Yerr (bool (nTrl,nInt)) : flag if prediction was *incorrect* at this integeration length for this trial 
+        Perr (float (nTrl,nInt)) : compute probability of incorrect prediction for this integeration length and trial
     '''
     if objIDs is None:
         objIDs = np.arange(Fy.shape[-1])   
@@ -71,7 +71,7 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
         integerationLengths (float (nInt,)) : a list of integeration lengths to compute peformance at
 
     Returns:
-        Yerr (nTrl,nInt : bool) : flag if estimate was correct at this integeration length for this trial 
+        Yerr (nTrl,nInt : bool) : flag if prediction was *incorrect* at this integeration length for this trial 
         Perr (nTrl,nInt : float) : compute probability of error for this integeration length and trial
         aveProbErr (nInt: float) : average error probablility at this integeration length
         aveProbErrEst (nInt: float):  average estimated error probability for this integeration length

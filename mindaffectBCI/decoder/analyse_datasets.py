@@ -14,7 +14,7 @@ import re
 
 
 
-def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, **kwargs):
+def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, retrain_on_all=True, **kwargs):
     """ cross-validated training on a single datasets and decoing curve estimation
 
     Args:
@@ -30,7 +30,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         offset_ms ((2,):float, optional): Offset for analysis window from start/end of the event response. Defaults to 0.
 
     Raises:
-        NotImplementedError: if you as for a model which isn't implemented
+        NotImplementedError: if you use for a model which isn't implemented
 
     Returns:
         score (float): the cv score for this dataset
@@ -77,6 +77,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
     # fit the model
     if cv:
+        # hyper-parameter optimization by cross-validation
         if tuned_parameters is not None:
             # hyper-parameter optimization with cross-validation
             from sklearn.model_selection import GridSearchCV
@@ -90,12 +91,16 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
 
             clsfr.set_params(**cv_clsfr.best_params_) # Note: **dict -> k,v argument array
 
-        # cross-validated parameter optimization
+        
         if ranks is not None and isinstance(clsfr,MultiCCA):
-            res = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks)
+            # cross-validated rank optimization
+            res = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks, retrain_on_all=retrain_on_all)
         else:
-            res = clsfr.cv_fit(X, Y, cv=cv)
+            # cross-validated performance estimation
+            res = clsfr.cv_fit(X, Y, cv=cv, retrain_on_all=retrain_on_all)
+
         Fy = res['estimator']
+
     else:
         print("Warning! overfitting...")
         clsfr.fit(X,Y)
@@ -108,7 +113,6 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
     (dc) = decodingCurveSupervised(Fy, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_)
 
     return score,dc,Fy,clsfr
-
 
 
 
@@ -126,7 +130,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     if dataset_args is None: dataset_args = dict()
     if loader_args is None: loader_args = dict()
     if clsfr_args is None: clsfr_args = dict()
-    loader, filenames, dataroot = get_dataset(dataset,**dataset_args)
+    loader, filenames, _ = get_dataset(dataset,**dataset_args)
     scores=[]
     decoding_curves=[]
     nout=[]
@@ -157,6 +161,88 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     plt.show()
 
 
+
+def analyse_train_test(X:np.ndarray, Y:np.ndarray, coords, splits=1, label:str='', model:str='cca', tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, preprocess_args=None, clsfr_args=dict(),  **kwargs):    
+    """analyse effect of different train/test splits on performance and generate a summary decoding plot.
+
+    Args:
+        splits (): list of list of train-test split pairs.  
+        dataset ([str]): the name of the dataset to load
+        model (str, optional): The type of model to fit. Defaults to 'cca'.
+        dataset_args ([dict], optional): additional arguments for get_dataset. Defaults to None.
+        loader_args ([dict], optional): additional arguments for the dataset loader. Defaults to None.
+        clsfr_args ([dict], optional): additional aguments for the model_fitter. Defaults to None.
+        tuned_parameters ([dict], optional): sets of hyper-parameters to tune by GridCVSearch
+    """    
+    fs = coords[1]['fs'] if coords is not None else fs
+
+    if isinstance(splits,int): 
+        # step size for increasing training data split size
+        splitsize=splits
+        maxsize = X.shape[0]
+        splits=[]
+        for tsti in range(splitsize, maxsize, splitsize):
+            # N.B. triple nest, so list, of lists of train/test pairs
+            splits.append( ( (slice(tsti),slice(tsti,None)), ) )
+
+
+    if preprocess_args is not None:
+        X, Y, coords = preprocess(X, Y, coords, **preprocess_args)
+
+    # run the train/test splits
+    decoding_curves=[]
+    labels=[]
+    scores=[]
+    Ws=[]
+    Rs=[]
+    for i, cv in enumerate(splits):
+        # label describing the folding
+        trnIdx = np.arange(X.shape[0])[cv[0][0]]
+        tstIdx = np.arange(X.shape[0])[cv[0][1]]
+        lab = "Trn {} ({}) / Tst {} ({})".format(len(trnIdx), (trnIdx[0],trnIdx[-1]), len(tstIdx), (tstIdx[0],tstIdx[-1]))
+        labels.append( lab )
+
+        print("{}) {}".format(i, lab))
+        score, decoding_curve, Fy, clsfr = analyse_dataset(X, Y, coords, model, cv=cv, retrain_on_all=False, **clsfr_args, **kwargs)
+        decoding_curves.append(decoding_curve)
+        scores.append(score)
+        Ws.append(clsfr.W_)
+        Rs.append(clsfr.R_)
+
+    # plot the model for each folding
+    plt.figure(1)
+    for w,r,l in zip(Ws,Rs,labels):
+        plt.subplot(211)
+        tmp = w[0,0,:]
+        sgn = np.sign(tmp[np.argmax(np.abs(tmp))])
+        plt.plot(tmp*sgn,label=l)
+        plt.subplot(212)
+        tmp=r[0,0,:,:].reshape((-1,))
+        plt.plot(np.arange(tmp.size)*1000/fs, tmp*sgn, label=l)
+    plt.subplot(211)
+    plt.grid()
+    plt.title('Spatial filter')
+    plt.legend()
+    plt.subplot(212)
+    plt.grid()
+    plt.title('Impulse response')
+    plt.xlabel('time (ms)')
+
+    plt.figure(2)
+    # collate the results and visualize
+    avescore=sum(scores)/len(scores)
+    print("\n--------\n\n Ave-score={}\n".format(avescore))
+    # extract averaged decoding curve info
+    int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
+    print("Ave-DC\n{}\n".format(print_decoding_curve(np.mean(int_len,0),np.mean(prob_err,0),np.mean(prob_err_est,0),np.mean(se,0),np.mean(st,0))))
+    plot_decoding_curve(int_len,prob_err)
+    plt.legend( labels + ['mean'] )
+    plt.suptitle("{} AUDC={:3.2f}(n={})\nclsfr={}({})".format(label,avescore,len(scores),model,clsfr_args))
+    try:
+        plt.savefig("{}_decoding_curve.png".format(label))
+    except:
+        pass
+    plt.show()
 
 
 def flatten_decoding_curves(decoding_curves):
@@ -227,9 +313,12 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     print("Plot X+Y")
     trli=min(3,X.shape[0]-1)
     plt.figure(10); plt.clf()
-    plt.subplot(211);
-    plt.imshow(X[trli,:,:].T,aspect='auto');plt.colorbar();plt.title('X');plt.xlabel('time (samp)');plt.legend();
-    plt.subplot(212);
+    plt.subplot(211)
+    plt.imshow(X[trli,:,:].T,aspect='auto')
+    plt.colorbar()
+    plt.title('X')
+    plt.xlabel('time (samp)')
+    plt.subplot(212)
     if Y.ndim == 3:
         plt.imshow(Y[trli, :, :].T, aspect='auto')
         plt.xlabel('time (samp)')
@@ -272,9 +361,21 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plot_decoding_curve(*res)
 
     plt.figure(19)
-    plt.imshow(res[33],aspect='auto')
+    plt.subplot(211)
+    plt.imshow(res[5],aspect='auto',cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.clim(0,1)
+    plt.colorbar()
+    plt.title('Yerr - correct-prediction (0=correct, 1=incorrect)?')
+    plt.ylabel('Trial#')
+    plt.grid()
+    plt.subplot(212)
+    plt.imshow(res[6], aspect='auto', cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.clim(0,1)
+    plt.colorbar()
+    plt.title('Perr - Prob of prediction error (0=correct, 1=incorrect)')
     plt.xlabel('time (samples)')
     plt.ylabel('Trial#')
+    plt.grid()
 
     print("Plot Model")
     plt.figure(15)
@@ -478,7 +579,8 @@ if __name__=="__main__":
     #savefile = '~/Desktop/mindaffectBCI_200720_2152_testing_python.txt'
     #savefile = '~/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
     #savefile = '~/Desktop/mindaffectBCI_200720_2128_master.txt'
-    savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
+    #savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*off.txt'
     #savefile = "~/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
     if savefile is None:
         savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
@@ -487,9 +589,33 @@ if __name__=="__main__":
     files = glob.glob(os.path.expanduser(savefile))
     savefile = max(files, key=os.path.getctime)
 
-    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=100)
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=200)
+
+    cv=[(slice(0,10),slice(10,None))]
+
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
-    debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', cv=[(slice(10),slice(10,None))], ranks=(1,2,3,5))
+    #debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5))
+
+    # strip weird trials..
+    # keep = np.ones((X.shape[0],),dtype=bool)
+    # keep[10:20]=False
+    # X = X[keep,...]
+    # Y = Y[keep,...]
+    # coords[0]['coords']=coords[0]['coords'][keep]
+
+    # set of splits were we train on non-overlapping subsets of trnsize.
+    trnsize=10
+    splits=[]
+    for i in range(0,X.shape[0],trnsize):
+        trn_ind=np.zeros((X.shape[0]), dtype=bool)
+        trn_ind[slice(i,i+trnsize)]=True
+        tst_ind= np.logical_not(trn_ind)
+        splits.append( ( (trn_ind, tst_ind), ) ) # N.B. ensure list-of-lists-of-trn/tst-splits
+
+    #splits=5
+
+    # compute learning curves
+    analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')#, ranks=(1,2,3,5) )
 
     #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
