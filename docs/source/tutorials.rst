@@ -9,3 +9,6 @@ All of our tutorials are interactive Jupyter Notbeooks. Clone our `repository <h
    :maxdepth: 1
    
    first_run
+   simple_output_tutorial
+   simple_presentation_tutorial
+   simple_integration_tutorial
