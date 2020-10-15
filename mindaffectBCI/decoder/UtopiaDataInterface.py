@@ -452,10 +452,15 @@ class UtopiaDataInterface:
         # return new messages, and count new samples/stimulus 
         return (newmsgs, nsamp, nstimulus)
 
+
+
     def push_back_newmsgs(self,oldmsgs):
         '''put unprocessed messages back onto the newmessages queue'''
         # TODO []: ensure  this preserves message time-stamp order?
         self.newmsgs.extend(oldmsgs)
+
+
+
 
     def extract_data_segment(self, bgn_ts, end_ts=None):
         """extract a segment of data based on a start and end time-stamp
@@ -794,6 +799,7 @@ class power_tracker(TransformerMixin):
         return self.sXX / self.sXX_N
     
     def testcase(self):
+        import matplotlib.pyplot as plt
         X = np.random.randn(10000,2)
         #X = np.cumsum(X,axis=0)
         pt = power_tracker(100,100,100)
