@@ -147,9 +147,18 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
                                                ['Yes',   'No']])
         from mindaffectBCI.examples.presentation import selectionMatrix
         selectionMatrix.run(**presentation_args)
+        
     elif presentation == 'none':
         from mindaffectBCI.decoder.sigViewer import sigViewer
         sigViewer()
+
+    else:
+        try:
+            import importlib
+            pres = importlib.import_module(presentation)
+            pres.run(**presentation_args)
+        except:
+            print("Error: could not run the presentation method")
 
     # TODO []: pop-up a monitoring object / dashboard!
 
