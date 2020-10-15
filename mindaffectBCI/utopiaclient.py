@@ -741,6 +741,7 @@ class UtopiaClient:
     def autoconnect(self, hostname=None, port=None, timeout_ms=5000, 
                 queryifhostnotfound=False, localhostifhostnotfound=True, scanifhostnotfound=False):
         if port is None: port = UtopiaClient.DEFAULTPORT
+        if hostname == '-' : hostname = None
         if hostname is None:
             print('Trying to auto-discover the utopia-hub server')
             if True:
