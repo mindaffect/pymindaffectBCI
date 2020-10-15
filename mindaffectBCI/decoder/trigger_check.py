@@ -55,7 +55,7 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.show(block=False)
     plt.pause(.1) # allow full redraw
 
-    wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, stopband=stopband, **kwargs)
+    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, stopband=stopband, **kwargs)
     times = (np.arange(wXe.shape[-1])+offset_ms*1000/fs)*1000/fs
     plt.show(block=False)
 
@@ -71,7 +71,7 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     ts_err = ts_err - ts_err[0,0]
     ts_errY = ts_err[Y_true>0] # (ep,) slice out the high-stimulus info (in seconds)
 
-    ax2=fig.axes[0].twinx()
+    ax2=ax.twinx()
     plt.plot(ts_errY,'k-')
     mu2 = np.median(ts_errY.ravel())
     scale2 = np.median( np.abs(ts_errY.ravel()-mu2) )
@@ -234,12 +234,16 @@ def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
         stim_ts = stimulus[:,-1]
         # up-sample to the data rate by matching time-stamps
         usstimulus, _ = upsample_stimseq(data_ts, stimulus, stim_ts)
-        ax, _, _, _ = triggerPlot(data,usstimulus,ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
+        ax, _, _, _ = triggerPlot(data[:,:,:-1],usstimulus[:,:,:-1],ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
 
 
 if __name__=="__main__":
-    offline = False
-    if offline:
+    online = True
+    if online:
+
+        run(evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5), fs_out=250)
+
+    else: # offline
         #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
         #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
         #filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*tschannel*.txt'
@@ -247,6 +251,4 @@ if __name__=="__main__":
         #filename=None
         filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
         trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5), fs_out=250)
-    else:
-        run(evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5), fs_out=250)
 
