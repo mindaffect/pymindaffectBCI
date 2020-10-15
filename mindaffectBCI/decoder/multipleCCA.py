@@ -222,8 +222,8 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
             isqrtC= np.dot(isqrtC, Ukeep.T)
     else:
         warnings.warn('Degenerate C matrices input!')
-        sqrtC = 1
-        isqrtC = 1
+        sqrtC = np.array(1.0, dtype=C.dtype)
+        isqrtC = np.array(1.0, dtype=C.dtype)
     return (isqrtC, isqrtC)
 
 
