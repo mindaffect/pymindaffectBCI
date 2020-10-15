@@ -57,7 +57,7 @@ def get_trial_start_end(msgs, start_ts=None):
     return (trials, start_ts, msgs)
 
 def getCalibration_dataset(ui):
-    ''' extract a labelled dataset from the utopiaInterface, which are trilas between modechange messages '''
+    ''' extract a labelled dataset from the utopiaInterface, which are trials between modechange messages '''
     # run until we get a mode change gathering training data in trials
     dataset = []
     start_ts = None
@@ -91,7 +91,17 @@ def getCalibration_dataset(ui):
     return dataset
 
 def dataset_to_XY_ndarrays(dataset):
-    ''' convert variable-trial length dataset with stimulus information to fixed size sklearn compatiable (X,Y) nd-arrays'''
+    """convert a dataset, consisting of a list of pairs of time-stamped data and stimulus events, to 3-d matrices of X=(trials,samples,channels) and Y=(trials,samples,outputs)
+
+    Args:
+        dataset ([type]): list of pairs of time-stamped data and stimulus events
+
+    Returns:
+        X (tr,samp,d): the per-trial data
+        Y (tr,samp,nY): the per-trial stimulus, with sample rate matched to X
+        X_ts (tr,samp): the time-stamps for the smaples in X
+        Y_ts (tr,samp): the time-stamps for the stimuli in Y
+    """ 
     # get length of each trial
     trlen = [trl[0].shape[0] for trl in dataset]
     trstim = [trl[1].shape[0] for trl in dataset]
@@ -103,7 +113,7 @@ def dataset_to_XY_ndarrays(dataset):
     # filter the trials to only be the  ones long enough to be worth processing
     dataset = [d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2]
     if trlen == 0 or len(dataset) == 0:
-        return None, None
+        return None, None, None, None
 
     # map to single fixed size matrix + upsample stimulus to he EEG sample rate
     Y = np.zeros((len(dataset), trlen, 256), dtype=dataset[0][1].dtype)
@@ -138,7 +148,7 @@ def dataset_to_XY_ndarrays(dataset):
 
 
 def strip_unused(Y):
-    # strip unused outputs
+    """ strip unused outputs from the stimulus info in Y """
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
     Y = Y[..., used_y]
@@ -147,7 +157,23 @@ def strip_unused(Y):
 
 def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
                             cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None, ranks=(1,2,3,5)):
-    ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
+    """
+    do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface
+
+    Args:
+        ui (UtopiaDataInterface): buffered interface to the data and stimulus streams
+        clsfr (BaseSequence2Sequence): the classifier to use to fit a model to the calibration data
+        cv (int, optional): the number of cross-validation folds to use for model generalization performance estimation. Defaults to 2.
+        calfn (str, optional): filename to save the extracted calibration data. Defaults to "calibration_data.pk".
+        fitfn (str, optional): filename to save the fitted model. Defaults to "fit_data.pk".
+        previous_dataset ([type], optional): data-set from a previous calibration run, used to accumulate data over subsequent calibrations. Defaults to None.
+        ranks (tuple, optional): a list of model ranks to optimize as hyperparameters. Defaults to (1,2,3,5).
+
+    Returns:
+        dataset [type]: the gathered calibration data
+        X : the calibration data as a 3-d array (tr,samp,d)
+        Y : the calibration stimulus as a 3-d array (tr,samp,num-outputs)
+    """    
     X = None
     Y = None
     dataset = getCalibration_dataset(ui)
@@ -269,6 +295,14 @@ def combine_Ptgt(pvals_objIDs):
 
 
 def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
+    """Send the current prediction information to the utopia-hub
+
+    Args:
+        ui (UtopiaDataInterface): the interface to the data-hub
+        Ptgt ([type]): the current distribution of target probabilities over outputs
+        used_idx ([type], optional): a set of output indices currently used. Defaults to None.
+        timestamp (int, optional): time stamp for which this prediction applies. Defaults to -1.
+    """    
     #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # N.B. for network efficiency, only send for non-zero probability outputs
     nonzero_idx = np.flatnonzero(Ptgt)
@@ -297,8 +331,15 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     
 
 def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type='trial', timeout_ms=None, block_step_ms=100, maxDecisLen_ms=8000):
-    ''' do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
+    """ 
+    do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
 
+    Args:
+        ui (UtopiaDataInterface): buffered interface to the data and stimulus streams
+        clsfr (BaseSequence2Sequence): the trained classification model
+        maxDecisLen_ms (float, optional): the maximum amount of data to use to make a prediction, i.e. prediction sliding window size.  Defaults to 8000
+
+    """
     if not clsfr.is_fitted():
         print("Warning: trying to predict without training classifier!")
         return
