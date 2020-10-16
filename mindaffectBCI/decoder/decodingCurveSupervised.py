@@ -76,9 +76,9 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
         aveProbErr (nInt: float) : average error probablility at this integeration length
         aveProbErrEst (nInt: float):  average estimated error probability for this integeration length
     """    
-    Yidx=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Yest=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Perr=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Yidx=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Yest=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Perr= np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
 
     print("Int Lens:", end='')
     for li,nep in enumerate(integerationLengths):
