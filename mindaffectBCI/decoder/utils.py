@@ -26,7 +26,7 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     # reshape to match dims of a
     if not isinstance(pat, np.ndarray): pat = np.array(pat) # ensure is numpy
     pshape = np.ones(a.ndim+1, dtype=int); pshape[axis+1] = pat.size
-    pat =  np.array(pat.ravel()).reshape(pshape) # [ ... x l x...]
+    pat =  np.array(pat.ravel(),dtype=a.dtype).reshape(pshape) # [ ... x l x...]
     # window a into pat-len pieces
     aw = window_axis(a, pat.size, axis=axis) # [ ... x t-l x l x ...]
     # do the match
@@ -34,9 +34,9 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     # pad to make the same shape as input
     padshape = list(a.shape); padshape[axis] = a.shape[axis]-F.shape[axis]
     if match == -1: # match at end of pattern -> pad before
-        F  = np.append(np.zeros(padshape), F, axis)
+        F  = np.append(np.zeros(padshape, dtype=F.dtype), F, axis)
     else: # match at start of pattern -> pad after
-        F  = np.append(F, np.zeros(padshape), axis)
+        F  = np.append(F, np.zeros(padshape, dtype=F.dtype), axis)
     return F
 
 
@@ -406,6 +406,34 @@ def idOutliers(X, thresh=4, axis=-2, verbosity=0):
     if verbosity > 1:
         print("%d bad" % (np.sum(bad.ravel())))
     return (bad, power)
+
+def robust_mean(X,thresh=(3,3)):
+    """Compute robust mean of values in X, using gaussian outlier criteria
+
+    Args:
+        X (the data): the data
+        thresh (2,): lower and upper threshold in standard deviations
+
+    Returns:
+        mu (): the robust mean
+        good (): the indices of the 'good' data in X
+    """    
+    good = np.ones(X.shape, dtype=bool)
+    for _ in range(4):
+        mu = np.mean(X[good])
+        sigma = np.sqrt(np.mean((X[good] - mu) ** 2))
+
+        # re-compute outlier list
+        good[:]=True
+        if thresh[0] is not None:
+            badThresh = mu + thresh[0]*sigma
+            good[X > badThresh] = False
+        if thresh[1] is not None:
+            badThresh = mu - thresh[0]*sigma
+            good[X < badThresh] = False
+    mu = np.mean(X[good])
+
+    return (mu, good)
 
 try:
     from scipy.signal import butter, bessel, sosfilt, sosfilt_zi
