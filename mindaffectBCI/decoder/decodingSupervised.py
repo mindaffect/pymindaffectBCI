@@ -10,7 +10,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
                        marginalizemodels=True, 
                        nocontrolamplitude=None,
                        priorsigma=(-1,120),
-                       tiebreaking_noise=1e-8):
+                       tiebreaking_noise=1e-3):
     '''
     true-target estimator and error-probility estimator for each trial
     Inputs:
