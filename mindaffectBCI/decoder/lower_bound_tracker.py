@@ -5,7 +5,7 @@ class lower_bound_tracker():
     """ sliding window linear trend tracker
     """   
 
-    def __init__(self, window_size=200, C=(.01,None), outlier_thresh=(1,None), step_size=10, step_threshold=2, a0=1, b0=0, warmup_size=10):
+    def __init__(self, window_size=200, C=(.1,None), outlier_thresh=(1,None), step_size=10, step_threshold=2, a0=1, b0=0, warmup_size=10):
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
         self.a0 = a0 if a0 is not None else 1

@@ -3,6 +3,7 @@ from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_
 from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
 import matplotlib.pyplot as plt
 from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
+from mindaffectBCI.decoder.utils import robust_mean
 
 def timestampPlot(filename=None):
     import glob
@@ -26,7 +27,7 @@ def timestampPlot(filename=None):
     rcv = np.array([ m.rts for m in dp])
     client = np.array([ m.timestamp for m in dp])
     samp = np.cumsum(samp)
-    samp2ms = np.median(np.diff(svr)/np.diff(samp))
+    samp2ms, _ = robust_mean(np.diff(svr)/np.maximum(1,np.diff(samp)),(3,3))
 
     lbt = lower_bound_tracker(a0=samp2ms)
     svr_filt = np.zeros(svr.shape)
@@ -63,6 +64,7 @@ if __name__=="__main__":
     #filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
     #filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
     filename = '~/Desktop/trig_check/mindaffectBCI_*timestamp*.txt'
+    filename = '~/Downloads/mindaffectBCI*.txt'
     #filename=None
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     timestampPlot(filename)

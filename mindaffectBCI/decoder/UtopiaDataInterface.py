@@ -1012,8 +1012,7 @@ if __name__ == "__main__":
     #testRaw()
     #testPP()
     #testERP()
-    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
-    filename="C:/Users/Developer/Downloads/trig_check/mindaffectBCI_cyton_brainflow_201002_2008.txt"
+    filename="~/Desktop/mark/mindaffectBCI_*.txt"
     testFileProxy(filename)
     #testFileProxy2(filename)
     # "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")

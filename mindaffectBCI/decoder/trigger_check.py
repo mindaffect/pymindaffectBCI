@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import glob
 
 
-def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=6000, stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
+def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(.1,45,'bandpass'), fs_out=250, trntrl=5, trnsamp=6000, max_samp=6000, **kwargs):
     """make a set of visualizations of the stimulus->measurement time-lock
 
     Args:
@@ -55,8 +55,8 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.show(block=False)
     plt.pause(.1) # allow full redraw
 
-    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, stopband=stopband, **kwargs)
-    times = (np.arange(wXe.shape[-1])+offset_ms*1000/fs)*1000/fs
+    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, stopband=stopband, max_samp=max_samp, trntrl=trntrl, **kwargs)
+    times = (np.arange(wXe.shape[-1])+offset_ms*fs/1000)*1000/fs
     plt.show(block=False)
 
     # over-plot the information on the timestamp errors
@@ -75,9 +75,9 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.plot(ts_errY,'k-')
     mu2 = np.median(ts_errY.ravel())
     scale2 = np.median( np.abs(ts_errY.ravel()-mu2) )
-    if times[-1]*.05 < scale2*2 and scale2*2 < times[-1]*8: # make line match
-        scale2 = times[-1]/2
-    elif scale2*2 < times[-1]*.2: # make image smaller
+    if scale2*2 < tau_ms*8: # make line match
+        scale2 = tau_ms/2
+    elif scale2*2 < tau_ms*.2: # make image smaller
         ax.set_ylim(min(times[0],mu2-2*scale2),max(times[-1],mu2+2*scale2))
     plt.ylim(mu2-1*scale2,mu2+1*scale2)
     plt.ylabel("Recieved time-stamp error vs. constant rate (ms)")
@@ -99,7 +99,7 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.figure(6)
     timestampPlot(filename)
 
-def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=6000, max_trl=5, stopband=(.1,45,'bandpass'), plot_model=True, plot_trial=True, ax=None, **kwargs):
+def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=6000, trntrl=None, stopband=(.1,45,'bandpass'), plot_model=True, plot_trial=True, ax=None, **kwargs):
     if X.ndim < 3 : 
         X = X[np.newaxis, ...]
     if Y.ndim < 3:
@@ -109,7 +109,11 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
     tau = int(fs*tau_ms/1000.0)
     # BODGE: for speed only use first 5 trials!
     # BODGE: reg with 1e-5 so only the strong channels are used..
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1,reg=(1e-2,None)).fit(X[-max_trl:,-max_samp:,...],Y[-max_trl:,-max_samp:,...])
+    if trntrl is None:
+        trntrl = -5
+    if isinstance(trntrl,int):
+        trntrl = slice(trntrl,None)
+    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1,reg=(1e-2,None)).fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...])
 
     # get the event-coded version of Y
     Ye = clsfr.stim2event(Y)
@@ -140,6 +144,7 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
         plt.show(block=False)
         # allow full re-draw
         plt.pause(.5)
+        plt.figure(3)
 
     # slice out the responses for the trigger stimulus
     print('slicing data')
@@ -184,6 +189,7 @@ def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
     ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
     ui.connect(hostname)
     try:
+        import matplotlib
         matplotlib.use('Qt4Cairo')
     except:
         pass
@@ -234,21 +240,24 @@ def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
         stim_ts = stimulus[:,-1]
         # up-sample to the data rate by matching time-stamps
         usstimulus, _ = upsample_stimseq(data_ts, stimulus, stim_ts)
-        ax, _, _, _ = triggerPlot(data[:,:,:-1],usstimulus[:,:,:-1],ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
+        ax, _, _, _ = triggerPlot(data[...,:-1],usstimulus[...,:-1],ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
 
 
 if __name__=="__main__":
-    online = True
-    if online:
+    #filename=None # on-line trigger check
+    # load the most recent matching file
+    filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
+    filename='~/Downloads/mindaffectBCI*1852.txt'
+    #filename='~/Desktop/mark/mindaffectBCI_*.txt'
+
+    if filename is None:
 
         run(evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5), fs_out=250)
 
     else: # offline
-        #filename="~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
-        #filename = '~/Desktop/rpi_trig/mindaffectBCI_*_201001_1859.txt'
-        #filename = '~/Desktop/trig_check/mindaffectBCI_*wifi*tschannel*.txt'
-        #filename = '~/Desktop/trig_check/mindaffectBCI_*_khash2.txt'
-        #filename=None
-        filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
-        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5), fs_out=250)
 
+        # trigger/opto-data
+        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
+
+        # brain data, 10-cal trials
+        #trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
