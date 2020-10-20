@@ -44,7 +44,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
     if whiten_spectrum > 0:
-        reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else 0
+        reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else .1
         print("Spectral whiten:{}".format(reg))
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
 
@@ -196,6 +196,19 @@ def fir(X:np.ndarray, ntap=3, dilation=1):
     return X
 
 def standardize_channel_power(X:np.ndarray, sigma2:np.ndarray=None, axis=-2, reg=1e-1, alpha=1e-3):
+    """Adaptively standardize the channel powers
+
+    Args:
+        X (np.ndarray): The data to standardize
+        sigma2 (np.ndarray, optional): previous channel powers estimates. Defaults to None.
+        axis (int, optional): dimension of X which is time. Defaults to -2.
+        reg ([type], optional): Regularisation strength for power estimation. Defaults to 1e-1.
+        alpha ([type], optional): learning rate for power estimation. Defaults to 1e-3.
+
+    Returns:
+        sX: the standardized version of X
+        sigma2 : the estimated channel power at the last sample of X
+    """
     assert axis==-2, "Only currently implemeted for axis==-2"
 
     # 3d-X recurse over trials 
@@ -220,17 +233,20 @@ def standardize_channel_power(X:np.ndarray, sigma2:np.ndarray=None, axis=-2, reg
     return sX,sigma2
 
 
-def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-6, axis=-2, alpha=1e-3, verb=0):
+def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-5, axis=-2, verb=0):
     """temporally decorrelate each channel of X with by fitting and subtracting an AR model
 
     Args:
         X (np.ndarray trl,samp,d): the data to be whitened, with channels/space in the *last* axis
         W ( tau,d): per channel AR coefficients
+        reg (float): regularization strength for fitting the AR model. Defaults to 1e-2
+        eta (float): learning rate for the SGD. Defaults to 1e-5
 
     Returns:
         X (np.ndarray): the whitened X
         W (np.ndarray (tau,d)): the AR model used to sample ahead predict X
     """    
+    assert axis==-2, "Only currently implemeted for axis==-2"
     if W is None:  W=10
     if isinstance(W,int):
         # set initial filter and order
@@ -241,7 +257,7 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-6, axi
         wX = np.zeros(X.shape,dtype=X.dtype)
         for i in range(X.shape[0]):
             # TODO[]: why does propogating the model between trials reduce the decorrelation effectivness?
-            wX[i,...], w = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,alpha=alpha,verb=verb)
+            wX[i,...], w = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,verb=verb)
         return wX, w
     
     # 2-d X
