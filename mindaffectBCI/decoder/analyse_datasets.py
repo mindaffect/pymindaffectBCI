@@ -280,6 +280,10 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     if evtlabs is None:
         evtlabs = ('re','fe')
 
+    # work on copy of X,Y just in case
+    X = X.copy()
+    Y = Y.copy()
+
     tau = int(fs*tau_ms/1000)
     offset=int(offset_ms*fs/1000)    
     times = np.arange(offset,tau+offset)/fs
