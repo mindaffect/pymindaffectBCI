@@ -60,7 +60,7 @@ def getCalibration_dataset(ui):
     ''' extract a labelled dataset from the utopiaInterface, which are trials between modechange messages '''
     # run until we get a mode change gathering training data in trials
     dataset = []
-    start_ts = None
+    start_ts = None  # assume we have just started the first trial?
     isCalibrating = True
     while isCalibrating:
 

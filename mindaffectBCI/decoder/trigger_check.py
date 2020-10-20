@@ -99,7 +99,7 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.figure(6)
     timestampPlot(filename)
 
-def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=6000, trntrl=None, stopband=(.1,45,'bandpass'), plot_model=True, plot_trial=True, ax=None, **kwargs):
+def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=10000, trntrl=None, stopband=(.1,45,'bandpass'), plot_model=True, plot_trial=True, ax=None, **kwargs):
     if X.ndim < 3 : 
         X = X[np.newaxis, ...]
     if Y.ndim < 3:
@@ -113,7 +113,7 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
         trntrl = -5
     if isinstance(trntrl,int):
         trntrl = slice(trntrl,None)
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1,reg=(1e-2,None)).fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...])
+    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...])
 
     # get the event-coded version of Y
     Ye = clsfr.stim2event(Y)
@@ -248,7 +248,7 @@ if __name__=="__main__":
     # load the most recent matching file
     filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
     filename='~/Downloads/mindaffectBCI*1852.txt'
-    #filename='~/Desktop/mark/mindaffectBCI_*.txt'
+    filename='~/Desktop/mark/mindaffectBCI_*.txt'
 
     if filename is None:
 
@@ -257,7 +257,7 @@ if __name__=="__main__":
     else: # offline
 
         # trigger/opto-data
-        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
+        #trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
 
         # brain data, 10-cal trials
-        #trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
+        trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
