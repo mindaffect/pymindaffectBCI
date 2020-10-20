@@ -106,7 +106,10 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     # TODO[X] : use a bracketing test.. (better with wrap-arround)
     bgn_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < bgn_ts, bgn_ts <= X_ts[1:]))
     # get the index of this timestamp, guarding for after last sample
-    bgn_samp = bgn_samp[0] if len(bgn_samp) > 0 else len(X_ts)+1
+    if len(bgn_samp) == 0 :
+        bgn_samp = 0 if bgn_ts <= X_ts[0] else len(X_ts)+1
+    else:
+        bgn_samp = bgn_samp[0]
     # and just to be sure the trial-end timestamp
     if  end_ts is not None:
         end_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < end_ts, end_ts <= X_ts[1:]))
