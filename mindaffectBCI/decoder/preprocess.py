@@ -3,7 +3,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None, filterbank=None, nY=None, fir=None):
+def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, standardize=False, stopband=None, filterbank=None, nY=None, fir=None):
     """apply simple pre-processing to an input dataset
 
     Args:
@@ -52,6 +52,11 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         reg = decorrelate if not isinstance(decorrelate,bool) else 9
         print("Temporally decorrelate:{}".format(reg))
         X, W = temporally_decorrelate(X, axis=-2, W=reg)
+
+    if standardize > 0:
+        reg = standardize if not isinstance(standardize,bool) else 1
+        print("Standardize channel power:{}".format(reg))
+        X, W = standardize_channel_power(X, axis=-2, reg=reg)
 
     if filterbank is not None:
         if fs is None and coords is not None: 
@@ -190,16 +195,41 @@ def fir(X:np.ndarray, ntap=3, dilation=1):
         X = X[...,::dilation,:] # extract the dilated points    
     return X
 
+def standardize_channel_power(X:np.ndarray, sigma2:np.ndarray=None, axis=-2, reg=1e-1, alpha=1e-3):
+    assert axis==-2, "Only currently implemeted for axis==-2"
+
+    # 3d-X recurse over trials 
+    if X.ndim == 3:
+        for i in range(X.shape[0]):
+            X[i,...], sigma2 = standardize_channel_power(X[i,...], sigma2=sigma2, reg=reg, alpha=alpha)
+        return X, sigma2
+
+    if sigma2 is None:
+        sigma2 = np.zeros((X.shape[-1],), dtype=X.dtype)
+        sigma2 = X[0,:]*X[0,:] # warmup with 1st sample power
+
+    # 2-d X
+    # return copy to don't change in-place!
+    sX = np.zeros(X.shape,dtype=X.dtype)
+    for t in range(X.shape[axis]):
+        # TODO[] : robustify this, e.g. clipping/windsorizing
+        sigma2 = sigma2 * (1-alpha) + X[t,:]*X[t,:]*alpha
+        # set to unit-power - but regularize to stop maginfication of low-power, i.e. noise, ch
+        sX[t,:] = X[t,:] / np.sqrt((sigma2 + reg*np.median(sigma2))/2)
+
+    return sX,sigma2
+
 
 def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-6, axis=-2, alpha=1e-3, verb=0):
-    """spatially whiten the nd-array X
+    """temporally decorrelate each channel of X with by fitting and subtracting an AR model
 
     Args:
-        X (np.ndarray): the data to be whitened, with channels/space in the *last* axis
+        X (np.ndarray trl,samp,d): the data to be whitened, with channels/space in the *last* axis
+        W ( tau,d): per channel AR coefficients
 
     Returns:
         X (np.ndarray): the whitened X
-        W (np.ndarray): the whitening matrix used to whiten X
+        W (np.ndarray (tau,d)): the AR model used to sample ahead predict X
     """    
     if W is None:  W=10
     if isinstance(W,int):
@@ -210,6 +240,7 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-6, axi
     if X.ndim > 2: # 3-d version, loop and recurse
         wX = np.zeros(X.shape,dtype=X.dtype)
         for i in range(X.shape[0]):
+            # TODO[]: why does propogating the model between trials reduce the decorrelation effectivness?
             wX[i,...], w = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,alpha=alpha,verb=verb)
         return wX, w
     
