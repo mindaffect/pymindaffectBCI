@@ -3,7 +3,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None, filterbank=None, nY=None, fir=None):
+def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, stopband=None, filterbank=None, nY=None, fir=None):
     """apply simple pre-processing to an input dataset
 
     Args:
@@ -47,6 +47,11 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, badCh
         reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else 0
         print("Spectral whiten:{}".format(reg))
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
+
+    if decorrelate > 0:
+        reg = decorrelate if not isinstance(decorrelate,bool) else 5
+        print("Temporally decorrelate:{}".format(reg))
+        X, W = temporally_decorrelate(X, axis=-2, W=reg)
 
     if filterbank is not None:
         if fs is None and coords is not None: 
@@ -185,8 +190,51 @@ def fir(X:np.ndarray, ntap=3, dilation=1):
         X = X[...,::dilation,:] # extract the dilated points    
     return X
 
-def butter_filterbank(X:np.ndarray, filterbank, fs:float, sos=None, zi=None, axis=-2, order=4, ftype='butter', verb=1):
-    from scipy.signal import sosfilt
+
+def temporally_decorrelate(X:np.ndarray, W:np.ndarray=3, reg=.01, eta=1e-8, axis=-2, verb=0):
+    """spatially whiten the nd-array X
+
+    Args:
+        X (np.ndarray): the data to be whitened, with channels/space in the *last* axis
+
+    Returns:
+        X (np.ndarray): the whitened X
+        W (np.ndarray): the whitening matrix used to whiten X
+    """    
+    if W is None:  W=10
+    if isinstance(W,int):
+        # set initial filter and order
+        W = np.zeros((W,X.shape[-1]))
+        W[-1,:]=1
+
+    for i in range(X.shape[0]):
+        wX = np.zeros(X.shape,dtype=X.dtype)
+        for t in range(X.shape[-2]):
+            if t < W.shape[0]:
+                wX[i,t,:] = X[i,t,:]
+
+            else:
+                Xt = X[i,t,:] # current input (d,)
+                Xtau = X[i,t-W.shape[0]:t,:] # current prediction window (N,d)
+
+
+                # compute the prediction error:
+                Xt_est = np.sum(W*Xtau,-2) # (d,)
+                err = Xt - Xt_est # (d,)
+
+                if (i==0 and t<30) or verb>1:
+                    print('Xt={} Xt_est={} err={}'.format(Xt,Xt_est,err))
+
+                # remove the predictable part => decorrelate with the window
+                wX[i,t,:] = err # y=x - w'x_tau
+            
+                # update the linear prediction model
+                W = W + eta * err * Xt * Xtau #/ np.sqrt(Xtau*Xtau) # w = w + eta x*x_tau
+
+    return (wX,W)
+
+
+def butter_filterbank(X:np.ndarray, filterbank, fs:float, axis=-2, order=4, ftype='butter', verb=1):
     if verb > 0:  print("Filterbank: {}".format(filterbank))
     if not axis == -2:
         raise ValueError("axis other than -2 not supported yet!")
@@ -302,7 +350,54 @@ def extract_envelope(X,fs,
     return X
 
 
-def test_filterbank():
+def testCase_spectralwhiten():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
+    fs=100
+    X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
+    X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+    #X = np.cumsum(X,-2) # 1/f spectrum
+    print("X={}".format(X.shape))
+    plt.figure(1)
+    plot_grand_average_spectrum(X, fs)
+    plt.suptitle('Raw')
+    plt.show(block=False)
+
+    wX, _ = spectrally_whiten(X)
+    
+    # compare raw vs summed filterbank
+    plt.figure(2)
+    plot_grand_average_spectrum(wX,fs)
+    plt.suptitle('Whitened')
+    plt.show()
+
+
+def testCase_temporallydecorrelate():
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
+    fs=100
+    X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
+    #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+    X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+    #X = np.cumsum(X,-2) # 1/f spectrum
+    print("X={}".format(X.shape))
+    plt.figure(1)
+    plot_grand_average_spectrum(X, fs)
+    plt.suptitle('Raw')
+    plt.show(block=False)
+
+    wX, _ = temporally_decorrelate(X)
+    
+    # compare raw vs summed filterbank
+    plt.figure(2)
+    plot_grand_average_spectrum(wX,fs)
+    plt.suptitle('Decorrelated')
+    plt.show()
+
+
+def testCase_filterbank():
     import numpy as np
     import matplotlib.pyplot as plt
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
@@ -363,4 +458,5 @@ def test_fir():
     plt.show()
 
 if __name__=="__main__":
-    test_filterbank()
+    testCase_temporallydecorrelate()
+    #testCase_spectralwhiten()

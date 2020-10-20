@@ -282,7 +282,8 @@ class MultiCCA(BaseSequence2Sequence):
                return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True, ranks=None):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
         if ranks is None :
-            return super(MultiCCA,self).cv_fit(X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0,retrain_on_all)
+            # call the base version
+            return BaseSequence2Sequence.cv_fit(self,X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0,retrain_on_all)
 
         # fast path for cross validation over rank
         cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
@@ -332,7 +333,7 @@ class MultiCCA(BaseSequence2Sequence):
 
         # final retrain with all the data
         # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
-        res = super(MultiCCA,self).cv_fit(X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
+        res = BaseSequence2Sequence.cv_fit(self,X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
         return res
 
     
