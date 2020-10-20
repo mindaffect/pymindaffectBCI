@@ -49,7 +49,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
 
     if decorrelate > 0:
-        reg = decorrelate if not isinstance(decorrelate,bool) else 5
+        reg = decorrelate if not isinstance(decorrelate,bool) else 9
         print("Temporally decorrelate:{}".format(reg))
         X, W = temporally_decorrelate(X, axis=-2, W=reg)
 
@@ -191,7 +191,7 @@ def fir(X:np.ndarray, ntap=3, dilation=1):
     return X
 
 
-def temporally_decorrelate(X:np.ndarray, W:np.ndarray=3, reg=.01, eta=1e-8, axis=-2, verb=0):
+def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-6, axis=-2, alpha=1e-3, verb=0):
     """spatially whiten the nd-array X
 
     Args:
@@ -207,29 +207,40 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=3, reg=.01, eta=1e-8, axis
         W = np.zeros((W,X.shape[-1]))
         W[-1,:]=1
 
-    for i in range(X.shape[0]):
+    if X.ndim > 2: # 3-d version, loop and recurse
         wX = np.zeros(X.shape,dtype=X.dtype)
-        for t in range(X.shape[-2]):
-            if t < W.shape[0]:
-                wX[i,t,:] = X[i,t,:]
+        for i in range(X.shape[0]):
+            wX[i,...], w = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,alpha=alpha,verb=verb)
+        return wX, w
+    
+    # 2-d X
+    wX = np.zeros(X.shape,dtype=X.dtype)
+    dH = np.ones(X.shape[-1],dtype=X.dtype)
+    for t in range(X.shape[-2]):
+        if t < W.shape[0]:
+            wX[t,:] = X[t,:]
 
-            else:
-                Xt = X[i,t,:] # current input (d,)
-                Xtau = X[i,t-W.shape[0]:t,:] # current prediction window (N,d)
+        else:
+            Xt = X[t,:] # current input (d,)
+            Xtau = X[t-W.shape[0]:t,:] # current prediction window (N,d)
 
 
-                # compute the prediction error:
-                Xt_est = np.sum(W*Xtau,-2) # (d,)
-                err = Xt - Xt_est # (d,)
+            # compute the prediction error:
+            Xt_est = np.sum(W*Xtau,-2) # (d,)
+            err = Xt - Xt_est # (d,)
 
-                if (i==0 and t<30) or verb>1:
-                    print('Xt={} Xt_est={} err={}'.format(Xt,Xt_est,err))
+            if t<W.shape[0]+0 or verb>1:
+                print('Xt={} Xt_est={} err={}'.format(Xt[0],Xt_est[0],err[0]))
 
-                # remove the predictable part => decorrelate with the window
-                wX[i,t,:] = err # y=x - w'x_tau
-            
-                # update the linear prediction model
-                W = W + eta * err * Xt * Xtau #/ np.sqrt(Xtau*Xtau) # w = w + eta x*x_tau
+            # remove the predictable part => decorrelate with the window
+            wX[t,:] = err # y=x - w'x_tau
+
+            # smoothed diag hessian estimate
+            dH = dH*(1-eta) + Xt*Xt*eta
+        
+            # update the linear prediction model - via. SGD
+            W = W + eta * err * Xtau / dH - reg * W # w = w + eta x*x_tau
+            #W = W / np.sqrt(np.sum(W*W,-2)) # unit norm in the weighting
 
     return (wX,W)
 
@@ -373,15 +384,17 @@ def testCase_spectralwhiten():
     plt.show()
 
 
-def testCase_temporallydecorrelate():
+def testCase_temporallydecorrelate(X=None,fs=100):
     import numpy as np
     import matplotlib.pyplot as plt
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_erp
     fs=100
-    X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
-    #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
-    X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
-    #X = np.cumsum(X,-2) # 1/f spectrum
+    if X is None:
+        X = np.random.standard_normal((2,fs*3,2)) # flat spectrum
+        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+
+        #X = np.cumsum(X,-2) # 1/f spectrum
     print("X={}".format(X.shape))
     plt.figure(1)
     plot_grand_average_spectrum(X, fs)
@@ -458,5 +471,22 @@ def test_fir():
     plt.show()
 
 if __name__=="__main__":
-    testCase_temporallydecorrelate()
+
+    savefile = '~/Desktop/mark/mindaffectBCI*.txt'
+
+    import glob
+    import os
+    files = glob.glob(os.path.expanduser(savefile)); 
+    #os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
+    savefile = max(files, key=os.path.getctime)
+
+    # load
+    from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', fs_out=100)
+    # output is: X=eeg, Y=stimulus, coords=meta-info about dimensions of X and Y
+    print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
+    print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.shape))
+
+
+    testCase_temporallydecorrelate(X)
     #testCase_spectralwhiten()
