@@ -227,6 +227,7 @@ def standardize_channel_power(X:np.ndarray, sigma2:np.ndarray=None, axis=-2, reg
     for t in range(X.shape[axis]):
         # TODO[] : robustify this, e.g. clipping/windsorizing
         sigma2 = sigma2 * (1-alpha) + X[t,:]*X[t,:]*alpha
+        sigma2[sigma2==0] = 1
         # set to unit-power - but regularize to stop maginfication of low-power, i.e. noise, ch
         sX[t,:] = X[t,:] / np.sqrt((sigma2 + reg*np.median(sigma2))/2)
 
