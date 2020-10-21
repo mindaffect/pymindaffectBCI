@@ -917,6 +917,135 @@ class timestamp_interpolation(TransformerMixin):
         plt.plot(ts_true - sts)
         plt.show()
 
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+from mindaffectBCI.decoder.preprocess import temporally_decorrelate
+class temporal_decorrelator(TransformerMixin):
+    """Incremental streaming tranformer to decorrelate temporally channels in an input stream
+    """
+
+    def __init__(self, order=10, reg=1e-4, eta=1e-5, axis=-2):
+        self.reg=reg
+        self.eta=eta
+        self.axis=axis
+
+    def fit(self,X):
+        self.W_ = np.zeros((self.order,X.shape[-1]),dtype=X.dtype)
+        self.W_[-1,:]=1
+        _, self.W_ = self.transform(X[1:,:])
+
+    def transform(self,X):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            X (float): the data to decorrelate
+            nsamp(int): number of samples to interpolate
+
+        Returns:
+            np.ndarray: the decorrelated data
+        """
+        if not hasattr(self,'W_'):
+            self.fit(X)
+
+        X, self.W_ = temporally_decorrelate(X, W=self.W_, reg=self.reg, eta=self.eta, axis=self.axis)
+
+        return X
+
+    def testcase(self, dur=3, fs=100, blksize=10):
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
+        fs=100
+        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
+        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+
+        #X = np.cumsum(X,-2) # 1/f spectrum
+        print("X={}".format(X.shape))
+        plt.figure(1)
+        plot_grand_average_spectrum(X, fs)
+        plt.suptitle('Raw')
+        plt.show(block=False)
+
+        tdc = temporal_decorrelator()
+        wX = np.zeros(X.shape,X.dtype)
+        for i in range(0,X.shape[-1],blksize):
+            idx = range(i,i+blksize)
+            wX[idx,:] = tdc.transform(X[idx,:])
+        
+        # compare raw vs summed filterbank
+        plt.figure(2)
+        plot_grand_average_spectrum(wX,fs)
+        plt.suptitle('Decorrelated')
+        plt.show()
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+from mindaffectBCI.decoder.preprocess import standardize_channel_power
+class channel_power_standardizer(TransformerMixin):
+    """Incremental streaming tranformer to channel power normalization in an input stream
+    """
+
+    def __init__(self, reg=1e-4, axis=-2):
+        self.reg=reg
+        self.axis=axis
+
+    def fit(self,X):
+        self.sigma2_ = np.zeros((X.shape[-1],), dtype=X.dtype)
+        self.sigma2_ = X[0,:]*X[0,:] # warmup with 1st sample power
+        self.transform(X[1:,:])
+
+    def transform(self,X):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            X (float): the data to decorrelate
+
+        Returns:
+            np.ndarray: the decorrelated data
+        """
+        if not hasattr(self,'sigma2_'):
+            self.fit(X)
+
+        X, self.W_ = standardize_channel_power(X, sigma2=self.sigma2_, reg=self.reg, axis=self.axis)
+
+        return X
+
+    def testcase(self, dur=3, fs=100, blksize=10):
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
+        fs=100
+        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
+        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+
+            #X = np.cumsum(X,-2) # 1/f spectrum
+        print("X={}".format(X.shape))
+        plt.figure(1)
+        plot_grand_average_spectrum(X, fs)
+        plt.suptitle('Raw')
+        plt.show(block=False)
+
+        cps = channel_power_standardizer()
+        wX = np.zeros(X.shape,X.dtype)
+        for i in range(0,X.shape[-1],blksize):
+            idx = range(i,i+blksize)
+            wX[idx,:] = cps.transform(X[idx,:])
+        
+        # compare raw vs summed filterbank
+        plt.figure(2)
+        plot_grand_average_spectrum(wX,fs)
+        plt.suptitle('Decorrelated')
+        plt.show()
+
+
 def testRaw():
     # test with raw
     ui = UtopiaDataInterface()
