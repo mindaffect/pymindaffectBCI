@@ -169,21 +169,23 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
         plt.colorbar()
         plt.set_cmap('jet')#'gray')#'nipy_spectral')
         plt.ylabel('time (ms)')
-        plt.xlabel('Trial')
+        plt.xlabel('Epoch')
         plt.grid()
 
     # draw a line at the trial boundary + text?
-    # make a trial indicator
-    trlIdx = np.tile(np.arange(X.shape[0])[:,np.newaxis],(1,wXe.shape[1]))
-    trlIdx = trlIdx[Y_true>0]
-    #plt.plot(trlIdx,'w-',label='trial number')
-    trlEndIdx = np.flatnonzero(np.diff(trlIdx)>0)
-    #for i,idx in enumerate(trlEndIdx):
-    #    plt.text(idx,0,"{:3d}".format(i+1),ha='center',va='center')
-    plt.xticks(trlEndIdx,np.arange(len(trlEndIdx))+1,rotation=-90,size='x-small')
-    #ax.set_xticks(trlEndIdx,major=True)
-    #ax.set_ticklabels(trlEndIdx)
-    plt.grid(True,which='major')
+    if X.ndim>2 and X.shape[0]>1:
+        # make a trial indicator
+        trlIdx = np.tile(np.arange(X.shape[0])[:,np.newaxis],(1,wXe.shape[1]))
+        trlIdx = trlIdx[Y_true>0]
+        #plt.plot(trlIdx,'w-',label='trial number')
+        trlEndIdx = np.flatnonzero(np.diff(trlIdx)>0)
+        #for i,idx in enumerate(trlEndIdx):
+        #    plt.text(idx,0,"{:3d}".format(i+1),ha='center',va='center')
+        plt.xticks(trlEndIdx,np.arange(len(trlEndIdx))+1,rotation=-90,size='x-small')
+        #ax.set_xticks(trlEndIdx,major=True)
+        #ax.set_ticklabels(trlEndIdx)
+        plt.grid(True,which='major')
+        plt.xlabel('Trial')
 
 
     # if X.shape[-1]>8 :
@@ -258,11 +260,12 @@ def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
 
 
 if __name__=="__main__":
-    #filename=None # on-line trigger check
+    filename=None # on-line trigger check
     # load the most recent matching file
-    filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
-    filename='~/Downloads/mindaffectBCI*.txt'
+    #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
+    #filename='~/Downloads/mindaffectBCI*cyton*.txt'
     #filename='~/Desktop/mark/mindaffectBCI_*.txt'
+    filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI*.txt'
 
     if filename is None:
 
