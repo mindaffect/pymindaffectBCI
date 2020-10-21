@@ -1219,10 +1219,11 @@ def initPyglet(fullscreen=False):
     global window
     # set up the window
     if fullscreen:
+        print('Fullscreen mode!')
         # N.B. accurate video timing only guaranteed with fullscreen
         # N.B. over-sampling seems to introduce frame lagging on windows+Intell
         config = pyglet.gl.Config(double_buffer=True) #double_buffer=False,sample_buffers=1, samples=4)
-        window = pyglet.window.Window(fullscreen=True, vsync=True, config=config)
+        window = pyglet.window.Window(fullscreen=True, vsync=True, resizable=False, config=config)
     else:
         config = pyglet.gl.Config(double_buffer=True)#,sample_buffers=1, samples=4)
         window = pyglet.window.Window(width=1024, height=768, vsync=True, resizable=True, config=config)

@@ -45,7 +45,8 @@ def timestampPlot(filename=None):
     svr_err = svr - samp*samp2ms- svr[0]
     client_err = client - samp*samp2ms- client[0]
     svr_filt_err = svr_filt - samp*samp2ms- svr_filt[0]
-    cent = np.median(svr_err); scale=np.median(np.abs(svr_err-cent))
+    cent = np.median(svr_err) 
+    scale=np.percentile(np.abs(svr_err-cent), 75)
     plt.plot(samp*samp2ms,svr_err,'.-',label='samp*samp2ms - server')
     plt.plot(samp*samp2ms,client_err,'.-',label='samp*samp2ms - client')
     plt.plot(samp*samp2ms,svr_filt_err,'.-',label='samp*samp2ms - filt(server)')
