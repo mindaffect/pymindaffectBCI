@@ -73,6 +73,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         board.config_board('x8020000X')
     sleep(1)
     if board_id==0 or board_id==5:
+        print("Enabling AMP time-stamps on cyton")
         board.config_board ('<')
     sleep(1)
     eeg_channels = BoardShim.get_eeg_channels (board_id)
