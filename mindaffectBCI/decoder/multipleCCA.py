@@ -2,7 +2,7 @@ import numpy as np
 import warnings
 
 def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
-                reg=0, rank=1, CCA=True, rcond=1e-4, symetric=False):
+                reg=1e-8, rank=1, CCA=True, rcond=1e-4, symetric=False):
     '''
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cxy,Cyy,regx,regy,rank,CCA)
@@ -160,6 +160,7 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
         W (np.ndarray): The whitening matrix
         iW (np.ndarray): The inverse whitening matrix
     """    
+    assert not np.any(np.isnan(C.ravel())) and not np.any(np.isinf(C.ravel())), "NaN or Inf in inputs!"
 
     # ensure symetric
     C = (C + C.T) / 2
@@ -392,4 +393,4 @@ def testcase_matlab_summarystatistics():
     plot.show()
 
 if __name__=="__main__":
-    filterbank_testcase()
+    testcase()
