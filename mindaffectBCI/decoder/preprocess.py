@@ -51,7 +51,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
     if decorrelate > 0:
         reg = decorrelate if not isinstance(decorrelate,bool) else 9
         print("Temporally decorrelate:{}".format(reg))
-        X, W = temporally_decorrelate(X, axis=-2, W=reg)
+        X, W = temporally_decorrelate(X, axis=-2, reg=reg)
 
     if standardize > 0:
         reg = standardize if not isinstance(standardize,bool) else 1
@@ -284,10 +284,10 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-5, axi
             wX[t,:] = err # y=x - w'x_tau
 
             # smoothed diag hessian estimate
-            dH = dH*(1-eta) + Xt*Xt*eta
+            dH = dH*(1-eta) + eta * (Xt*Xt + reg)
         
             # update the linear prediction model - via. SGD
-            W = W + eta * err * Xtau / dH - reg * W # w = w + eta x*x_tau
+            W = W + eta * (err * Xtau - reg * W) / dH # w = w + eta x*x_tau
             #W = W / np.sqrt(np.sum(W*W,-2)) # unit norm in the weighting
 
     return (wX,W)
