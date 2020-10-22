@@ -86,10 +86,23 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,"A_"): delattr(self,'A_')
         if hasattr(self,"b_"): delattr(self,'b_')
 
-    def predict(self, X, Y, dedup0=None, prevY=None):
-        '''make predictions on multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)
-        
-        N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)'''
+    def predict(self, X, Y, dedup0=True, prevY=None):
+        """Generate predictions with the fitted model for the paired data + stimulus-sequences
+
+            N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
+
+        Args:
+            X (np.ndarray (tr,samp,d)): the multi-trial data
+            Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
+            dedup0 ([type], optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
+            prevY ([type], optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
+
+        Raises:
+            NotFittedError: raised if try to predict without first fitting
+
+        Returns:
+            Fy (np.ndarray (tr,samp,nY): score for each output in each trial.  Higher score means more 'likely' to be the 'true' target
+        """        
         if not self.is_fitted():
             # only if we've been fitted!
             raise NotFittedError
@@ -108,6 +121,19 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
 
     def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True):
+        """Convert stimulus scores to stimulus probabities of being the target
+
+        Args:
+            Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
+
+        Raises:
+            NotFittedError: [description]
+
+        Returns:
+            Ptgt (np.ndarray (tr,nDecis,nY)): score for each decision point in each trial for each output.  Higher score means more 'likely' to be the 'true' target
+        """        
         # build optional arguments if set
         kwargs=dict()
         if hasattr(self,'sigma0_') and self.sigma0_ is not None:
@@ -121,7 +147,23 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return Ptgt #(nTrl, nEp, nY)
 
     
-    def predict_proba(self, X, Y, marginalizemodels=False, minDecisLen=-1, dedup0=None, prevY=None):
+    def predict_proba(self, X, Y, marginalizemodels=False, minDecisLen=-1, dedup0=True, prevY=None):
+        """Predict the probability of each output for paired data/stimulus sequences
+
+        Args:
+            X (np.ndarray (tr,samp,d)): the multi-trial data
+            Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
+            dedup0 (bool, optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
+            prevY (np.ndarray, optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
+
+        Raises:
+            NotFittedError: [description]
+
+        Returns:
+            Ptgt (np.ndarray (tr,nDecis,nY): Probability of each output being the target.  Higher score means more 'likely' to be the 'true' target
+        """        
         Fy = self.predict(X, Y, dedup0=dedup0, prevY=prevY)
         return self.decode_proba(Fy,marginalizemodels=marginalizemodels, minDecisLen=minDecisLen)
 
