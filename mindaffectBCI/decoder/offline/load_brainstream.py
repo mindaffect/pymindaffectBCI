@@ -4,6 +4,24 @@ from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt
 
 def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, stopband=((45,65),(5,25,'bandpass')), verb=0, ch_names=None):
+    """Load and pre-process a brainstream offline save-file and return the EEG data, and stimulus information
+
+    Args:
+        datadir (str): root of the data directory tree
+        sessdir (str, optional): sub-directory for the session to load. Defaults to None.
+        sessfn (str, optional): filename for the session information. Defaults to None.
+        fs_out (float, optional): [description]. Defaults to 100.
+        ifs (float, optional): the input data sample rate.
+        fr (float, optional): the input stimulus frame rate.
+        stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
+        ch_names (tuple, optional): Names for the channels of the EEG data.
+
+    Returns:
+        X (np.ndarray (nTrl,nSamp,nCh)): the pre-processed per-trial EEG data
+        Y (np.ndarray (nTrl,nSamp,nY)): the up-sampled stimulus information for each output
+        coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
+                          "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
+    """    
 
     # load the data file
     Xfn = datadir
