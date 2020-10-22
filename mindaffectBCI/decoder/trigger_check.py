@@ -110,13 +110,19 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
     # BODGE: for speed only use first 5 trials!
     # BODGE: reg with 1e-5 so only the strong channels are used..
     if trntrl is None:
-        trntrl = -5
+        trntrl = 10
     if isinstance(trntrl,int):
         trntrl = slice(trntrl,None)
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1).fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...])
+    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1)
+    clsfr.cv_fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...],ranks=(1,2,3,5))
+
+    # get the classifier predictions
+    Ptgt = clsfr.predict_proba(X,Y) # (tr,decis,ny) get predicted target probability for each trial
+    Perr = Ptgt[:,-1,0] > .9 # use last prediction prob as proxy for trial prediction
 
     # get the event-coded version of Y
     Ye = clsfr.stim2event(Y)
+
 
     print("applying spatial filter")
     W = clsfr.W_[0,0,...] # (d,)
@@ -178,10 +184,12 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
         trlIdx = np.tile(np.arange(X.shape[0])[:,np.newaxis],(1,wXe.shape[1]))
         trlIdx = trlIdx[Y_true>0]
         #plt.plot(trlIdx,'w-',label='trial number')
-        trlEndIdx = np.flatnonzero(np.diff(trlIdx)>0)
+        trlEndIdx = np.append(0,np.flatnonzero(np.diff(trlIdx)>0))
         #for i,idx in enumerate(trlEndIdx):
         #    plt.text(idx,0,"{:3d}".format(i+1),ha='center',va='center')
-        plt.xticks(trlEndIdx,np.arange(len(trlEndIdx))+1,rotation=-90,size='x-small')
+        # N.B. +2 as end-of-trial line and count from 0
+        ticklabs = [ "{}{}".format(i+1,"*" if p else "") for (i,p) in zip(range(len(trlEndIdx)),Perr)]
+        plt.xticks(trlEndIdx,ticklabs,rotation=-90,size='x-small')
         #ax.set_xticks(trlEndIdx,major=True)
         #ax.set_ticklabels(trlEndIdx)
         plt.grid(True,which='major')
@@ -264,8 +272,8 @@ if __name__=="__main__":
     # load the most recent matching file
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
     #filename='~/Downloads/mindaffectBCI*cyton*.txt'
-    #filename='~/Desktop/mark/mindaffectBCI_*.txt'
-    filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI*.txt'
+    filename='~/Desktop/mark/mindaffectBCI_*1239.txt'
+    #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI*.txt'
 
     if filename is None:
 
@@ -274,7 +282,7 @@ if __name__=="__main__":
     else: # offline
 
         # trigger/opto-data
-        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
+        #trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
 
         # brain data, 10-cal trials
-        #trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
+        trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
