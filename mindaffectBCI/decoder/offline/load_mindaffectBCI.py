@@ -5,8 +5,29 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), **kwargs):
-    
+def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), ch_names=None, **kwargs):
+    """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
+
+    Args:
+        datadir (str): root of the data directory tree
+        sessdir (str, optional): sub-directory for the session to load. Defaults to None.
+        sessfn (str, optional): filename for the session information. Defaults to None.
+        fs_out (float, optional): [description]. Defaults to 100.
+        stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
+        order (int, optional): the order of the temporal filter. Defaults to 6.
+        ftype (str, optional): The type of filter design to use.  One of: 'butter', 'bessel'. Defaults to 'butter'.
+        verb (int, optional): General verbosity/logging level. Defaults to 0.
+        iti_ms (int, optional): Inter-trial interval. Used to detect trial-transitions when gap between stimuli is greater than this duration. Defaults to 1000.
+        trlen_ms (float, optional): Trial duration in milli-seconds.  If None then this is deduced from the stimulus information. Defaults to None.
+        offset_ms (tuple, (2,) optional): Offset in milliseconds from the trial start/end for the returned data such that X has range [tr_start+offset_ms[0] -> tr_end+offset_ms[0]]. Defaults to (-500,500).
+        ch_names (tuple, optional): Names for the channels of the EEG data.
+
+    Returns:
+        X (np.ndarray (nTrl,nSamp,nCh)): the pre-processed per-trial EEG data
+        Y (np.ndarray (nTrl,nSamp,nY)): the up-sampled stimulus information for each output
+        coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
+                          "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
+    """    
     # load the data file
     Xfn = datadir
     if sessdir:
@@ -33,7 +54,7 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=
     idx = range(0,data_ts.shape[0],1000)
     samp2ms = np.median( np.diff(data_ts[idx])/1000.0 ) 
     fs = 1000.0 / samp2ms
-    ch_names = None
+    ch_names = ch_names
 
     if verb >= 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
 
