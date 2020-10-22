@@ -47,7 +47,7 @@ def parse_args():
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0,sampFreq=0):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0,samplingFrequency=0):
     global board, client
 
     # init the board params
@@ -70,7 +70,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
 
     board = BoardShim (board_id , params)
     board.prepare_session ()
-    if sampFreq > 0 and board ==5 :
+    if samplingFrequency > 0 and board_id ==5 :
 	    board.config_board (SampFreq2WiFiCommands[samplingFrequency])
     if triggerCheck:
         print('trigger is enabled, trigger channel: 8')
