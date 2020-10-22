@@ -55,7 +55,7 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.show(block=False)
     plt.pause(.1) # allow full redraw
 
-    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, stopband=stopband, max_samp=max_samp, trntrl=trntrl, **kwargs)
+    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=max_samp, trntrl=trntrl, **kwargs)
     times = (np.arange(wXe.shape[-1])+offset_ms*fs/1000)*1000/fs
     plt.show(block=False)
 
@@ -99,22 +99,26 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     plt.figure(6)
     timestampPlot(filename)
 
-def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=10000, trntrl=None, stopband=(.1,45,'bandpass'), plot_model=True, plot_trial=True, ax=None, **kwargs):
+def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=10000, trntrl=None, plot_model=True, plot_trial=True, ax=None, **kwargs):
     if X.ndim < 3 : 
         X = X[np.newaxis, ...]
     if Y.ndim < 3:
         Y = Y[np.newaxis, ...]
     
-    print("training model")
     tau = int(fs*tau_ms/1000.0)
     # BODGE: for speed only use first 5 trials!
     # BODGE: reg with 1e-5 so only the strong channels are used..
-    if trntrl is None:
-        trntrl = 10
-    if isinstance(trntrl,int):
-        trntrl = slice(trntrl,None)
-    clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1)
-    clsfr.cv_fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...],ranks=(1,2,3,5))
+    if clsfr is None:
+        print("training model")
+        if trntrl is None:
+            trntrl = 10
+        if isinstance(trntrl,int):
+            trntrl = slice(trntrl,None)
+
+        clsfr = MultiCCA(evtlabs=evtlabs,tau=tau,rank=1)
+        clsfr.cv_fit(X[trntrl,-max_samp:,...],Y[trntrl,-max_samp:,...],ranks=(1,2,3,5))
+        print('clsfr={}'.format(clsfr))
+        
 
     # get the classifier predictions
     Ptgt = clsfr.predict_proba(X,Y) # (tr,decis,ny) get predicted target probability for each trial
@@ -134,7 +138,7 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
     wX = np.einsum("d,Ttd->Tt", W, X) # (nTrl, nSamp) apply the spatial filter
 
     if plot_trial:
-        plt.figure(1)
+        plt.figure()
         # add as line to the trl plot:
         for i in range(min(X.shape[0],3)):
             plt.subplot(3,1,i+1)
@@ -145,7 +149,7 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
 
     if plot_model:
         # model in a new figure
-        plt.figure(2)
+        plt.figure()
         clsfr.plot_model(fs=fs)
         plt.show(block=False)
         # allow full re-draw
@@ -163,6 +167,7 @@ def triggerPlot(X,Y,fs, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp
     mu = np.median(wXeY.ravel())
     scale = np.median( np.abs(wXeY.ravel()-mu) )
     if ax is None:
+        plt.figure()
         ax = plt.axes()
         newax = True
     else:

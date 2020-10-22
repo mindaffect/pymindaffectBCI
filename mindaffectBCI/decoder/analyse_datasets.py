@@ -8,6 +8,7 @@ from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import plot_Fy
 from mindaffectBCI.decoder.preprocess import preprocess, plot_grand_average_spectrum
+from mindaffectBCI.decoder.trigger_check import triggerPlot
 import matplotlib.pyplot as plt
 import gc
 import re
@@ -366,20 +367,23 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
 
     plt.figure(19)
     plt.subplot(211)
-    plt.imshow(res[5],aspect='auto',cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.imshow(res[5], origin='lower', aspect='auto',cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
     plt.clim(0,1)
     plt.colorbar()
     plt.title('Yerr - correct-prediction (0=correct, 1=incorrect)?')
     plt.ylabel('Trial#')
     plt.grid()
     plt.subplot(212)
-    plt.imshow(res[6], aspect='auto', cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.imshow(res[6], origin='lower', aspect='auto', cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
     plt.clim(0,1)
     plt.colorbar()
     plt.title('Perr - Prob of prediction error (0=correct, 1=incorrect)')
     plt.xlabel('time (samples)')
     plt.ylabel('Trial#')
     plt.grid()
+
+    plt.figure(20)
+    triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
 
     print("Plot Model")
     plt.figure(15)
