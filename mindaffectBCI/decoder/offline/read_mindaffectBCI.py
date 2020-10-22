@@ -14,7 +14,7 @@ datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(
 modechange_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*mode:(?P<newmode>.*) <-.*$')
 
 def read_StimulusEvent(line:str):
-    ''' read a stimulus event message from a text-file save version '''
+    ''' read a stimulus event message from a line of a mindaffectBCI offline save file '''
     # named reg-ex to extract the bits we need
     res = stimevent_re.match(line)
     if res is None:
@@ -31,6 +31,14 @@ def read_StimulusEvent(line:str):
     return StimulusEvent(ts,objIDs,stimstate)
     
 def read_DataPacket(line:str ):
+    """read a data-packet line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        DataPacket: a mindaffectBCI.utopiaclient.messages.DataPacket object containing (nsamp,d) EEG data
+    """   
     # named reg-ex to extract the bits we need
     res = datapacket_re.match(line)
     if res is None:
@@ -44,6 +52,14 @@ def read_DataPacket(line:str ):
     return DataPacket(ts,samples)
     
 def read_ModeChange(line:str):
+    """read a mode-change line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        ModeChange: a mode-change object, with the new mode information
+    """
     res = modechange_re.match(line)
     if res is None:
         return None
@@ -52,30 +68,84 @@ def read_ModeChange(line:str):
     return ModeChange(ts,newmode)
 
 def read_NewTarget(line:str):
+    """read a newtarget message line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        NewTarget: a newtarget object
+    """
     ts = read_clientts(line)
     return NewTarget(ts)
 
 def read_Selection(line:str):
+    """read a Selection message line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        Selection: a selection object - Note: currently the selection information is *not* valid
+    """
     # TODO[]: read the actual selection info
     match = read_clientts(line)
     return Selection(match,-1)
 
 def read_clientts(line:str):
+    """read the client-timestamp from a message line from a mindaffectBCI offline save file
+
+    Note: the client-timestamp is the *raw* timestamp sent by the client, in the clients local clock.
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        clientts (int): the client timestamp
+    """
     match = clientts_re.match(line)
     match = int(match['ts']) if match is not None else None
     return match
 
 def read_serverts(line:str):
+    """read the server-timestamp from a message line from a mindaffectBCI offline save file
+
+    Note: the server-timestamp is the client-timestamp after mapping to the servers local clock.  Thus, server timestamps are directly comparable for all clients.
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        ts (int): the server timestamp
+    """
     match = serverts_re.match(line)
     match = int(match['sts']) if match is not None else None
     return match
 
 def read_recievedts(line:str):
+    """read the recieved-timestamp from a message line from a mindaffectBCI offline save file
+
+    Note: the recieved-timestamp is the time the client-message was recieved, measured on the servers clock.
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        ts (int): the timestamp
+    """
     match = recievedts_re.match(line)
     match = int(match['rts']) if match is not None else None
     return match
 
 def read_clientip(line:str):
+    """read the client-ip-address from a message line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        ip (str): the client ip-address
+    """
     ip = clientip_re.match(line)
     ip = ip['ip'] if ip is not None else None
     return ip
@@ -87,7 +157,7 @@ def read_mindaffectBCI_message(line:str):
         line (str): A line containing a mindaffectBCI message
 
     Returns:
-        [type]: The decoded message as a message class.
+        message_type: The decoded message as a message class.
     """    
     if StimulusEvent.msgName in line:
         msg = read_StimulusEvent(line)
@@ -155,6 +225,15 @@ def datapackets2array(msgs, sample2timestamp='lower_bound_tracker', timestamp_ch
 
 
 def robust_timestamp_regression(x,y):
+    """Given 2 time-stamp streams, e.g. one from server, one from client, compute a robust, outlier resistant linear mapping from one to the other.
+
+    Args:
+        x (int/float, (ntimes,)): the source time-stamps
+        y (int/float, (ntimes,)): the destination time-stamps
+
+    Returns:
+        ab: the gain and bias for the linear map such that:  y = ab[0]*x + ab[1]
+    """    
     # Warning: strip and -1....
     invalidts = np.logical_or(x==-1,y==-1)
     x = x[~invalidts]
@@ -183,7 +262,7 @@ def robust_timestamp_regression(x,y):
 
 
 def rewrite_timestamps2servertimestamps(msgs):
-    ''' rewrite message time-stamps  to best-fit server time-stamps '''
+    ''' rewrite message client-timestamps  to best-fit server time-stamps '''
     # get the client-timestamp, server-timestamp pairs
     x = np.array([msg.timestamp for msg in msgs]) #  from: client timestamp
     y = np.array([msg.sts for msg in msgs]) # to: server timestamp
@@ -198,10 +277,16 @@ def rewrite_timestamps2servertimestamps(msgs):
 
     
 def read_mindaffectBCI_messages( fn:str, regress:bool=False ):
-    ''' read the data from a text-file save version into a list of messages,
-        WARNING: this reads the  messages as raw, and does *not* try to time-stamp clocks
-                 w.r.t.  the message source.  To compare messages between clients you will
-                 need to do this manually! '''
+    """read all the messages from a mindaffetBCI offline save file
+
+    Args:
+        fn (str): the file name to load from
+        regress (bool, optional): How should we regress the client-time stamps onto the server time-stamps.  If False then use the server-time-stamps, if None then leave the client-time-stamps, if True then use robust-regression to map from client to server time-stamps.
+        Defaults to False.
+
+    Returns:
+        (list, messages): a list of all the decoded messages
+    """    
     fn = os.path.expanduser(fn)
     with open(fn,'r') as file:
         msgs=[]
@@ -234,7 +319,17 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=False ):
     return msgs
 
 def read_mindaffectBCI_data_messages( fn:str, regress=False, timestamp_wrap_size=(1<<24), **kwargs ):
-    ''' read the data from a text-file save version into a dataarray and message list '''
+    """read an offline mindaffectBCI save file, and return raw-data (as a np.ndarray) and messages. 
+
+    Args:
+        fn (str): the file name to load the data from
+        regress (bool, optional): How to map from client-specific to a common time-stamp basis. Defaults to False.
+        timestamp_wrap_size (tuple, optional): The bit-resolution of the time-stamps. Defaults to (1<<24).
+
+    Returns:
+        data (np.ndarray (nsamp,d) float): the time-stamped data stream
+        messages (list messages): the (non-datapacket) messages in the file
+    """
     rawmsgs = read_mindaffectBCI_messages(fn, regress)
     # split into datapacket messages and others
     data=[]
