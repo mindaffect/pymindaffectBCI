@@ -4,13 +4,44 @@ from multiprocessing import Process
 from time import sleep
 
 def startHubProcess(label):
+    """Start the process to manage the central utopia-hub
+
+    Args:
+        label (str): a textual name for this process
+
+    Raises:
+        ValueError: unrecognised arguments, e.g. acquisation type.
+
+    Returns:
+        hub (Process): sub-process for managing the started acquisation driver
+    """    
     from mindaffectBCI.decoder import startUtopiaHub
     hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
     hub.start()
     sleep(1)
     return hub
 
+
+
 def startAcquisationProcess(label,acquisation,acq_args):
+    """Start the process to manage the acquisation of data from the amplifier
+
+    Args:
+        label (str): a textual name for this process
+        acquisation (str): the name for the acquisation device to start.  One-of:
+                  'none' - do nothing,  
+                  'brainflow' - use the mindaffectBCI.examples.acquisation.utopia_brainflow driver
+                  'fakedata'- start a fake-data streamer
+                  'eego' - start the ANT-neuro eego driver
+                  'lsl' - start the lsl EEG sync driver
+        acq_args (dict): dictionary of additional arguments to pass to the acquisation device
+
+    Raises:
+        ValueError: unrecognised arguments, e.g. acquisation type.
+
+    Returns:
+        Process: sub-process for managing the started acquisation driver
+    """    
     # start the ganglion acquisation process
     # Using brainflow for the acquisation driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
@@ -64,6 +95,21 @@ def startAcquisationProcess(label,acquisation,acq_args):
     return acquisation
 
 def startDecoderProcess(label,decoder,decoder_args):
+    """start the EEG decoder process
+
+    Args:
+        label (str): a textual name for this process
+        decoder (str): the name for the acquisation device to start.  One-of:
+                  'decoder' - use the mindaffectBCI.decoder.decoder
+                  'none' - don't start a decoder
+        decoder_args (dict): dictionary of additional arguments to pass to the decoder
+
+    Raises:
+        ValueError: unrecognised arguments, e.g. acquisation type.
+
+    Returns:
+        Process: sub-process for managing the started decoder
+    """    
     if decoder == 'decoder' or decoder == 'mindaffectBCI.decoder.decoder':
         from mindaffectBCI.decoder import decoder
         if decoder_args is None:
@@ -182,6 +228,11 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     #print('exit online_bci')
 
 def parse_args():
+    """ load settings from the json config-file, parse command line arguments, and merge the two sets of settings.
+
+    Returns:
+        NameSpace: the combined arguments name-space
+    """    
     import argparse
     import json
     parser = argparse.ArgumentParser()
