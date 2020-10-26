@@ -11,3 +11,5 @@ __pycache__
 .gradle/*
 logs/*
 build/*
+*.pk
+*.ipynb_check*
