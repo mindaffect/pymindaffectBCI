@@ -1310,7 +1310,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
-    if windowed:
+    if windowed or fullscreen:
         fullscreen_stimulus = False
     nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
