@@ -49,7 +49,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
 
     if decorrelate > 0:
-        reg = decorrelate if not isinstance(decorrelate,bool) else 9
+        reg = decorrelate if not isinstance(decorrelate,bool) else .4
         print("Temporally decorrelate:{}".format(reg))
         X, W = temporally_decorrelate(X, axis=-2, reg=reg)
 
@@ -234,8 +234,8 @@ def standardize_channel_power(X:np.ndarray, sigma2:np.ndarray=None, axis=-2, reg
     return sX,sigma2
 
 
-def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-5, axis=-2, verb=0):
-    """temporally decorrelate each channel of X with by fitting and subtracting an AR model
+def temporally_decorrelate(X:np.ndarray, W:np.ndarray=50, reg=.5, eta=1e-7, axis=-2, verb=0):
+    """temporally decorrelate each channel of X by fitting and subtracting an AR model
 
     Args:
         X (np.ndarray trl,samp,d): the data to be whitened, with channels/space in the *last* axis
@@ -258,8 +258,8 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-5, axi
         wX = np.zeros(X.shape,dtype=X.dtype)
         for i in range(X.shape[0]):
             # TODO[]: why does propogating the model between trials reduce the decorrelation effectivness?
-            wX[i,...], w = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,verb=verb)
-        return wX, w
+            wX[i,...], W = temporally_decorrelate(X[i,...],W=W,reg=reg,eta=eta,axis=axis,verb=verb)
+        return wX, W
     
     # 2-d X
     wX = np.zeros(X.shape,dtype=X.dtype)
@@ -281,14 +281,13 @@ def temporally_decorrelate(X:np.ndarray, W:np.ndarray=9, reg=1e-4, eta=1e-5, axi
                 print('Xt={} Xt_est={} err={}'.format(Xt[0],Xt_est[0],err[0]))
 
             # remove the predictable part => decorrelate with the window
-            wX[t,:] = err # y=x - w'x_tau
+            wX[t,:] = Xt - reg * Xt_est # y=x - w'x_tau
 
             # smoothed diag hessian estimate
-            dH = dH*(1-eta) + eta * (Xt*Xt + reg)
+            dH = dH*(1-eta) + eta * Xt*Xt
         
             # update the linear prediction model - via. SGD
-            W = W + eta * (err * Xtau - reg * W) / dH # w = w + eta x*x_tau
-            #W = W / np.sqrt(np.sum(W*W,-2)) # unit norm in the weighting
+            W = W + eta * (err * Xtau / dH ) #- reg * W)  # w = w + eta x*x_tau
 
     return (wX,W)
 

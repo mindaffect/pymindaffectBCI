@@ -1,6 +1,7 @@
 resources/logs/*
 *_info.txt
 *.pdf
+*.png
 *~
 *#
 octave-workspace
@@ -8,8 +9,9 @@ octave-workspace
 __pycache__
 *.log
 *.res
-.gradle/*
-logs/*
-build/*
+.gradle*
+logs*
+build*
 *.pk
 *.ipynb_check*
+dist*

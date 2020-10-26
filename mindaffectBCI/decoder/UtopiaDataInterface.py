@@ -760,10 +760,11 @@ class power_tracker(TransformerMixin):
         TransformerMixin ([type]): sklearn compatiable transformer
     """
 
-    def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
+    def __init__(self,halflife_mu_ms, halflife_power_ms, fs, car=True):
         # convert to per-sample decay factor
         self.alpha_mu = self.hl2alpha(fs * halflife_mu_ms / 1000.0 ) 
         self.alpha_power= self.hl2alpha(fs * halflife_power_ms / 1000.0 )
+        self.car = car
         self.sX_N = None
         self.sX = None
         self.sXX_N = None
@@ -774,6 +775,8 @@ class power_tracker(TransformerMixin):
 
     def fit(self,X):
         self.sX_N = X.shape[0]
+        if self.car:
+            X = X.copy() - np.mean(X,-1,keepdims=True)
         self.sX = np.sum(X,axis=0)
         self.sXX_N = X.shape[0]
         self.sXX = np.sum((X-(self.sX/self.sX_N))**2,axis=0)
@@ -783,6 +786,8 @@ class power_tracker(TransformerMixin):
         ''' compute the exponientially weighted centered power of X '''
         if self.sX is None: # not fitted yet!
             return self.fit(X)
+        if self.car:
+            X = X.copy() - np.mean(X,-1,keepdims=True)
         # compute updated mean
         alpha_mu   = self.alpha_mu ** X.shape[0]
         self.sX_N  = self.sX_N*alpha_mu + X.shape[0]

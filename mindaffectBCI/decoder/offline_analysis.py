@@ -11,7 +11,7 @@ savefile = '~/Downloads/mindaffectBCI_200701_1624[1].txt'
 savefile = '~/Downloads/mindaffectBCI_200701_2025_khash.txt'
 
 savefile = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
-savefile = '~/Desktop/mark/mindaffectBCI*.txt'
+savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
 
 import glob
 import os
@@ -27,7 +27,9 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 plt.close('all')
 # train *only* on 1st 10 trials
-debug_test_dataset(X, Y, coords, cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')
+debug_test_dataset(X, Y, coords,
+                    preprocess_args=dict(decorrelate=1e0),
+                    cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
 
 
 # do a time-stamp check.
