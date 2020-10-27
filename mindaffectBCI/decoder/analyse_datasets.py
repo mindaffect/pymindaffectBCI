@@ -267,7 +267,7 @@ def flatten_decoding_curves(decoding_curves):
 
 
 
-def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
     fs = coords[1]['fs'] if coords is not None else fs
     if clsfr_args is not None:
         if 'tau_ms' in clsfr_args and clsfr_args['tau_ms'] is not None:
@@ -325,13 +325,13 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.xlabel('time (samp)')
     plt.subplot(212)
     if Y.ndim == 3:
-        plt.imshow(Y[trli, :, :].T, aspect='auto')
+        plt.imshow(Y[trli, :, :].T, aspect='auto', cmap='gray', interpolation=None)
         plt.xlabel('time (samp)')
         plt.ylabel('target')
     else:
         plt.plot(Y[trli, :, 0, :])
     plt.title('Y')
-    plt.show()
+    plt.show(block=False)
 
     print("Plot summary stats")
     if Y.ndim == 4: # already transformed
@@ -341,17 +341,18 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Yevt[..., 0:1, :], tau=tau, offset=offset)
     plt.figure(11); plt.clf()
     plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs, times, ch_names)
-    plt.show()
+    plt.show(block=False)
 
     print('Plot global spectral properties')
     plot_grand_average_spectrum(X,axis=-2,fs=fs, ch_names=ch_names)
-    plt.show()
+    plt.show(block=False)
 
     print("Plot ERP")
     plt.figure(12);plt.clf()
     plot_erp(Cxy, ch_names=ch_names, evtlabs=evtlabs, times=times)
     plt.suptitle("ERP")
     plt.show()
+    plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
     # fit the model
     # override with direct keyword arguments
@@ -361,9 +362,18 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
     score, res, Fy, clsfr = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
-    
+    Fe = clsfr.transform(X)
+    Yerr = res[5]
+    Perr = res[6]
+
+    plot_trial_summary(X,Y,Fy,fs=fs,Yerr=Yerr[:,-1],Fe=Fe,label=label)
+    plt.show(block=False)
+    plt.gcf().set_size_inches((40,20))
+    plt.savefig("{}_trial_summary".format(label)+".pdf")
+
     plt.figure(14)
     plot_decoding_curve(*res)
+    plt.show(block=False)
 
     plt.figure(19)
     plt.subplot(211)
@@ -381,9 +391,12 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plt.xlabel('time (samples)')
     plt.ylabel('Trial#')
     plt.grid()
+    plt.show(block=False)
 
     plt.figure(20)
     triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
+    plt.show(block=False)
+    plt.savefig("{}_triggerplot".format(label)+".pdf",format='pdf')
 
     print("Plot Model")
     plt.figure(15)
@@ -393,26 +406,26 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     else:
         plot_erp(factored2full(clsfr.W_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
         plt.suptitle("bwd-model")
-    plt.show()
+    plt.show(block=False)
 
     print("Plot Factored Model")
     plt.figure(18)
     plt.clf()
     clsfr.plot_model(fs=fs,ch_names=ch_names)
+    plt.savefig("{}_model".format(label)+".pdf")
     plt.show()
     
-    print("plot Fe")
-    plt.figure(16);plt.clf()
-    Fe = clsfr.transform(X)
-    plot_Fe(Fe)
-    plt.suptitle("Fe")
-    plt.show()
+    # print("plot Fe")
+    # plt.figure(16);plt.clf()
+    # plot_Fe(Fe)
+    # plt.suptitle("Fe")
+    # plt.show()
 
-    print("plot Fy")
-    plt.figure(17);plt.clf()
-    plot_Fy(Fy,cumsum=True)
-    plt.suptitle("Fy")
-    plt.show()
+    # print("plot Fy")
+    # plt.figure(17);plt.clf()
+    # plot_Fy(Fy,cumsum=True)
+    # plt.suptitle("Fy")
+    # plt.show()
 
     from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
     print("normalized Fy")
@@ -427,6 +440,92 @@ def debug_test_dataset(X, Y, coords=None, tau_ms=300, fs=None, offset_ms=0, evtl
     plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
 
     return clsfr,res
+
+
+def plot_trial_summary(X,Y,Fy, Fe=None, fs=None, label=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
+    times = np.arange(X.shape[1])
+    if fs is not None:
+        times = times/fs
+        xunit='s'
+    else:
+        xunit='samp'
+
+    if centerx:
+        X = X.copy() - np.mean(X,1,keepdims=True)
+    if xspacing is None: 
+        xspacing=np.median(np.diff(X,axis=-2).ravel())
+
+    if sumFy:
+        Fy = np.cumsum(Fy,axis=-2)
+
+    Xlim = (np.min(X.ravel()),np.max(X.ravel()))
+
+    Fylim = (np.min(Fy.ravel()),np.max(Fy.ravel()))
+    if Fe is not None:
+        Felim = (np.min(Fe.ravel()),np.max(Fe.ravel()))
+
+    nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl)*1.8)); h = int(np.ceil(nTrl/w))
+    fig = plt.figure(figsize=(20,10))
+    trial_grid = fig.add_gridspec( nrows=h, ncols=w, figure=fig, hspace=.05, wspace=.05) # per-trial grid
+    ti=0
+    for hi in range(h):
+        for wi in range(w):
+            if ti>=X.shape[0]:
+                break
+
+            gs = trial_grid[ti].subgridspec( nrows= 5 if Fe is None else 6, ncols=1, hspace=0 )
+
+            # plot Fy
+            axFy = fig.add_subplot(gs[-1,0])
+            plt.plot(times,Fy[ti,:,:], color='.5')
+            plt.plot(times,Fy[ti,:,0],'k-')
+            if hi==h-1: # only bottom plots
+                plt.xlabel('time ({})'.format(xunit))
+            else:
+                plt.gca().set_xticklabels(())
+            if wi==0: # only left most plots
+                plt.ylabel("Fy")
+            plt.grid(True)
+            plt.gca().set_yticklabels(())
+            plt.ylim(Fylim)
+
+            # plot X (0-3)
+            fig.add_subplot(gs[:3,:], sharex=axFy)
+            plt.plot(times,X[ti,:,:] + np.arange(X.shape[-1])*xspacing)
+            plt.gca().set_xticklabels(())
+            plt.grid(True)
+            plt.ylim((Xlim[0],Xlim[1]+X.shape[-1]*xspacing))
+            if wi==0: # only left-most-plots
+                plt.ylabel('X')
+            plt.gca().set_yticklabels(())
+            # group 'title'
+            plt.text(.5,1,'{}{}'.format(ti,'*' if Yerr is not None and Yerr[ti]==False else ''), ha='center', va='top', fontweight='bold', transform=plt.gca().transAxes)
+
+            # imagesc Y
+            fig.add_subplot(gs[3,:], sharex=axFy)
+            plt.imshow(Y[ti,:,:].T, origin='upper', aspect='auto', cmap='gray', extent=[times[0],times[-1],0,Y.shape[-1]], interpolation=None)
+            plt.gca().set_xticklabels(())
+            if wi==0: # only left-most-plots
+                plt.ylabel('Y')
+            plt.gca().set_yticklabels(())
+
+            # Fe (if given)
+            if Fe is not None:
+                fig.add_subplot(gs[4,:], sharex=axFy)
+                plt.plot(times,Fe[ti,:,:] + np.arange(Fe.shape[-1])[np.newaxis,:])
+                plt.gca().set_xticklabels(())
+                plt.grid(True)
+                if wi==0: # only left-most-plots
+                    plt.ylabel('Fe')
+                plt.gca().set_yticklabels(())
+                plt.ylim((Felim[0],Felim[1]+Fe.shape[-1]-1))
+
+            ti=ti+1
+
+    if label is not None:
+        plt.suptitle("{}".format(label))
+    fig.set_tight_layout(True)
+    plt.show(block=False)
 
 
 
@@ -588,7 +687,7 @@ if __name__=="__main__":
     #savefile = '~/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
     #savefile = '~/Desktop/mindaffectBCI_200720_2128_master.txt'
     #savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
-    savefile = '~/Desktop/mark/mindaffectBCI_*off.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
     #savefile = "~/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
     if savefile is None:
         savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
@@ -597,7 +696,8 @@ if __name__=="__main__":
     files = glob.glob(os.path.expanduser(savefile))
     savefile = max(files, key=os.path.getctime)
 
-    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), fs_out=200)
+    X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100)
+    label = os.path.splitext(os.path.basename(savefile))[0]
 
     cv=[(slice(0,10),slice(10,None))]
 
@@ -612,19 +712,20 @@ if __name__=="__main__":
     # coords[0]['coords']=coords[0]['coords'][keep]
 
     # set of splits were we train on non-overlapping subsets of trnsize.
-    trnsize=10
-    splits=[]
-    for i in range(0,X.shape[0],trnsize):
-        trn_ind=np.zeros((X.shape[0]), dtype=bool)
-        trn_ind[slice(i,i+trnsize)]=True
-        tst_ind= np.logical_not(trn_ind)
-        splits.append( ( (trn_ind, tst_ind), ) ) # N.B. ensure list-of-lists-of-trn/tst-splits
+    if False:
+        trnsize=10
+        splits=[]
+        for i in range(0,X.shape[0],trnsize):
+            trn_ind=np.zeros((X.shape[0]), dtype=bool)
+            trn_ind[slice(i,i+trnsize)]=True
+            tst_ind= np.logical_not(trn_ind)
+            splits.append( ( (trn_ind, tst_ind), ) ) # N.B. ensure list-of-lists-of-trn/tst-splits
+        #splits=5
+        # compute learning curves
+        analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')#, ranks=(1,2,3,5) )
 
-    #splits=5
-
-    # compute learning curves
-    analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')#, ranks=(1,2,3,5) )
-
-    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
+    else:
+        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5))
+        #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()

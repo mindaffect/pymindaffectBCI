@@ -21,6 +21,8 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=0, outputscore='ip'):
         return Fy
     if Ye.ndim < 4: # ensure 4-d
         Ye = Ye.reshape((1,)*(4-Ye.ndim)+Ye.shape)    
+    if Fe.ndim < 4: # ensure 4-d
+        Fe = Fe.reshape((1,)*(4-Fe.ndim)+Fe.shape)    
     if dedup0 is not None: # remove duplicate copies output=0
         Ye = dedupY0(Ye)
 

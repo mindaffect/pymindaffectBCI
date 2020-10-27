@@ -122,7 +122,8 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
 
     # get the classifier predictions
     Ptgt = clsfr.predict_proba(X,Y) # (tr,decis,ny) get predicted target probability for each trial
-    Perr = Ptgt[:,-1,0] > .9 # use last prediction prob as proxy for trial prediction
+    #Ptgt[Ptgt==0]=1
+    Yerr = np.any(Ptgt[:,-1,:1] < Ptgt[:,-1,1:], axis=-1) # use last prediction to decide if correct
 
     # get the event-coded version of Y
     Ye = clsfr.stim2event(Y)
@@ -193,7 +194,7 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
         #for i,idx in enumerate(trlEndIdx):
         #    plt.text(idx,0,"{:3d}".format(i+1),ha='center',va='center')
         # N.B. +2 as end-of-trial line and count from 0
-        ticklabs = [ "{}{}".format(i+1,"*" if p else "") for (i,p) in zip(range(len(trlEndIdx)),Perr)]
+        ticklabs = [ "{}{}".format(i+1,"" if p else "*") for (i,p) in zip(range(len(trlEndIdx)),Yerr)]
         plt.xticks(trlEndIdx,ticklabs,rotation=-90,size='x-small')
         #ax.set_xticks(trlEndIdx,major=True)
         #ax.set_ticklabels(trlEndIdx)

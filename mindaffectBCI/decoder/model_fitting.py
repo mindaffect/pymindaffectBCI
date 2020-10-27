@@ -118,7 +118,10 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     def transform(self, X):
         ''' estimate the stimulus properties from the raw data '''
-        return scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
+        Fe = scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
+        if Fe.ndim>X.ndim and Fe.shape[0]==1:
+            Fe = Fe[0,...]
+        return Fe
 
     def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True):
         """Convert stimulus scores to stimulus probabities of being the target

@@ -54,11 +54,15 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     #print("intlen={}".format(integerationLengths))
         
     Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy,objIDs,integerationLengths, **kwargs)
+    # up-size Yerr, Perr to match input number of trials
+    if not np.all(keep):
+        tmp=Yerr; Yerr=np.ones((len(keep),)+Yerr.shape[1:],dtype=Yerr.dtype); Yerr[keep,...]=tmp
+        tmp=Perr; Perr=np.ones((len(keep),)+Perr.shape[1:],dtype=Perr.dtype); Perr[keep,...]=tmp
 
     stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
     
     print(print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh))
-    
+
     return integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh, Yerr, Perr
 
 
@@ -193,13 +197,15 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
             Perr = args[6-2].copy() #(nTrl,nInt)
+            Perr[Yerr<0]=np.NaN
             Perr[Yerr==True]=np.NaN # disable points where it was in error
             # est when was correct
             plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
             plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
             # est when incorrect..
             Perr = args[6-2].copy() #(nTrl,nInt)
-            Perr[Yerr==False]=np.NaN # disable points where it was in error
+            Perr[Yerr<0]=np.NaN
+            Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
             plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
             plt.title('Decoding Curve (nTrl={})'.format(Yerr.shape[0]))
