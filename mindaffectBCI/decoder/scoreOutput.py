@@ -1,18 +1,23 @@
 import numpy as np
 from mindaffectBCI.decoder.utils import window_axis
 #@function
-def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=0, outputscore='ip'):
+def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
     '''
     score each output given information on which stim-sequences corrospend to which inputs
-    Inputs:
-      Fe  = (nM,nTrl,nSamp,nE) similarity score for each event type for each stimulus
-      Ye  = (nTrl,nSamp,nY,nE) Indicator for which events occured for which outputs
+
+    Args
+
+      Fe (nM,nTrl,nSamp,nE): similarity score for each event type for each stimulus
+      Ye (nTrl,nSamp,nY,nE): Indicator for which events occured for which outputs
                nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
-      R = (nM,nfilt,nE,tau) FWD-model (impulse response) for each of the event types, used to correct the 
+      R (nM,nfilt,nE,tau): FWD-model (impulse response) for each of the event types, used to correct the 
             scores for correlated responses.
-      dedup0 = bool - remove duplicate copies of output O (used when cross validating calibration data)
-    Outputs:
-      Fy  = (nM,nTrl,nEp,nY) similarity score for each input epoch for each output
+      offset (int): A (set of) offsets to try when decoding.  Defaults to None.
+      dedup0 (bool): remove duplicate copies of output O (used when cross validating calibration data)
+      outputscore (str): type of score to compute. one-of: 'ip', 'sse'.  Defaults to 'ip' 
+
+    Returns
+      Fy  (nM,nTrl,nSamp,nY): similarity score for each input epoch for each output
     
     Copyright (c) MindAffect B.V. 2018
     '''
@@ -26,9 +31,31 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=0, outputscore='ip'):
     if dedup0 is not None: # remove duplicate copies output=0
         Ye = dedupY0(Ye)
 
-    # inner-product score    
-    Fy = np.einsum("mTEe,TEYe->mTEY", Fe, Ye, dtype=Fe.dtype)
-    Fy = Fy.astype(Fe.dtype)
+    # inner-product score
+    if offset is None:
+        Fy = np.einsum("mTEe,TEYe->mTEY", Fe, Ye, dtype=Fe.dtype)
+        Fy = Fy.astype(Fe.dtype)
+
+    else:
+        assert Fe.ndim<4 or Fe.shape[0]==1, "Offsets only for single models!"
+        if not hasattr(offset,'__iter__'): 
+            offset=[offset]
+        # list of possible offsets to try
+        Fy= np.zeros((len(offset), Fe.shape[1], Fe.shape[2], Ye.shape[-2]), dtype=Fe.dtype)
+        for i,o in enumerate(offset):
+            # +offset -> Y is later than it 'should' be
+            if o == 0:
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe, Ye, dtype=Fe.dtype)
+                Fy[i,...] = Fyi.astype(Fe.dtype)
+
+            elif o > 0:
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe[..., o: ,: ], Ye[..., :-o , :, :], dtype=Fe.dtype)
+                Fy[i, ..., o:, :] = Fyi.astype(Fe.dtype)
+
+            else:
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe[..., :o ,:], Ye[..., -o: , :, :], dtype=Fe.dtype)
+                Fy[i, ..., :o, :] = Fyi.astype(Fe.dtype)
+
 
     # add correction for other measures
     if outputscore == 'sse':
@@ -99,7 +126,7 @@ def convWX(X,W):
     WX = np.einsum("TSd,mfd->mTSf",X,W)
     return WX #(nM,nTrl,nSamp,nfilt)
 
-def convYR(Y,R,offset=0):
+def convYR(Y,R,offset=None):
     ''' compute the convolution of Y with R '''
     if R is None:
         return Y
@@ -107,6 +134,8 @@ def convYR(Y,R,offset=0):
         R = R.reshape((1,)*(4-R.ndim)+R.shape) # (nM,nfilt,nE,tau)
     if Y.ndim < 4: # ensure 4-d
         Y = Y.reshape((1,)*(4-Y.ndim)+Y.shape) # (nTr,nSamp,nY,nE)
+    if offset is None:
+        offset=0
     #print("R={}".format(R.shape))
     #print("Y={}".format(Y.shape))
     
@@ -137,39 +166,61 @@ def convXYR(X,Y,W,R,offset):
 
 #@function
 def testcases():
-    #   Fe  = [nE x nEpoch x nTrl x nM ] similarity score for each event type for each stimulus
-    #   Ye  = [nE x nY x nEpoch x nTrl ] Indicator for which events occured for which outputs
-    nE=2
-    nEpoch=100
-    nTrl=30
-    nY=20
-    nM=20
-    Fe=np.random.standard_normal((nM,nTrl,nEpoch,nE))
-    Ye=np.random.standard_normal((nTrl,nEpoch,nY,nE))
-    print("Fe={}".format(Fe.shape))
-    print("Ye={}".format(Ye.shape))
-    Fy=scoreOutput(Fe,Ye) # (nM,nTrl,nEp,nY)
-    print("Fy={}".format(Fy.shape))
-    import matplotlib.pyplot as plt
-    sFy=np.cumsum(Fy,axis=-2)
-    plt.clf();plt.plot(sFy[0,0,:,:]);plt.xlabel('epoch');plt.ylabel('output');plt.show()
-
-
-    # more complex example with actual signal/noise
     from utils import testSignal
     from scoreOutput import scoreOutput, plot_outputscore, convWX, convYR, convXYR
     from scoreStimulus import scoreStimulus
     from decodingSupervised import decodingSupervised
     from normalizeOutputScores import normalizeOutputScores
     import numpy as np
+
+    # Fe  = (nM,nTrl,nSamp,nE) similarity score for each event type for each stimulus
+    # Ye  = (nTrl,nSamp,nY,nE) Indicator for which events occured for which outputs
+    nE=2
+    nSamp=100
+    nTrl=30
+    nY=20
+    nM=1
+    sigstr = 1e-2
+    N=np.random.standard_normal((nM,nTrl,nSamp,nE))
+    Ye=np.random.standard_normal((nTrl,nSamp,nY,nE))
+    # make Ye[0]=Fe
+    Fe = N + Ye[...,0,:] * sigstr
+    print("Fe={}".format(Fe.shape))
+    print("Ye={}".format(Ye.shape))
+    Fy = scoreOutput(Fe,Ye) # (nM,nTrl,nSamp,nY)
+    print("Fy={}".format(Fy.shape))
+    import matplotlib.pyplot as plt
+    sFy=np.cumsum(Fy,axis=-2)
+    plt.clf();plt.plot(sFy[0,0,:,:]);plt.xlabel('epoch');plt.ylabel('output');plt.show()
+
+    # try with range offsets between Fe, Ye
+    offset=2
+    offsets=np.arange(-6,6)
+    Fe = N 
+    Fe[..., offset: , :] = Fe[..., offset:, :] + Ye[..., :-offset, 0, :]
+    Fy = scoreOutput(Fe,Ye, offset=offsets) # (nM,nTrl,nSamp,nY), nM=num-offset
+    print("Fy={}".format(Fy.shape))
+    import matplotlib.pyplot as plt
+    sFy=np.cumsum(Fy,axis=-2)
+    plt.clf();
+    for i,o in enumerate(offsets):
+        plt.subplot(len(offsets),1,i+1)
+        plt.plot(sFy[i,0,:,:]);plt.xlabel('epoch');plt.ylabel('output');
+        plt.title("offset={}".format(o))
+    plt.show()
+
+
+    # more complex example with actual signal/noise
     irf=(1,1,-1,-1,0,0,0,0,0,0)
     X,Y,st,W,R = testSignal(nTrl=1,nSamp=1000,d=1,nE=1,nY=10,isi=2,irf=irf,noise2signal=0)
 
     plot_outputscore(X[0,...],Y[0,:,0:3,:],W,R)
+    plt.show()
     
     # add a correlated output
     Y[:,:,1,:]=Y[:,:,0,:]*.5
     plot_outputscore(X[0,...],Y[0,:,0:3,:],W,R)
+    plt.show()
     
 
 def datasettest():
@@ -220,14 +271,16 @@ def datasettest():
     plot_outputscore(X[0,...],Y[0,...],W,R)
 
        
-def plot_Fy(Fy,cumsum=True, legend=False):
+def plot_Fy(Fy,cumsum=True, label=None, legend=False, maxplots=25):
     import matplotlib.pyplot as plt
     import numpy as np
     '''plot the output score function'''
     if cumsum:
         Fy = np.cumsum(Fy.copy(),-2)
+    if label is None:
+        label = ''
     plt.clf()
-    nPlts=min(25,Fy.shape[0])
+    nPlts=min(maxplots,Fy.shape[0])
     if Fy.shape[0]/2 > nPlts:
         tis = np.linspace(0,Fy.shape[0]/2-1,nPlts,dtype=int)
     else:
@@ -237,6 +290,7 @@ def plot_Fy(Fy,cumsum=True, legend=False):
     #fig, plts = plt.subplots(nrows, ncols, sharex='all', sharey='all', squeeze=False)
     axploti = ncols*(nrows-1)
     ax = plt.subplot(nrows,ncols,axploti+1)
+    Yerr = np.any(Fy[...,-1,1:] > Fy[...,-1,:1],-1)
     for ci,ti in enumerate(tis):
         # make the axis
         if ci==axploti: # common axis plot
@@ -245,13 +299,14 @@ def plot_Fy(Fy,cumsum=True, legend=False):
             pl = plt.subplot(nrows,ncols,ci+1,sharex=ax, sharey=ax) # share limits
             plt.tick_params(labelbottom=False,labelleft=False) # no labels        
         #pl = plts[ci//ncols, ci%ncols]
-        pl.plot(Fy[ti,:,1:])
-        pl.plot(Fy[ti,:,0:1],'k',linewidth=5)
-        pl.set_title("{}".format(ti))
+        pl.plot(Fy[ti,:,1:],color='.5')
+        pl.plot(Fy[ti,:,0:1],'k')
+        
+        pl.set_title("{}{}".format(ti," " if Yerr[ti] else "*"))
         pl.grid(True)
     if legend:
         pl.legend(range(Fy.shape[-1]-1))
-    plt.suptitle('cumsum Fy')
+    plt.suptitle('{} {} Fy {}/{} correct'.format(label,"cumsum" if cumsum else "", sum(np.logical_not(Yerr)),len(Yerr)))
     
 def plot_Fycomparsion(Fy,Fys,ti=0):    
     import matplotlib.pyplot as plt

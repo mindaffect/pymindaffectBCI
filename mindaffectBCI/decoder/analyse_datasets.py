@@ -265,9 +265,29 @@ def flatten_decoding_curves(decoding_curves):
     return il,pe,pee,se,st
 
 
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), **kwargs):
+    """Debug a data set, by pre-processing, model-fitting and generating various visualizations
 
+    Args:
+        X (nTrl,nSamp,d): The preprocessed EEG data
+        Y (nTrl,nSamp,nY): The stimulus information
+        coords ([type], optional): meta-info about the dimensions of X and Y. Defaults to None.
+        label ([type], optional): textual name for this dataset, used for titles and save-file names. Defaults to None.
+        tau_ms (int, optional): stimulus-response length in milliseconds. Defaults to 300.
+        fs ([type], optional): sample rate of X and Y. Defaults to None.
+        offset_ms (int, optional): offset for start of stimulus response w.r.t. stimulus time. Defaults to 0.
+        evtlabs ([type], optional): list of types of stimulus even to fit the model to. Defaults to None.
+        rank (int, optional): the rank of the model to fit. Defaults to 1.
+        model (str, optional): the type of model to fit. Defaults to 'cca'.
+        preprocess_args (dict, optional): additional arguments to send to the data pre-processor. Defaults to None.
+        clsfr_args (dict, optional): additional arguments to pass to the model fitting. Defaults to dict().
 
-def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args=None, clsfr_args=dict(), **kwargs):
+    Returns:
+        score (float): the cv score for this dataset
+        dc (tuple): the information about the decoding curve as returned by `decodingCurveSupervised.py`
+        Fy (np.ndarray): the raw cv'd output-scores for this dataset as returned by `decodingCurveSupervised.py` 
+        clsfr (BaseSequence2Sequence): the trained classifier
+    """    
     fs = coords[1]['fs'] if coords is not None else fs
     if clsfr_args is not None:
         if 'tau_ms' in clsfr_args and clsfr_args['tau_ms'] is not None:
@@ -432,17 +452,29 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.figure(20);plt.clf()
     # normalize every sample
     ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1)
-    plot_Fy(ssFy,cumsum=False)
-    plt.suptitle("normalized_Fy")
+    plot_Fy(ssFy,label=label,cumsum=False)
     plt.show()
 
     plt.figure(21)
     plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
 
-    return clsfr,res
+    return score, res, Fy, clsfr
 
+def plot_trial_summary(X, Y, Fy, Fe=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
+    """generate a plot summarizing the inputs (X,Y) and outputs (Fe,Fe) for every trial in a dataset for debugging purposes
 
-def plot_trial_summary(X,Y,Fy, Fe=None, fs=None, label=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
+    Args:
+        X (nTrl,nSamp,d): The preprocessed EEG data
+        Y (nTrl,nSamp,nY): The stimulus information
+        Fy (nTrl,nSamp,nY): The output scores obtained by comping the stimulus-scores (Fe) with the stimulus information (Y)
+        Fe (nTrl,nSamp,nY,nE, optional): The stimulus scores, for the different event types, obtained by combining X with the decoding model. Defaults to None.
+        fs (float, optional): sample rate of X, Y, used to set the time-axis. Defaults to None.
+        label (str, optional): A textual label for this dataset, used for titles & save-files. Defaults to None.
+        centerx (bool, optional): Center (zero-mean over samples) X for plotting. Defaults to True.
+        xspacing (int, optional): Gap in X units between different channel lines. Defaults to 10.
+        sumFy (bool, optional): accumulate the output scores before plotting. Defaults to True.
+        Yerr (bool (nTrl,), optional): indicator for which trials the model made a correct prediction. Defaults to None.
+    """    
     times = np.arange(X.shape[1])
     if fs is not None:
         times = times/fs
@@ -523,7 +555,10 @@ def plot_trial_summary(X,Y,Fy, Fe=None, fs=None, label=None, centerx=True, xspac
             ti=ti+1
 
     if label is not None:
-        plt.suptitle("{}".format(label))
+        if Yerr is not None:
+            plt.suptitle("{} {}/{} correct".format(label,sum(np.logical_not(Yerr)),len(Yerr)))
+        else:
+            plt.suptitle("{}".format(label))
     fig.set_tight_layout(True)
     plt.show(block=False)
 
