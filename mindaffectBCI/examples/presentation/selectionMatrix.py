@@ -668,9 +668,10 @@ class SelectionGridScreen(Screen):
     LOGLEVEL=0
 
     def __init__(self, window, symbols, noisetag, objIDs=None,
-                 bgFraction=.2, instruct="", 
-                 clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True,
-                 waitKey=True, stimulus_callback=None, framerate_display=True):
+                 bgFraction:float=.2, instruct:str="", 
+                 clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, optosensor:bool=True, 
+                 target_only:bool=False, show_correct:bool=True,
+                 waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -695,6 +696,8 @@ class SelectionGridScreen(Screen):
         self.feedbackThreshold = .4
         self.waitKey=waitKey
         self.stimulus_callback = stimulus_callback
+        self.last_target_idx = -1
+        self.show_correct = show_correct
 
     def reset(self):
         self.isRunning=False
@@ -728,7 +731,10 @@ class SelectionGridScreen(Screen):
             if objID in self.objIDs:
                 print("doSelection: {}".format(objID))
                 symbIdx = self.objIDs.index(objID)
-                self.set_sentence(self.sentence.text + self.getSymb(symbIdx) )
+                sel = self.getSymb(symbIdx)
+                if self.show_correct and self.last_target_idx>0:
+                    sel += "*" if symbIdx==self.last_target_idx else "_"
+                self.set_sentence( self.sentence.text + sel )
 
     def set_sentence(self, text):
         '''set/update the text to show in the instruction screen'''
@@ -815,9 +821,10 @@ class SelectionGridScreen(Screen):
         # add the sentence box
         y = (gridheight-1)/gridheight*winh # top-edge cell
         x = winw*.2 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2,
+        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, width=winw-x,
                                         color=(255, 255, 255, 255),
                                         anchor_x='left', anchor_y='center',
+                                        multiline=True,
                                         batch=self.batch, group=self.foreground)
 
         # add the framerate box
@@ -854,7 +861,9 @@ class SelectionGridScreen(Screen):
         # get the current stimulus state to show
         try:
             self.noisetag.updateStimulusState()
-            stimulus_state, target_state, objIDs, sendEvents=self.noisetag.getStimulusState()
+            stimulus_state, target_idx, objIDs, sendEvents=self.noisetag.getStimulusState()
+            target_state = stimulus_state[target_idx] if target_idx>=0 else -1
+            if target_idx > 0 : self.last_target_idx = target_idx
         except StopIteration:
             self.isDone=True
             return
@@ -884,7 +893,10 @@ class SelectionGridScreen(Screen):
         for idx in range(min(len(self.objects), len(stimulus_state))):
             # set background color based on the stimulus state (if set)
             try:
-                self.objects[idx].color=self.state2color[stimulus_state[idx]]
+                ssi = stimulus_state[idx]
+                if self.target_only and not target_idx == idx :
+                    ssi = 0
+                self.objects[idx].color=self.state2color[ssi]
                 self.labels[idx].color=(255,255,255,255) # reset labels
             except KeyError:
                 pass
@@ -1088,9 +1100,10 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit, target_only=self.simple_calibration)
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=False
+            self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
@@ -1118,6 +1131,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
@@ -1136,6 +1150,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=True
+            self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
             self.screen = self.selectionGrid

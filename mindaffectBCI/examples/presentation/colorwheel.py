@@ -126,7 +126,8 @@ class DrawWindow(pyglet.window.Window):
         if self.noisetag :
             self.noisetag.sendStimulusState(timestamp=self.lastfliptime)
             self.noisetag.updateStimulusState()
-            stimulus_state,target_state,objIDs,sendEvents=self.noisetag.getStimulusState()
+            stimulus_state,target_idx,objIDs,sendEvents=self.noisetag.getStimulusState()
+            target_state = stimulus_state[target_idx] if target_idx>=0 else -1
         # do nothing if no bci-stimulus
         if stimulus_state is None :
             stimulus_state = [0]*len(self.segements)

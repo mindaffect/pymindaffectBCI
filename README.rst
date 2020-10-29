@@ -236,7 +236,8 @@ Now we write a function which,
     # N.B. update raises StopIteration when noisetag sequence has finished
     try : 
         nt.updateStimulusState()
-        stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
+        stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
+        target_state = stimulus_state[target_idx] if target_idx>=0 else -1
     except StopIteration :
         pyglet.app.exit() # terminate app when noisetag is done
         return

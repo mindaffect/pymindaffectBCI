@@ -80,12 +80,11 @@ class WaitFor(FSM):
 class Flicker(FSM):
     ''' do a normal flicker sequence'''
     def __init__(self,stimSeq=None,
-                 numframes=4*isi, # 
-                 tgtidx=-1, # target output for this flicker
-                 sendEvents=True, # 
-                 framesperbit=1, # number of video-frames per codebook bit
-                 target_only=False): # flag, only show the target stimulus
-        """[summary]
+                 numframes=4*isi, 
+                 tgtidx=-1,
+                 sendEvents=True, 
+                 framesperbit=1): 
+        """Object to provide state information for a flicker sequence
 
         Args:
             stimSeq ([type], optional): the stimulus sequence to use. Defaults to None.
@@ -93,19 +92,14 @@ class Flicker(FSM):
             tgtidx (int, optional): the target output, -1 for no target. Defaults to -1
             sendEvents (bool, optional): should we send stimulus events.  Defaults to True
             framesperbit (int, optional): number of video-frames, i.e. calls to next, per stimsequence bit.  Defaults to 1.
-            target_only (bool, optional): flag if we should only show the target stimulus.   Default to false.
         """    
         self.stimSeq=stimSeq
         self.numframes=numframes
         self.nframe=0
         self.tgtidx=tgtidx
-        self.tgtstate=-1
+        #self.tgtstate=-1
         self.sendEvents=sendEvents
         self.framesperbit=framesperbit if framesperbit is not None else 1
-        self.target_only = target_only
-        if self.target_only and self.tgtidx < 0 :
-            self.target_only = False
-            print("WARNING: target_only is set without target? IGNORED!")
 
         # ensure right length
         self.ss=None
@@ -128,11 +122,7 @@ class Flicker(FSM):
         else:            
             self.ss       = self.stimSeq[self.nframe//self.framesperbit % len(self.stimSeq)]
             # extract the current target state, for these objects
-            self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
-
-        # TODO[]: only turn of for the display, not for the sending of the info to the decoder
-        if self.target_only : # turn off other stimuli if target_only mode
-            self.ss = [s if i==self.tgtidx else 0 for i,s in enumerate(self.ss)]
+            #self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
         
     def get(self):
         # update the curent stimulus state info
@@ -141,7 +131,7 @@ class Flicker(FSM):
         #if objIDs is None : objIDs=self.objIDs
         # get the state info for the given set of objectIDs
         #ss =[self.ss[i] for i in objIDs-1]
-        return (self.ss,self.tgtstate,None,self.sendEvents)
+        return (self.ss,self.tgtidx,None,self.sendEvents)
 
     
 class FlickerWithSelection(Flicker):
@@ -152,9 +142,8 @@ class FlickerWithSelection(Flicker):
                  tgtidx=-1,
                  utopiaController=None,
                  framesperbit=1,
-                 sendEvents=True,
-                 target_only=False):
-        super().__init__(stimSeq,numframes,tgtidx,sendEvents,framesperbit,target_only)
+                 sendEvents=True):
+        super().__init__(stimSeq,numframes,tgtidx,sendEvents,framesperbit)
         self.utopiaController = utopiaController
         if self.utopiaController is None : raise ValueError("must have utopiaController")
         # ensure old predictions are gone..
@@ -198,7 +187,7 @@ class SingleTrial(FSM):
                  numframes=None,framesperbit=1,
                  selectionThreshold=None,
                  duration=4,cueduration=1,feedbackduration=1,waitduration=1,
-                 cueframes=None,feedbackframes=None,waitframes=None,target_only=False):
+                 cueframes=None,feedbackframes=None,waitframes=None):
         self.tgtidx=tgtidx
         self.stimSeq=stimSeq
         self.utopiaController = utopiaController
@@ -209,7 +198,6 @@ class SingleTrial(FSM):
         self.feedbackframes=feedbackframes if feedbackframes else feedbackduration/isi
         self.waitframes=waitframes if waitframes else waitduration/isi
         self.selectionThreshold=selectionThreshold
-        self.target_only = target_only 
         self.stage=0
         self.stagestart = self.utopiaController.getTimeStamp()
         print("tgtidx=%d"%(self.tgtidx if self.tgtidx>=0 else -1))
@@ -248,7 +236,6 @@ class SingleTrial(FSM):
                                          self.tgtidx,
                                          self.utopiaController,
                                          framesperbit=self.framesperbit,
-                                         target_only=self.target_only,
                                          sendEvents=True))
             else: # no selection based stopping
                 self.stimulusStateStack.push(
@@ -256,7 +243,6 @@ class SingleTrial(FSM):
                             self.numframes,
                             self.tgtidx,
                             framesperbit=self.framesperbit,
-                            target_only=self.target_only,
                             sendEvents=True))
                 
         elif self.stage==3 : # wait/feedback
@@ -488,12 +474,12 @@ class Noisetag:
         if objIDs is not None : 
             self.setActiveObjIDs(objIDs)
         # get the complete stimulus state (for MAXOBIDS objects)
-        stimState,tgtstate,objIDs,sendEvents = self.stimulusStateMachineStack.get()
+        stimState,tgtidx,objIDs,sendEvents = self.stimulusStateMachineStack.get()
         # subset to the active set, matching objIDs to allobjIDs
         # N.B. objID-1 to map from objID->stimStateIndex
         if stimState is not None :
             stimState = [ stimState[i-1] for i in self.objIDs ]
-        self.laststate = (stimState,tgtstate,self.objIDs,sendEvents)
+        self.laststate = (stimState,tgtidx,self.objIDs,sendEvents)
         return self.laststate
     
     def setActiveObjIDs(self,objIDs):
@@ -508,10 +494,12 @@ class Noisetag:
     
     # decoder interaction methods via. utopia controller
     def sendStimulusState(self,timestamp=None):
-        stimState,targetState,objIDs,sendEvent=self.laststate
+        stimState,target_idx,objIDs,sendEvent=self.laststate
+        targetState = stimState[target_idx] if target_idx is not None and target_idx>=0 else -1
         # send info about the stimulus displayed
         if sendEvent and stimState is not None :
             #print((stimState,targetState))
+            # TODO[]: change to use the target_idx
             self.utopiaController.sendStimulusEvent(stimState,
                                                     timestamp,
                                                     targetState,
