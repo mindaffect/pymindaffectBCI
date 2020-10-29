@@ -1,6 +1,6 @@
 import numpy as np
 #@function
-def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=True, peroutputmodel:bool=True):
+def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=True):
     '''
     convert normalized output scores into target probabilities
 

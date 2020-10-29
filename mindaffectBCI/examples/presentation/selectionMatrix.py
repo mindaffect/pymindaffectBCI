@@ -993,7 +993,10 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1, optosensor:bool=True):
+    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
+                 framesperbit:int=None, fullscreen_stimulus:bool=True, 
+                 selectionThreshold:float=.1, optosensor:bool=True,
+                 simple_calibration:bool=False):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -1011,6 +1014,7 @@ class ExptScreenManager(Screen):
         self.framesperbit = framesperbit
         self.fullscreen_stimulus = fullscreen_stimulus
         self.selectionThreshold = selectionThreshold
+        self.simple_calibration = simple_calibration
         self.screen = None
         self.transitionNextPhase()
 
@@ -1084,7 +1088,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit, target_only=self.simple_calibration)
             self.selectionGrid.reset()
             self.selectionGrid.liveFeedback=False
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
@@ -1292,7 +1296,8 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1303,6 +1308,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
+        simple_calibration (bool, optional): flag if we only show the *target* during calibration.  Defaults to False
     """
     global nt, ss
     # N.B. init the noise-tag first, so asks for the IP
@@ -1310,7 +1316,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
-    if windowed or fullscreen:
+    if windowed == True or fullscreen == True:
         fullscreen_stimulus = False
     nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
@@ -1332,7 +1338,9 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         symbols = load_symbols(symbols)
 
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, optosensor=optosensor)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
+                        fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
+                        optosensor=optosensor, simple_calibration=True) #simple_calibration)
 
     # set per-frame callback to the draw function
     if drawrate > 0:
@@ -1353,10 +1361,10 @@ if __name__ == "__main__":
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
-    #parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
+    parser.add_argument('--fullscreen_stimulus',action='store_true',help='run with stimuli in fullscreen mode')
     parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
     parser.add_argument('--selectionThreshold',type=float,help='target error threshold for selection to occur',default=.1)
-    #parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
+    parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
 

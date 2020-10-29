@@ -6,15 +6,10 @@ from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
 from mindaffectBCI.decoder.timestamp_check import timestampPlot
 import matplotlib.pyplot as plt
 
-savefile = '~/Downloads/mindaffectBCI_200701_1617[1].txt'
-
-savefile = '~/Downloads/mindaffectBCI_200701_1624[1].txt'
-
-savefile = '~/Downloads/mindaffectBCI_200701_2025_khash.txt'
-
-savefile = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
 savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
+
+savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
@@ -27,11 +22,11 @@ print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1][
 print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.shape))
 
 # train *only* on 1st 10 trials
-#score, dc, Fy, clsfr = debug_test_dataset(X, Y, coords,
-#                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
+score, dc, Fy, clsfr = debug_test_dataset(X, Y, coords,
+                        cv=[(slice(10),slice(10,None))], tau_ms=650, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
 
-score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
-                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
+#score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
+#                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
 
 
 # test the auto-offset compensation
@@ -52,7 +47,7 @@ from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 # try auto-model-id in the Pval computation:
 #ssFyo,scale_sFy,N,_,_=normalizeOutputScores(Fyo.copy(),minDecisLen=-1,nEpochCorrection=30)
-ssFyo = np.cumsum(Fyo[:,22:23,:,:],-2)
+ssFyo = np.cumsum(Fyo[:,:,:,:],-2)
 plot_Fy(np.squeeze(ssFyo),cumsum=False)
 plt.show()
 Ptgt=zscore2Ptgt_softmax(ssFyo,marginalizemodels=True, marginalizedecis=False) # (nTrl,nEp,nY)

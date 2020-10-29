@@ -399,7 +399,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 block_end_ts = valid_end_ts
             else:
                 block_end_ts = None
-            # limit the trial size
+            # limit the trial size and hence computational cost!
             if block_start_ts is not None:
                 block_start_ts = max( block_start_ts, valid_end_ts - maxDecisLen_ms)
         else:
