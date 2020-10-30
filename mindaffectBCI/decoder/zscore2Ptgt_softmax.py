@@ -55,40 +55,56 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodel
     # multiple models
     if ((marginalizemodels and Ptgteptimdl.ndim > 3 and Ptgteptimdl.shape[0] > 1) or 
         (marginalizedecis and Ptgteptimdl.shape[-2] > 1)): # mulitple decis points 
-        # need to remove the nusiance parameters to get per-trial Y-prob
-        if marginalizedecis:
-            ftgt=np.zeros((Ptgteptimdl.shape[-3], Ptgteptimdl.shape[-1])) # (nTrl,nY)
-        else:
-            ftgt=np.zeros(Ptgteptimdl.shape[-3:]) # (nTrl,nDecis,nY)
 
-        # compute entropy over outputs for each decision point
-        ent = entropy(Ptgteptimdl,-1)
-
-        for ti in range(Ptgteptimdl.shape[-3]): # loop over trials
-            # find when hit max-ent decison point for each model
+        if False:
+            # need to remove the nusiance parameters to get per-trial Y-prob
             if marginalizedecis:
-                # find max-ent model + decision points
-                entti = ent[...,ti,:]
-                midx = np.argmax(entti)
-                mi, di = np.unravel_index(midx, entti.shape)
-                wght = np.zeros(entti.shape) # (nM,nDecis)
-                wght[mi,di:] = 1
-                # BODGE 1: just do weighted sum over decis points with more data than max-ent point
-                ftgt[ti, :] = np.dot(wght.ravel(), f[..., ti, :, :].reshape((-1,f.shape[-1]))) / np.sum(wght.ravel())
+                ftgt=np.zeros((Ptgteptimdl.shape[-3], Ptgteptimdl.shape[-1])) # (nTrl,nY)
             else:
-                # find max-ent model for each decision point
-                for di in range(f.shape[-2]):
-                    # BODGE 0: use the summed entropy *up to* this decision point to smooth the model selection
-                    mi = np.argmax(np.sum(ent[...,ti,:di],-1))
-                    # BODGE 1: just take the max-ent model for this decision point
-                    ftgt[ti, di, :] = f[mi, ti, di, :]
+                ftgt=np.zeros(Ptgteptimdl.shape[-3:]) # (nTrl,nDecis,nY)
 
-        # TODO: make this more elegant for matching of the softmax scale
-        if ftgt.ndim==3:
-            Ptgt = softmax(softmaxscale[:,np.newaxis,np.newaxis]*ftgt,validTgt)
+            # compute entropy over outputs for each decision point
+            ent = entropy(Ptgteptimdl,-1)
+
+            for ti in range(Ptgteptimdl.shape[-3]): # loop over trials
+                # find when hit max-ent decison point for each model
+                if marginalizedecis:
+                    # find max-ent model + decision points
+                    entti = ent[...,ti,:]
+                    midx = np.argmax(entti)
+                    mi, di = np.unravel_index(midx, entti.shape)
+                    wght = np.zeros(entti.shape) # (nM,nDecis)
+                    wght[mi,di:] = 1
+                    # BODGE 1: just do weighted sum over decis points with more data than max-ent point
+                    ftgt[ti, :] = np.dot(wght.ravel(), f[..., ti, :, :].reshape((-1,f.shape[-1]))) / np.sum(wght.ravel())
+                else:
+                    # find max-ent model for each decision point
+                    for di in range(f.shape[-2]):
+                        # BODGE 0: use the summed entropy *up to* this decision point to smooth the model selection
+                        mi = np.argmax(np.sum(ent[...,ti,:di],-1))
+                        # BODGE 1: just take the max-ent model for this decision point
+                        ftgt[ti, di, :] = f[mi, ti, di, :]
+
+            # TODO: make this more elegant for matching of the softmax scale
+            if ftgt.ndim==3:
+                Ptgt = softmax(softmaxscale[:,np.newaxis,np.newaxis]*ftgt,validTgt)
+            else:
+                Ptgt = softmax(softmaxscale[:,np.newaxis]*ftgt,validTgt)
+
         else:
-            Ptgt = softmax(softmaxscale[:,np.newaxis]*ftgt,validTgt)
-
+            # marginalize for the P values.
+            # get the axis to marginalize over
+            axis=[]
+            if f.ndim>3 and marginalizemodels: # marginalize the models axis
+                axis.append(-4)
+            if marginalizedecis: # marginalize the decision points axis
+                axis.append(-2)
+            axis=tuple(axis)
+            maxf = np.max(f,axis=axis,keepdims=True) # remove for numerical robustness
+            ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*(f - maxf)),axis=axis,keepdims=True))+maxf*softmaxscale[:,np.newaxis,np.newaxis]
+            ftgt = np.squeeze(ftgt,axis)
+            #ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*f),axis=axis))
+            Ptgt = softmax(ftgt,validTgt)
     else:
         Ptgt = Ptgteptimdl
 
@@ -168,8 +184,9 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,
     return softmaxscale
 
 #@function
-def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5):
+def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, marginalizedecis=False):
     import numpy as np
+    np.random.seed(0)
     noise = np.random.standard_normal((nM,nTrl,nEp,nY))
     noise = noise - np.mean(noise.ravel())
     noise = noise / np.std(noise.ravel())
@@ -190,26 +207,30 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5):
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
     smax = softmax(ssFy)
     #print("{}".format(smax.shape))
-    Ptgt=zscore2Ptgt_softmax(ssFy,marginalizemodels=True, marginalizedecis=False) # (nTrl,nEp,nY)
+    Ptgt=zscore2Ptgt_softmax(ssFy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis) # (nTrl,nEp,nY)
     #print("Ptgt={}".format(Ptgt.shape))
     import matplotlib.pyplot as plt
     plt.clf()
     tri=1
-    plt.subplot(411);plt.cla();
-    plt.plot(sFy[0,tri,:,:])
-    plt.plot(scale_sFy[0,tri,:],'k')
-    plt.title('ssFy')
-    plt.grid()
-    plt.subplot(412);plt.cla();
-    plt.plot(ssFy[0,tri,:,:])
-    plt.title('ssFy')
-    plt.grid()
-    plt.subplot(413);plt.cla()
-    plt.plot(smax[0,tri,:,:])
-    plt.title('softmax')
-    plt.grid()
-    plt.subplot(414);plt.cla()
-    plt.plot(Ptgt[tri,:,:])
+    for mi in range(nM):
+        plt.subplot(4,nM,0*nM+mi+1);plt.cla();
+        plt.plot(sFy[mi,tri,:,:])
+        plt.plot(scale_sFy[mi,tri,:],'k')
+        plt.title('sFy')
+        plt.grid()
+    
+        plt.subplot(4,nM,1*nM+mi+1);plt.cla();
+        plt.plot(ssFy[mi,tri,:,:])
+        plt.title('ssFy')
+        plt.grid()
+        
+        plt.subplot(4,nM,2*nM+mi+1);plt.cla()
+        plt.plot(smax[mi,tri,:,:])
+        plt.title('softmax')
+        plt.grid()
+        
+    plt.subplot(414);plt.cla()    
+    plt.plot(Ptgt[tri,...])
     plt.title('Ptgt')
     plt.grid()
     plt.show()
