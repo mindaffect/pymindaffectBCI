@@ -276,24 +276,32 @@ def rewrite_timestamps2servertimestamps(msgs):
     return msgs
 
     
-def read_mindaffectBCI_messages( fn:str, regress:bool=False ):
+def read_mindaffectBCI_messages( source, regress:bool=False ):
     """read all the messages from a mindaffetBCI offline save file
 
     Args:
-        fn (str): the file name to load from
+        source ([str, stream]): the log file messages source, can be file-name, or IO-stream, or string
         regress (bool, optional): How should we regress the client-time stamps onto the server time-stamps.  If False then use the server-time-stamps, if None then leave the client-time-stamps, if True then use robust-regression to map from client to server time-stamps.
         Defaults to False.
 
     Returns:
         (list, messages): a list of all the decoded messages
-    """    
-    fn = os.path.expanduser(fn)
-    with open(fn,'r') as file:
-        msgs=[]
-        for line in file:
-            msg = read_mindaffectBCI_message(line)
-            if msg is not None:
-                msgs.append(msg)
+    """
+    if hasattr(source, 'readline'):
+        stream = source
+    elif isinstance(source,str):
+        if os.path.exists(source): # read from file
+            source = os.path.expanduser(source)
+            stream = open(source,'r')
+        else: # assume it's already a string with the messages in
+            import io
+            stream = io.StringIO(fn)
+
+    msgs=[]
+    for line in stream:
+        msg = read_mindaffectBCI_message(line)
+        if msg is not None:
+            msgs.append(msg)
 
     # TODO [X]: intelligent time-stamp re-writer taking account of the client-ip
     if regress is None:
@@ -318,11 +326,11 @@ def read_mindaffectBCI_messages( fn:str, regress:bool=False ):
         
     return msgs
 
-def read_mindaffectBCI_data_messages( fn:str, regress=False, timestamp_wrap_size=(1<<24), **kwargs ):
+def read_mindaffectBCI_data_messages( source, regress=False, timestamp_wrap_size=(1<<24), **kwargs ):
     """read an offline mindaffectBCI save file, and return raw-data (as a np.ndarray) and messages. 
 
     Args:
-        fn (str): the file name to load the data from
+        source (str): the file name to load the data from
         regress (bool, optional): How to map from client-specific to a common time-stamp basis. Defaults to False.
         timestamp_wrap_size (tuple, optional): The bit-resolution of the time-stamps. Defaults to (1<<24).
 
@@ -330,7 +338,7 @@ def read_mindaffectBCI_data_messages( fn:str, regress=False, timestamp_wrap_size
         data (np.ndarray (nsamp,d) float): the time-stamped data stream
         messages (list messages): the (non-datapacket) messages in the file
     """
-    rawmsgs = read_mindaffectBCI_messages(fn, regress)
+    rawmsgs = read_mindaffectBCI_messages(source, regress)
     # split into datapacket messages and others
     data=[]
     msgs=[]

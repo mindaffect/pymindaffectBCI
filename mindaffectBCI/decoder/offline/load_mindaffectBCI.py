@@ -5,13 +5,11 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), ch_names=None, **kwargs):
+def load_mindaffectBCI(source, datadir=None, sessdir=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), ch_names=None, **kwargs):
     """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
 
     Args:
-        datadir (str): root of the data directory tree
-        sessdir (str, optional): sub-directory for the session to load. Defaults to None.
-        sessfn (str, optional): filename for the session information. Defaults to None.
+        source (str, stream): the source to load the data from
         fs_out (float, optional): [description]. Defaults to 100.
         stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
         order (int, optional): the order of the temporal filter. Defaults to 6.
@@ -28,17 +26,15 @@ def load_mindaffectBCI(datadir, sessdir=None, sessfn=None, fs_out=100, stopband=
         coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
                           "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
     """    
-    # load the data file
-    Xfn = datadir
-    if sessdir:
-        Xfn = os.path.join(Xfn, sessdir)
-    if sessfn:
-        Xfn = os.path.join(Xfn, sessfn)
-    sessdir = os.path.dirname(Xfn)
+    if isinstance(source,str):
+        if sessdir:
+            source = os.path.join(sessdir, source)
+        if datadir:
+            source = os.path.join(datadir, source)
 
-    if verb >= 0: print("Loading {}".format(Xfn))
+    if verb >= 0 and isinstance(source,str): print("Loading {}".format(source))
     # TODO []: convert to use the on-line time-stamp code
-    X, messages = read_mindaffectBCI_data_messages(Xfn, **kwargs)
+    X, messages = read_mindaffectBCI_data_messages(source, **kwargs)
 
     # TODO[]: get the header if there is one?
 
