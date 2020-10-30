@@ -7,9 +7,10 @@ from mindaffectBCI.decoder.timestamp_check import timestampPlot
 import matplotlib.pyplot as plt
 
 savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
-savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
+savefile = '~/Desktop/khash/mindaffectBCI*.txt'
+#savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-savefile = '~/Downloads/mindaffectBCI*.txt'
+#savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
@@ -23,7 +24,7 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 # train *only* on 1st 10 trials
 score, dc, Fy, clsfr = debug_test_dataset(X, Y, coords,
-                        cv=[(slice(10),slice(10,None))], tau_ms=650, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
+                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
 
 #score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
 #                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
@@ -35,7 +36,8 @@ Fe = clsfr.transform(X)
 Ye = clsfr.stim2event(Y)
     
 # score all trials with shifts
-offsets=[-2,-1,0,1,2]
+offsets=[-2,-1,0,1,2] # set offsets to test
+prior=np.array([.3,.7,1,.5,.2]) # prior over offsets
 Fyo = scoreOutput(Fe,Ye, offset=offsets, dedup0=True)
 print("{}".format(Fyo.shape))
 for i,o in enumerate(offsets):
@@ -46,11 +48,10 @@ for i,o in enumerate(offsets):
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 # try auto-model-id in the Pval computation:
-#ssFyo,scale_sFy,N,_,_=normalizeOutputScores(Fyo.copy(),minDecisLen=-1,nEpochCorrection=30)
-ssFyo = np.cumsum(Fyo[:,:,:,:],-2)
-plot_Fy(np.squeeze(ssFyo),cumsum=False)
+ssFyo,scale_sFy,N,_,_=normalizeOutputScores(Fyo.copy(),minDecisLen=-1,nEpochCorrection=100, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+plot_Fy(np.squeeze(ssFyo[:,0,...]),cumsum=False, label="{} Trl={}".format(savefile,0))
 plt.show()
-Ptgt=zscore2Ptgt_softmax(ssFyo,marginalizemodels=True, marginalizedecis=False) # (nTrl,nEp,nY)
+Ptgt=zscore2Ptgt_softmax(ssFyo,clsfr.softmaxscale_,prior=prior.reshape((-1,1,1,1)),marginalizemodels=True, marginalizedecis=False) # (nTrl,nEp,nY)
 plot_Fy(Ptgt, cumsum=False,maxplots=50,label=savefile)
 
 # do a time-stamp check.
@@ -65,5 +66,6 @@ timestampPlot(savefile)
 
 # sigq=testElectrodeQualities(X,fs=200)
 # plt.clf();plt.plot(sigq)
+plt.show()
 
 

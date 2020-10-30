@@ -433,7 +433,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.clf()
     clsfr.plot_model(fs=fs,ch_names=ch_names)
     plt.savefig("{}_model".format(label)+".pdf")
-    plt.show()
+    plt.show(block=False)
     
     # print("plot Fe")
     # plt.figure(16);plt.clf()
@@ -453,10 +453,11 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # normalize every sample
     ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1)
     plot_Fy(ssFy,label=label,cumsum=False)
-    plt.show()
+    plt.show(block=False)
 
     plt.figure(21)
     plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
+    plt.show()
 
     return score, res, Fy, clsfr
 

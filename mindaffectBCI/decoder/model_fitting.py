@@ -52,13 +52,14 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip'):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100):
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
         self.tau = tau
         self.offset = offset
         self.outputscore = outputscore
         self.verb = 0
-        self.priorweight = 120
+        self.priorweight = priorweight
+        self.startup_correction = 100
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
@@ -123,13 +124,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fe = Fe[0,...]
         return Fe
 
-    def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True):
+    def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True, marginalizedecis=False):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
             Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
             minDecisLen (int,optional): minimum number of samples on which to make a prediction
             marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
+            marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
 
         Raises:
             NotFittedError: [description]
@@ -146,11 +150,11 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
             kwargs['softmaxscale']=self.softmaxscale_
 
-        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, **kwargs)
+        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
         return Ptgt #(nTrl, nEp, nY)
 
     
-    def predict_proba(self, X, Y, marginalizemodels=False, minDecisLen=-1, dedup0=True, prevY=None):
+    def predict_proba(self, X, Y, marginalizemodels=True, marginalizedecis=False, startup_correction=100, minDecisLen=-1, dedup0=True, prevY=None):
         """Predict the probability of each output for paired data/stimulus sequences
 
         Args:
@@ -159,7 +163,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             dedup0 (bool, optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
             prevY (np.ndarray, optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
             minDecisLen (int,optional): minimum number of samples on which to make a prediction
-            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
+            marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
 
         Raises:
             NotFittedError: [description]

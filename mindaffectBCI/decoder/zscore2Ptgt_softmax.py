@@ -1,6 +1,6 @@
 import numpy as np
-#@function
-def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=True):
+
+def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=True):
     '''
     convert normalized output scores into target probabilities
 
@@ -9,6 +9,7 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodel
      softmaxscale (float, optional): slope to scale from scores to probabilities.  Defaults to 2.
      validtgtTrl (bool nM,nTrl,nY): which targets are valid in which trials 
      peroutputmode (bool, optional): assume if nM==nY that we have 1 model per output.  Defaults to True.
+     prior ([nM,nTrl,nDecis,nY]): prior probabilities over the different dimesions of f. e.g. if want a prior over Models should be shape (nM,1,1,1), for a prior over outputs (nY,). Defaults to None. 
 
     Returns:
      Ptgt (nTrl,nY): target probability for each trial (if marginalizemodels and marginalizedecis is True)
@@ -29,10 +30,6 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodel
                 f=np.zeros(f.shape[1:])
                 for mi in range(origf.shape[0]):
                     f[..., mi]=origf[mi, :, :, mi]
-            # else: 
-            #     # BODGE: push the model dimension into the decision point dimension
-            #     f = np.moveaxis(f,(0,1,2,3),(1,0,2,3)) # (nM,nTrl,nDecis,nY) -> (nTrl,nM,nDecis,nY)
-            #     f = np.reshape(f,(f.shape[0],f.shape[1]*f.shape[2],f.shape[3])) # (nTrl,nM,nDecis,nY) -> (nTrl,nM*nDecis,nY)
 
     elif f.ndim == 2:
         f = f[np.newaxis, :]
@@ -49,64 +46,43 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, validTgt=None, marginalizemodel
     noutcorr = softmax_nout_corr(np.sum(validTgt,-1)) # (nTrl,)
     softmaxscale = softmaxscale * noutcorr #(nTrl,)
 
-    # get the prob each output conditioned on the model
-    Ptgteptimdl = softmax(f*softmaxscale[:,np.newaxis,np.newaxis],validTgt) # ((nM,)nTrl,nDecis,nY) 
+    # include the scaling
+    # N.B. horrible np-hack to make softmaxscale the right size, by adding 1 dims to end
+    f = f * softmaxscale.reshape((-1,1,1))
+    
+    # inlude the prior
+    if prior is not None:
+        logprior = np.log(np.maximum(prior,1e-8))
+        f = f + logprior
     
     # multiple models
-    if ((marginalizemodels and Ptgteptimdl.ndim > 3 and Ptgteptimdl.shape[0] > 1) or 
-        (marginalizedecis and Ptgteptimdl.shape[-2] > 1)): # mulitple decis points 
+    if ((marginalizemodels and f.ndim > 3 and f.shape[0] > 1) or 
+        (marginalizedecis and f.shape[-2] > 1)): # mulitple decis points 
 
-        if False:
-            # need to remove the nusiance parameters to get per-trial Y-prob
-            if marginalizedecis:
-                ftgt=np.zeros((Ptgteptimdl.shape[-3], Ptgteptimdl.shape[-1])) # (nTrl,nY)
-            else:
-                ftgt=np.zeros(Ptgteptimdl.shape[-3:]) # (nTrl,nDecis,nY)
+        # marginalize for the P values.
+        # get the axis to marginalize over
+        axis=[]
+        if f.ndim>3 and marginalizemodels: # marginalize the models axis
+            axis.append(-4)
+        if marginalizedecis: # marginalize the decision points axis
+            axis.append(-2)
+        axis=tuple(axis)
 
-            # compute entropy over outputs for each decision point
-            ent = entropy(Ptgteptimdl,-1)
+        if prior is not None:
+            logprior = np.log(np.maximum(prior,1e-8))
+            f = f + logprior
+        maxf = np.max(f,axis=axis,keepdims=True) # remove for numerical robustness
+        Ztgt = np.exp((f - maxf)) # non-normalized Ptgt
+        ftgt = np.log(np.sum(Ztgt, axis=axis, keepdims=True)) + maxf
+        # remove the marginalized dimesions
+        ftgt = np.squeeze(ftgt,axis)
+        #ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*f),axis=axis))
+        # N.B. prior is already included in ftgt
+        Ptgt = softmax(ftgt,validTgt)
 
-            for ti in range(Ptgteptimdl.shape[-3]): # loop over trials
-                # find when hit max-ent decison point for each model
-                if marginalizedecis:
-                    # find max-ent model + decision points
-                    entti = ent[...,ti,:]
-                    midx = np.argmax(entti)
-                    mi, di = np.unravel_index(midx, entti.shape)
-                    wght = np.zeros(entti.shape) # (nM,nDecis)
-                    wght[mi,di:] = 1
-                    # BODGE 1: just do weighted sum over decis points with more data than max-ent point
-                    ftgt[ti, :] = np.dot(wght.ravel(), f[..., ti, :, :].reshape((-1,f.shape[-1]))) / np.sum(wght.ravel())
-                else:
-                    # find max-ent model for each decision point
-                    for di in range(f.shape[-2]):
-                        # BODGE 0: use the summed entropy *up to* this decision point to smooth the model selection
-                        mi = np.argmax(np.sum(ent[...,ti,:di],-1))
-                        # BODGE 1: just take the max-ent model for this decision point
-                        ftgt[ti, di, :] = f[mi, ti, di, :]
-
-            # TODO: make this more elegant for matching of the softmax scale
-            if ftgt.ndim==3:
-                Ptgt = softmax(softmaxscale[:,np.newaxis,np.newaxis]*ftgt,validTgt)
-            else:
-                Ptgt = softmax(softmaxscale[:,np.newaxis]*ftgt,validTgt)
-
-        else:
-            # marginalize for the P values.
-            # get the axis to marginalize over
-            axis=[]
-            if f.ndim>3 and marginalizemodels: # marginalize the models axis
-                axis.append(-4)
-            if marginalizedecis: # marginalize the decision points axis
-                axis.append(-2)
-            axis=tuple(axis)
-            maxf = np.max(f,axis=axis,keepdims=True) # remove for numerical robustness
-            ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*(f - maxf)),axis=axis,keepdims=True))+maxf*softmaxscale[:,np.newaxis,np.newaxis]
-            ftgt = np.squeeze(ftgt,axis)
-            #ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*f),axis=axis))
-            Ptgt = softmax(ftgt,validTgt)
     else:
-        Ptgt = Ptgteptimdl
+        # get the prob each output conditioned on the model
+        Ptgt = softmax(f,validTgt) # ((nM,)nTrl,nDecis,nY)
 
     if any(np.isnan(Ptgt.ravel())):
         if not all(np.isnan(Ptgt.ravel())):

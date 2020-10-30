@@ -107,9 +107,9 @@ def load_mindaffectBCI(source, datadir=None, sessdir=None, fs_out=100, stopband=
     trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
     # estimate the best trial-length to use
     if trlen_ms is None:
-        trlen_ms = np.median(trl_dur)
+        trlen_ms = np.percentile(trl_dur,90)
     # strip any trial too much shorter than trlen_ms (50%)
-    keep = np.flatnonzero(trl_dur>trlen_ms*.4)
+    keep = np.flatnonzero(trl_dur>trlen_ms*.2)
     print('Got {} trials, keeping {}'.format(len(trl_stim_idx)-1,len(keep)))
     # re-compute the trlen_ms for the good trials
     trl_stim_idx = trl_stim_idx[keep]

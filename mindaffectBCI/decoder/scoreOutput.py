@@ -306,7 +306,7 @@ def plot_Fy(Fy,cumsum=True, label=None, legend=False, maxplots=25):
         pl.grid(True)
     if legend:
         pl.legend(range(Fy.shape[-1]-1))
-    plt.suptitle('{} {} Fy {}/{} correct'.format(label,"cumsum" if cumsum else "", sum(np.logical_not(Yerr)),len(Yerr)))
+    plt.suptitle('{}\n {} Fy {}/{} correct'.format(label,"cumsum" if cumsum else "", sum(np.logical_not(Yerr)),len(Yerr)))
     
 def plot_Fycomparsion(Fy,Fys,ti=0):    
     import matplotlib.pyplot as plt
