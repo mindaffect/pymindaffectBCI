@@ -766,13 +766,12 @@ class SelectionGridScreen(Screen):
         if objIDs is not None:
             self.objIDs = objIDs
         else:
-            if self.objIDs is None:
-                self.objIDs = list(range(1,nsymb+1))
+            self.objIDs = list(range(1,nsymb+1))
             objIDs = self.objIDs
         # get size of the matrix
         gridheight  = len(symbols) + 1 # extra row for sentence
         gridwidth = max([len(s) for s in symbols])
-        ngrid      = gridwidth * gridheight
+        self.ngrid      = gridwidth * gridheight
 
         self.noisetag.setActiveObjIDs(self.objIDs)
 
@@ -839,7 +838,7 @@ class SelectionGridScreen(Screen):
         return self.isDone
 
     # mapping from bci-stimulus-states to display color
-    state2color={0:(10, 10, 10),   # off=grey
+    state2color={0:(5, 5, 5),   # off=grey
                  1:(255, 255, 255), # on=white
                  2:(0, 255, 0),    # cue=green
                  3:(0, 0, 255)}    # feedback=blue
@@ -1008,10 +1007,12 @@ class ExptScreenManager(Screen):
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 simple_calibration:bool=False):
+                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.05):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
+        self.calibration_symbols = calibration_symbols if calibration_symbols is not None else symbols
+        self.bgFraction = bgFraction
         self.menu = MenuScreen(window, self.main_menu, self.menu_keys.keys())
         self.instruct = InstructionScreen(window, '', duration = 50000)
         self.connecting = ConnectingScreen(window, noisetag)
@@ -1100,11 +1101,13 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=False
             self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
+
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
 
@@ -1127,12 +1130,14 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
             self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
+
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1147,12 +1152,14 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
+
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1312,7 +1319,7 @@ def load_symbols(fn):
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1352,10 +1359,16 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         # load the layout from a file
         symbols = load_symbols(symbols)
 
+    # different calibration symbols if wanted
+    if calibration_symbols is None:
+        calibration_symbols = symbols
+    elif isinstance(calibration_symbols, str):
+        calibration_symbols = load_symbols(calibration_symbols)
+
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True) #simple_calibration)
+                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols)
 
     # set per-frame callback to the draw function
     if drawrate > 0:
@@ -1380,6 +1393,8 @@ if __name__ == "__main__":
     parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
     parser.add_argument('--selectionThreshold',type=float,help='target error threshold for selection to occur',default=.1)
     parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
+    parser.add_argument('--symbols',type=str,help='file name for the symbols grid to display',default=None)
+    parser.add_argument('--calibration_symbols',type=str,help='file name for the symbols grid to use for calibration',default=None)
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
 
