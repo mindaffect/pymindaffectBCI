@@ -384,6 +384,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     clsfr_args['fs']=fs
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
+    clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
     score, res, Fy, clsfr = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
     Fe = clsfr.transform(X)
     Yerr = res[5]
