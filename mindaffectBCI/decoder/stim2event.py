@@ -3,8 +3,9 @@ from mindaffectBCI.decoder.utils import equals_subarray
 def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
     '''
     convert per-sample stimulus sequence into per-sample event sequence (e.g. rising/falling edge, or long/short flash)
-    Inputs:
-     M      - (...samp) or (...,samp,nY) for and/non-target features
+
+    Args:
+     M  (...samp) or (...,samp,nY): for and/non-target features
      evnames - [nE]:str list of strings:
         "0", "1", "00", "11", "01" (aka. 're'), "10" (aka, fe), "010" (aka. short), "0110" (aka long)
         "nt"+evtname : non-target event, i.e. evtname occured for any other target
@@ -87,13 +88,21 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
             # pad missing entry
             padshape=list(F.shape); padshape[axis] = 1
             F = np.append(np.zeros(padshape, dtype=F.dtype), F, axis)
-        elif etype == "rest":
-            F = np.logical_not(np.any(E, axis=-1))
+
+        elif etype == "rest": # i.e. no stimuli anywhere
+            if not axis == M.ndim-2:
+                raise ValueError("rest only for axis==-2")
+            F = np.logical_not(np.any(M, axis=-1, keepdims=True))
 
         elif etype == 'raw':
-            F = E
-        elif etype == 'grad':
+            F = M
+        elif etype == 'grad': # i.e. gradient of the stimulus
             F = np.diff(M,axis=axis)
+
+        elif etype == 'onset':
+            # first stimulus RE for any output
+            F = np.cumsum(M>0, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
+            F[F>1] = 0 # zero out if more than 1 stimulus since trial start
 
         else:
             raise ValueError("Unrecognised evttype:{}".format(etype))
@@ -137,9 +146,10 @@ def testcase():
     e = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
     e = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
     e = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
-    e = stim2event(M, 'ntre', axis=-1);      print("ntre :{}".format(e[0, ...].T))
     e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
-    e = stim2event(M, ('re', 'fe', 'rest'), axis=-1); print("referest :{}".format(e[0, ...].T))
+    e = stim2event(M, 'onset', axis=-1);     print("onset:{}".format(e[0, ...].T))
+    e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
+    e = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
 
     # test incremental calling, propogating prefix between calls
     oM= None
