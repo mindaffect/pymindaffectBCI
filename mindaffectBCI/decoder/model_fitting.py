@@ -52,14 +52,22 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100, prediction_offsets=None):
+        """Base class for general sequence to sequence models and inference
+
+            N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
+
+        Args:
+          evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
+          tau (int, optional): the length in samples of the stimulus response. Defaults to 18.
+          offset ([ListInt], optional): a (list of) possible offsets from the even time for the response window.
+          outputscore (str, Optional): the type of output scoring function to use. Defaults to 'ip'.
+          priorweight (float, Optional): the weighting in pseudo-samples for the prior estimate for the prediction noise variance.  Defaults to 120.
+          startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
+        """        
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau = tau
-        self.offset = offset
-        self.outputscore = outputscore
+        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets)
         self.verb = 0
-        self.priorweight = priorweight
-        self.startup_correction = 100
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
@@ -87,7 +95,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,"A_"): delattr(self,'A_')
         if hasattr(self,"b_"): delattr(self,'b_')
 
-    def predict(self, X, Y, dedup0=True, prevY=None):
+    def predict(self, X, Y, dedup0=True, prevY=None, offsets=None):
         """Generate predictions with the fitted model for the paired data + stimulus-sequences
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -97,6 +105,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
             dedup0 ([type], optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
             prevY ([type], optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
+            offsets ([ListInt], optional): list of offsets in Y to try when decoding, to override the class variable.  Defaults to None.
 
         Raises:
             NotFittedError: raised if try to predict without first fitting
@@ -107,13 +116,21 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if not self.is_fitted():
             # only if we've been fitted!
             raise NotFittedError
+        
         # convert from stimulus coding to brain response coding
         Y = self.stim2event(Y, prevY)
-        # valid performance
+        
+        # apply the model to transform from raw data to stimulus scores
         Fe = self.transform(X) # (nM, nTrl, nSamp, nE)
-        Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=self.offset) #(nM, nTrl, nSamp, nY)
+
+        # combine the stimulus information and the stimulus scores to
+        # get output scores.  Optionally, include time-shifts in output.
+        if offsets is None and self.prediction_offsets is not None:
+            offsets = self.prediction_offsets
+        Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=offsets) #(nM, nTrl, nSamp, nY)
+        
         # BODGE: strip un-needed model dimension
-        if Fy.shape[0] == 1 and Fy.ndim > 3:
+        if Fy.ndim > 3 and Fy.shape[0] == 1:
             Fy = Fy.reshape(Fy.shape[1:])
         return Fy
 
@@ -236,6 +253,12 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
             # predict, forcing removal of copies of  tgt=0 so can score
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
+            # BODGE: kill the model dimesion!
+            # TODO[] : allow marginalie the models from the scores directly
+            #  OR: return p-values not scores?
+            if Fyi.ndim>Y.ndim:
+                Fyi = np.mean(Fyi,0)
+            
             if return_estimator:
                 Fy[valid_idx, ...] = Fyi
             

@@ -1,8 +1,11 @@
 import numpy as np
 from mindaffectBCI.decoder.datasets import get_dataset
 from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
-from sklearn.linear_model import Ridge, LogisticRegression
-from sklearn.svm import LinearSVR, LinearSVC
+try:
+    from sklearn.linear_model import Ridge, LogisticRegression
+    from sklearn.svm import LinearSVR, LinearSVC
+except:
+    pass
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, plot_factoredmodel
 from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
@@ -723,8 +726,8 @@ if __name__=="__main__":
     #savefile = '~/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
     #savefile = '~/Desktop/mindaffectBCI_200720_2128_master.txt'
     #savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
-    savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
-    #savefile = "~/Downloads/mindaffectBCI_200717_1625_mark_testing_octave_gdx.txt"
+    #savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
+    savefile = "~/Downloads/mindaffectBCI*.txt"
     if savefile is None:
         savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
     
@@ -758,10 +761,10 @@ if __name__=="__main__":
             splits.append( ( (trn_ind, tst_ind), ) ) # N.B. ensure list-of-lists-of-trn/tst-splits
         #splits=5
         # compute learning curves
-        analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca')#, ranks=(1,2,3,5) )
+        analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', ranks=(1,2,3,5) )
 
     else:
-        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5))
+        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5), prediction_offsets=(-2,-1,0,1) )
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()

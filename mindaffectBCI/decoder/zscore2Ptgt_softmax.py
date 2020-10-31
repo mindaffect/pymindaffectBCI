@@ -38,10 +38,15 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
         f = f[np.newaxis, np.newaxis, :]
     # Now : f= ((nM,)nTrl,nDecis,nY)
 
+    # identify the valid targets for each trial
     if validTgt is None: # get which outputs are used in which trials..
         validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
-    elif validTgt.ndim == 1:
-        validTgt = validTgt[np.newaxis, :]
+    else:
+        # ensure valid target info is in the shape we expect
+        if validTgt.ndim == 3: #(nM,nTrl,nY)
+            validTgt = np.any(validTgt,0)
+        elif validTgt.ndim == 1: # (nY,)
+            validTgt = validTgt[np.newaxis, :] 
 
     noutcorr = softmax_nout_corr(np.sum(validTgt,-1)) # (nTrl,)
     softmaxscale = softmaxscale * noutcorr #(nTrl,)
