@@ -142,6 +142,26 @@ def unwrap_test():
     plt.plot(xuw,label='x (unwrapped')
     plt.legend()
 
+
+def search_directories_for_file(f,*args):
+    """search a given set of directories for given filename, return 1st match
+
+    Args:
+        f (str): filename to search for
+        *args (): set for directory names to look in
+
+    Returns:
+        f (str): full path to where f is found, or f if not found.
+    """    
+    import os
+    if os.path.exists(f):
+        return f
+    for d in args:
+        if os.path.exists(os.path.join(d,f)):
+            f = os.path.join(d,f)
+            break
+    return f
+
 # toy data generation
 
 #@function

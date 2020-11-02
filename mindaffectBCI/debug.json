@@ -8,11 +8,12 @@
 
     "decoder":"mindaffectBCI.decoder.decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[0,3],[25,-1]],
+        "stopband" : [[45,65],[5.5,25,"bandpass"]],
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
         "prediction_offsets" : [-1,0,1],
+        "prior_dataset": "calibration_dataset_debug.pk",
         "calplots" : true,
         "predplots" : false
     },
@@ -22,13 +23,12 @@
         "ncal":2,
         "npred":10,
         "selectionThreshold":0.1,
-        "calibration_symbols":[["hello","there"]],
         "symbols":"symbols.txt",
-	"calibration_symbols":"3x3.txt",
+	    "calibration_symbols":"3x3.txt",
         "stimfile":"mgold_65_6532_psk_60hz.png",
-        "framesperbit":2,
+        "framesperbit":4,
         "fullscreen":false,
-        "fullscreen_stimulus":true,
+        "fullscreen_stimulus":false,
         "host":"-"
     }
 }

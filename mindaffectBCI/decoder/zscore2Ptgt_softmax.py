@@ -117,6 +117,8 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
     Returns:
         f: (np.ndarray): the marginalized f scores
     """
+    if f.size == 0:
+        return f
 
     if prior is not None:
         logprior = np.log(np.maximum(prior,1e-8))

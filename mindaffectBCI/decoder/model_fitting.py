@@ -261,8 +261,6 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             # predict, forcing removal of copies of  tgt=0 so can score
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
             # BODGE: kill the model dimesion!
-            # TODO[] : allow marginalize the models from the scores directly
-            #  OR: return p-values not scores?
             if Fyi.ndim>Y.ndim:
                 Fyi = marginalize_scores(Fyi,0)
             
