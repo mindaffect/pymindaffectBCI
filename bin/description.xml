@@ -4,7 +4,7 @@
     <major>1</major>
     <minor>0</minor>
   </specVersion>
-  <URLBase>http://192.168.178.171/description.xml</URLBase>
+  <URLBase>http://100.115.92.196/description.xml</URLBase>
   <device>
     <deviceType>urn:schemas-upnp-org:device:Basic:1</deviceType>
     <friendlyName>utopia/1.1</friendlyName>
@@ -12,9 +12,9 @@
     <manufacturerURL>http://www.mindaffect.nl</manufacturerURL>
     <modelDescription>Utopia-HUB BCI server</modelDescription>
     <modelName>Utopia-HUB_v1.0</modelName>
-    <UDN>uuid:3203c759-9215-44cb-952e-486beed0d98e</UDN>
+    <UDN>uuid:2a9bc359-eb6a-4cf3-90d5-273fff98edf8</UDN>
     <serviceList>
 /</serviceList>
-    <presentationURL>http://http://192.168.178.171/description.xml</presentationURL>
+    <presentationURL>http://http://100.115.92.196/description.xml</presentationURL>
   </device>
 </root>

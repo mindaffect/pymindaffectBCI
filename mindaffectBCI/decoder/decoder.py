@@ -154,6 +154,34 @@ def strip_unused(Y):
     Y = Y[..., used_y]
     return Y, used_y
 
+def search_directories_for_file(f,*args):
+    import os
+    for d in args:
+        if os.path.exist(os.path.join(d,filename)):
+            filename = os.path.join(d,filename)
+            break
+    return filename
+
+def load_previous_dataset(f:str):
+    """
+    load a previously saved (pickled) calibration dataset
+
+    Args:
+        f (str, file-like): buffered interface to the data and stimulus streams
+    """
+    import pickle
+    if isinstance(f,str): # filename to load from
+        # search in likely dataset locations for the file to load
+        f = search_directories_for_file(f,'',
+                                        os.path.join(os.path.basename(os.path.abspath(__file__))),
+                                        os.path.join(os.path.basename(os.path.abspath(__file__)),'..','..'))
+        with open(f,'rb') as file:
+            dataset = pickle.load(file)
+    else: # is it a byte-stream to load from?
+        dataset = pickle.load(f)
+
+    return dataset
+
 
 def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
                             cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None, ranks=(1,2,3,5)):
@@ -177,18 +205,29 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
     X = None
     Y = None
     dataset = getCalibration_dataset(ui)
+
     if previous_dataset is not None: # combine with the old calibration data
+        if isinstance(previous_dataset,str): # filename to load the data from?
+            previous_dataset = load_previous_dataset(previous_dataset)
         dataset.extend(previous_dataset)
+
     if dataset:
+        try:
+            import pickle
+            pickle.dump(dict(dataset=dataset),
+                        open('calibration_datseta.pk','wb'))
+        except:
+            print('Error saving cal data')
+
         # convert msgs -> to nd-arrays
         X, Y, X_ts, Y_ts = dataset_to_XY_ndarrays(dataset)
 
-        try:
-            import pickle
-            pickle.dump(dict(X=X, Y=Y, X_ts=X_ts, Y_ts=Y_ts, fs=ui.fs),
-                        open('calibration_data.pk','wb'))
-        except:
-            print('Error saving cal data')
+        # try:
+        #     import pickle
+        #     pickle.dump(dict(dataset=dataset, Y=Y, X_ts=X_ts, Y_ts=Y_ts, fs=ui.fs),
+        #                 open('calibration_data_sliced.pk','wb'))
+        # except:
+        #     print('Error saving cal data')
 
         # guard against empty training dataset
         if X is None or Y is None :
@@ -474,9 +513,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 ui.push_back_newmsgs(newmsgs[i:])
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
-        host:str=None, datafile:str=None,
+        host:str=None, calibration_dataset:str=None,
         tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
-        stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5, 
+        stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5,
+        prediction_offsets=None,
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -494,6 +534,8 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         evtlabs (tuple, optional): the brain event coding to use.  Defaults to None.
         calplots (bool, optional): flag if we make plots after calibration. Defaults to False.
         predplots (bool, optional): flag if we make plots after each prediction trial. Defaults to False.
+        calibration_dataset ([str,(dataset)]): calibration data from a previous run of the system.  Used to pre-seed the model.  Defaults to None.
+        prediction_offsets ([ListInt], optional): a list of stimulus offsets to try at prediction time to cope with stimulus timing jitter.  Defaults to None.
     """
     global CALIBRATIONPLOTS, PREDICTIONPLOTS
     CALIBRATIONPLOTS = calplots
@@ -528,7 +570,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
             evtlabs = evtlabs.split(',')
-        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000))
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
     
     calibration_dataset = None
@@ -585,10 +627,12 @@ if  __name__ == "__main__":
     args = parser.parse_args()
 
     if args.savefile is not None or True:#
-        #setattr(args,'savefile',"~/utopia/java/messagelib/UtopiaMessages_.log")
-        #setattr(args,'savefile',"~/utopia/java/utopia2ft/UtopiaMessages_*1700.log")
-        #setattr(args,'savefile',"~/Downloads/jason/UtopiaMessages_200923_1749_*.log")
-        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*.txt')
+        #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
+        #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
+        #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
+        savefile='~/Desktop/mark/mindaffectBCI*.txt'
+        savefile="../../logs/mindaffectBCI*.txt"
+        setattr(args,'savefile',savefile)
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
