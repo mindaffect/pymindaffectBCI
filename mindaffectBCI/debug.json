@@ -22,10 +22,11 @@
         "ncal":2,
         "npred":10,
         "selectionThreshold":0.1,
+        "calibration_symbols":[["hello","there"]],
         "symbols":"symbols.txt",
 	"calibration_symbols":"3x3.txt",
         "stimfile":"mgold_65_6532_psk_60hz.png",
-        "framesperbit":1,
+        "framesperbit":2,
         "fullscreen":false,
         "fullscreen_stimulus":true,
         "host":"-"

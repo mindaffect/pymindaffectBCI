@@ -54,7 +54,7 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
     # include the scaling
     # N.B. horrible np-hack to make softmaxscale the right size, by adding 1 dims to end
     f = f * softmaxscale.reshape((-1,1,1))
-    
+
     # inlude the prior
     if prior is not None:
         logprior = np.log(np.maximum(prior,1e-8))
@@ -73,21 +73,10 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
             axis.append(-2)
         axis=tuple(axis)
 
-        if prior is not None:
-            logprior = np.log(np.maximum(prior,1e-8))
-            f = f + logprior
-        maxf = np.max(f,axis=axis,keepdims=True) # remove for numerical robustness
-        Ztgt = np.exp((f - maxf)) # non-normalized Ptgt
-        ftgt = np.log(np.sum(Ztgt, axis=axis, keepdims=True)) + maxf
-        # remove the marginalized dimesions
-        ftgt = np.squeeze(ftgt,axis)
-        #ftgt = np.log(np.sum(np.exp(softmaxscale[:,np.newaxis,np.newaxis]*f),axis=axis))
-        # N.B. prior is already included in ftgt
-        Ptgt = softmax(ftgt,validTgt)
+        f = marginalize_scores(f, axis, keepdims=False)
 
-    else:
-        # get the prob each output conditioned on the model
-        Ptgt = softmax(f,validTgt) # ((nM,)nTrl,nDecis,nY)
+    # get the prob each output conditioned on the model
+    Ptgt = softmax(f,validTgt) # ((nM,)nTrl,nDecis,nY)
 
     if any(np.isnan(Ptgt.ravel())):
         if not all(np.isnan(Ptgt.ravel())):
@@ -116,6 +105,28 @@ def softmax_nout_corr(n):
     #return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
     return np.ones(n.shape) #np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
 
+def marginalize_scores(f, axis, prior=None, keepdims=False):
+    """marginalize the output scores to remove nuisance parameters, e.g. decis-pts, models.
+
+    Args:
+        f (np.ndarray (nModel,nTrial,nDecisPts,nOutput)): the scores
+        axis ([listInt]): the axis of f to marginalize over
+        prior ([type], optional): prior over the dimesions of f. Defaults to None.
+        keepdims (bool, optional): flag if we keep or compress the dims of f.  Defaults to False.
+
+    Returns:
+        f: (np.ndarray): the marginalized f scores
+    """
+
+    if prior is not None:
+        logprior = np.log(np.maximum(prior,1e-8))
+        f = f + logprior
+
+    maxf = np.max(f, axis=axis, keepdims=True) # remove for numerical robustness
+    z = np.exp( f - maxf ) # non-normalized Ptgt
+    f = np.log(np.sum(z, axis=axis, keepdims=keepdims)) + maxf
+
+    return f
 
 def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01):
     '''

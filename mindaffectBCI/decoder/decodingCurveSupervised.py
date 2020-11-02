@@ -188,7 +188,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
         # multiple datasets
         plt.plot(integerationLengths.T,aveProbErr.T)
         plt.plot(np.mean(integerationLengths,0), np.mean(aveProbErr,0), 'k', linewidth=5, label="mean")
-        plt.title('Decoding Curve (nDatasets={})'.format(aveProbErr.shape[0]))
+        plt.title('Decoding Curve\n(nDatasets={})'.format(aveProbErr.shape[0]))
     
     else:
         # single dataset
@@ -208,7 +208,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
             plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
-            plt.title('Decoding Curve (nTrl={})'.format(Yerr.shape[0]))
+            plt.title('Decoding Curve\n(nTrl={})'.format(Yerr.shape[0]))
 
     plt.ylim((0,1))
     plt.xlabel('Integeration Length (samples)')
