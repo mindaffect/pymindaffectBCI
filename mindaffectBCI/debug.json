@@ -20,13 +20,14 @@
 
     "presentation":"selectionMatrix",
     "presentation_args":{
-        "ncal":2,
+        "ncal":4,
         "npred":10,
         "selectionThreshold":0.1,
         "symbols":"symbols.txt",
 	    "calibration_symbols":"3x3.txt",
         "stimfile":"mgold_65_6532_psk_60hz.png",
-        "framesperbit":4,
+        "bgFraction":0.1,
+        "framesperbit":2,
         "fullscreen":false,
         "fullscreen_stimulus":false,
         "host":"-"

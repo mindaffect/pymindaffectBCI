@@ -732,7 +732,7 @@ class SelectionGridScreen(Screen):
                 print("doSelection: {}".format(objID))
                 symbIdx = self.objIDs.index(objID)
                 sel = self.getSymb(symbIdx)
-                if self.show_correct and self.last_target_idx>0:
+                if self.show_correct and self.last_target_idx>=0:
                     sel += "*" if symbIdx==self.last_target_idx else "_"
                 self.set_sentence( self.sentence.text + sel )
 
@@ -1007,7 +1007,7 @@ class ExptScreenManager(Screen):
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.05):
+                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -1319,7 +1319,7 @@ def load_symbols(fn):
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None):
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1368,7 +1368,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols)
+                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, bgFraction=bgFraction)
 
     # set per-frame callback to the draw function
     if drawrate > 0:

@@ -52,7 +52,7 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100, prediction_offsets=None):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100, prediction_offsets=None, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -64,10 +64,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
           outputscore (str, Optional): the type of output scoring function to use. Defaults to 'ip'.
           priorweight (float, Optional): the weighting in pseudo-samples for the prior estimate for the prediction noise variance.  Defaults to 120.
           startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
-        """        
+        """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets)
-        self.verb = 0
+        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets, verb)
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
