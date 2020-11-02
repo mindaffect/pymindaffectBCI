@@ -585,10 +585,11 @@ if  __name__ == "__main__":
     args = parser.parse_args()
 
     if args.savefile is not None or True:#
-        #setattr(args,'savefile',"~/utopia/java/messagelib/UtopiaMessages_.log")
-        #setattr(args,'savefile',"~/utopia/java/utopia2ft/UtopiaMessages_*1700.log")
-        #setattr(args,'savefile',"~/Downloads/jason/UtopiaMessages_200923_1749_*.log")
-        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*.txt')
+        #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
+        #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
+        #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
+        savefile = '~/Desktop/khash/mindaffectBCI*.txt'
+        setattr(args,'savefile',savefile)
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)

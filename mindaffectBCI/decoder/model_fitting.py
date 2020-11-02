@@ -8,7 +8,7 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
-from mindaffectBCI.decoder.zscore2Ptgt_softmax import calibrate_softmaxscale
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import calibrate_softmaxscale, marginalize_scores
 
 try:
     from sklearn.model_selection import StratifiedKFold
@@ -135,7 +135,14 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return Fy
 
     def transform(self, X):
-        ''' estimate the stimulus properties from the raw data '''
+        """ transform raw data into raw stimulus scores by convolving X with the model, i.e. Fe = X (*) (W*R)
+
+        Args:
+            X (np.ndarray (nTrl,nSamp,d): The raw eeg data.
+
+        Returns:
+            Fe (np.ndarray (nTrl,nSamp,nE)): The raw stimulus scores.
+        """
         Fe = scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
         if Fe.ndim>X.ndim and Fe.shape[0]==1:
             Fe = Fe[0,...]
@@ -254,10 +261,10 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             # predict, forcing removal of copies of  tgt=0 so can score
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
             # BODGE: kill the model dimesion!
-            # TODO[] : allow marginalie the models from the scores directly
+            # TODO[] : allow marginalize the models from the scores directly
             #  OR: return p-values not scores?
             if Fyi.ndim>Y.ndim:
-                Fyi = np.mean(Fyi,0)
+                Fyi = marginalize_scores(Fyi,0)
             
             if return_estimator:
                 Fy[valid_idx, ...] = Fyi

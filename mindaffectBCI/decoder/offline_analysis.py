@@ -24,7 +24,7 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 # train *only* on 1st 10 trials
 score, dc, Fy, clsfr = debug_test_dataset(X, Y, coords,
-                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
+                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re','anyonset'), rank=1, model='cca', ranks=(1,2,3,5), prediction_offsets=(-1,0,1))
 
 #score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
 #                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
@@ -55,6 +55,7 @@ Ptgt=zscore2Ptgt_softmax(ssFyo,clsfr.softmaxscale_,prior=prior.reshape((-1,1,1,1
 plot_Fy(Ptgt, cumsum=False,maxplots=50,label=savefile)
 
 # do a time-stamp check.
+plt.clf()
 timestampPlot(savefile)
 
 # # check the electrode qualities computation

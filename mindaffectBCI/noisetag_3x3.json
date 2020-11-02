@@ -22,6 +22,7 @@
         "ncal":10,
         "npred":10,
         "selectionThreshold":0.1,
+        "calibration_symbols":"3x3.txt",
         "symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,

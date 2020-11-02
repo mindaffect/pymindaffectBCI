@@ -107,7 +107,7 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
         else:
             raise ValueError("Unrecognised evttype:{}".format(etype))
 
-        # apply any modifiers wanted
+        # apply any modifiers wanted to F
         if modifier == "nt":
             # non-target, means true when OTHER targets are high, i.e. or over other outputs
             if not axis == M.ndim-2:
@@ -121,7 +121,7 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
             if not axis == M.ndim-2:
                 raise ValueError("any feature only for axis==-2")   
             # any, means true if any target is true, N.B. use logical_or to broadcast
-            F = np.logical_or(F, np.any(F > 0, axis=-1, keepdims=True))
+            F = np.any(F > 0, axis=-1, keepdims=True)
 
         E[..., ei] = F
 
