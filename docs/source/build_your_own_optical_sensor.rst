@@ -49,6 +49,7 @@ First, the sensor must be connected to the OpenBCI board as described below.
 set the board to bipolar mode
 
    * For the cyton board, go to *pymindaffectBCI/mindaffectBCI* directory and open the online_bci.json file. Next, enable trigger check by adding the highlighted line. (don’t forget to save the file afterwards)
+      .. image:: images/6.PNG
    * For the ganglion board, follow this  (**add link here**) and set the switches to **DOWN** position.
 
 Then the blue wire should be connected to 
