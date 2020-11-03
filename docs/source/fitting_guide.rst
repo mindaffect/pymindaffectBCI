@@ -1,4 +1,4 @@
-.. _fittingref:
+.. _fittingRef:
 
 Set-up & fitting
 ===============
