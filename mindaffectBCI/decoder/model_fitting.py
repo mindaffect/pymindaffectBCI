@@ -8,7 +8,7 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
-from mindaffectBCI.decoder.zscore2Ptgt_softmax import calibrate_softmaxscale, marginalize_scores
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax, calibrate_softmaxscale, marginalize_scores
 
 try:
     from sklearn.model_selection import StratifiedKFold
@@ -110,7 +110,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             NotFittedError: raised if try to predict without first fitting
 
         Returns:
-            Fy (np.ndarray (tr,samp,nY): score for each output in each trial.  Higher score means more 'likely' to be the 'true' target
+            Fy (np.ndarray (mdl,tr,samp,nY): score for each output in each trial.  Higher score means more 'likely' to be the 'true' target
         """        
         if not self.is_fitted():
             # only if we've been fitted!
@@ -243,11 +243,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             else: # single trial, train/test on all...
                 cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
 
-        if return_estimator:
-            Fy = np.zeros(Y.shape) if Y.ndim<=3 else np.zeros(Y.shape[:-1]) # (nTrl, nEp, nY)
-        else:
-            Fy = None
         scores = []
+        Fy = np.zeros(Y.shape, dtype=X.dtype)
         if verbose > 0:
             print("CV:", end='')
         for i, (train_idx, valid_idx) in enumerate(cv):
@@ -258,13 +255,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             self.fit(X[train_idx, ...], Y[train_idx, ...], **fit_params)
 
             # predict, forcing removal of copies of  tgt=0 so can score
+            if X[valid_idx,...].size==0:
+                print("Warning: no-validation trials!!! using all data!")
+                valid_idx = slice(X.shape[0])
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
-            # BODGE: kill the model dimesion!
-            if Fyi.ndim>Y.ndim:
-                Fyi = marginalize_scores(Fyi,0)
-            
-            if return_estimator:
-                Fy[valid_idx, ...] = Fyi
+
+            if Fyi.ndim > Fy.ndim:
+                Fy = np.zeros(Fyi.shape[:-3]+Y.shape, dtype=X.dtype)
+                Fy[:,valid_idx,...]=Fyi
+            else:
+                Fy[valid_idx,...]=Fyi
             
             scores.append(self.audc_score(Fyi))
 
@@ -273,21 +273,28 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             self.fit(X, Y, **fit_params)
 
         self.sigma0_ = None
-        self.softmaxscale_ = None
-        if return_estimator:
-            # estimate prior for Fy using the cv'd Fy
-            #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
-            #print('Fy={}'.format(Fy.shape))
-            # N.B. need to match the filter used in the decoder..
-            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)  # per-trial
-            #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
-            self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
-            print('Sigma0 = {}'.format(self.sigma0_))
+        self.softmaxscale_ = 1
 
-            if calibrate_softmax:
-                # calibrate the softmax scale to give more valid probabilities
-                nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, priorsigma=(self.sigma0_,self.priorweight))
-                self.softmaxscale_ = calibrate_softmaxscale(nFy)
+        # estimate prior for Fy using the cv'd Fy
+        #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
+        #print('Fy={}'.format(Fy.shape))
+        # N.B. need to match the filter used in the decoder..
+        self.sigma0_, _ = estimate_Fy_noise_variance(Fy[0,...], priorsigma=None)  # per-model+trial
+        #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
+        self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
+        print('Sigma0 = {}'.format(self.sigma0_))
+
+        if calibrate_softmax:
+            # calibrate the softmax scale to give more valid probabilities
+            nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, nEpochCorrection=self.startup_correction, priorsigma=(self.sigma0_,self.priorweight))
+            self.softmaxscale_ = calibrate_softmaxscale(nFy)
+
+        if return_estimator and Fy.ndim>3:
+            # make into a Fy matrix
+            # N.B. DO NOT marginalize directly on per-sample scores -- as they are v.v.v. noisy!!
+            sFy = np.sum( Fy, -2, keepdims=True)
+            p = softmax( sFy*self.softmaxscale_, axis=0) # weight for each model
+            Fy = np.sum( Fy * p, axis=0)
 
         return {'estimator': Fy, 'test_score': scores}
 

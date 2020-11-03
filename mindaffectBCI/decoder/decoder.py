@@ -678,7 +678,7 @@ if  __name__ == "__main__":
 
 
     # # HACK: set debug attrs....
-    setattr(args,'prior_dataset','calibration_dataset_debug.pk')
+    #setattr(args,'prior_dataset','calibration_dataset_debug.pk')
     
     # hack testing arguments!
     #setattr(args,'prediction_offsets',(-1,0,1))
