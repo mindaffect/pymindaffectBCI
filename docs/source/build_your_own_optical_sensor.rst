@@ -64,3 +64,15 @@ The black wire should be connected to the *GND* gpio pin and the ground signal p
    .. image:: images/7.png
    .. image:: images/8.png
    .. image:: images/9.png
+
+Testing the functionality
+===============
+To quickly test the optical sesnor
+#. Connect the OpenBCI to your PC and power up the board
+#. Connect the Optical sensor to the OpenBCI board (as discussed above)
+#. run the MindaffectBCI program as usual
+#. start the MindaffectBCI presentation 
+#. perform calibration by placing the optical sesnor in front of the cued buttons
+#. go to prediction mode. The system should detect any button that is put in front of the optical sensor (as demonstarted below)
+
+   .. image:: images/optotest.gif
