@@ -12,3 +12,4 @@ All of our tutorials are interactive Jupyter Notbeooks. Clone our `repository <h
    simple_output_tutorial
    simple_presentation_tutorial
    simple_integration_tutorial
+   Build_your_own_optical_sensor
