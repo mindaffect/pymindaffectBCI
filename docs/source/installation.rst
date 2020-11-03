@@ -48,6 +48,21 @@ On Mac:
 
 Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`
 
+OpenBCI Cyton Latency Fix
+------------------------
+If you are using the OpenBCI Cyton with the included USB dongle, the default COM config has to be changed to fix latency issues.   
+The default config for the dongle driver sends very big data-packets relatively slowly. The fix is pretty simple, just drop the packet size.    
+To do so:  
+
+1. Open device-manager
+2. Find the dongle driver under the ports dropdown
+3. Go to properties for this com port
+4. Go to port-settings
+5. Select Advanced
+6. Reduce the recieve buffer to 1024 Bytes
+7. Reduce the latency timer to 6ms
+8. Apply and reboot
+
 FrameRate Check
 ---------------
 For rapid visual stimulation BCI (like the noisetagging BCI), it is very important that the visual flicker be displayed accurately.
