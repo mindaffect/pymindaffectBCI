@@ -3,7 +3,7 @@ Frequently Asked Questions
 
 
 
-How do I improve my reported calibration accuracy?
+How do I improve my calibration accuracy?
 --------------------------------------------------
 First, open the signal viewer by pressing 0 in the main menu to check the quality of the EEG signal. If the reported noise to signal ratio is high, try to reduce the noise as follows:  
 
