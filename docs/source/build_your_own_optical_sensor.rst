@@ -11,7 +11,7 @@ Equipment
 * 100k ohm resistor
 * photoresistor(LDR) 
    * GL5528 LDR or GL5537 LDR
-* 3v DC power supply of your choice
+* 3v DC power supply of your choice (any of the following options would work fine)
    * 2x AAA batteries in parallel
    * 3v GPIO pins of the OpenBCI board
    * 3v LiPo battery 
