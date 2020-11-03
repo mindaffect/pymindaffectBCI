@@ -7,6 +7,7 @@ Equipment
    * Soldering tin
    * Soldering mat
    * Wires with 3 different colors
+   * Shrink tubes
 * 100k ohm resistor
 * photoresistor(LDR) 
    * GL5528 LDR or GL5537 LDR
