@@ -19,15 +19,15 @@ Circuit design concept
 -----
 The circuit is a simple voltage divider, consisting of a number resistor and a LDR. The LDR’s resistance is a function of light exposure. The resistance is reciprocally proportional to light intensity. Thus, by exposing the LDR to any of the visual noise tags (e.g. the flickering buttons on the screen of your computer) The output voltage mimics the behavior of the flickering pattern.
 
-Steps to build the sensor:
+Steps to build the sensor
 -----
-#. Solder the resistor and the LDR together
+#. Solder the resistor and the LDR together.
  
 
 
 
 
-#. Solder the red, blue and black wires as demonstrated in the following picture
+#. Solder the red, blue and black wires as demonstrated below.
 
 #. Add shrink tubes at the soldering locations and apply heat to insulate the connections.
 #. You have yourself an optical sensor!
