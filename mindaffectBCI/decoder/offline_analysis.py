@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
 savefile = '~/Desktop/khash/mindaffectBCI*.txt'
+savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
 #savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'
@@ -24,7 +25,7 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 # train *only* on 1st 10 trials
 score, dc, Fy, clsfr = debug_test_dataset(X, Y, coords,
-                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re','anyonset'), rank=1, model='cca', ranks=(1,2,3,5), prediction_offsets=(-1,0,1))
+                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re','anyonset'), rank=1, model='cca', ranks=(1,2,3,5), prediction_offsets=(0,1,2))
 
 #score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
 #                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))

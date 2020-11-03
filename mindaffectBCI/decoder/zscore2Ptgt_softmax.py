@@ -132,7 +132,7 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
+def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 

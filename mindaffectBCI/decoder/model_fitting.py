@@ -206,9 +206,12 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return BaseSequence2Sequence.audc_score(Fy)
 
     @staticmethod
-    def audc_score(Fy):
+    def audc_score(Fy,marginalizemodels=True):
         '''compute area under decoding curve score from Fy, *assuming* Fy[:,:,0] is the *true* classes score'''
         sFy = np.cumsum(Fy, axis=-2) # (nM, nTrl, nSamp, nY)
+        if marginalizemodels and sFy.ndim>3 and sFy.shape[0]>1 :
+            # marginalize over models
+            sFy = marginalize_scores(sFy,axis=0) # (nTrl,nSamp,nY)
         Yi  = np.argmax(sFy, axis=-1) # output for every model*trial*sample
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
@@ -260,8 +263,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
                 valid_idx = slice(X.shape[0])
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
 
-            if Fyi.ndim > Fy.ndim:
-                Fy = np.zeros(Fyi.shape[:-3]+Y.shape, dtype=X.dtype)
+            if i==0 and Fyi.ndim > Fy.ndim: # reshape Fy to include the extra model dim
+                Fy = np.zeros(Fyi.shape[:-3]+Y.shape, dtype=X.dtype)       
+            if Fyi.ndim > Y.ndim:
                 Fy[:,valid_idx,...]=Fyi
             else:
                 Fy[valid_idx,...]=Fyi
@@ -279,7 +283,10 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
         #print('Fy={}'.format(Fy.shape))
         # N.B. need to match the filter used in the decoder..
-        self.sigma0_, _ = estimate_Fy_noise_variance(Fy[0,...], priorsigma=None)  # per-model+trial
+        if Fy.ndim>3:
+            self.sigma0_, _ = estimate_Fy_noise_variance(Fy[0,...], priorsigma=None)  # per-model+trial
+        else:
+            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
         #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
         self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
         print('Sigma0 = {}'.format(self.sigma0_))
@@ -289,14 +296,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, nEpochCorrection=self.startup_correction, priorsigma=(self.sigma0_,self.priorweight))
             self.softmaxscale_ = calibrate_softmaxscale(nFy)
 
+        Fy_raw = Fy
         if return_estimator and Fy.ndim>3:
             # make into a Fy matrix
             # N.B. DO NOT marginalize directly on per-sample scores -- as they are v.v.v. noisy!!
             sFy = np.sum( Fy, -2, keepdims=True)
             p = softmax( sFy*self.softmaxscale_, axis=0) # weight for each model
+            print("model wght= {}".format(np.mean(p.reshape((p.shape[0],-1)),axis=1)))
             Fy = np.sum( Fy * p, axis=0)
 
-        return {'estimator': Fy, 'test_score': scores}
+        return dict(estimator=Fy, rawestimator=Fy_raw, test_score=scores)
 
 
     def plot_model(self, **kwargs):
@@ -314,14 +323,7 @@ class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
-        self.rank = rank
-        self.reg  = reg
-        self.rcond= rcond
-        self.badEpThresh = badEpThresh
-        self.symetric = symetric
-        self.center = center
-        self.CCA = CCA
-
+        self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
     def fit(self, X, Y, stimTimes=None):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, Y)'''

@@ -5,7 +5,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
                           bwdAccumulate=False,
-                          priorsigma=None):
+                          priorsigma=None, normSum=False):
     '''
     normalize the raw output scores to feed into the Perr computation
 
@@ -31,7 +31,6 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     Copyright (c) MindAffect B.V. 2018    
     '''
-    normSum = True
     if Fy is None or Fy.size == 0:
         ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
         return ssFy, None, 0, None, None
@@ -51,7 +50,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     maxnEp = np.max(nEp.ravel())
 
     if maxnEp < 1: # guard no data to analyse
-        ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
+        ssFy = np.zeros(Fyshape[:-2]+(1,Fyshape[-1]))
         return ssFy, None, 0, None, None
 
     # estimate the points at which we may make a decision
@@ -110,7 +109,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     sigma2, Nsigma = estimate_Fy_noise_variance_2(Fy, decisIdx=decisIdx, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
-    if (normSum):
+    if normSum:
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
         # TODO: use N= number non-zero entries rather than just length..
         sFy_scale = np.sqrt(sigma2*np.maximum(.01,N)) # [ nDecis x nTrl ]
@@ -129,7 +128,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # from: https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
     # E[sigma]=c4(n)*sigma -> sigma = E[sigma]/c4(n)
     # where cf is the correction for the sampling bias in the estimator
-    if nEpochCorrection is not None and nEpochCorrection > 0 :
+    if False and nEpochCorrection is not None and nEpochCorrection > 0 :
         cf = c4(N/np.maximum(1, nEpochCorrection)) 
         #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
         # include the multiple comparsiosn correction factors
@@ -344,7 +343,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
 #@function
 def c4(n):
     # correction factor for bias in the standard deviation  
-# from: https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
+    # from: https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
     n = np.maximum(1.0, n)
     cf = 1 - 1 / 4*(n ** - 1) - 7 / 32*(n ** - 2) - 19 / 128*(n ** - 3)
     return cf
@@ -426,7 +425,15 @@ def testcase():
     oFy=Fy.copy()
 
     print("Fy={}".format(Fy.shape))
-    
+
+    priorsigma=(1,1e6)
+    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
+    print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
+    #%matplotlib
+    plt.figure(1)
+    plot_normalizedScores(oFy[0,...],ssFy[0,:,:],scale_sFy[0,:],decisIdx)
+
+
     # visualize all trials true-target normalized scores
     ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy)
     print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
