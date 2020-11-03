@@ -1,11 +1,32 @@
 Installation
 =========================
+
 Requirements
 ------------
 - Python (3.x) installation (Suggested: Anaconda_ ) 
-- OpenBCI Cyton / Ganglion (supported) amplifier
+- EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion )
 
 .. _Anaconda: https://docs.anaconda.com/anaconda/install/
+
+
+Recommended Setup
+*****************
+The mindaffcetBCI can be used with various EEG acquisition and presentation devices and is therefore not limited to our recommended setup. 
+It is however tested on the following supported hardware:  
+  
+- Amplifier: OpenBCI Cyton 
+- Headset:  The Mindaffect Headset (Find the files to 3d print your own on our `Github <https://github.com/mindaffect/Headset>`_)
+- Windows 10 machine
+
+OS Optimization
+***************************
+For rapid visual stimulation BCI (like the MindAffect BCI), it is very important that the visual flicker is displayed accurately.
+From our testing we found that the following things help in improving timing accuracy:  
+
+- For windows 10: Disable full-screen optimization for your Python executable as explained `here <https://www.tenforums.com/tutorials/104080-enable-disable-fullscreen-optimizations-windows-10-a.html>`_.
+- For laptop users: make sure that your charger is plugged in and your machine is in *power mode: Best performance* (or a similar). `How to change power mode <https://support.microsoft.com/en-us/windows/change-the-power-mode-for-your-windows-10-pc-c2aff038-22c9-f46d-5ca0-78696fdf2de8>`_.
+- Set you screen to maximum brightness and disable *Night Light*, *f.lux*, or other applications that change the colour temperature of your screen. 
+ 
 
 Installing the package
 ----------------------
@@ -14,8 +35,12 @@ To install the code:
   1. Clone or download the pymindaffectBCI repository::
 
        git clone https://github.com/mindaffect/pymindaffectBCI
-
-  2. Install the necessary bits to your local python path:
+  
+  2. Switch to the open_source branch::
+		
+		git checkout open_source
+			
+  3. Install the necessary bits to your local python path:
 
     1. change to the directory where you cloned the repository.
     2. Add this module to the python path, and install dependencies::
