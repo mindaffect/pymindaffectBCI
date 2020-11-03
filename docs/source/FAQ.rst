@@ -40,4 +40,15 @@ I'm getting an  :code:`Acq did not start correctly` and/or a :code:`brainflow.bo
 
 How do I run the BCI in full-screen mode?
 -----------------------------------------
-To run the BCI in full-screen mode set the :code:`fullscreen` parameter in the :code:`onlin_bci.json` configuration file --or any other :code:`.json` config file you are currently using-- to :code:`true`. 
+To run the BCI in full-screen mode set the :code:`fullscreen` parameter in the :code:`onlin_bci.json` configuration file --or in any other :code:`.json` config file you are currently using-- to :code:`true`. 
+
+Can I use the mindaffectBCI without an EEG acquisition device?
+--------------------------------------------------------------
+In some scenarios it is useful to run the BCI without having to connect an amplifier that's streaming real brain data (e.g. debugging/developing other components of the BCI). 
+To run the full BCI stack with a fake data stream, launch it with the :code:`debug.json` config file::
+
+	python -m mindaffectBCI.online_bci --config_file debug.json
+	
+When using the fake data stream, calibration and cued prediction performance will be 100%. In Free Typing mode selections are made randomly. 
+
+ 
