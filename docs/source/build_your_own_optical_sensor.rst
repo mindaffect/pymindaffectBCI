@@ -57,6 +57,6 @@ Then the blue wire should be connected to
    * The upper pin of ganglion channel of choice
 
 The black wire should be connected to the *GND* gpio pin & ground signal pin (in bipolar mode, the lower pin of ganglion and the upper pin of cyton)
-   .. image:: images/7.jpg
-   .. image:: images/8.jpg
-   .. image:: images/9.jpg
+   .. image:: images/7.PNG
+   .. image:: images/8.PNG
+   .. image:: images/9.PNG
