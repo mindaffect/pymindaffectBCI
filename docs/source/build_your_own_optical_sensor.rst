@@ -36,3 +36,21 @@ Steps to build the sensor
 #. You have yourself an optical sensor!
 
    .. image:: images/5.PNG
+   
+How to use this sensor with an OpenBCI board
+-----
+First, the sensor must be connected to the OpenBCI board as described below
+* Red wire --> vDD OpenBCI board
+* Blue wire --> signal pin of openbci. You can use any free channel as your signal pin
+   * Channels 1-8 for the openBCI cyton board
+   * Channels 1-4 for the openBCI ganglion board
+set the board to bipolar mode
+* For the cyton board, go to *pymindaffectBCI/mindaffectBCI* directory and open the online_bci.json file. Next, enable trigger check by adding the highlighted line. (don’t forget to save the file afterwards)
+
+* For the ganglion board, follow this guide and set the switches to **DOWN** position.
+
+Then the blue wire should be connected to 
+* The lower pin of cyton channel of choice (by default this is set to channel 8)
+* The upper pin of ganglion channel of choice
+
+The black wire is connected to the GND gpio pin & ground signal pin (in bipolar mode, the lower pin of ganglion and the upper pin of cyton)
