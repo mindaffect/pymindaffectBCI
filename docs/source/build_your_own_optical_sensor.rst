@@ -41,10 +41,10 @@ How to use this sensor with an OpenBCI board
 -----
 First, the sensor must be connected to the OpenBCI board as described below.
 
-* Red wire --> vDD OpenBCI board
-* Blue wire --> signal pin of openbci. You can use any free channel as your signal pin
-   * Channels 1-8 for the openBCI cyton board
-   * Channels 1-4 for the openBCI ganglion board
+   * Red wire --> vDD OpenBCI board.
+   * Blue wire --> signal pin of openbci. You can use any free channel as your signal pin.
+   * Channels 1-8 for the openBCI cyton board.
+   * Channels 1-4 for the openBCI ganglion board.
    
 set the board to bipolar mode
 
@@ -52,6 +52,7 @@ set the board to bipolar mode
    * For the ganglion board, follow this guide and set the switches to **DOWN** position.
 
 Then the blue wire should be connected to 
+
    * The lower pin of cyton channel of choice (by default this is set to channel 8)
    * The upper pin of ganglion channel of choice
 
