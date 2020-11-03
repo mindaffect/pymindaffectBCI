@@ -16,7 +16,7 @@ Second, make sure that you have followed our OS Optimization instructions: :ref:
 If the issue still remains you may have to dive deeper in the timing stability of your system. 
 To do this we provide tutorials on:
 
-- Building an Opto-sensor
+- :ref:`optobuildRef`
 - Building a trigger circuit
 - Analysing your opto and trigger data
 
@@ -26,7 +26,7 @@ My calibration accuracy is fine but prediction mode does not work.
 - Run the BCI in always full-screen mode: :ref:`fullscreenRef`
 - Inconsistent frame timing between calibration and prediction can cause this issue. To check the frametime stability of your system follow our tutorials on:
 
-	- Building an Opto-sensor
+	- :ref:`optobuildRef`
 	- Building a trigger circuit
 	- Analysing your opto and trigger data
 
