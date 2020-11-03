@@ -18,8 +18,10 @@ It is however tested on the following supported hardware:
 - Headset:  The Mindaffect Headset (Find the files to 3d print your own on our `Github <https://github.com/mindaffect/Headset>`_)
 - Windows 10 machine
 
+.. _osoptRef:
+
 OS Optimization
-***************************
+****************
 For rapid visual stimulation BCI (like the MindAffect BCI), it is very important that the visual flicker is displayed accurately.
 From our testing we found that the following things help in improving timing accuracy:  
 
@@ -46,6 +48,8 @@ To install the code:
     2. Add this module to the python path, and install dependencies::
    
          pip install -e .
+
+.. _COMref:
 
 COM port
 --------

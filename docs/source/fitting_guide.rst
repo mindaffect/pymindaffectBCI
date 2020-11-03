@@ -1,7 +1,9 @@
-Setup & fitting
+.. _fittingref:
+
+Set-up & fitting
 ===============
 
-Setup
+Set-up
 -----
 To prepare the headset:
 
