@@ -15,6 +15,7 @@ This page contains the documentation of the open source Brain Computer Interface
    OnlineBCI_quickstart
    tutorials
    modules
+   FAQ
    
 .. toctree::
    :maxdepth: 2
