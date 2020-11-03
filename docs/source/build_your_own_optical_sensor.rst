@@ -23,11 +23,12 @@ Steps to build the sensor
 -----
 #. Solder the resistor and the LDR together.
  
-
+.. image:: images/1.png
 
 
 
 #. Solder the red, blue and black wires as demonstrated below.
-
+.. image:: images/2.png
 #. Add shrink tubes at the soldering locations and apply heat to insulate the connections.
 #. You have yourself an optical sensor!
+.. image:: images/3.png
