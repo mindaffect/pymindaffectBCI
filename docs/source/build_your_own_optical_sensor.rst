@@ -66,7 +66,7 @@ The black wire should be connected to the *GND* gpio pin and the ground signal p
    .. image:: images/9.png
 
 Testing the functionality
-===============
+-----
 To quickly test the optical sesnor
    #. Connect the OpenBCI to your PC and power up the board
    #. Connect the Optical sensor to the OpenBCI board (as discussed above)
