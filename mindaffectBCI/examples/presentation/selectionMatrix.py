@@ -852,10 +852,10 @@ class SelectionGridScreen(Screen):
             logo = search_directories_for_file(logo,os.path.join(os.path.dirname(__file__),'..','..'))
             logo = pyglet.image.load(logo)
             logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-            self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-12) # sprite a window top-right
+            self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16) # sprite a window top-right
         self.logo.batch = self.batch
         self.logo.group = self.foreground
-        self.logo.update(x=window.width,  y=window.height,
+        self.logo.update(x=window.width,  y=window.height-16,
                          scale_x=window.width*.1/logo.width, 
                          scale_y=window.height*.1/logo.height)
 
