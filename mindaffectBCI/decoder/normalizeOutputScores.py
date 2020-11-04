@@ -5,7 +5,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
                           bwdAccumulate=False,
-                          priorsigma=None, normSum=False):
+                          priorsigma=None, normSum=True):
     '''
     normalize the raw output scores to feed into the Perr computation
 
@@ -128,7 +128,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # from: https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
     # E[sigma]=c4(n)*sigma -> sigma = E[sigma]/c4(n)
     # where cf is the correction for the sampling bias in the estimator
-    if False and nEpochCorrection is not None and nEpochCorrection > 0 :
+    if nEpochCorrection is not None and nEpochCorrection > 0 :
         cf = c4(N/np.maximum(1, nEpochCorrection)) 
         #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
         # include the multiple comparsiosn correction factors

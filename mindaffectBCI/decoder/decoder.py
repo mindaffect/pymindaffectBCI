@@ -186,7 +186,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
         ui (UtopiaDataInterface): buffered interface to the data and stimulus streams
         clsfr (BaseSequence2Sequence): the classifier to use to fit a model to the calibration data
         cv (int, optional): the number of cross-validation folds to use for model generalization performance estimation. Defaults to 2.
-        previous_dataset ([type], optional): data-set from a previous calibration run, used to accumulate data over subsequent calibrations. Defaults to None.
+        prior_dataset ([type], optional): data-set from a previous calibration run, used to accumulate data over subsequent calibrations. Defaults to None.
         ranks (tuple, optional): a list of model ranks to optimize as hyperparameters. Defaults to (1,2,3,5).
 
     Returns:
@@ -606,7 +606,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, previous_dataset=prior_dataset)
+            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:

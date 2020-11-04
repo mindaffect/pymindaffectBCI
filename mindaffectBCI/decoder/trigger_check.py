@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import glob
 
 
-def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(.1,45,'bandpass'), fs_out=250, trntrl=5, trnsamp=6000, max_samp=6000, **kwargs):
+def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(.1,45,'bandpass'), fs_out=250, trntrl=slice(10), trnsamp=6000, max_samp=6000, plot_model=True, plot_trial=True, plot_epoch_lines=False, **kwargs):
     """make a set of visualizations of the stimulus->measurement time-lock
 
     Args:
@@ -39,30 +39,13 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
     print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:-1]]+['output'],Y.shape))
 
-    plt.figure(1)
-    plt.clf()
-    for i in range(min(X.shape[0],3)):
-        plt.subplot(3,1,i+1)
-        #plt.imshow(X[0,...].T,aspect='auto',label='X',extent=[0,X.shape[-2],0,X.shape[-1]]);
-        for c in range(X.shape[-1]):
-            tmp = X[i,...,c]
-            tmp = (tmp - np.mean(tmp.ravel())) / max(1,np.std(tmp.ravel()))
-            plt.plot(tmp+2*c,label='X{}'.format(c))
-        plt.plot(Y[i,...,0],'k',label='Y')
-        plt.title('Trl {}'.format(i))
-    plt.legend()
-    plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
-    plt.show(block=False)
-    plt.pause(.1) # allow full redraw
-
-    ax, wXe, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=max_samp, trntrl=trntrl, **kwargs)
-    times = (np.arange(wXe.shape[-1])+offset_ms*fs/1000)*1000/fs
-    plt.show(block=False)
+    ax, clsfr, wX, wXeY, Y_true = triggerPlot(X, Y, fs, evtlabs=evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=max_samp, trntrl=trntrl, **kwargs)
+    times = (np.arange(wXeY.shape[-1])+offset_ms*fs/1000)*1000/fs
 
     # over-plot the information on the timestamp errors
     # get a samp#, timestamp dataset
-    trl_ts = coords[0]['trl_ts'][:,:wXe.shape[1]]   # (nTrl, nSamp-tau)
-    trl_idx = coords[0]['trl_idx'][:,:wXe.shape[1]] # (nTrl, nSamp-tau)
+    trl_ts = coords[0]['trl_ts'][:,:Y_true.shape[1]]   # (nTrl, nSamp-tau)
+    trl_idx = coords[0]['trl_idx'][:,:Y_true.shape[1]] # (nTrl, nSamp-tau)
     samp2ms = np.median((np.diff(trl_ts,axis=-1)/np.maximum(1,np.diff(trl_idx,axis=-1))).ravel())
     samp2ms = 1000/fs #samp2ms*.99
     print("samp2ms={}".format(samp2ms))
@@ -86,18 +69,45 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     # allow full re-draw
     plt.pause(.5)
 
-    # now plot as lines
-    plt.figure(5)
-    tmp = wXeY.reshape((-1,wXeY.shape[-1]))[:100,:]
-    tmp = tmp - np.mean(tmp,-1,keepdims=True)
-    tmp = tmp / np.std(tmp.ravel())
-    plt.plot(times, tmp.T + np.arange(tmp.shape[0])[np.newaxis,:])
-    plt.title('1st {} {} evt trigger epochs time-series'.format(tmp.shape[0],evtlabs[0]))
+    if plot_trial:
+        plt.figure(2)
+        plt.clf()
+        for i in range(min(X.shape[0],3)):
+            plt.subplot(3,1,i+1)
+            #plt.imshow(X[0,...].T,aspect='auto',label='X',extent=[0,X.shape[-2],0,X.shape[-1]]);
+            for c in range(X.shape[-1]):
+                tmp = X[i,...,c]
+                tmp = (tmp - np.mean(tmp.ravel())) / max(1,np.std(tmp.ravel()))
+                plt.plot(tmp+2*c,label='X{}'.format(c))
 
-    # do a time-stamp check.
-    from mindaffectBCI.decoder.timestamp_check import timestampPlot
-    plt.figure(6)
-    timestampPlot(filename)
+            tmp = wX[i,...]
+            tmp = (tmp - np.mean(tmp.ravel())) / max(.01,np.std(tmp.ravel()))
+            plt.plot(tmp+2*(X.shape[-1]+1),label='wX')
+
+            plt.plot(Y[i,...,0],'k',label='Y')
+
+            plt.title('Trl {}'.format(i))
+        plt.legend()
+        plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
+        plt.show(block=False)
+        plt.pause(.1) # allow full redraw
+
+    if plot_model:
+        # model in a new figure
+        plt.figure(3)
+        clsfr.plot_model(fs=fs)
+        plt.show(block=False)
+        # allow full re-draw
+        plt.pause(.5)
+
+    # now plot as lines
+    if plot_epoch_lines:
+        plt.figure(4)
+        tmp = wXeY.reshape((-1,wXeY.shape[-1]))[:100,:]
+        tmp = tmp - np.mean(tmp,-1,keepdims=True)
+        tmp = tmp / np.std(tmp.ravel())
+        plt.plot(times, tmp.T + np.arange(tmp.shape[0])[np.newaxis,:])
+        plt.title('1st {} {} evt trigger epochs time-series'.format(tmp.shape[0],evtlabs[0]))
 
 def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, max_samp=10000, trntrl=None, plot_model=True, plot_trial=True, ax=None, **kwargs):
     if X.ndim < 3 : 
@@ -137,26 +147,6 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
     offset = int(fs*offset_ms/1000.0)
     times = (np.arange(tau)+offset)*1000/fs
     wX = np.einsum("d,Ttd->Tt", W, X) # (nTrl, nSamp) apply the spatial filter
-
-    if plot_trial:
-        plt.figure()
-        # add as line to the trl plot:
-        for i in range(min(X.shape[0],3)):
-            plt.subplot(3,1,i+1)
-            tmp = wX[i,...]
-            tmp = (tmp - np.mean(tmp.ravel())) / max(.01,np.std(tmp.ravel()))
-            plt.plot(tmp+2*(X.shape[-1]+1),label='wX')
-        plt.legend()
-
-    if plot_model:
-        # model in a new figure
-        plt.figure()
-        clsfr.plot_model(fs=fs)
-        plt.show(block=False)
-        # allow full re-draw
-        plt.pause(.5)
-        plt.figure(3)
-
     # slice out the responses for the trigger stimulus
     print('slicing data')
     wXe = window_axis(wX, winsz=tau, axis=-1) # (nTrl, nSamp-tau, tau)
@@ -208,7 +198,7 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
     #     samp_miss = samp_miss[...,:X.shape[1]]
     #     samp_miss = samp_miss[Y_true>0]
     #     plt.plot(samp_miss*samp2ms + 100,'k-')
-    return ax, wXe, wXeY, Y_true
+    return ax, clsfr, wX, wXeY, Y_true
 
 def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
     """online continuously updating trigger check plot
@@ -278,7 +268,8 @@ if __name__=="__main__":
     # load the most recent matching file
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
     #filename='~/Downloads/mindaffectBCI*cyton*.txt'
-    filename='~/Desktop/mark/mindaffectBCI_*1239.txt'
+    #filename='~/Desktop/mark/mindaffectBCI_*1239.txt'
+    filename='-'
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI*.txt'
 
     if filename is None:
@@ -288,7 +279,12 @@ if __name__=="__main__":
     else: # offline
 
         # trigger/opto-data
-        #trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
+        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
 
         # brain data, 10-cal trials
-        trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
+        #trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))
+
+        # do a time-stamp check.
+        from mindaffectBCI.decoder.timestamp_check import timestampPlot
+        plt.figure(6)
+        timestampPlot(filename)

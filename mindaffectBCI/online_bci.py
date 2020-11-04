@@ -3,6 +3,8 @@ import signal
 from multiprocessing import Process
 import subprocess 
 from time import sleep
+import json
+import argparse
 
 def startHubProcess(label):
     """Start the process to manage the central utopia-hub
@@ -153,7 +155,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     for retries in range(10):
         #--------------------------- HUB ------------------------------
         # start the utopia-hub process
-        if hub_proc is None or not hub_proc.is_alive():
+        if hub_proc is None or not hub_proc.poll() is None:
             hub_proc = startHubProcess(label)
 
         #---------------------------ACQUISATION ------------------------------
@@ -184,11 +186,14 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
 
     if hub_proc is not None and not hub_proc.poll() is None:
         print("Hub didn't start correctly!")
+        shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Hub didn't start correctly!")
     if acquisation_proc is not None and not acquisation_proc.is_alive():
         print("Acq didn't start correctly!")
+        shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Acquisation didn't start correctly!")
     if decoder_proc is not None and not decoder_proc.is_alive():
+        shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
@@ -225,6 +230,10 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
 
     #--------------------------- SHUTDOWN ------------------------------
     # shutdown the background processes
+    shutdown(hub_proc, acquisation_proc, decoder_proc)
+
+
+def shutdown(hub,acquisation,decoder):    
     try: 
         decoder.terminate()
         decoder.join()
@@ -236,13 +245,39 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
     except:
         pass
     
-    hub_proc.terminate()
-    hub_proc.wait()
+    hub.terminate()
+    hub.wait()
 #    if os.name == 'nt': # hard kill
 #        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_proc.pid))
 #    else: # hard kill
 #        os.kill(hub_proc.pid, signal.SIGTERM)
     #print('exit online_bci')
+
+
+def load_config(config_file):
+    """load an online-bci configuration from a json file
+
+    Args:
+        config_file ([str, file-like]): the file to load the configuration from. 
+    """    
+    from mindaffectBCI.decoder.utils import search_directories_for_file
+    if isinstance(config_file,str):
+        # search for the file in py-dir if not in CWD
+        if not os.path.splitext(config_file)[1] == '.json':
+            config_file = config_file + '.json'
+        config_file = search_directories_for_file(config_file,os.path.dirname(os.path.abspath(__file__)))
+        with open(config_file,'r') as f:
+            config = json.load(f)
+    else:
+        config = json.load(f)
+
+    # set the label from the config file
+    if 'label' not in config or config['label'] is None:
+        # get filename without path or ext
+        config['label'] = os.path.splitext(os.path.basename(config_file))[0]
+        
+    return config
+
 
 def parse_args():
     """ load settings from the json config-file, parse command line arguments, and merge the two sets of settings.
@@ -264,21 +299,9 @@ def parse_args():
 
     args = parser.parse_args()
 
+    # load config-file
     if args.config_file is not None:
-        config_file = args.config_file
-        # search for the file in py-dir if not in CWD
-        import os.path
-        if not os.path.isfile(config_file) and os.path.isfile(config_file+'.json'):
-                config_file = config_file +'.json'
-        if not os.path.isfile(config_file):
-            pydir = os.path.dirname(os.path.abspath(__file__))
-            if os.path.isfile(os.path.join(pydir,config_file)):
-                config_file = os.path.join(pydir, config_file)
-            elif os.path.isfile(os.path.join(pydir,config_file+'.json')):
-                config_file = os.path.join(pydir, config_file+'.json')
-
-        with open(config_file,'r') as f:
-            config = json.load(f)
+        config = load_config(args.config_file)
 
         # MERGE the config-file parameters with the command-line overrides
         for name in config: # config file parameter
@@ -292,12 +315,6 @@ def parse_args():
                 else: # otherwise just override
                     val = newval
             setattr(args,name,val)
-        
-        # set label to config file name if label is not set
-        if args.label is None:
-            # get filename without path or ext
-            tmp = os.path.splitext(os.path.basename(config_file))[0]
-            setattr(args,'label',tmp)
 
     return args
 

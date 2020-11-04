@@ -158,7 +158,7 @@ class ssdpDiscover :
                 # build discovery message for this service/group
                 self.msearchMessage=self.makeDiscoveryMessage(self.ssdpgroup, self.servicetype, querytimeout)
 
-                print("Sending query message:\n%s"%(self.msearchMessage))
+                #print("Sending query message:\n%s"%(self.msearchMessage))
                 try:
                     self.sock.sendto(self.msearchMessage, self.ssdpgroup)
                     self.queryt = time.time()
@@ -176,26 +176,26 @@ class ssdpDiscover :
         # wait for responses to our query
         return responses
 
-    def wait_msearch_response(self,timeout):
+    def wait_msearch_response(self,timeout,verb=0):
         self.sock.settimeout(timeout)
-        print("Waiting responses")
+        if verb>0 : print("Waiting responses")
         try:
             rsp,addr=self.sock.recvfrom(8192)
         except socket.timeout:
-            print("Socket timeout")
+            if verb>0 : print("Socket timeout")
             return (None,None)
         except socket.error as ex :
             print("Socket error" + str(ex)) 
             return (None,None)
 
         if rsp == self.msearchMessage:
-            print("Response was query message! {} {}".format(addr,rsp))
+            if verb>0 : print("Response was query message! {} {}".format(addr,rsp))
             return (None,None)
 
 
         # got a response, parse it...           
         rsp=rsp.decode('utf-8')
-        print("Got response from : %s\n%s\n"%(addr,rsp))
+        if verb>0 : print("Got response from : %s\n%s\n"%(addr,rsp))
 
         # guard for recieving our own query message!
         #if "M-SEARCH" in rsp:
@@ -203,7 +203,7 @@ class ssdpDiscover :
         # does the response contain servertype, if so then we match
         location=None
         if self.servicetype is None or self.servicetype in rsp :
-            print("Response matches server type: %s"%(self.servicetype))
+            if verb>0 : print("Response matches server type: %s"%(self.servicetype))
             # use the message source address as default location
             location=addr[0] if hasattr(addr,'__iter__') else addr 
             # extract the location or IP from the message
@@ -217,10 +217,10 @@ class ssdpDiscover :
                         location=location[7:] # strip http
                     if '/' in location :
                         location=location[:location.index('/')] # strip desc.xml
-                    print("Got location: {}".format(location))
+                    if verb>-1: print("Got location: {}".format(location))
                     break # done with self response
             # add to the list of possible servers
-            print("Loc added to response list: {}".format(location))
+            if verb>0 : print("Loc added to response list: {}".format(location))
         return (location,rsp)
 
 

@@ -1,5 +1,6 @@
 import subprocess
 import os
+from time import sleep
 
 def run(label=''):
     pydir = os.path.dirname(os.path.abspath(__file__)) # mindaffectBCI/decoder/startUtopiaHub.py
@@ -24,7 +25,7 @@ def run(label=''):
     print("Running command: {}".format(cmd+args))
     utopiaHub = subprocess.Popen(cmd + args, cwd=bindir, shell=False)#,
                                #stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print("Result: {}".format(utopiaHub.stdout))
+    sleep(1)
     return utopiaHub
 
 if __name__=="__main__":

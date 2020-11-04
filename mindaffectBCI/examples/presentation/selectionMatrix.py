@@ -89,8 +89,6 @@ class InstructionScreen(Screen):
         self.logo.update(scale_x=window.width*.1/logo.width, 
                          scale_y=window.height*.1/logo.height)
 
-        print("Instruct (%dms): %s"%(duration, text))
-
     def reset(self):
         self.isRunning = False
         self.isDone = False
@@ -147,7 +145,7 @@ class MenuScreen(InstructionScreen):
         self.menu_text = text
         self.valid_keys = valid_keys
         self.key_press = None
-        print("Menu")
+        #print("Menu")
 
     def set_message(self,message:str):
         self.set_text(self.menu_text+'\n\n\n'+message)
@@ -1407,6 +1405,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         pyglet.clock.schedule(draw)
     # mainloop
     pyglet.app.run()
+    pyglet.app.EventLoop().exit()
+    window.set_visible(False)
 
 
 if __name__ == "__main__":
