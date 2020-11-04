@@ -81,7 +81,8 @@ class InstructionScreen(Screen):
                                                width=int(window.width*.8))
         self.set_text(text)
         if isinstance(logo,str): # filename to load
-            logo = search_directories_for_file(logo,os.path.join(os.path.dirname(__file__),'..','..'))
+            logo = search_directories_for_file(logo,os.path.dirname(os.path.abspath(__file__)),
+                                               os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..'))
             logo = pyglet.image.load(logo)
         logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
         self.logo = pyglet.sprite.Sprite(logo,window.width,window.height)
@@ -849,7 +850,7 @@ class SelectionGridScreen(Screen):
         
         # add a logo box
         if isinstance(logo,str): # filename to load
-            logo = search_directories_for_file(logo,os.path.join(os.path.dirname(__file__),'..','..'))
+            logo = search_directories_for_file(logo,os.path.dirname(__file__),os.path.join(os.path.dirname(__file__),'..','..','..'))
             logo = pyglet.image.load(logo)
             logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
             self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16) # sprite a window top-right
@@ -1329,7 +1330,7 @@ def load_symbols(fn):
 
     # search in likely directories for the file, cwd, pydir, projectroot 
     fn = search_directories_for_file(fn,os.path.dirname(os.path.abspath(__file__)),
-                                        os.path.join(os.path.dirname(os.path.abspath(__file__),'..','..')))
+                                        os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
 
     with open(fn,'r') as f:
         for line in f:

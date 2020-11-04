@@ -22,8 +22,8 @@ def run(label=''):
 
     # run the command, waiting until it has finished
     print("Running command: {}".format(cmd+args))
-    utopiaHub = subprocess.run(cmd + args, cwd=bindir, shell=False,
-                               stdin=subprocess.DEVNULL)#, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    utopiaHub = subprocess.Popen(cmd + args, cwd=bindir, shell=False)#,
+                               #stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print("Result: {}".format(utopiaHub.stdout))
     return utopiaHub
 

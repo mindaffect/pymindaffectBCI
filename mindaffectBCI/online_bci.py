@@ -1,6 +1,7 @@
 import os
 import signal
 from multiprocessing import Process
+import subprocess 
 from time import sleep
 
 def startHubProcess(label):
@@ -16,8 +17,9 @@ def startHubProcess(label):
         hub (Process): sub-process for managing the started acquisation driver
     """    
     from mindaffectBCI.decoder import startUtopiaHub
-    hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
-    hub.start()
+    hub = startUtopiaHub.run(label=label)
+    #hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
+    #hub.start()
     sleep(1)
     return hub
 
@@ -87,6 +89,11 @@ def startAcquisationProcess(label,acquisation,acq_args):
     elif acquisation == 'lsl': # lsl eeg input stream
         from mindaffectBCI.examples.acquisation import utopia_lsl
         acquisation = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
+        acquisation.start()
+
+    elif acquisation == 'brainproducts': # brainproducts eeg input stream
+        from mindaffectBCI.examples.acquisation import utopia_brainproducts
+        acquisation = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
         acquisation.start()
 
     else:
@@ -161,7 +168,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         # terminate if all started successfully
         # check all started up and running..
         component_failed=False
-        if hub_proc is not None and not hub_proc.is_alive():
+        if hub_proc is not None and not hub_proc.poll() is None:
             print("Hub didn't start correctly!")
             component_failed=True
         if acquisation_proc is not None and not acquisation_proc.is_alive():
@@ -175,7 +182,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         if not component_failed:
             break
 
-    if hub_proc is not None and not hub_proc.is_alive():
+    if hub_proc is not None and not hub_proc.poll() is None:
         print("Hub didn't start correctly!")
         raise ValueError("Hub didn't start correctly!")
     if acquisation_proc is not None and not acquisation_proc.is_alive():
@@ -192,11 +199,19 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
         from mindaffectBCI.examples.presentation import selectionMatrix
-        selectionMatrix.run(**presentation_args)
-        
+        try:
+            selectionMatrix.run(**presentation_args)
+        except:
+            import traceback
+            traceback.print_exc()
+
     elif presentation == 'none':
         from mindaffectBCI.decoder.sigViewer import sigViewer
-        sigViewer()
+        try:
+            sigViewer()
+        except:
+            import traceback
+            traceback.print_exc()
 
     else:
         try:
@@ -222,9 +237,11 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         pass
     
     hub_proc.terminate()
-    hub_proc.join()
-    #print('killing hub')
-    #os.kill(hub.pid, signal.SIGTERM)
+    hub_proc.wait()
+#    if os.name == 'nt': # hard kill
+#        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_proc.pid))
+#    else: # hard kill
+#        os.kill(hub_proc.pid, signal.SIGTERM)
     #print('exit online_bci')
 
 def parse_args():
@@ -237,7 +254,7 @@ def parse_args():
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--label', type=str, help='user label for the data savefile', default=None)
-    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default='online_bci.json')
+    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default='debug')#'online_bci.json')
     parser.add_argument('--acquisation', type=str, help='set the acquisation driver type: one-of: "none","brainflow","fakedata","ganglion","eego"', default=None)
     parser.add_argument('--acq_args', type=json.loads, help='a JSON dictionary of keyword arguments to pass to the acquisation system', default=None)
     parser.add_argument('--decoder', type=str, help='set eeg decoder function to use. one-of: "none", "decoder"', default=None)

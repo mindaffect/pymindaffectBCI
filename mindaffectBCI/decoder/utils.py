@@ -157,6 +157,7 @@ def search_directories_for_file(f,*args):
     if os.path.exists(f):
         return f
     for d in args:
+        #print('Searching dir: {}'.format(d))
         if os.path.exists(os.path.join(d,f)):
             f = os.path.join(d,f)
             break
