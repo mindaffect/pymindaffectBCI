@@ -9,7 +9,8 @@ First, open the signal viewer by pressing 0 in the main menu to check the qualit
 
 - Make sure your headset is properly set up and fitted. See our instructions here: :ref:`fittingRef`.	
 - Move away from wall outlets, plugged in electronic devices, and other potential sources of 50Hz noise.  
-- If possible, place the amplifier behind you so your body is between the machine running the mindaffcetBCI and the amplifier. 
+- If possible, place the amplifier behind you so your body is between the machine running the mindaffcetBCI and the amplifier.
+- Place the EEG hardware close to or on your body and run the electrode cables over your back.  
 - Check all the connections between the electrodes in your headset and the amplifier. 
 
 Second, make sure that you have followed our OS Optimization instructions: :ref:`osoptRef`, and you are running the BCI in fullscreen mode: :ref:`fullscreenRef`.   
