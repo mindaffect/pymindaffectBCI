@@ -23,8 +23,10 @@
 
 
 # get the general noisetagging framework
+import os
 from mindaffectBCI.noisetag import Noisetag
 from mindaffectBCI.utopiaclient import DataPacket
+from mindaffectBCI.decoder.utils import search_directories_for_file
 
 # graphic library
 import pyglet
@@ -60,7 +62,7 @@ class Screen:
 #-----------------------------------------------------------------
 class InstructionScreen(Screen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
-    def __init__(self, window, text, duration=5000, waitKey=True):
+    def __init__(self, window, text, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
         super().__init__(window)
         self.t0 = None # timer for the duration
         self.duration = duration
@@ -70,14 +72,22 @@ class InstructionScreen(Screen):
         self.clearScreen = True
         # initialize the instructions screen
         self.instructLabel = pyglet.text.Label(x=window.width//2,
-                                             y=window.height//2,
-                                             anchor_x='center',
-                                             anchor_y='center',
-                                             font_size=24,
-                                             color=(255, 255, 255, 255),
-                                             multiline=True,
-                                             width=int(window.width*.8))
+                                               y=window.height//2,
+                                               anchor_x='center',
+                                               anchor_y='center',
+                                               font_size=24,
+                                               color=(255, 255, 255, 255),
+                                               multiline=True,
+                                               width=int(window.width*.8))
         self.set_text(text)
+        if isinstance(logo,str): # filename to load
+            logo = search_directories_for_file(logo,os.path.join(os.path.dirname(__file__),'..','..'))
+            logo = pyglet.image.load(logo)
+        logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+        self.logo = pyglet.sprite.Sprite(logo,window.width,window.height)
+        self.logo.update(scale_x=window.width*.1/logo.width, 
+                         scale_y=window.height*.1/logo.height)
+
         print("Instruct (%dms): %s"%(duration, text))
 
     def reset(self):
@@ -118,6 +128,7 @@ class InstructionScreen(Screen):
         if self.clearScreen:
             self.window.clear()
         self.instructLabel.draw()
+        self.logo.draw()
 
 
 
@@ -671,7 +682,8 @@ class SelectionGridScreen(Screen):
                  bgFraction:float=.2, instruct:str="", 
                  clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, optosensor:bool=True, 
                  target_only:bool=False, show_correct:bool=True,
-                 waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True):
+                 waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
+                 logo:str='MindAffect_Logo.png'):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -689,9 +701,10 @@ class SelectionGridScreen(Screen):
         self.objIDs = objIDs
         self.optosensor = optosensor
         self.framerate_display = framerate_display
+        self.logo = logo
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
-        self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
+        self.set_grid(symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
         self.liveSelections = None
         self.feedbackThreshold = .4
         self.waitKey=waitKey
@@ -752,7 +765,7 @@ class SelectionGridScreen(Screen):
         self.framerate.text=text
         self.framerate.end_update()
 
-    def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here"):
+    def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here", logo=None):
         '''set/update the grid of symbols to be selected from'''
         winw, winh=window.get_size()
         # tell noisetag which objIDs we are using
@@ -768,6 +781,8 @@ class SelectionGridScreen(Screen):
         else:
             self.objIDs = list(range(1,nsymb+1))
             objIDs = self.objIDs
+        if logo is None:
+            logo = self.logo
         # get size of the matrix
         gridheight  = len(symbols) + 1 # extra row for sentence
         gridwidth = max([len(s) for s in symbols])
@@ -831,6 +846,19 @@ class SelectionGridScreen(Screen):
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top',
                                         batch=self.batch, group=self.foreground)
+        
+        # add a logo box
+        if isinstance(logo,str): # filename to load
+            logo = search_directories_for_file(logo,os.path.join(os.path.dirname(__file__),'..','..'))
+            logo = pyglet.image.load(logo)
+            logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+            self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-12) # sprite a window top-right
+        self.logo.batch = self.batch
+        self.logo.group = self.foreground
+        self.logo.update(x=window.width,  y=window.height,
+                         scale_x=window.width*.1/logo.width, 
+                         scale_y=window.height*.1/logo.height)
+
 
     def is_done(self):
         if self.isDone:
@@ -930,6 +958,7 @@ class SelectionGridScreen(Screen):
 
         # do the draw
         self.batch.draw()
+        self.logo.draw()
         self.frameend=self.noisetag.getTimeStamp()
 
         # frame flip time logging info
@@ -1298,11 +1327,9 @@ def load_symbols(fn):
     """
     symbols = []
 
-    # look relative to the py-file dir if can't find
-    import os.path
-    if not os.path.isfile(fn):
-        pydir = os.path.dirname(os.path.abspath(__file__))
-        fn = os.path.join(pydir, fn)
+    # search in likely directories for the file, cwd, pydir, projectroot 
+    fn = search_directories_for_file(fn,os.path.dirname(os.path.abspath(__file__)),
+                                        os.path.join(os.path.dirname(os.path.abspath(__file__),'..','..')))
 
     with open(fn,'r') as f:
         for line in f:

@@ -759,6 +759,7 @@ if __name__=="__main__":
 
     savefile = None
     savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*201020_1148.txt'
     #savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
     #savefile = "~/Downloads/mindaffectBCI*.txt"
     if savefile is None:
@@ -797,7 +798,7 @@ if __name__=="__main__":
         analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', ranks=(1,2,3,5) )
 
     else:
-        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5), priorweight=999999, prediction_offsets=(0,1,2), startup_correction=100 )
+        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5), priorweight=300, prediction_offsets=(0,1,2), startup_correction=100 )
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()
