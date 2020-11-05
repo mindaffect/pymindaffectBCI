@@ -22,11 +22,7 @@ To launch all these components at once:
 
 If all is installed it should start the selection matrix with all the other components in the background.
 
-<<<<<<< HEAD
-When the blue light on the ganglion does not turn solid after starting the BCI you most likely have to change the com port for your bluetooth dongle. You can specify the correct serial port to use in the acq_args section of the [`online_bci.json`](mindaffectBCI/online_bci.json) system configuration file.  You can find the used com port as described on the installation page. 
-=======
 When the blue light on the ganglion does not turn solid after starting the BCI you most likely have to change the com port for your bluetooth dongle. You can specify the correct COM port in the acq_args section of the [`online_bci.json`](mindaffectBCI/online_bci.json) system configuration file.  Follow the instructions under COM Port on the installation page to find the com port in use by you usb dongle. 
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 
 
 ## Using the MindAffect BCI:

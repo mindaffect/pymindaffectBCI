@@ -1,14 +1,5 @@
 Installation
 =========================
-<<<<<<< HEAD
-Requirements
-------------
-- Python (3.x) installation (Suggested: Anaconda_ ) 
-- OpenBCI Cyton / Ganglion (supported) amplifier
-
-.. _Anaconda: https://docs.anaconda.com/anaconda/install/
-
-=======
 
 Requirements
 ------------
@@ -40,7 +31,6 @@ From our testing we found that the following things help in improving timing acc
 - Set you screen to maximum brightness and disable *Night Light*, *f.lux*, or other applications that change the colour temperature of your screen. 
  
 
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 Installing the package
 ----------------------
 
@@ -48,28 +38,20 @@ To install the code:
   1. Clone or download the pymindaffectBCI repository::
 
        git clone https://github.com/mindaffect/pymindaffectBCI
-<<<<<<< HEAD
-
-  2. Install the necessary bits to your local python path:
-=======
   
   2. Switch to the open_source branch::
 		
 		git checkout open_source
 			
   3. Install the necessary bits to your local python path:
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 
     1. change to the directory where you cloned the repository.
     2. Add this module to the python path, and install dependencies::
    
          pip install -e .
 
-<<<<<<< HEAD
-=======
 .. _COMref:
 
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 COM port
 --------
 When using either the OpenBCI Ganglion or Cyton *with an USB-dongle* we have to pass the serial_port argument, to find the serial port in use by your amplifier follow the following instructions:
@@ -84,11 +66,7 @@ On Windows
 Then, in the online_bci file your configuration file (mindaffectBCI/online_bci.json) you should have: :code:`"serial_port":"COM_X_"`
 
 
-<<<<<<< HEAD
-On Mac:
-=======
 On Mac
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 *******
 1. Open a Terminal session
 2. Type: :code:`ls /dev/cu.*`, and look for something like :code:`/dev/cu.usbmodem1` (or similar)::
@@ -97,11 +75,6 @@ On Mac
     /dev/cu.Bluetooth-Modem		/dev/cu.iPhone-WirelessiAP
     /dev/cu.Bluetooth-PDA-Sync	/dev/cu.usbserial
     /dev/cu.usbmodem1
-<<<<<<< HEAD
-
-Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`
-
-=======
 	
 Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`
 
@@ -155,7 +128,6 @@ To do so:
 7. Reduce the latency timer to 6ms
 8. Apply and reboot
 
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 FrameRate Check
 ---------------
 For rapid visual stimulation BCI (like the noisetagging BCI), it is very important that the visual flicker be displayed accurately.
