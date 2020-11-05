@@ -8,6 +8,8 @@ from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
 from mindaffectBCI.decoder.scoreOutput import dedupY0
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_erp
+from mindaffectBCI.decoder.utils import search_directories_for_file
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 
 PREDICTIONPLOTS = False
@@ -57,10 +59,10 @@ def get_trial_start_end(msgs, start_ts=None):
     return (trials, start_ts, msgs)
 
 def getCalibration_dataset(ui):
-    ''' extract a labelled dataset from the utopiaInterface, which are trilas between modechange messages '''
+    ''' extract a labelled dataset from the utopiaInterface, which are trials between modechange messages '''
     # run until we get a mode change gathering training data in trials
     dataset = []
-    start_ts = None
+    start_ts = None  # assume we have just started the first trial?
     isCalibrating = True
     while isCalibrating:
 
@@ -91,19 +93,29 @@ def getCalibration_dataset(ui):
     return dataset
 
 def dataset_to_XY_ndarrays(dataset):
-    ''' convert variable-trial length dataset with stimulus information to fixed size sklearn compatiable (X,Y) nd-arrays'''
+    """convert a dataset, consisting of a list of pairs of time-stamped data and stimulus events, to 3-d matrices of X=(trials,samples,channels) and Y=(trials,samples,outputs)
+
+    Args:
+        dataset ([type]): list of pairs of time-stamped data and stimulus events
+
+    Returns:
+        X (tr,samp,d): the per-trial data
+        Y (tr,samp,nY): the per-trial stimulus, with sample rate matched to X
+        X_ts (tr,samp): the time-stamps for the smaples in X
+        Y_ts (tr,samp): the time-stamps for the stimuli in Y
+    """ 
     # get length of each trial
     trlen = [trl[0].shape[0] for trl in dataset]
     trstim = [trl[1].shape[0] for trl in dataset]
     print("Trlen: {}".format(trlen))
     print("Trstim: {}".format(trstim))
     # set array trial length to 90th percential length
-    trlen = int(np.percentile(trlen, 90))
-    trstim = max(20, int(np.percentile(trstim, 90)))
+    trlen = int(np.percentile(trlen, 75))
+    trstim = max(20, int(np.percentile(trstim, 75)))
     # filter the trials to only be the  ones long enough to be worth processing
     dataset = [d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2]
     if trlen == 0 or len(dataset) == 0:
-        return None, None
+        return None, None, None, None
 
     # map to single fixed size matrix + upsample stimulus to he EEG sample rate
     Y = np.zeros((len(dataset), trlen, 256), dtype=dataset[0][1].dtype)
@@ -138,47 +150,127 @@ def dataset_to_XY_ndarrays(dataset):
 
 
 def strip_unused(Y):
-    # strip unused outputs
+    """ strip unused outputs from the stimulus info in Y """
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
     Y = Y[..., used_y]
     return Y, used_y
 
+def load_previous_dataset(f:str):
+    """
+    load a previously saved (pickled) calibration dataset
 
-def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
-                            cv=2, calfn="calibration_data.pk", fitfn="fit_data.pk", previous_dataset=None):
-    ''' do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface'''
+    Args:
+        f (str, file-like): buffered interface to the data and stimulus streams
+    """
+    import pickle
+    if isinstance(f,str): # filename to load from
+        # search in likely dataset locations for the file to load
+        f = search_directories_for_file(f,
+                                        os.path.join(os.path.dirname(os.path.abspath(__file__))),
+                                        os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
+        with open(f,'rb') as file:
+            dataset = pickle.load(file)
+    else: # is it a byte-stream to load from?
+        dataset = pickle.load(f)
+    if isinstance(dataset,dict):
+        dataset=dataset['dataset']
+    return dataset
+
+
+def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, **kwargs):
+    """
+    do a calibration phase = basically just extract  the training data and train a classifier from the utopiaInterface
+
+    Args:
+        ui (UtopiaDataInterface): buffered interface to the data and stimulus streams
+        clsfr (BaseSequence2Sequence): the classifier to use to fit a model to the calibration data
+        cv (int, optional): the number of cross-validation folds to use for model generalization performance estimation. Defaults to 2.
+        prior_dataset ([type], optional): data-set from a previous calibration run, used to accumulate data over subsequent calibrations. Defaults to None.
+        ranks (tuple, optional): a list of model ranks to optimize as hyperparameters. Defaults to (1,2,3,5).
+
+    Returns:
+        dataset [type]: the gathered calibration data
+        X : the calibration data as a 3-d array (tr,samp,d)
+        Y : the calibration stimulus as a 3-d array (tr,samp,num-outputs)
+    """    
     X = None
     Y = None
-    dataset = getCalibration_dataset(ui)
-    if previous_dataset is not None: # combine with the old calibration data
-        dataset.extend(previous_dataset)
-    if dataset:
-        # convert msgs -> to nd-arrays
-        X, Y, X_ts, Y_ts = dataset_to_XY_ndarrays(dataset)
 
+    # get the calibration data on-line
+    dataset = getCalibration_dataset(ui)
+
+    # fit the model to this data
+    perr, dataset, X, Y = doModelFitting(clsfr,dataset,**kwargs)
+
+    # send message with calibration performance score, if we got one
+    if perr is not None:
+        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, perr))
+        
+    return dataset, X, Y
+
+
+def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
+                   cv=2, prior_dataset=None, ranks=(1,2,3,5), **kwargs):
+    """
+    fit a model given a dataset 
+
+    Args:
+        clsfr (BaseSequence2Sequence): the classifier to use to fit a model to the calibration data
+        cv (int, optional): the number of cross-validation folds to use for model generalization performance estimation. Defaults to 2.
+        prior_dataset ([type], optional): data-set from a previous calibration run, used to accumulate data over subsequent calibrations. Defaults to None.
+        ranks (tuple, optional): a list of model ranks to optimize as hyperparameters. Defaults to (1,2,3,5).
+
+    Returns:
+        perr (float): the estimated model generalization performance on the training data.
+        dataset [type]: the gathered calibration data
+        X : the calibration data as a 3-d array (tr,samp,d)
+        Y : the calibration stimulus as a 3-d array (tr,samp,num-outputs)
+    """   
+    global uname
+    perr = None 
+    X = None
+    Y = None
+
+    if prior_dataset is not None: # combine with the old calibration data
+        if isinstance(prior_dataset,str): # filename to load the data from?
+            try:
+                prior_dataset = load_previous_dataset(prior_dataset)
+            except:
+                # soft-fail if load failed
+                print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
+                prior_dataset = None
+        if dataset is not None:
+            dataset.extend(prior_dataset)
+        else: 
+            dataset = prior_dataset
+
+    if dataset:
         try:
             import pickle
-            pickle.dump(dict(X=X, Y=Y, X_ts=X_ts, Y_ts=Y_ts, fs=ui.fs),
-                        open('calibration_data.pk','wb'))
+            pickle.dump(dict(dataset=dataset),
+                        open('calibration_dataset_{}.pk'.format(uname),'wb'))
         except:
             print('Error saving cal data')
 
+        # convert msgs -> to nd-arrays
+        X, Y, X_ts, Y_ts = dataset_to_XY_ndarrays(dataset)
+
         # guard against empty training dataset
         if X is None or Y is None :
-            return None, None, None
+            return None, None, None, None
         Y, used_idx = strip_unused(Y)
         
         # now call the clsfr fit method, on the true-target info
         try:
             print("Training dataset = ({},{})".format(X.shape, Y.shape))
-            cvscores = clsfr.cv_fit(X, Y, cv=cv)
+            cvscores = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks, **kwargs)
             score = np.mean(cvscores['test_score'])
             print("clsfr={} => {}".format(clsfr, score))
         except:
             import traceback
             traceback.print_exc()
-            return None, None, None
+            return None, None, None, None
 
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
@@ -192,11 +284,10 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
             #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model(fs=ui.fs)
-                plt.suptitle('Factored Model')
-                plt.figure(2)
+                clsfr.plot_model(fs=ui.fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
+                plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
-                plt.suptitle('Decoding Curve')
+                plt.suptitle("Model + Decoding Performance")
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=ui.fs)
                 plt.figure(3) # plot the CCA info
@@ -208,7 +299,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 try:
                     import pickle
                     pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
-                                open('summary_statistics.pk','wb'))
+                                open('summary_statistics_{}.pk'.format(uname),'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
@@ -219,8 +310,8 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
                 logsdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/')
                 plt.figure(1)
                 plt.savefig(os.path.join(logsdir,'model_{}.png'.format(uname)))
-                plt.figure(2)
-                plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
+                #plt.figure(2)
+                #plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
                 plt.figure(3)
                 plt.savefig(os.path.join(logsdir,'summary_statistics_{}.png'.format(uname)))
                 plt.figure(4)
@@ -228,10 +319,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
             except:
                 pass
 
-        # send message with calibration performance score
-        ui.sendMessage(PredictedTargetProb(ui.stimulus_timestamp, 0, perr))
-        
-    return dataset, X, Y
+    return perr, dataset, X, Y
 
 
 def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=None):
@@ -270,9 +358,20 @@ def combine_Ptgt(pvals_objIDs):
 
 
 def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
+    """Send the current prediction information to the utopia-hub
+
+    Args:
+        ui (UtopiaDataInterface): the interface to the data-hub
+        Ptgt ([type]): the current distribution of target probabilities over outputs
+        used_idx ([type], optional): a set of output indices currently used. Defaults to None.
+        timestamp (int, optional): time stamp for which this prediction applies. Defaults to -1.
+    """ 
+    if Ptgt is None or len(Ptgt)==0 :
+        return   
     #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # N.B. for network efficiency, only send for non-zero probability outputs
     nonzero_idx = np.flatnonzero(Ptgt)
+    print("{}={}".format(Ptgt,nonzero_idx))
     # ensure a least one entry
     if nonzero_idx.size == 0: 
         nonzero_idx = [0]
@@ -298,8 +397,15 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     
 
 def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type='trial', timeout_ms=None, block_step_ms=100, maxDecisLen_ms=8000):
-    ''' do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
+    """ 
+    do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
 
+    Args:
+        ui (UtopiaDataInterface): buffered interface to the data and stimulus streams
+        clsfr (BaseSequence2Sequence): the trained classification model
+        maxDecisLen_ms (float, optional): the maximum amount of data to use to make a prediction, i.e. prediction sliding window size.  Defaults to 8000
+
+    """
     if not clsfr.is_fitted():
         print("Warning: trying to predict without training classifier!")
         return
@@ -359,7 +465,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 block_end_ts = valid_end_ts
             else:
                 block_end_ts = None
-            # limit the trial size
+            # limit the trial size and hence computational cost!
             if block_start_ts is not None:
                 block_start_ts = max( block_start_ts, valid_end_ts - maxDecisLen_ms)
         else:
@@ -420,7 +526,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 Ptgt = clsfr.decode_proba(Fy[...,used_idx])
                 #  _, _, Ptgt, _, _ = decodingSupervised(Fy[...,used_idx])
                 # BODGE: only  use the last (most data?) prediction...
-                Ptgt = Ptgt[-1, -1, :]
+                Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
 
@@ -434,9 +540,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 ui.push_back_newmsgs(newmsgs[i:])
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
-        host:str=None, datafile:str=None,
+        host:str=None, prior_dataset:str=None,
         tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
-        stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5, 
+        stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5,
+        prediction_offsets=None,
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -454,6 +561,8 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         evtlabs (tuple, optional): the brain event coding to use.  Defaults to None.
         calplots (bool, optional): flag if we make plots after calibration. Defaults to False.
         predplots (bool, optional): flag if we make plots after each prediction trial. Defaults to False.
+        prior_dataset ([str,(dataset)]): calibration data from a previous run of the system.  Used to pre-seed the model.  Defaults to None.
+        prediction_offsets ([ListInt], optional): a list of stimulus offsets to try at prediction time to cope with stimulus timing jitter.  Defaults to None.
     """
     global CALIBRATIONPLOTS, PREDICTIONPLOTS
     CALIBRATIONPLOTS = calplots
@@ -473,18 +582,22 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
 
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
-        ppfn = butterfilt_and_downsample(order=order, stopband=stopband, fs_out=out_fs, ftype=ftype)
-        #ppfn = butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=out_fs)
+        try:
+            from  scipy.signal import butter
+            ppfn = butterfilt_and_downsample(order=order, stopband=stopband, fs_out=out_fs, ftype=ftype)
+        except: # load filter from file
+            print("Warning: stopband specification *ignored*, using sos_filter_coeff.pk file...")
+            ppfn = butterfilt_and_downsample(stopband='sos_filter_coeff.pk', fs_out=out_fs)
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=55) # 20hz updates
+                                 timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
     # use a multi-cca for the model-fitting
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
             evtlabs = evtlabs.split(',')
-        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000))
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
     
     calibration_dataset = None
@@ -493,13 +606,17 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, previous_dataset=calibration_dataset)
+            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
+            if not clsfr.is_fitted() and prior_dataset is not None:
+                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset)
+
             doPredictionStatic(ui, clsfr)
 
         elif current_mode.lower() in ("reset"):
             calibration_dataset = None
+            clsfr.clear()
 
         # check for new mode-messages
         newmsgs, nsamp, nstim = ui.update()
@@ -539,23 +656,33 @@ if  __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.savefile is not None or True:#
-        #setattr(args,'savefile',"~/utopia/java/messagelib/UtopiaMessages_.log")
-        #setattr(args,'savefile',"~/utopia/java/utopia2ft/UtopiaMessages_*1700.log")
-        #setattr(args,'savefile',"~/Downloads/jason/UtopiaMessages_200923_1749_*.log")
-        setattr(args,'savefile','~/Desktop/mark/mindaffectBCI*ganglion*1404*.txt')
+    if args.savefile is not None or False:#
+        #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
+        #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
+        #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
+        savefile='~/Desktop/mark/mindaffectBCI*.txt'
+        savefile="../../logs/mindaffectBCI*.txt"
+        setattr(args,'savefile',savefile)
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
+        setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs) # 20hz updates
+                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='decoder') # 20hz updates
         # add the file-proxy ui as input argument
         setattr(args,'ui',ui)
+
+
+    # # HACK: set debug attrs....
+    #setattr(args,'prior_dataset','calibration_dataset_debug.pk')
     
+    # hack testing arguments!
+    #setattr(args,'prediction_offsets',(-1,0,1))
+
     running=True
     nCrash = 0
     run(**vars(args))

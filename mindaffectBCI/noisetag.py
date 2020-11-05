@@ -80,15 +80,24 @@ class WaitFor(FSM):
 class Flicker(FSM):
     ''' do a normal flicker sequence'''
     def __init__(self,stimSeq=None,
-                 numframes=4*isi, # number for frames to flicker for
-                 tgtidx=-1, # target output for this flicker
-                 sendEvents=True, # send stimulus events
-                 framesperbit=1): # number of video-frames per codebook bit 
+                 numframes=4*isi, 
+                 tgtidx=-1,
+                 sendEvents=True, 
+                 framesperbit=1): 
+        """Object to provide state information for a flicker sequence
+
+        Args:
+            stimSeq ([type], optional): the stimulus sequence to use. Defaults to None.
+            numframes ([type], optional): number for frames to flicker for. Defaults to 4*isi.
+            tgtidx (int, optional): the target output, -1 for no target. Defaults to -1
+            sendEvents (bool, optional): should we send stimulus events.  Defaults to True
+            framesperbit (int, optional): number of video-frames, i.e. calls to next, per stimsequence bit.  Defaults to 1.
+        """    
         self.stimSeq=stimSeq
         self.numframes=numframes
         self.nframe=0
         self.tgtidx=tgtidx
-        self.tgtstate=-1
+        #self.tgtstate=-1
         self.sendEvents=sendEvents
         self.framesperbit=framesperbit if framesperbit is not None else 1
 
@@ -108,12 +117,12 @@ class Flicker(FSM):
         # extract the current frames stimulus state, loop if past end
         if self.nframe >= self.numframes:
             # final frame is blank screen
-            self.ss[:] = [0]*len(self.stimSeq[0])
+            self.ss[:] = [0 for i in range(len(self.stimSeq[0]))]
             self.tgtState = -1
         else:            
             self.ss       = self.stimSeq[self.nframe//self.framesperbit % len(self.stimSeq)]
             # extract the current target state, for these objects
-            self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
+            #self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
         
     def get(self):
         # update the curent stimulus state info
@@ -122,7 +131,7 @@ class Flicker(FSM):
         #if objIDs is None : objIDs=self.objIDs
         # get the state info for the given set of objectIDs
         #ss =[self.ss[i] for i in objIDs-1]
-        return (self.ss,self.tgtstate,None,self.sendEvents)
+        return (self.ss,self.tgtidx,None,self.sendEvents)
 
     
 class FlickerWithSelection(Flicker):
@@ -408,7 +417,7 @@ class Noisetag:
      2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
      3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
      '''
-    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack=None):
+    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack=None,clientid:str=None):
         # global flicker stimulus sequence
         if stimFile is None:  stimFile = default_stimFile
         noisecode = StimSeq.fromFile(stimFile)
@@ -428,6 +437,7 @@ class Noisetag:
         self.stimulusStateMachineStack=stimulusStateMachineStack
         self.laststate=(None,None,None,None)
         self.objIDs=None
+        self.clientid=clientid
 
     def connect(self,host=None,port=-1,queryifhostnotfound=True,timeout_ms=5000):
         if self.utopiaController is None :
@@ -435,7 +445,7 @@ class Noisetag:
             global uc
             if uc is None :
                 # auto-connect the global controller if none given
-                uc = UtopiaController()
+                uc = UtopiaController(clientid=self.clientid)
             self.utopiaController=uc
         if self.utopiaController.isConnected() :
             return True
@@ -464,12 +474,12 @@ class Noisetag:
         if objIDs is not None : 
             self.setActiveObjIDs(objIDs)
         # get the complete stimulus state (for MAXOBIDS objects)
-        stimState,tgtstate,objIDs,sendEvents = self.stimulusStateMachineStack.get()
+        stimState,tgtidx,objIDs,sendEvents = self.stimulusStateMachineStack.get()
         # subset to the active set, matching objIDs to allobjIDs
         # N.B. objID-1 to map from objID->stimStateIndex
         if stimState is not None :
             stimState = [ stimState[i-1] for i in self.objIDs ]
-        self.laststate = (stimState,tgtstate,self.objIDs,sendEvents)
+        self.laststate = (stimState,tgtidx,self.objIDs,sendEvents)
         return self.laststate
     
     def setActiveObjIDs(self,objIDs):
@@ -484,10 +494,12 @@ class Noisetag:
     
     # decoder interaction methods via. utopia controller
     def sendStimulusState(self,timestamp=None):
-        stimState,targetState,objIDs,sendEvent=self.laststate
+        stimState,target_idx,objIDs,sendEvent=self.laststate
+        targetState = stimState[target_idx] if target_idx is not None and target_idx>=0 else -1
         # send info about the stimulus displayed
         if sendEvent and stimState is not None :
             #print((stimState,targetState))
+            # TODO[]: change to use the target_idx
             self.utopiaController.sendStimulusEvent(stimState,
                                                     timestamp,
                                                     targetState,
@@ -629,8 +641,8 @@ class Noisetag:
 
 class sumstats:
     '''Utility class to record summary stastics for, e.g. frame flip timing'''
-    def __init__(self):
-        self.buf=[0]*(70*10) # ring-buffer, 700 entries
+    def __init__(self,bufsize:int=60*2):
+        self.buf=[0]*(bufsize) # ring-buffer, 700 entries
         self.N=0
         self.sx=0
         self.mu=-1
@@ -663,13 +675,18 @@ class sumstats:
             pp=''
         return pp
 
-    def __str__(self):
+    def update_statistics(self):
         import statistics
         buf = self.buf[:min(len(self.buf),self.N)]
-        mu = statistics.mean(buf)
-        med= statistics.median(buf)
-        sigma=statistics.stdev(buf) if len(buf)>2 else -1
-        return "%f,%f (%f,[%f,%f])"%(mu,med,sigma,min(self.buf),max(self.buf))
+        self.mu = statistics.mean(buf)
+        self.med= statistics.median(buf)
+        self.sigma=statistics.stdev(buf) if len(buf)>2 else -1
+        self.min = min(buf)
+        self.max = max(buf)
+
+    def __str__(self):
+        self.update_statistics()
+        return "%f,%f (%f,[%f,%f])"%(self.mu,self.median,self.sigma,self.min,self.max)
 
 def doFrame(t,stimState,tgtState=-1,objIDs=None,utopiaController=None):
     if tgtState>=0 :

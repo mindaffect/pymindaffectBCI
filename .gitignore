@@ -8,7 +8,10 @@ octave-workspace
 __pycache__
 *.log
 *.res
-.gradle/*
-logs/*
-*build/*
+.gradle*
+logs*
+*build*
+*dist*
+*.ipynb_checkpoints*
+*.png
 *.pk

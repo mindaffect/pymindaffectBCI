@@ -23,8 +23,10 @@
 
 
 # get the general noisetagging framework
+import os
 from mindaffectBCI.noisetag import Noisetag
 from mindaffectBCI.utopiaclient import DataPacket
+from mindaffectBCI.decoder.utils import search_directories_for_file
 
 # graphic library
 import pyglet
@@ -60,7 +62,7 @@ class Screen:
 #-----------------------------------------------------------------
 class InstructionScreen(Screen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
-    def __init__(self, window, text, duration=5000, waitKey=True):
+    def __init__(self, window, text, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
         super().__init__(window)
         self.t0 = None # timer for the duration
         self.duration = duration
@@ -70,15 +72,26 @@ class InstructionScreen(Screen):
         self.clearScreen = True
         # initialize the instructions screen
         self.instructLabel = pyglet.text.Label(x=window.width//2,
-                                             y=window.height//2,
-                                             anchor_x='center',
-                                             anchor_y='center',
-                                             font_size=24,
-                                             color=(255, 255, 255, 255),
-                                             multiline=True,
-                                             width=int(window.width*.8))
+                                               y=window.height//2,
+                                               anchor_x='center',
+                                               anchor_y='center',
+                                               font_size=24,
+                                               color=(255, 255, 255, 255),
+                                               multiline=True,
+                                               width=int(window.width*.8))
         self.set_text(text)
-        print("Instruct (%dms): %s"%(duration, text))
+        if isinstance(logo,str): # filename to load
+            logo = search_directories_for_file(logo,os.path.dirname(os.path.abspath(__file__)),
+                                               os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..'))
+            try:
+                logo = pyglet.image.load(logo)
+            except:
+                logo = None
+        if logo:
+            logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+            self.logo = pyglet.sprite.Sprite(logo,window.width,window.height)
+            self.logo.update(scale_x=window.width*.1/logo.width, 
+                            scale_y=window.height*.1/logo.height)
 
     def reset(self):
         self.isRunning = False
@@ -118,6 +131,7 @@ class InstructionScreen(Screen):
         if self.clearScreen:
             self.window.clear()
         self.instructLabel.draw()
+        self.logo.draw()
 
 
 
@@ -132,15 +146,26 @@ class MenuScreen(InstructionScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, valid_keys):
         super().__init__(window, text, 99999999, True)
+        self.menu_text = text
         self.valid_keys = valid_keys
         self.key_press = None
-        print("Menu")
+        #print("Menu")
+
+    def set_message(self,message:str):
+        self.set_text(self.menu_text+'\n\n\n'+message)
 
     def is_done(self):
         # check termination conditions
         if not self.isRunning:
             self.isDone = False
             return self.isDone
+
+        # check if should update display
+        # TODO[]: only update screen 1x / second
+        global flipstats
+        flipstats.update_statistics()
+        self.set_message("Frame-duration: {:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
+
         global last_key_press
         if self.window.last_key_press:
             self.key_press = self.window.last_key_press
@@ -657,9 +682,11 @@ class SelectionGridScreen(Screen):
     LOGLEVEL=0
 
     def __init__(self, window, symbols, noisetag, objIDs=None,
-                 bgFraction=.2, instruct="", 
-                 clearScreen=True, sendEvents=True, liveFeedback=True, optosensor=True,
-                 waitKey=True):
+                 bgFraction:float=.2, instruct:str="", 
+                 clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, optosensor:bool=True, 
+                 target_only:bool=False, show_correct:bool=True,
+                 waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
+                 logo:str='MindAffect_Logo.png'):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -676,11 +703,17 @@ class SelectionGridScreen(Screen):
         self.symbols = symbols
         self.objIDs = objIDs
         self.optosensor = optosensor
+        self.framerate_display = framerate_display
+        self.logo = logo
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
-        self.set_grid(symbols, objIDs, bgFraction, sentence=instruct)
+        self.set_grid(symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
         self.liveSelections = None
+        self.feedbackThreshold = .4
         self.waitKey=waitKey
+        self.stimulus_callback = stimulus_callback
+        self.last_target_idx = -1
+        self.show_correct = show_correct
 
     def reset(self):
         self.isRunning=False
@@ -714,7 +747,10 @@ class SelectionGridScreen(Screen):
             if objID in self.objIDs:
                 print("doSelection: {}".format(objID))
                 symbIdx = self.objIDs.index(objID)
-                self.set_sentence(self.sentence.text + self.getSymb(symbIdx) )
+                sel = self.getSymb(symbIdx)
+                if self.show_correct and self.last_target_idx>=0:
+                    sel += "*" if symbIdx==self.last_target_idx else "_"
+                self.set_sentence( self.sentence.text + sel )
 
     def set_sentence(self, text):
         '''set/update the text to show in the instruction screen'''
@@ -723,8 +759,16 @@ class SelectionGridScreen(Screen):
         self.sentence.begin_update()
         self.sentence.text=text
         self.sentence.end_update()
+    
+    def set_framerate(self, text):
+        '''set/update the text to show in the frame rate box'''
+        if type(text) is list:
+            text = "\n".join(text)
+        self.framerate.begin_update()
+        self.framerate.text=text
+        self.framerate.end_update()
 
-    def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here"):
+    def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here", logo=None):
         '''set/update the grid of symbols to be selected from'''
         winw, winh=window.get_size()
         # tell noisetag which objIDs we are using
@@ -738,13 +782,14 @@ class SelectionGridScreen(Screen):
         if objIDs is not None:
             self.objIDs = objIDs
         else:
-            if self.objIDs is None:
-                self.objIDs = list(range(1,nsymb+1))
+            self.objIDs = list(range(1,nsymb+1))
             objIDs = self.objIDs
+        if logo is None:
+            logo = self.logo
         # get size of the matrix
         gridheight  = len(symbols) + 1 # extra row for sentence
         gridwidth = max([len(s) for s in symbols])
-        ngrid      = gridwidth * gridheight
+        self.ngrid      = gridwidth * gridheight
 
         self.noisetag.setActiveObjIDs(self.objIDs)
 
@@ -793,16 +838,42 @@ class SelectionGridScreen(Screen):
         # add the sentence box
         y = (gridheight-1)/gridheight*winh # top-edge cell
         x = winw*.2 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2,
+        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, width=winw-x,
                                         color=(255, 255, 255, 255),
                                         anchor_x='left', anchor_y='center',
+                                        multiline=True,
                                         batch=self.batch, group=self.foreground)
 
+        # add the framerate box
+        self.framerate=pyglet.text.Label("", font_size=12, x=winw, y=winh,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='right', anchor_y='top',
+                                        batch=self.batch, group=self.foreground)
+        
+        # add a logo box
+        if isinstance(logo,str): # filename to load
+            logo = search_directories_for_file(logo,os.path.dirname(__file__),os.path.join(os.path.dirname(__file__),'..','..','..'))
+            try:
+                logo = pyglet.image.load(logo)
+                logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+                self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16) # sprite a window top-right
+            except:
+                self.logo = None
+        if self.logo:
+            self.logo.batch = self.batch
+            self.logo.group = self.foreground
+            self.logo.update(x=window.width,  y=window.height-16,
+                            scale_x=window.width*.1/logo.width, 
+                            scale_y=window.height*.1/logo.height)
+
+
     def is_done(self):
+        if self.isDone:
+            self.noisetag.modeChange('idle')
         return self.isDone
 
     # mapping from bci-stimulus-states to display color
-    state2color={0:(10, 10, 10),   # off=grey
+    state2color={0:(5, 5, 5),   # off=grey
                  1:(255, 255, 255), # on=white
                  2:(0, 255, 0),    # cue=green
                  3:(0, 0, 255)}    # feedback=blue
@@ -824,7 +895,9 @@ class SelectionGridScreen(Screen):
         # get the current stimulus state to show
         try:
             self.noisetag.updateStimulusState()
-            stimulus_state, target_state, objIDs, sendEvents=self.noisetag.getStimulusState()
+            stimulus_state, target_idx, objIDs, sendEvents=self.noisetag.getStimulusState()
+            target_state = stimulus_state[target_idx] if target_idx>=0 else -1
+            if target_idx > 0 : self.last_target_idx = target_idx
         except StopIteration:
             self.isDone=True
             return
@@ -841,6 +914,10 @@ class SelectionGridScreen(Screen):
         if stimulus_state is None:
             stimulus_state = [0]*len(self.objects)
 
+        # do the stimulus callback if wanted
+        if self.stimulus_callback is not None:
+            self.stimulus_callback(stimulus_state, target_state)
+
         # draw the white background onto the surface
         if self.clearScreen:
             window.clear()
@@ -850,7 +927,11 @@ class SelectionGridScreen(Screen):
         for idx in range(min(len(self.objects), len(stimulus_state))):
             # set background color based on the stimulus state (if set)
             try:
-                self.objects[idx].color=self.state2color[stimulus_state[idx]]
+                ssi = stimulus_state[idx]
+                if self.target_only and not target_idx == idx :
+                    ssi = 0
+                self.objects[idx].color=self.state2color[ssi]
+                self.labels[idx].color=(255,255,255,255) # reset labels
             except KeyError:
                 pass
 
@@ -859,12 +940,18 @@ class SelectionGridScreen(Screen):
         if self.liveFeedback:
             # get prediction info if any
             predMessage=self.noisetag.getLastPrediction()
-            if predMessage and predMessage.Yest in objIDs:
+            if predMessage and predMessage.Yest in objIDs and predMessage.Perr < self.feedbackThreshold:
                 predidx=objIDs.index(predMessage.Yest) # convert from objID -> objects index
-                # BODGE: manually mix in the feedback color as blue tint.
-                fbcol=self.objects[predidx].color
-                fbcol=(fbcol[0]*.6, fbcol[1]*.6, fbcol[2]*.6+255*(1-predMessage.Perr))
-                self.objects[predidx].color=fbcol
+                prederr=predMessage.Perr
+                # BODGE: manually mix in the feedback color as blue tint on the label
+                fbcol=list(self.labels[predidx].color)
+                fbcol[0]=fbcol[0]*.4 
+                if fbcol[0]>1: fbcol[0]=int(fbcol[0])
+                fbcol[1]=fbcol[1]*.4; 
+                if fbcol[1]>1: fbcol[1]=int(fbcol[1])
+                fbcol[2]=fbcol[2]*.4+255*(1-prederr)*.6; 
+                if fbcol[2]>1: fbcol[2]=int(fbcol[2])
+                self.labels[predidx].color=fbcol
 
         # disp opto-sensor if targetState is set
         if self.optosensor :
@@ -878,6 +965,7 @@ class SelectionGridScreen(Screen):
 
         # do the draw
         self.batch.draw()
+        self.logo.draw()
         self.frameend=self.noisetag.getTimeStamp()
 
         # frame flip time logging info
@@ -886,6 +974,12 @@ class SelectionGridScreen(Screen):
             logstr="FrameIdx:%d FlipTime:%d FlipLB:%d FlipUB:%d Opto:%d"%(nframe, self.framestart, self.framestart, self.frameend, opto)
             self.noisetag.log(logstr)
 
+        # add the frame rate info
+        # TODO[]: limit update rate..
+        if self.framerate_display:
+            global flipstats
+            flipstats.update_statistics()
+            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
 
 
 
@@ -946,10 +1040,15 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, framesperbit:int=None, fullscreen_stimulus:bool=True, selectionThreshold:float=.1, optosensor:bool=True):
+    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
+                 framesperbit:int=None, fullscreen_stimulus:bool=True, 
+                 selectionThreshold:float=.1, optosensor:bool=True,
+                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
+        self.calibration_symbols = calibration_symbols if calibration_symbols is not None else symbols
+        self.bgFraction = bgFraction
         self.menu = MenuScreen(window, self.main_menu, self.menu_keys.keys())
         self.instruct = InstructionScreen(window, '', duration = 50000)
         self.connecting = ConnectingScreen(window, noisetag)
@@ -964,6 +1063,7 @@ class ExptScreenManager(Screen):
         self.framesperbit = framesperbit
         self.fullscreen_stimulus = fullscreen_stimulus
         self.selectionThreshold = selectionThreshold
+        self.simple_calibration = simple_calibration
         self.screen = None
         self.transitionNextPhase()
 
@@ -991,6 +1091,7 @@ class ExptScreenManager(Screen):
         if self.stage==self.ExptPhases.MainMenu: # main menu
             if self.fullscreen_stimulus==True :
                 self.window.set_fullscreen(fullscreen=False)
+
             print("main menu")
             self.menu.reset()
             self.screen = self.menu
@@ -1036,10 +1137,13 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=False
+            self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
+
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
 
@@ -1062,11 +1166,14 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
+
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1081,11 +1188,14 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.selectionGrid.reset()
+            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
+            self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
+
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1142,7 +1252,7 @@ def getTimeStamp():
 
 import types
 from mindaffectBCI.noisetag import sumstats
-flipstats=None;#sumstats(); 
+flipstats=sumstats(60)
 fliplogtime=0
 def timedflip(self):
     '''pseudo method type which records the timestamp for window flips'''
@@ -1152,10 +1262,10 @@ def timedflip(self):
     self.lastfliptime=getTimeStamp()
     if flipstats is not None:
         flipstats.addpoint(self.lastfliptime-olft)
-        if self.lastfliptime > fliplogtime:
-            fliplogtime=fliplogtime+5000
-            print("\nFlipTimes:"+str(flipstats))
-            print("Hist:\n"+flipstats.hist())
+        #if self.lastfliptime > fliplogtime:
+        #    fliplogtime=fliplogtime+5000
+        #    print("\nFlipTimes:"+str(flipstats))
+        #    print("Hist:\n"+flipstats.hist())
 
 def on_key_press(symbols, modifiers):
     '''main key-press handler, which stores the last key in a global variable'''
@@ -1171,10 +1281,11 @@ def initPyglet(fullscreen=False):
     global window
     # set up the window
     if fullscreen:
+        print('Fullscreen mode!')
         # N.B. accurate video timing only guaranteed with fullscreen
         # N.B. over-sampling seems to introduce frame lagging on windows+Intell
         config = pyglet.gl.Config(double_buffer=True) #double_buffer=False,sample_buffers=1, samples=4)
-        window = pyglet.window.Window(fullscreen=True, vsync=True, config=config)
+        window = pyglet.window.Window(fullscreen=True, vsync=True, resizable=False, config=config)
     else:
         config = pyglet.gl.Config(double_buffer=True)#,sample_buffers=1, samples=4)
         window = pyglet.window.Window(width=1024, height=768, vsync=True, resizable=True, config=config)
@@ -1223,11 +1334,9 @@ def load_symbols(fn):
     """
     symbols = []
 
-    # look relative to the py-file dir if can't find
-    import os.path
-    if not os.path.isfile(fn):
-        pydir = os.path.dirname(os.path.abspath(__file__))
-        fn = os.path.join(pydir, fn)
+    # search in likely directories for the file, cwd, pydir, projectroot 
+    fn = search_directories_for_file(fn,os.path.dirname(os.path.abspath(__file__)),
+                                        os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
 
     with open(fn,'r') as f:
         for line in f:
@@ -1243,7 +1352,8 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, fullscreen_stimulus:bool=True, simple_calibration=False, host=None):
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1254,6 +1364,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
+        simple_calibration (bool, optional): flag if we only show the *target* during calibration.  Defaults to False
     """
     global nt, ss
     # N.B. init the noise-tag first, so asks for the IP
@@ -1261,9 +1372,9 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
-    if windowed:
+    if windowed == True or fullscreen == True:
         fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile)
+    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 
@@ -1282,8 +1393,16 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         # load the layout from a file
         symbols = load_symbols(symbols)
 
+    # different calibration symbols if wanted
+    if calibration_symbols is None:
+        calibration_symbols = symbols
+    elif isinstance(calibration_symbols, str):
+        calibration_symbols = load_symbols(calibration_symbols)
+
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, optosensor=optosensor)
+    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
+                        fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
+                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, bgFraction=bgFraction)
 
     # set per-frame callback to the draw function
     if drawrate > 0:
@@ -1294,6 +1413,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         pyglet.clock.schedule(draw)
     # mainloop
     pyglet.app.run()
+    pyglet.app.EventLoop().exit()
+    window.set_visible(False)
 
 
 if __name__ == "__main__":
@@ -1304,10 +1425,12 @@ if __name__ == "__main__":
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
-    #parser.add_argument('--fullscreen',action='store_true',help='run in fullscreen mode')
+    parser.add_argument('--fullscreen_stimulus',action='store_true',help='run with stimuli in fullscreen mode')
     parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
     parser.add_argument('--selectionThreshold',type=float,help='target error threshold for selection to occur',default=.1)
-    #parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
+    parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
+    parser.add_argument('--symbols',type=str,help='file name for the symbols grid to display',default=None)
+    parser.add_argument('--calibration_symbols',type=str,help='file name for the symbols grid to use for calibration',default=None)
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
 
