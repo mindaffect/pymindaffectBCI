@@ -86,12 +86,15 @@ class InstructionScreen(Screen):
             try:
                 logo = pyglet.image.load(logo)
             except:
+                print('Couldnt find logo file: {}'.format(logo))
                 logo = None
         if logo:
             logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
             self.logo = pyglet.sprite.Sprite(logo,window.width,window.height)
             self.logo.update(scale_x=window.width*.1/logo.width, 
                             scale_y=window.height*.1/logo.height)
+        else:
+            self.logo = None
 
     def reset(self):
         self.isRunning = False
@@ -836,11 +839,13 @@ class SelectionGridScreen(Screen):
         self.opto_sprite.visible=False
 
         # add the sentence box
-        y = (gridheight-1)/gridheight*winh # top-edge cell
-        x = winw*.2 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, width=winw-x,
+        y = winh # top-edge cell
+        x = winw*.15 # left-edge cell
+        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y, 
+                                        width=winw-x-winw*.1,
+                                        height=(gridheight-1)/gridheight*winh,
                                         color=(255, 255, 255, 255),
-                                        anchor_x='left', anchor_y='center',
+                                        anchor_x='left', anchor_y='top',
                                         multiline=True,
                                         batch=self.batch, group=self.foreground)
 
