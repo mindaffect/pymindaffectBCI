@@ -26,7 +26,7 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     # reshape to match dims of a
     if not isinstance(pat, np.ndarray): pat = np.array(pat) # ensure is numpy
     pshape = np.ones(a.ndim+1, dtype=int); pshape[axis+1] = pat.size
-    pat =  np.array(pat.ravel()).reshape(pshape) # [ ... x l x...]
+    pat =  np.array(pat.ravel(),dtype=a.dtype).reshape(pshape) # [ ... x l x...]
     # window a into pat-len pieces
     aw = window_axis(a, pat.size, axis=axis) # [ ... x t-l x l x ...]
     # do the match
@@ -34,9 +34,9 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     # pad to make the same shape as input
     padshape = list(a.shape); padshape[axis] = a.shape[axis]-F.shape[axis]
     if match == -1: # match at end of pattern -> pad before
-        F  = np.append(np.zeros(padshape), F, axis)
+        F  = np.append(np.zeros(padshape, dtype=F.dtype), F, axis)
     else: # match at start of pattern -> pad after
-        F  = np.append(F, np.zeros(padshape), axis)
+        F  = np.append(F, np.zeros(padshape, dtype=F.dtype), axis)
     return F
 
 
@@ -53,6 +53,7 @@ class RingBuffer:
         self.copysize = 0 # number entries to copy as a block
 
     def clear(self):
+        '''empty the ring-buffer and reset to empty'''
         self.pos=int(self.bufshape[0])
         self.n  =0
         self.copypos=0
@@ -96,19 +97,22 @@ class RingBuffer:
         return iter(self.unwrap())
 
 def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
-    ''' extract the data between start/end time stamps'''
+    ''' extract the data between start/end time stamps, from time-stamps contained in the last channel of a nd matrix'''
     # get the data / msgs from the ringbuffers
     X = rb.unwrap() # (nsamp,nch+1)
     X_ts = X[:, -1] # last channel is timestamps
     # TODO: binary-search to make these searches more efficient!
     # search backwards for trial-start time-stamp
-    # TODO[] : use a bracketing test.. (better with wrap-arround)
-    bgn_samp = np.flatnonzero(np.logical_and(bgn_ts <= X_ts, X_ts != 0))
+    # TODO[X] : use a bracketing test.. (better with wrap-arround)
+    bgn_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < bgn_ts, bgn_ts <= X_ts[1:]))
     # get the index of this timestamp, guarding for after last sample
-    bgn_samp = bgn_samp[0] if len(bgn_samp) > 0 else len(X_ts)+1
+    if len(bgn_samp) == 0 :
+        bgn_samp = 0 if bgn_ts <= X_ts[0] else len(X_ts)+1
+    else:
+        bgn_samp = bgn_samp[0]
     # and just to be sure the trial-end timestamp
     if  end_ts is not None:
-        end_samp = np.flatnonzero(np.logical_and(X_ts < end_ts, X_ts != 0))
+        end_samp = np.flatnonzero(np.logical_and(X_ts[:-1] < end_ts, end_ts <= X_ts[1:]))
         # get index of this timestamp, guarding for after last data sample
         end_samp = end_samp[-1] if len(end_samp) > 0 else len(X_ts)
     else: # until now
@@ -116,6 +120,48 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     # extract the trial data, and make copy (just to be sure)
     X = X[bgn_samp:end_samp+1, :].copy()
     return X
+
+def unwrap(x,range=None):
+    ''' unwrap a list of numbers to correct for truncation due to limited bit-resolution, e.g. time-stamps stored in 24bit integers'''
+    if range is None: 
+        range = 1<< int(np.ceil(np.log2(max(x))))
+    wrap_ind = np.diff(x) < -range/2
+    unwrap = np.zeros(x.shape)
+    unwrap[np.flatnonzero(wrap_ind)+1]=range
+    unwrap=np.cumsum(unwrap)
+    x = x + unwrap
+    return x
+
+def unwrap_test():
+    x = np.cumsum(np.random.rand(6000,1))
+    xw = x%(1<<10)
+    xuw = unwrap(x)
+    import matplotlib.pyplot as plt
+    plt.plot(x,label='x')
+    plt.plot(xw,label='x (wrapped)')
+    plt.plot(xuw,label='x (unwrapped')
+    plt.legend()
+
+
+def search_directories_for_file(f,*args):
+    """search a given set of directories for given filename, return 1st match
+
+    Args:
+        f (str): filename to search for
+        *args (): set for directory names to look in
+
+    Returns:
+        f (str): full path to where f is found, or f if not found.
+    """    
+    import os
+    if os.path.exists(f):
+        return f
+    for d in args:
+        #print('Searching dir: {}'.format(d))
+        if os.path.exists(os.path.join(d,f)):
+            f = os.path.join(d,f)
+            break
+    return f
 
 # toy data generation
 
@@ -155,10 +201,10 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     # generate the brain source
     A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
     if irf is None:
-        B  = np.zeros((tau),dtype=np.float32)
+        B  = np.zeros((tau), dtype=np.float32)
         B[-3] = 1;         # true response filter (shift by 10 samples)
     else:
-        B = np.array(irf,dtype=np.float32)
+        B = np.array(irf, dtype=np.float32)
     Ytrue = Y[..., 0, :] # (nTrl, nSamp, nE)
 
     if True:
@@ -182,6 +228,8 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
     X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d) #[d x nSamp]
     return (X, Y, stimTimes_samp, A, B)
+
+
 
 def testtestSignal():
     import matplotlib.pyplot as plt
@@ -316,7 +364,6 @@ def lab2ind(lab,lab2class=None):
     return (Y,lab2class)
 
 
-
 def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
     '''identify and zero-out bad/outlying data
 
@@ -384,185 +431,33 @@ def idOutliers(X, thresh=4, axis=-2, verbosity=0):
         print("%d bad" % (np.sum(bad.ravel())))
     return (bad, power)
 
-class linear_trend_tracker():
-    """ linear trend tracker with adaptive forgetting factor
-    """   
+def robust_mean(X,thresh=(3,3)):
+    """Compute robust mean of values in X, using gaussian outlier criteria
 
-    def __init__(self,halflife=70,int_err_halflife=5, K_int_err=10, a0=1, b0=0):
-        self.alpha=np.exp(np.log(.5)/halflife) if halflife else .99
-        self.warmup_weight= (1-self.alpha**20)/(1-self.alpha); # >20 points for warmup
-        self.N=0
-        if int_err_halflife is None and halflife:
-            int_err_halflife = max(halflife/100,1) 
-        self.int_err_alpha = np.exp(np.log(.5)/int_err_halflife) if int_err_halflife else .999
-        self.K_int_err = K_int_err
-        self.a0 = a0
-        self.b0 = b0
+    Args:
+        X (the data): the data
+        thresh (2,): lower and upper threshold in standard deviations
 
-    def reset(self, keep_err=False, keep_model=False):
-        self.N = 0
-        self.X0 = None
-        self.Y0 = None
-        self.sX = 0
-        self.sY = 0
-        self.sXX = 0
-        self.sYX = 0
-        self.sYY = 0
-        if not keep_model:
-            self.a=self.a0
-            self.b=self.b0
-        if not keep_err:
-            self.int_err = 0
-            self.abs_err=0
-            self.int_err_N = 0
+    Returns:
+        mu (): the robust mean
+        good (): the indices of the 'good' data in X
+    """    
+    good = np.ones(X.shape, dtype=bool)
+    for _ in range(4):
+        mu = np.mean(X[good])
+        sigma = np.sqrt(np.mean((X[good] - mu) ** 2))
 
-    def fit(self,X,Y,keep_err=False):
-        self.reset(keep_err)
-        if hasattr(X,'__iter__'):
-            self.N = len(X)
-            self.X0=X[0,...] 
-            self.Y0=Y[0,...] 
-            if len(X)>1 :
-                self.transform(X[1:,...],Y[1:,...])
-        else:
-            self.N = 1
-            self.X0 = X
-            self.Y0 = Y
-        self.a = self.a0
-        self.b = self.Y0 - self.a * self.X0
+        # re-compute outlier list
+        good[:]=True
+        if thresh[0] is not None:
+            badThresh = mu + thresh[0]*sigma
+            good[X > badThresh] = False
+        if thresh[1] is not None:
+            badThresh = mu - thresh[0]*sigma
+            good[X < badThresh] = False
+    mu = np.mean(X[good])
 
-    def transform(self,X,Y):
-        if self.N==0:
-            self.fit(X,Y)
-            return Y
-
-        #if np.all(X==self.Xlast) or np.all(Y==self.Ylast):
-        #    return self.getY(X)
-        # get our prediction for this point and use to track our prediction error
-        Yest = self.getY(X)
-        err  = np.mean(np.abs(Y-Yest))
-  
-        ## center x/y
-        # N.B. be sure to do all the analysis in floating point to avoid overflow
-        cX  = np.array(X - self.X0, dtype=float)
-        cY  = np.array(Y - self.Y0, dtype=float)
-        N = len(X) if hasattr(X,'__iter__') else 1
-        # update the 1st and 2nd order summary statistics 
-        wght    = self.alpha**N
-        # adaptive learning rate as function of integerated error
-        if self.N > self.warmup_weight:
-            ptwght = max(1, abs(self.int_err/self.int_err_N)*self.K_int_err) #1/max(1,err) if self.N > self.warmup_weight else 1
-        else:
-            ptwght = 1
-        # adaptive learning rate as a function of the direction of the error...
-        #if err < 0:
-        #    ptwght = ptwght*.1
-        self.N  = wght*self.N   + ptwght*N
-        self.sY = wght*self.sY  + ptwght*np.sum(cY,axis=0)
-        self.sX = wght*self.sX  + ptwght*np.sum(cX,axis=0)
-        self.sYY= wght*self.sYY + ptwght*np.sum(cY*cY,axis=0)
-        self.sYX= wght*self.sYX + ptwght*np.sum(cY*cX,axis=0)
-        self.sXX= wght*self.sXX + ptwght*np.sum(cX*cX,axis=0)
-
-        # update the slope when warmed up
-        if self.N > self.warmup_weight:
-            Yvar  = self.sYY - self.sY * self.sY / self.N
-            Xvar  = self.sXX - self.sX * self.sX / self.N
-            YXvar = self.sYX - self.sY * self.sX / self.N
-            self.a = (YXvar / Xvar + Yvar/YXvar )/2        
-        # update the bias given the estimated slope b = mu_y - a * mu_x
-        # being sure to include the shift to the origin!
-        self.b = (self.Y0 + self.sY / self.N) - self.a * (self.X0 + self.sX / self.N)
-
-        # check for steps in the inputs
-        # get our prediction for this point and use to track our prediction error
-        Yest = self.getY(X)
-        err  = np.mean(Y-Yest)
-
-        # track the prediction error, with long and short half-life
-        self.abs_err = self.abs_err*wght + abs(err)
-        # track with step window
-        int_err_wght = self.int_err_alpha**N
-        self.int_err_N = self.int_err_N * int_err_wght + N
-        self.int_err = self.int_err*int_err_wght + err
-
-        # only return the estimate if we've warmed up the tracker
-        if self.N < self.warmup_weight:
-            return Y
-
-        # detect change in statistics by significant difference in error statistics
-        # between long and short halflife
-        #if (self.step_err / self.step_N) > (self.err / self.N) * self.step_threshold:
-        #    print("step-detected")
-        #    #self.fit(X,Y,keep_err=True)
-        #    #Yest = Y
-
-        return Yest
-
-    def getX(self,y):
-        return ( y  - self.b ) / self.a 
-
-    def getY(self,x):
-        return self.a * x + self.b
-
-    @staticmethod
-    def testcase():
-        X = np.arange(1000) + np.random.randn(1)*1e6
-        a = 1000/50 
-        b = 1000*np.random.randn(1)
-        Ytrue= a*X+b
-        Y    = Ytrue+ np.random.standard_normal(Ytrue.shape)*10
-
-        import glob
-        import os
-        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
-        savefile = max(files, key=os.path.getctime)
-        #savefile = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1339.txt" 
-        #savefile = "C:/Users/Developer/Downloads/khash/mindaffectBCI_brainflow_ipad_200908_1938.txt"
-        from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_messages
-        from mindaffectBCI.utopiaclient import DataPacket
-        print("Loading: {}".format(savefile))
-        msgs = read_mindaffectBCI_messages(savefile,regress=None) # load without time-stamp fixing.
-        dp = [ m for m in msgs if isinstance(m,DataPacket)]
-        nsc = np.array([ (m.samples.shape[0],m.sts,m.timestamp) for m in dp])
-        X = np.cumsum(nsc[:,0])
-        Y = nsc[:,1]
-        Ytrue = nsc[:,2]
-
-        ltt = linear_trend_tracker(1000)
-        ltt.fit(X[0],Y[0]) # check scalar inputs
-        step = 1
-        idxs = list(range(1,X.shape[0],step))
-        ab = np.zeros((len(idxs),2))
-        print("{}) a={} b={}".format('true',a,b))
-        dts = np.zeros((Y.shape[0],))
-        dts[0] = ltt.getY(X[0])
-        for i,j in enumerate(idxs):
-            dts[j:j+step] = ltt.transform(X[j:j+step],Y[j:j+step])
-            ab[i,:] = (ltt.a,ltt.b)
-            yest = ltt.getY(X[j])
-            err =  yest - Y[j]
-            if abs(err)> 1000:
-                print("{}) argh! yest={} ytrue={} err={}".format(i,yest,Ytrue[j],err))
-            if i < 100:
-                print("{:4d}) a={:5f} b={:5f}\ty_est-y={:2.5f}".format(j,ab[i,0],ab[i,1],
-                        Y[j]-yest))
-
-        import matplotlib.pyplot as plt
-        ab,res,_,_ = np.linalg.lstsq(np.append(X[:,np.newaxis],np.ones((X.shape[0],1)),1),Y,rcond=-1)
-        ots = X*ab[0]+ab[1]        
-        idx=range(X.shape[0])
-        plt.plot(X[idx],Y[idx]- X[idx]*ab[0]-Y[0],label='server ts')
-        plt.plot(X[idx],dts[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server)')
-        plt.plot(X[idx],ots[idx] - X[idx]*ab[0]-Y[0],label='regressed ts (samp vs server) offline')
-
-        err = Y - X*ab[0] - Y[0]
-        cent = np.median(err); scale=np.median(np.abs(err-cent))
-        plt.ylim((cent-scale*5,cent+scale*5))
-
-        plt.legend()
-        plt.show()
-        
+    return (mu, good)
 
 try:
     from scipy.signal import butter, bessel, sosfilt, sosfilt_zi
@@ -577,6 +472,18 @@ except:
         return butter_py(order,freq,btype,output)
 
 def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
+    '''Use some initial data to "warmup" a second-order-sections filter to reduce startup artifacts.
+
+    Args:
+        zi (np.ndarray): the sos filter, state
+        X ([type]): the warmup data
+        axis (int, optional): The filter axis in X. Defaults to -1.
+        sos ([type], optional): the sos filter coefficients. Defaults to None.
+
+    Returns:
+        [np.ndarray]: the warmed up filter coefficients
+    '''
+    
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # zi => (order,...,2,...)
@@ -599,7 +506,7 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
     return zi
 
 def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
-    ''' given a set of filter cutoffs return butterworth sos coefficients '''
+    ''' given a set of filter cutoffs return butterworth or bessel sos coefficients '''
 
     # convert to normalized frequency, Note: not to close to 0/1
     if stopband is None:
@@ -649,14 +556,31 @@ def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0
     sos = np.concatenate(sos,axis=0)
     return sos
 
-def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, verb=True, ftype='butter'):
-    ''' use a (cascade of) butterworth SOS filter(s) to band-pass and (cascade of) band stop X along axis '''
+def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, verb=True, ftype='butter'):
+    """use a (cascade of) butterworth SOS filter(s) filter X along axis
+
+    Args:
+        X (np.ndarray): the data to be filtered
+        stopband ([type]): the filter band specifications in Hz, as a list of lists of stopbands (given as (low-pass,high-pass)) or pass bands (given as (low-cut,high-cut,'bandpass'))
+        fs (float): the sampling rate of X
+        order (int, optional): the desired filter order. Defaults to 6.
+        axis (int, optional): the axis of X to filter along. Defaults to -2.
+        zi ([type], optional): the internal filter state -- propogate between calls for incremental filtering. Defaults to None.
+        verb (bool, optional): Verbosity level for logging. Defaults to True.
+        ftype (str, optional): The type of filter to make, one-of: 'butter', 'bessel'. Defaults to 'butter'.
+
+    Returns:
+        X [np.ndarray]: the filtered version of X
+        sos (np.ndarray): the designed filter coefficients
+        zi (np.ndarray): the filter state for propogation between calls
+
+    """    '''  '''
     if stopband is None: # deal with no filter case
         return (X,None,None)
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # TODO []: auto-order determination?
-    sos = iir_sosfilt_sos(stopband, fs, order, passband=passband, ftype=ftype)
+    sos = iir_sosfilt_sos(stopband, fs, order, ftype=ftype)
     sos = sos.astype(X.dtype) # keep as single precision
 
     if axis == X.ndim-2 and zi is None:
@@ -680,14 +604,15 @@ def butter_sosfilt(X, stopband, fs, order=6, axis=-2, zi=None, passband=None, ve
     # return filtered data, filter-coefficients, filter-state
     return (X, sos, zi)
 
-def save_butter_sosfilt_coeff(filename=None, stopband=((0,5),(25,-1)), fs=200, order=6, ftype='butter'):
+def save_butter_sosfilt_coeff(filename=None, stopband=((45,65),(5.5,25,'bandpass')), fs=200, order=6, ftype='butter'):
     ''' design a butterworth sos filter cascade and save the coefficients '''
     import pickle
-    sos = iir_sosfilt_sos(stopband, fs, order, passband=None, fytpe=ftype)
+    sos = iir_sosfilt_sos(stopband, fs, order, passband=None, ftype=ftype)
     zi = sosfilt_zi(sos)
     if filename is None:
         # auto-generate descriptive filename
-        filename = "{}_stopband{}_fs{}.pk".format(btype,stopband,fs)
+        filename = "{}_stopband{}_fs{}.pk".format(ftype,stopband,fs)
+    print("Saving to: {}\n".format(filename))
     with open(filename,'wb') as f:
         pickle.dump(sos,f)
         pickle.dump(zi,f)
@@ -820,10 +745,10 @@ def sosfilt_zi_py(sos):
             # Normalize the coefficients so a[0] == 1.
             b = b / a[0]
             a = a / a[0]
-        IminusA = np.eye(n - 1) - linalg.companion(a).T
+        IminusA = np.eye(n_sections - 1) - np.linalg.companion(a).T
         B = b[1:] - a[1:] * b[0]
         # Solve zi = A*zi + B
-        lfitler_zi = np.linalg.solve(IminusA, B)
+        lfilter_zi = np.linalg.solve(IminusA, B)
         zi[section] = scale * lfilter_zi
         scale *= b.sum() / a.sum()
         
@@ -842,7 +767,7 @@ def test_sosfilt_py():
     Xpy = sosfilt_2d_py(sos,X.copy(),-2)
 
     import matplotlib.pyplot as plt
-    plt.clf();
+    plt.clf()
     plt.subplot(411);plt.plot(X[:500,:]);plt.title('X')
     plt.subplot(412);plt.plot(Xsci[:500,:]);plt.title('Xscipy')
     plt.subplot(413);plt.plot(Xpy[:500,:]);plt.title('Xpy')
@@ -875,5 +800,5 @@ def test_sosfilt_py():
 #     b= K*b;    
 
 if __name__=='__main__':
-    test_butter_sosfilt()
-    linear_trend_tracker.testcase()
+    save_butter_sosfilt_coeff("sos_filter_coeff.pk")
+    #test_butter_sosfilt()

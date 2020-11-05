@@ -351,11 +351,20 @@ def crossautocov(X, Y, tau, offset=0):
     return Ctdtd
 
 def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=None, fs=None):
-    '''
-    Cxx =(d, d) updated data covariance
-    Cxy = (nY, nE, tau, d)  updated per output ERPs
-    Cyy = (nY, nE, tau, nE, tau) updated response covariance for each output
-    '''
+    """Visualize the summary statistics (Cxx, Cxy, Cyy) of a dataset
+
+    It is assumed the data has 'd' channels, with 'nE' different types of
+    trigger event, and a response length of 'tau' for each trigger.
+
+    Args:
+        Cxx (d,d): spatial covariance
+        Cxy (nY, nE, tau, d): per-output event related potentials (ERPs)
+        Cyy (nY, nE, tau, nE, tau): updated response covariance for each output
+        evtlabs ([type], optional): the labels for the event types. Defaults to None.
+        times ([type], optional): values for the time-points along tau. Defaults to None.
+        ch_names ([type], optional): textual names for the channels. Defaults to None.
+        fs ([type], optional): sampling rate for the data along tau (used to make times if not given). Defaults to None.
+    """    
     import matplotlib.pyplot as plt
     if times is None:
         times = np.arange(Cxy.shape[-2])
@@ -370,6 +379,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     # Cxx
     plt.subplot(311);
     plt.imshow(Cxx, origin='lower', extent=[0, Cxx.shape[0], 0, Cxx.shape[1]])
+    plt.colorbar()
     # TODO []: use the ch_names to add lables to the  axes
     plt.title('Cxx')
 
@@ -401,6 +411,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
     plt.subplot(313)
     plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
+    plt.colorbar()
     plt.title('Cyy')
 
 def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
@@ -477,12 +488,14 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None):
+def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, spatial_filter_type="Filter", ncol=2):
     '''
     Make a multi-plot of a factored model
     A = (k,d)
     R = (k,e,tau)
     '''
+    A=A.copy()
+    R=R.copy()
     if A.ndim > 2:
         if A.shape[0]>1 :
             print("Warning: only the 1st set ERPs is plotted")
@@ -520,7 +533,7 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
     print("A={} R={}".format(A.shape, R.shape))
     
     # plot per component
-    ncols = 2 #int(np.ceil(np.sqrt(A.shape[0])))
+    ncols = ncol #int(np.ceil(np.sqrt(A.shape[0])))
     nrows = A.shape[0] #int(np.ceil(A.shape[0]/ncols))
     # start at the bottom to share the axis
     for ci in range(A.shape[0]):
@@ -531,24 +544,33 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             axA = plt.subplot(nrows, ncols, subploti+1) # share limits
             axA.set_xlabel("Space")
             axR.set_xlabel("time (s)")
+            axR.grid(True)
             pA = axA
             pR = axR
         else: # normal plot
             pR = plt.subplot(nrows, ncols, subploti+2, sharex=axR, sharey=axR) 
             pA = plt.subplot(nrows, ncols, subploti+1, sharex=axA, sharey=axA) 
             plt.tick_params(labelbottom=False,labelleft=False) # no labels
+            pR.grid(True)
 
         # make the spatial plot
         sign = np.sign(A[ci,np.argmax(np.abs(A[ci,:]))]) # normalize directions
-        if not ch_pos is None:
+        if not ch_pos is None: # make as topoplot
             cRng= np.max(np.abs(A.reshape((-1))))
             levels = np.linspace(-cRng,cRng,20)
             tt=pA.tricontourf(ch_pos[:,0],ch_pos[:,1],A[ci,:]*sign,levels=levels,cmap='Spectral')
-            pA.plot(ch_pos[:,0],ch_pos[:,1],'ko',markersize=5)
+            for i,n in enumerate(ch_names):
+                #pA.plot(ch_pos[i,0],ch_pos[i,1],'.',markersize=5) # marker
+                pA.text(ch_pos[i,0],ch_pos[i,1],n,ha='center',va='center') # label
+            pA.set_aspect(aspect='equal')
+            pA.set_frame_on(False) # no frame
+            plt.tick_params(labelbottom=False,labelleft=False,which='both',bottom=False,left=False) # no labels, ticks
             plt.colorbar(tt)
         else:
             pA.plot(ch_names,A[ci,:]*sign,'.-')
-        pA.title.set_text("Spatial Filter #{}".format(ci))
+            pA.grid(True)
+
+        pA.title.set_text("Spatial {} #{}".format(spatial_filter_type,ci))
         # make the temporal plot, with labels, N.B. use loop so can set each lines label
         for e in range(R.shape[-2]):
             pR.plot(times,R[ci,e,:]*sign,'.-',label=evtlabs[e])

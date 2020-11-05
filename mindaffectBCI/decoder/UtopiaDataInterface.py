@@ -21,12 +21,21 @@
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
 from collections import deque
-from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment, linear_trend_tracker
+from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment
 from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
+from mindaffectBCI.decoder.linear_trend_tracker import linear_trend_tracker
 from time import sleep
 import numpy as np
 
 class UtopiaDataInterface:
+    """Adaptor class for interfacing between the decoder logic and the data source
+
+    This class provides functionality to wrap a real time data and stimulus stream to make
+    it easier to implement standard machine learning pipelines.  In particular it provides streamed
+    pre-processing for both EEG and stimulus streams, and ring-buffers for the same with time-stamp based indexing.    
+    """
+
+
     # TODO [X] : infer valid data time-stamps
     # TODO [X] : smooth and de-jitter the data time-stamps
     # TODO [] : expose a (potentially blocking) message generator interface
@@ -36,7 +45,8 @@ class UtopiaDataInterface:
 
     def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
-                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker'):
+                 timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker',
+                 clientid=None):
         # rate control
         self.timeout_ms = timeout_ms
         self.mintime_ms = mintime_ms # minimum time to spend in update => max processing rate
@@ -46,7 +56,7 @@ class UtopiaDataInterface:
         # connect to the mindaffectDecoder
         self.host = None
         self.port = -1
-        self.U = UtopiaClient() if U is None else U
+        self.U = UtopiaClient(clientid) if U is None else U
         self.t0 = self.getTimeStamp()
         # init the buffers
 
@@ -338,10 +348,10 @@ class UtopiaDataInterface:
 
 
     def update(self, timeout_ms=None, mintime_ms=None):
-        '''Update the tracking state w.r.t. the utopia-hub.
+        '''Update the tracking state w.r.t. the data source
 
-        By adding data to the data_ringbuffer and (non-data) messages
-        to the messages ring buffer.
+        By adding data to the data_ringbuffer, stimulus info to the stimulus_ringbuffer, 
+        and other messages to the messages ring buffer.
 
         Args
          timeout_ms : int
@@ -442,15 +452,38 @@ class UtopiaDataInterface:
         # return new messages, and count new samples/stimulus 
         return (newmsgs, nsamp, nstimulus)
 
+
+
     def push_back_newmsgs(self,oldmsgs):
-        '''put unprocessed messages back onto the  newmessages queue'''
+        '''put unprocessed messages back onto the newmessages queue'''
         # TODO []: ensure  this preserves message time-stamp order?
         self.newmsgs.extend(oldmsgs)
 
+
+
+
     def extract_data_segment(self, bgn_ts, end_ts=None):
+        """extract a segment of data based on a start and end time-stamp
+
+        Args:
+            bgn_ts (float): segment start time-stamp
+            end_ts (float, optional): segment end time-stamp. Defaults to None.
+
+        Returns:
+            (np.ndarray): the data between these time-stamps, or None if timestamps invalid
+        """        
         return extract_ringbuffer_segment(self.data_ringbuffer,bgn_ts,end_ts)
     
     def extract_stimulus_segment(self, bgn_ts, end_ts=None):
+        """extract a segment of the stimulus stream based on a start and end time-stamp
+
+        Args:
+            bgn_ts (float): segment start time-stamp
+            end_ts (float, optional): segment end time-stamp. Defaults to None.
+
+        Returns:
+            (np.ndarray): the stimulus events between these time-stamps, or None if timestamps invalid
+        """        
         return extract_ringbuffer_segment(self.stimulus_ringbuffer,bgn_ts,end_ts)
     
     def extract_msgs_segment(self, bgn_ts, end_ts=None):
@@ -509,10 +542,15 @@ except:
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
 class butterfilt_and_downsample(TransformerMixin):
+    """Incremental streaming transformer to provide filtering and downsampling data transformations
+
+    Args:
+        TransformerMixin ([type]): sklearn compatible transformer
+    """    
     def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
         self.stopband = stopband
         self.fs = fs
-        self.fs_out = fs_out if fs_out < fs else fs
+        self.fs_out = fs_out if fs_out is not None and fs_out < fs else fs
         self.order = order
         self.axis = -2
         if not self.axis == -2:
@@ -547,7 +585,7 @@ class butterfilt_and_downsample(TransformerMixin):
             
         # preprocess -> downsample
         self.nsamp = 0
-        self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0
+        self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0 if self.fs_out is not None else 1
         self.out_fs_  = self.fs/self.resamprate_
         print("resample: {}->{}hz rsrate={}".format(self.fs, self.out_fs_, self.resamprate_))
 
@@ -644,7 +682,10 @@ class butterfilt_and_downsample(TransformerMixin):
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.stim2event import stim2event
 class stim2eventfilt(TransformerMixin):
-    ''' transformer to transform a sequence of stimulus states to a brain event sequence '''
+    ''' Incremental streaming transformer to transform a sequence of stimulus states to a brain event sequence
+    
+    For example by transforming a sequence of stimulus intensities, to rising and falling edge events.
+    '''
     def __init__(self, evtlabs=None, histlen=20):
         self.evtlabs = evtlabs
         self.histlen = histlen
@@ -713,10 +754,17 @@ class stim2eventfilt(TransformerMixin):
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 class power_tracker(TransformerMixin):
-    def __init__(self,halflife_mu_ms, halflife_power_ms, fs):
+    """Incremental streaming transformer from raw n-channel data, to exponientially smoothed channel powers
+
+    Args:
+        TransformerMixin ([type]): sklearn compatiable transformer
+    """
+
+    def __init__(self,halflife_mu_ms, halflife_power_ms, fs, car=True):
         # convert to per-sample decay factor
         self.alpha_mu = self.hl2alpha(fs * halflife_mu_ms / 1000.0 ) 
         self.alpha_power= self.hl2alpha(fs * halflife_power_ms / 1000.0 )
+        self.car = car
         self.sX_N = None
         self.sX = None
         self.sXX_N = None
@@ -727,6 +775,8 @@ class power_tracker(TransformerMixin):
 
     def fit(self,X):
         self.sX_N = X.shape[0]
+        if self.car:
+            X = X.copy() - np.mean(X,-1,keepdims=True)
         self.sX = np.sum(X,axis=0)
         self.sXX_N = X.shape[0]
         self.sXX = np.sum((X-(self.sX/self.sX_N))**2,axis=0)
@@ -736,6 +786,8 @@ class power_tracker(TransformerMixin):
         ''' compute the exponientially weighted centered power of X '''
         if self.sX is None: # not fitted yet!
             return self.fit(X)
+        if self.car:
+            X = X.copy() - np.mean(X,-1,keepdims=True)
         # compute updated mean
         alpha_mu   = self.alpha_mu ** X.shape[0]
         self.sX_N  = self.sX_N*alpha_mu + X.shape[0]
@@ -752,6 +804,7 @@ class power_tracker(TransformerMixin):
         return self.sXX / self.sXX_N
     
     def testcase(self):
+        import matplotlib.pyplot as plt
         X = np.random.randn(10000,2)
         #X = np.cumsum(X,axis=0)
         pt = power_tracker(100,100,100)
@@ -779,7 +832,8 @@ class power_tracker(TransformerMixin):
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 class timestamp_interpolation(TransformerMixin):
-    """transform from per-packet time-stamps to per-sample timestamps (with de-jitter)
+    """Incremental streaming tranformer to transform from per-packet time-stamps to per-sample timestamps 
+    with time-stamp smoothing, de-jittering, and dropped-sample detection.
     """
 
     def __init__(self,fs=None,sample2timestamp=None, max_delta=200):
@@ -868,6 +922,135 @@ class timestamp_interpolation(TransformerMixin):
         plt.plot(ts_true - sts)
         plt.show()
 
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+from mindaffectBCI.decoder.preprocess import temporally_decorrelate
+class temporal_decorrelator(TransformerMixin):
+    """Incremental streaming tranformer to decorrelate temporally channels in an input stream
+    """
+
+    def __init__(self, order=10, reg=1e-4, eta=1e-5, axis=-2):
+        self.reg=reg
+        self.eta=eta
+        self.axis=axis
+
+    def fit(self,X):
+        self.W_ = np.zeros((self.order,X.shape[-1]),dtype=X.dtype)
+        self.W_[-1,:]=1
+        _, self.W_ = self.transform(X[1:,:])
+
+    def transform(self,X):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            X (float): the data to decorrelate
+            nsamp(int): number of samples to interpolate
+
+        Returns:
+            np.ndarray: the decorrelated data
+        """
+        if not hasattr(self,'W_'):
+            self.fit(X)
+
+        X, self.W_ = temporally_decorrelate(X, W=self.W_, reg=self.reg, eta=self.eta, axis=self.axis)
+
+        return X
+
+    def testcase(self, dur=3, fs=100, blksize=10):
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
+        fs=100
+        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
+        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+
+        #X = np.cumsum(X,-2) # 1/f spectrum
+        print("X={}".format(X.shape))
+        plt.figure(1)
+        plot_grand_average_spectrum(X, fs)
+        plt.suptitle('Raw')
+        plt.show(block=False)
+
+        tdc = temporal_decorrelator()
+        wX = np.zeros(X.shape,X.dtype)
+        for i in range(0,X.shape[-1],blksize):
+            idx = range(i,i+blksize)
+            wX[idx,:] = tdc.transform(X[idx,:])
+        
+        # compare raw vs summed filterbank
+        plt.figure(2)
+        plot_grand_average_spectrum(wX,fs)
+        plt.suptitle('Decorrelated')
+        plt.show()
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+from mindaffectBCI.decoder.preprocess import standardize_channel_power
+class channel_power_standardizer(TransformerMixin):
+    """Incremental streaming tranformer to channel power normalization in an input stream
+    """
+
+    def __init__(self, reg=1e-4, axis=-2):
+        self.reg=reg
+        self.axis=axis
+
+    def fit(self,X):
+        self.sigma2_ = np.zeros((X.shape[-1],), dtype=X.dtype)
+        self.sigma2_ = X[0,:]*X[0,:] # warmup with 1st sample power
+        self.transform(X[1:,:])
+
+    def transform(self,X):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            X (float): the data to decorrelate
+
+        Returns:
+            np.ndarray: the decorrelated data
+        """
+        if not hasattr(self,'sigma2_'):
+            self.fit(X)
+
+        X, self.W_ = standardize_channel_power(X, sigma2=self.sigma2_, reg=self.reg, axis=self.axis)
+
+        return X
+
+    def testcase(self, dur=3, fs=100, blksize=10):
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
+        fs=100
+        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
+        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
+        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
+
+            #X = np.cumsum(X,-2) # 1/f spectrum
+        print("X={}".format(X.shape))
+        plt.figure(1)
+        plot_grand_average_spectrum(X, fs)
+        plt.suptitle('Raw')
+        plt.show(block=False)
+
+        cps = channel_power_standardizer()
+        wX = np.zeros(X.shape,X.dtype)
+        for i in range(0,X.shape[-1],blksize):
+            idx = range(i,i+blksize)
+            wX[idx,:] = cps.transform(X[idx,:])
+        
+        # compare raw vs summed filterbank
+        plt.figure(2)
+        plot_grand_average_spectrum(wX,fs)
+        plt.suptitle('Decorrelated')
+        plt.show()
+
+
 def testRaw():
     # test with raw
     ui = UtopiaDataInterface()
@@ -899,9 +1082,9 @@ def testFileProxy2(filename):
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
     U = FileProxyHub(filename)
     fs = 200
-    ofs = 200
+    fs_out = 200
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=ofs)
+    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=fs_out)
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
     ui.connect()
     # run in bits..
@@ -963,8 +1146,7 @@ if __name__ == "__main__":
     #testRaw()
     #testPP()
     #testERP()
-    filename="C:/Users/Developer/Downloads/mindaffectBCI__201002_1713.txt"
-    filename="C:/Users/Developer/Downloads/trig_check/mindaffectBCI_cyton_brainflow_201002_2008.txt"
+    filename="~/Desktop/mark/mindaffectBCI_*.txt"
     testFileProxy(filename)
     #testFileProxy2(filename)
     # "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt")

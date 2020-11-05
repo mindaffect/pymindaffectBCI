@@ -8,7 +8,7 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
-from mindaffectBCI.decoder.zscore2Ptgt_softmax import calibrate_softmaxscale
+from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax, calibrate_softmaxscale, marginalize_scores
 
 try:
     from sklearn.model_selection import StratifiedKFold
@@ -52,13 +52,21 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip'):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100, prediction_offsets=None, verb=0):
+        """Base class for general sequence to sequence models and inference
+
+            N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
+
+        Args:
+          evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
+          tau (int, optional): the length in samples of the stimulus response. Defaults to 18.
+          offset ([ListInt], optional): a (list of) possible offsets from the even time for the response window.
+          outputscore (str, Optional): the type of output scoring function to use. Defaults to 'ip'.
+          priorweight (float, Optional): the weighting in pseudo-samples for the prior estimate for the prediction noise variance.  Defaults to 120.
+          startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
+        """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau = tau
-        self.offset = offset
-        self.outputscore = outputscore
-        self.verb = 0
-        self.priorweight = 120
+        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets, verb)
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
@@ -75,33 +83,87 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, Y):
         '''fit model mapping 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)'''
-        raise NotImplemented
+        raise NotImplementedError
 
     def is_fitted(self):
         return hasattr(self,"W_")
 
-    def predict(self, X, Y, dedup0=None, prevY=None):
-        '''make predictions on multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)
-        
-        N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)'''
+    def clear(self):
+        if hasattr(self,"W_"): delattr(self,'W_')
+        if hasattr(self,"R_"): delattr(self,'R_')
+        if hasattr(self,"A_"): delattr(self,'A_')
+        if hasattr(self,"b_"): delattr(self,'b_')
+
+    def predict(self, X, Y, dedup0=True, prevY=None, offsets=None):
+        """Generate predictions with the fitted model for the paired data + stimulus-sequences
+
+            N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
+
+        Args:
+            X (np.ndarray (tr,samp,d)): the multi-trial data
+            Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
+            dedup0 ([type], optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
+            prevY ([type], optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
+            offsets ([ListInt], optional): list of offsets in Y to try when decoding, to override the class variable.  Defaults to None.
+
+        Raises:
+            NotFittedError: raised if try to predict without first fitting
+
+        Returns:
+            Fy (np.ndarray (mdl,tr,samp,nY): score for each output in each trial.  Higher score means more 'likely' to be the 'true' target
+        """        
         if not self.is_fitted():
             # only if we've been fitted!
             raise NotFittedError
+        
         # convert from stimulus coding to brain response coding
         Y = self.stim2event(Y, prevY)
-        # valid performance
+        
+        # apply the model to transform from raw data to stimulus scores
         Fe = self.transform(X) # (nM, nTrl, nSamp, nE)
-        Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=self.offset) #(nM, nTrl, nSamp, nY)
+
+        # combine the stimulus information and the stimulus scores to
+        # get output scores.  Optionally, include time-shifts in output.
+        if offsets is None and self.prediction_offsets is not None:
+            offsets = self.prediction_offsets
+        Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=offsets) #(nM, nTrl, nSamp, nY)
+        
         # BODGE: strip un-needed model dimension
-        if Fy.shape[0] == 1 and Fy.ndim > 3:
+        if Fy.ndim > 3 and Fy.shape[0] == 1:
             Fy = Fy.reshape(Fy.shape[1:])
         return Fy
 
     def transform(self, X):
-        ''' estimate the stimulus properties from the raw data '''
-        return scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
+        """ transform raw data into raw stimulus scores by convolving X with the model, i.e. Fe = X (*) (W*R)
 
-    def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True):
+        Args:
+            X (np.ndarray (nTrl,nSamp,d): The raw eeg data.
+
+        Returns:
+            Fe (np.ndarray (nTrl,nSamp,nE)): The raw stimulus scores.
+        """
+        Fe = scoreStimulus(X, self.W_, self.R_, self.b_, offset=self.offset)
+        if Fe.ndim>X.ndim and Fe.shape[0]==1:
+            Fe = Fe[0,...]
+        return Fe
+
+    def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True, marginalizedecis=False):
+        """Convert stimulus scores to stimulus probabities of being the target
+
+        Args:
+            Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
+            marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
+
+        Raises:
+            NotFittedError: [description]
+
+        Returns:
+            Ptgt (np.ndarray (tr,nDecis,nY)): score for each decision point in each trial for each output.  Higher score means more 'likely' to be the 'true' target
+        """        
         # build optional arguments if set
         kwargs=dict()
         if hasattr(self,'sigma0_') and self.sigma0_ is not None:
@@ -111,11 +173,28 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
             kwargs['softmaxscale']=self.softmaxscale_
 
-        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, **kwargs)
+        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
         return Ptgt #(nTrl, nEp, nY)
 
     
-    def predict_proba(self, X, Y, marginalizemodels=False, minDecisLen=-1, dedup0=None, prevY=None):
+    def predict_proba(self, X, Y, marginalizemodels=True, marginalizedecis=False, startup_correction=100, minDecisLen=-1, dedup0=True, prevY=None):
+        """Predict the probability of each output for paired data/stimulus sequences
+
+        Args:
+            X (np.ndarray (tr,samp,d)): the multi-trial data
+            Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
+            dedup0 (bool, optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to True.
+            prevY (np.ndarray, optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
+            marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
+
+        Raises:
+            NotFittedError: [description]
+
+        Returns:
+            Ptgt (np.ndarray (tr,nDecis,nY): Probability of each output being the target.  Higher score means more 'likely' to be the 'true' target
+        """        
         Fy = self.predict(X, Y, dedup0=dedup0, prevY=prevY)
         return self.decode_proba(Fy,marginalizemodels=marginalizemodels, minDecisLen=minDecisLen)
 
@@ -127,29 +206,48 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return BaseSequence2Sequence.audc_score(Fy)
 
     @staticmethod
-    def audc_score(Fy):
+    def audc_score(Fy,marginalizemodels=True):
         '''compute area under decoding curve score from Fy, *assuming* Fy[:,:,0] is the *true* classes score'''
         sFy = np.cumsum(Fy, axis=-2) # (nM, nTrl, nSamp, nY)
+        if marginalizemodels and sFy.ndim>3 and sFy.shape[0]>1 :
+            # marginalize over models
+            sFy = marginalize_scores(sFy,axis=0) # (nTrl,nSamp,nY)
         Yi  = np.argmax(sFy, axis=-1) # output for every model*trial*sample
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
-    def cv_fit(self, X, Y, cv=5, fit_params={}, verbose=0, return_estimator=True, calibrate_softmax=True, dedup0=True):
-        ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True):
+        """Cross-validated fit the model for generalization performance estimation
+
+        N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.
+
+        Args:
+            X ([type]): [description]
+            Y ([type]): [description]
+            cv (int, optional): the number of folds to use, or a fold generator. Defaults to 5.
+            fit_params (dict, optional): additional parameters to pass to the self.fit(X,Y,...) function. Defaults to dict().
+            verbose (bool, optional): flag for model fitting verbosity. Defaults to 0.
+            return_estimator (bool, optional): should we return the cross-validated predictions. Defaults to True.
+            calibrate_softmax (bool, optional): after fitting the model, should we use the cross-validated predictions to calibrate the probability estimates. Defaults to True.
+            dedup0 (bool, optional): should we de-duplicate copies of the 'true-target'. Defaults to True.
+            retrain_on_all (bool, optional): should we retrain the model on all the data after the cv folds. Defaults to True.
+
+        Returns:
+            results (dict): dictionary with the results
+        """        
+
         # TODO [] : make more computationally efficient by pre-computing the updateSummaryStatistics etc.
         # TODO [] : conform to sklearn cross_validate signature
         # TODO [] : move into a wrapper class
+        if cv == True:  cv = 5
         if isinstance(cv, int):
             if X.shape[0] > 1:
                 cv = StratifiedKFold(n_splits=min(cv, X.shape[0])).split(np.zeros(X.shape[0]), np.zeros(Y.shape[0]))
             else: # single trial, train/test on all...
                 cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
 
-        if return_estimator:
-            Fy = np.zeros(Y.shape) if Y.ndim<=3 else np.zeros(Y.shape[:-1]) # (nTrl, nEp, nY)
-        else:
-            Fy = None
         scores = []
+        Fy = np.zeros(Y.shape, dtype=X.dtype)
         if verbose > 0:
             print("CV:", end='')
         for i, (train_idx, valid_idx) in enumerate(cv):
@@ -160,39 +258,61 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             self.fit(X[train_idx, ...], Y[train_idx, ...], **fit_params)
 
             # predict, forcing removal of copies of  tgt=0 so can score
+            if X[valid_idx,...].size==0:
+                print("Warning: no-validation trials!!! using all data!")
+                valid_idx = slice(X.shape[0])
             Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
-            if return_estimator:
-                Fy[valid_idx, ...] = Fyi
+
+            if i==0 and Fyi.ndim > Fy.ndim: # reshape Fy to include the extra model dim
+                Fy = np.zeros(Fyi.shape[:-3]+Y.shape, dtype=X.dtype)       
+            if Fyi.ndim > Y.ndim:
+                Fy[:,valid_idx,...]=Fyi
+            else:
+                Fy[valid_idx,...]=Fyi
             
             scores.append(self.audc_score(Fyi))
 
         # final retrain with all the data
-        self.fit(X, Y)
+        if retrain_on_all:
+            self.fit(X, Y, **fit_params)
 
         self.sigma0_ = None
-        self.softmaxscale_ = None
-        if return_estimator:
-            # estimate prior for Fy using the cv'd Fy
-            #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
-            #print('Fy={}'.format(Fy.shape))
-            # N.B. need to match the filter used in the decoder..
-            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)  # per-trial
-            #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
-            self.sigma0_ = np.median(self.sigma0_.ravel())  # ave
-            print('Sigma0 = {}'.format(self.sigma0_))
+        self.softmaxscale_ = 1
 
-            if calibrate_softmax:
-                # calibrate the softmax scale to give more valid probabilities
-                nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, priorsigma=(self.sigma0_,self.priorweight))
-                self.softmaxscale_ = calibrate_softmaxscale(nFy)
+        # estimate prior for Fy using the cv'd Fy
+        #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
+        #print('Fy={}'.format(Fy.shape))
+        # N.B. need to match the filter used in the decoder..
+        if Fy.ndim>3:
+            self.sigma0_, _ = estimate_Fy_noise_variance(Fy[0,...], priorsigma=None)  # per-model+trial
+        else:
+            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
+        #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
+        self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
+        print('Sigma0 = {}'.format(self.sigma0_))
 
-        return {'estimator': Fy, 'test_score': scores}
-    
+        if calibrate_softmax:
+            # calibrate the softmax scale to give more valid probabilities
+            nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, nEpochCorrection=self.startup_correction, priorsigma=(self.sigma0_,self.priorweight))
+            self.softmaxscale_ = calibrate_softmaxscale(nFy)
+
+        Fy_raw = Fy
+        if return_estimator and Fy.ndim>3:
+            # make into a Fy matrix
+            # N.B. DO NOT marginalize directly on per-sample scores -- as they are v.v.v. noisy!!
+            sFy = np.sum( Fy, -2, keepdims=True)
+            p = softmax( sFy*self.softmaxscale_, axis=0) # weight for each model
+            print("model wght= {}".format(np.mean(p.reshape((p.shape[0],-1)),axis=1)))
+            Fy = np.sum( Fy * p, axis=0)
+
+        return dict(estimator=Fy, rawestimator=Fy_raw, test_score=scores)
+
+
     def plot_model(self, **kwargs):
         if not self.R_ is None:
             print("Plot Factored Model")
-            if False and hasattr(self, 'A_'):
-                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, **kwargs)
+            if hasattr(self, 'A_'):
+                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, spatial_filter_type='Pattern', **kwargs)
             else:
                 plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
         else:
@@ -201,15 +321,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=1e-8, rcond=1e-4, badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
-        self.rank = rank
-        self.reg  = reg
-        self.rcond= rcond
-        self.badEpThresh = badEpThresh
-        self.symetric = symetric
-        self.center = center
-        self.CCA = CCA
+        self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
     def fit(self, X, Y, stimTimes=None):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, Y)'''
@@ -228,17 +342,86 @@ class MultiCCA(BaseSequence2Sequence):
         R = R.astype(X.dtype)
         self.W_ = W #(nM,rank,d)
         self.R_ = R #(nM,rank,e,tau)
+        self.fit_b(X) #(nM,e)
         # store A_ for plotting later
         self.A_ = np.einsum("de,Mkd->Mke",Cxx,W)
-        
+
+        return self
+
+
+    def fit_b(self,X):
+        """fit the bias parameter given the other parameters and a dataset
+
+        Args:
+            X (np.ndarray): the target data
+        """        
         if self.center: # use bias terms to correct for data centering
             muX = np.mean(X.reshape((-1,X.shape[-1])),0)
-            self.b_ = -np.einsum("Mkd,d,Mket->Me",W,muX,R) # (nM,d)
+            self.b_ = -np.einsum("Mkd,d,Mket->Me",self.W_,muX,self.R_) # (nM,e)
             self.b_ = self.b_[0,:] # strip model dim..
         else:
             self.b_ = None
-
         return self
+
+
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, 
+               return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True, ranks=None):
+        ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
+        if ranks is None :
+            # call the base version
+            return BaseSequence2Sequence.cv_fit(self,X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0,retrain_on_all)
+
+        # fast path for cross validation over rank
+        cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
+        if cv == True:  cv = 5
+        if isinstance(cv, int):
+            if X.shape[0] > 1:
+                cv = StratifiedKFold(n_splits=min(cv, X.shape[0])).split(np.zeros(X.shape[0]), np.zeros(Y.shape[0]))
+            else: # single trial, train/test on all...
+                cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
+
+        if return_estimator:
+            Fy = np.zeros(Y.shape) if Y.ndim<=3 else np.zeros(Y.shape[:-1]) # (nTrl, nEp, nY)
+        else:
+            Fy = None
+        scores = []
+        if verbose > 0:
+            print("CV:", end='')
+
+        maxrank = max(ranks)
+        self.rank = maxrank
+        scores = [[] for i in range(len(ranks))]
+        for i, (train_idx, valid_idx) in enumerate(cv):
+            if verbose > 0:
+                print(".", end='', flush=True)
+            #print("trn={} val={}".format(train_idx,valid_idx))
+
+            # 1) fit with max-rank            
+            self.fit(X[train_idx, ...], Y[train_idx, ...], **fit_params)
+
+            # 2) Extract the desired rank-sub-models and predict with them
+            W = self.W_ #(nM,rank,d)
+            R = self.R_ #(nM,rank,e,tau)
+            for i,r in enumerate(ranks):
+                self.W_ = W[...,:r,:]
+                self.R_ = R[...,:r,:,:]
+                self.fit_b(X[train_idx,...])
+                # predict, forcing removal of copies of  tgt=0 so can score
+                Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
+                scores[i].append(self.audc_score(Fyi))
+        
+        #3) get the *best* rank
+        scores= np.mean(np.array(scores),axis=-1) # (ranks,folds) -> ranks
+        print("Rank score: " + ", ".join(["{}={:4.3f}".format(r,s) for (r,s) in zip(ranks,scores)]),end='')
+        maxri = np.argmax(scores)
+        self.rank = ranks[maxri]
+        print(" -> best={}".format(self.rank))
+
+        # final retrain with all the data
+        # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
+        res = BaseSequence2Sequence.cv_fit(self,X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
+        return res
+
     
 class FwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using forward linear regression  X = A*Y '''
@@ -534,7 +717,7 @@ def testcase(dataset='toy',loader_args=dict()):
     # cca - cv-fit
     print("CV fitted")
     cca = MultiCCA(tau=tau, rank=1, reg=None, evtlabs=evtlabs)
-    cv_res = cca.cv_fit(X, Y)
+    cv_res = cca.cv_fit(X, Y, ranks=(1,2,3,5))
     Fy = cv_res['estimator']
     (_) = decodingCurveSupervised(Fy,priorsigma=(cca.sigma0_,cca.priorweight))
         
@@ -603,8 +786,7 @@ def testcase(dataset='toy',loader_args=dict()):
     
     plot_erp(factored2full(svc.W_, svc.R_), ch_names=ch_names, evtlabs=evtlabs)
     plt.savefig('W_svc.png')
-
-    
+   
     # hyper-parameter optimization with cross-validation
     from sklearn.model_selection import GridSearchCV
     tuned_parameters={'rank':[1, 2, 3, 5], 'tau':[int(dur*fs) for dur in [.2, .3, .5, .7]], 'evtlabs':[['re', 'fe'], ['re', 'ntre'], ['0','1']]}

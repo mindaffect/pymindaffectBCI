@@ -11,9 +11,6 @@ All of our tutorials are interactive Jupyter Notbeooks. Clone our `repository <h
    first_run
    simple_output_tutorial
    simple_presentation_tutorial
-<<<<<<< HEAD
-   simple_integration_tutorial
-=======
    simple_integration_tutorial
    build_your_own_optical_sensor
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
+   stimulus_time-lock_test_tutorial
