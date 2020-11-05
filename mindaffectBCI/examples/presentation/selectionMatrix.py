@@ -80,12 +80,18 @@ class InstructionScreen(Screen):
                                                multiline=True,
                                                width=int(window.width*.8))
         self.set_text(text)
+
+        # add the framerate box
+        self.framerate=pyglet.text.Label("", font_size=12, x=window.width, y=window.height,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='right', anchor_y='top')
+        
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,os.path.dirname(os.path.abspath(__file__)),
                                                os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..'))
             logo = pyglet.image.load(logo)
         logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-        self.logo = pyglet.sprite.Sprite(logo,window.width,window.height)
+        self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16)
         self.logo.update(scale_x=window.width*.1/logo.width, 
                          scale_y=window.height*.1/logo.height)
 
@@ -114,6 +120,7 @@ class InstructionScreen(Screen):
                 self.window.last_key_press = None
         if self.elapsed_ms() > self.duration:
             self.isDone = True
+
         return self.isDone
 
     def elapsed_ms(self):
@@ -127,6 +134,16 @@ class InstructionScreen(Screen):
         if self.clearScreen:
             self.window.clear()
         self.instructLabel.draw()
+
+        # check if should update display
+        # TODO[]: only update screen 1x / second
+        global flipstats
+        flipstats.update_statistics()
+        self.framerate.begin_update()
+        self.framerate.text = "{:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma)
+        self.framerate.end_update()
+        self.framerate.draw()
+
         self.logo.draw()
 
 
@@ -156,22 +173,18 @@ class MenuScreen(InstructionScreen):
             self.isDone = False
             return self.isDone
 
-        # check if should update display
-        # TODO[]: only update screen 1x / second
-        global flipstats
-        flipstats.update_statistics()
-        self.set_message("Frame-duration: {:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
-
+        # valid key is pressed
         global last_key_press
         if self.window.last_key_press:
             self.key_press = self.window.last_key_press
             if self.key_press in self.valid_keys:
                 self.isDone = True
             self.window.last_key_press = None
+
+        # time-out
         if self.elapsed_ms() > self.duration:
             self.isDone = True
         return self.isDone
-
 
 
 
@@ -832,11 +845,13 @@ class SelectionGridScreen(Screen):
         self.opto_sprite.visible=False
 
         # add the sentence box
-        y = (gridheight-1)/gridheight*winh # top-edge cell
-        x = winw*.2 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, x=x, y=y+h/2, width=winw-x,
+        y = winh # top-edge cell
+        x = winw*.15 # left-edge cell
+        self.sentence=pyglet.text.Label(sentence, font_size=32, 
+                                        x=x, y=y, 
+                                        width=winw-x-winw*.1, height=(gridheight-1)/gridheight*winh,
                                         color=(255, 255, 255, 255),
-                                        anchor_x='left', anchor_y='center',
+                                        anchor_x='left', anchor_y='top',
                                         multiline=True,
                                         batch=self.batch, group=self.foreground)
 
@@ -852,11 +867,12 @@ class SelectionGridScreen(Screen):
             logo = pyglet.image.load(logo)
             logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
             self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16) # sprite a window top-right
-        self.logo.batch = self.batch
-        self.logo.group = self.foreground
-        self.logo.update(x=window.width,  y=window.height-16,
-                         scale_x=window.width*.1/logo.width, 
-                         scale_y=window.height*.1/logo.height)
+        if self.logo:
+            self.logo.batch = self.batch
+            self.logo.group = self.foreground
+            self.logo.update(x=window.width,  y=window.height-16,
+                            scale_x=window.width*.1/logo.width, 
+                            scale_y=window.height*.1/logo.height)
 
 
     def is_done(self):

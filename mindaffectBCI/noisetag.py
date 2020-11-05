@@ -678,11 +678,11 @@ class sumstats:
     def update_statistics(self):
         import statistics
         buf = self.buf[:min(len(self.buf),self.N)]
-        self.mu = statistics.mean(buf)
-        self.med= statistics.median(buf)
+        self.mu = statistics.mean(buf) if len(buf)>0 else -1
+        self.med= statistics.median(buf) if len(buf)>0 else -1
         self.sigma=statistics.stdev(buf) if len(buf)>2 else -1
-        self.min = min(buf)
-        self.max = max(buf)
+        self.min = min(buf) if len(buf)>0 else -1
+        self.max = max(buf) if len(buf)>0 else -1
 
     def __str__(self):
         self.update_statistics()
