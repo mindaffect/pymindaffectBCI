@@ -110,13 +110,16 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         clsfr.fit(X,Y)
         Fy = clsfr.predict(X, Y, dedup0=True)
 
+
+    # use the raw scores, i.e. inc model dim, in computing the decoding curve
+    rawFy = res['rawestimator'] if 'rawestimator' in res else Fy
+
     # assess model performance
     score=clsfr.audc_score(Fy)
     print(clsfr)
     print("score={}".format(score))
 
-    # use the raw scores, i.e. inc model dim, in computing the decoding curve
-    rawFy = res['rawestimator'] if 'rawestimator' in res else Fy
+    # compute decoding curve
     (dc) = decodingCurveSupervised(rawFy, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
 
     return score, dc, Fy, clsfr, res
@@ -752,6 +755,11 @@ if __name__=="__main__":
     from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
     import glob
     import os
+
+
+    analyse_datasets('lowlands',loader_args=dict(fs_out=100,stopband=((45,65),(5.5,25,'bandpass'))),
+                    preprocess_args=dict(badChannelThresh=None, badTrialThresh=None, whiten=False, whiten_spectrum=.1),
+                    model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe','ntre'),rank=1),ranks=(1,2,3,5), prediction_offsets=(-1,0,1)) #cv=[(slice(10),slice(10,None))],retrain_on_all=False,
 
     #debug_test_single_dataset('p300_prn',dataset_args=dict(label='rc_5_flash'),
     #              loader_args=dict(fs_out=32,stopband=((0,1),(12,-1)),subtriallen=None),

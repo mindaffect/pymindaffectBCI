@@ -189,11 +189,11 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     
     else:
         # single dataset
-        plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
         if len(args)>=7-2:
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
             Perr = args[6-2].copy() #(nTrl,nInt)
+            plt.plot(integerationLengths.T,Perr.T,color='.95') # line per trial
             Perr[Yerr<0]=np.NaN
             Perr[Yerr==True]=np.NaN # disable points where it was in error
             # est when was correct
@@ -207,6 +207,8 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
             plt.title('Decoding Curve\n(nTrl={})'.format(Yerr.shape[0]))
 
+        plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
+
     plt.ylim((0,1))
     plt.xlabel('Integeration Length (samples)')
     plt.ylabel('Perr')
@@ -215,11 +217,13 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
 
 def testcase():
     import numpy as np
+    import matplotlib.pyplot as plt
     Fy=np.random.standard_normal((2,10,100,50))
     Fy[0,:,:,0]=Fy[0,:,:,0] + 0.3
     from decodingCurveSupervised import decodingCurveSupervised
     (dc)=decodingCurveSupervised(Fy)
     plot_decoding_curve(*dc)
+    plt.show(block=False)
 
     sFy = np.cumsum(Fy,-2)
     Yi = np.argmax(sFy,-1)
@@ -230,7 +234,9 @@ def testcase():
     il=np.tile(dc[0][np.newaxis,:],(4,1))
     pe=np.tile(dc[1][np.newaxis,:],(4,1))
     pe= pe+np.random.standard_normal(pe.shape)*.1 # add some noise
+    plt.figure()
     plot_decoding_curve(il,pe)
+    plt.show()
     
 
 if __name__=="__main__":

@@ -212,7 +212,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if marginalizemodels and sFy.ndim>3 and sFy.shape[0]>1 :
             # marginalize over models
             sFy = marginalize_scores(sFy,axis=0) # (nTrl,nSamp,nY)
-        Yi  = np.argmax(sFy, axis=-1) # output for every model*trial*sample
+        validTrl = np.any(np.any(sFy>0,-1),-1) # (nM,nTrl) flag if this trial is valid, i.e. some non-zero
+        Yi  = np.argmax(sFy[validTrl,:,:], axis=-1) # output for every model*trial*sample
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
@@ -380,10 +381,6 @@ class MultiCCA(BaseSequence2Sequence):
             else: # single trial, train/test on all...
                 cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
 
-        if return_estimator:
-            Fy = np.zeros(Y.shape) if Y.ndim<=3 else np.zeros(Y.shape[:-1]) # (nTrl, nEp, nY)
-        else:
-            Fy = None
         scores = []
         if verbose > 0:
             print("CV:", end='')
@@ -391,6 +388,7 @@ class MultiCCA(BaseSequence2Sequence):
         maxrank = max(ranks)
         self.rank = maxrank
         scores = [[] for i in range(len(ranks))]
+        Fy = np.zeros((len(ranks),)+Y.shape,dtype=X.dtype)
         for i, (train_idx, valid_idx) in enumerate(cv):
             if verbose > 0:
                 print(".", end='', flush=True)
@@ -402,13 +400,20 @@ class MultiCCA(BaseSequence2Sequence):
             # 2) Extract the desired rank-sub-models and predict with them
             W = self.W_ #(nM,rank,d)
             R = self.R_ #(nM,rank,e,tau)
-            for i,r in enumerate(ranks):
+            for ri,r in enumerate(ranks):
                 self.W_ = W[...,:r,:]
                 self.R_ = R[...,:r,:,:]
                 self.fit_b(X[train_idx,...])
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
-                scores[i].append(self.audc_score(Fyi))
+                if i==0 and ri==0 and Fyi.ndim >= Fy.ndim: # reshape Fy to include the extra model dim
+                    Fy = np.zeros((len(ranks),)+Fyi.shape[:-3]+Y.shape, dtype=X.dtype)       
+                if Fyi.ndim > Y.ndim:
+                    # Warning: strange indexing bug.  if use [ri,..] then dim-shapes get reversed!!
+                    Fy[ri:ri+1,:,valid_idx,...]=Fyi
+                else:
+                    Fy[ri,valid_idx,...]=Fyi
+                scores[ri].append(self.audc_score(Fyi))
         
         #3) get the *best* rank
         scores= np.mean(np.array(scores),axis=-1) # (ranks,folds) -> ranks
@@ -417,9 +422,9 @@ class MultiCCA(BaseSequence2Sequence):
         self.rank = ranks[maxri]
         print(" -> best={}".format(self.rank))
 
-        # final retrain with all the data
         # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
         res = BaseSequence2Sequence.cv_fit(self,X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
+        res['Fy_rank']=Fy # store the pre-rank info
         return res
 
     
