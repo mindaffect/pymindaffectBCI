@@ -13,10 +13,11 @@ Requirements
 Requirements
 ------------
 - Python (3.x) installation (Suggested: Anaconda_ ) 
+- Java_ 8
 - EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion )
 
 .. _Anaconda: https://docs.anaconda.com/anaconda/install/
-
+.. _Java: https://www.java.com/download/help/download_options.html
 
 Recommended Setup
 *****************
