@@ -78,7 +78,7 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
         else: # softmax then sum
 
             Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
-            Ptgt = np.sum(Ptgt,axis=marginalize_axis)
+            Ptgt = np.sum(Ptgt, axis=marginalize_axis)
     else:
         Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
 
@@ -137,7 +137,7 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
+def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -172,7 +172,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,
     Ed = np.zeros(len(scales),)
     for i,s in enumerate(scales):
         # apply the soft-max with this scaling
-        Ptgt = zscore2Ptgt_softmax(f,s,validTgt=validTgt,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
+        Ptgt = zscore2Ptgt_softmax(f,softmaxscale=s,validTgt=validTgt,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
         # Compute the loss = cross-entropy.  
         # As Y==0 is *always* the true-class, this becomes simply sum log this class 
         Ed[i] = np.sum(-np.log(np.maximum(Ptgt[...,0],MINP)))
@@ -183,8 +183,8 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,
     print("softmaxscale={}".format(softmaxscale))
     return softmaxscale
 
-#@function
-def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, marginalizedecis=False):
+
+def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.2, normSum=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=0):
     import numpy as np
     np.random.seed(0)
     noise = np.random.standard_normal((nM,nTrl,nEp,nY))
@@ -202,33 +202,50 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, 
     
     sFy=np.cumsum(Fy,-2)
     from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
-    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=100, normSum=False)
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
+    softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
-    smax = softmax(ssFy,axis=(-4,-2,-1))
+    smax = softmax(ssFy*sigstr,axis=(-4,-1))
     #print("{}".format(smax.shape))
-    Ptgt=zscore2Ptgt_softmax(ssFy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis) # (nTrl,nEp,nY)
+    Ptgt=zscore2Ptgt_softmax(ssFy, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, softmaxscale=softmaxscale) # (nTrl,nEp,nY)
     #print("Ptgt={}".format(Ptgt.shape))
     import matplotlib.pyplot as plt
     plt.clf()
     tri=1
     for mi in range(nM):
-        plt.subplot(4,nM,0*nM+mi+1);plt.cla()
+        if mi==0 :
+            a = plt.subplot(4,nM,0*nM+mi+1)
+            xax=a
+            yax0=a
+        else:
+            a = plt.subplot(4,nM,0*nM+mi+1,sharex=xax, sharey=yax0)
+        plt.cla()
         plt.plot(sFy[mi,tri,:,:])
-        plt.plot(scale_sFy[mi,tri,:],'k')
+        plt.plot(scale_sFy[tri,:],'k')
         if mi==0 : plt.ylabel('sFy')
         plt.ylim((np.min(sFy.ravel()),np.max(sFy.ravel())))
         plt.grid()
     
-        plt.subplot(4,nM,1*nM+mi+1);plt.cla();
+        if mi==0 :
+            a=plt.subplot(4,nM,1*nM+mi+1, sharex=xax)
+            yax1=a
+        else:
+            a=plt.subplot(4,nM,1*nM+mi+1, sharex=xax, sharey=yax1)
+        plt.cla()
         plt.plot(ssFy[mi,tri,:,:])
         plt.ylim((np.min(ssFy.ravel()),np.max(ssFy.ravel())))
         if mi==0 : plt.ylabel('ssFy')
         plt.grid()
         
-        plt.subplot(4,nM,2*nM+mi+1);plt.cla()
+        if mi==0:
+            a=plt.subplot(4,nM,2*nM+mi+1, sharex=xax)
+            yax2=a
+        else:
+            a=plt.subplot(4,nM,2*nM+mi+1, sharex=xax, sharey=yax2)
+        plt.cla()
         plt.plot(smax[mi,tri,:,:])
-        plt.ylim((np.min(smax.ravel()),np.max(smax.ravel())))
+        plt.ylim((np.min(smax[:,tri,:,:].ravel()),np.max(smax[:,tri,:,:].ravel())))
         if mi==0: plt.ylabel('softmax')
         plt.grid()
         
@@ -236,11 +253,19 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, 
     plt.plot(Ptgt[tri,...])
     plt.title('Ptgt')
     plt.grid()
-    plt.show()
+    plt.show(block=False)
     plt.tight_layout()
 
-    maxP=np.max(Ptgt,-1) # (nTrl,nEp) [ nEp x nTrl ]
-    estopi=[ np.flatnonzero(maxP[tri,:]>.9)[-1] for tri in range(Ptgt.shape[0])]
+    # make the decoding curve
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
+    #ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
+    #softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
+    (dc) = decodingCurveSupervised(Fy,nInt=(100,25),marginalizemodels=marginalizemodels,normSum=normSum,softmaxscale=softmaxscale)
+    plt.figure()
+    plot_decoding_curve(*dc)
+    plt.show()
+
+
 
 if __name__=="__main__":
     testcase()

@@ -6,7 +6,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
                        centFy=True, detrendFy=True, 
                        nEpochCorrection=100,
                        minDecisLen=0, maxDecisLen=0,
-                       bwdAccumulate=False,
+                       bwdAccumulate=False, normSum=True,
                        marginalizemodels=True, 
                        marginalizedecis=False,
                        prior=None,
@@ -59,7 +59,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
                                               centFy=centFy, detrendFy=detrendFy,
                                               nEpochCorrection=nEpochCorrection,
                                               minDecisLen=minDecisLen, maxDecisLen=maxDecisLen,
-                                              bwdAccumulate=bwdAccumulate,
+                                              bwdAccumulate=bwdAccumulate, normSum=normSum,
                                               priorsigma=priorsigma)
 
   if nocontrolamplitude is not None:
