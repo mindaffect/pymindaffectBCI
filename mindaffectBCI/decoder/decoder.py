@@ -12,6 +12,9 @@ from mindaffectBCI.decoder.utils import search_directories_for_file
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 
+PYDIR = os.path.dirname(os.path.abspath(__file__))
+LOGSDIR = os.path.join(PYDIR,'../../logs/')
+
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 
@@ -168,8 +171,9 @@ def load_previous_dataset(f:str):
     if isinstance(f,str): # filename to load from
         # search in likely dataset locations for the file to load
         f = search_directories_for_file(f,
-                                        os.path.join(os.path.dirname(os.path.abspath(__file__))),
-                                        os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
+                                        PYDIR,
+                                        os.path.join(PYDIR,'..','..'),
+                                        os.path.join(PYDIR,'..','..','logs'))
         # pick the most recent if multiple files match
         f = max(glob.glob(f), key=os.path.getctime)
         if f:
@@ -236,14 +240,14 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
     X = None
     Y = None
 
+    if isinstance(prior_dataset,str): # filename to load the data from?
+        try:
+            prior_dataset = load_previous_dataset(prior_dataset)
+        except:
+            # soft-fail if load failed
+            print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
+            prior_dataset = None
     if prior_dataset is not None: # combine with the old calibration data
-        if isinstance(prior_dataset,str): # filename to load the data from?
-            try:
-                prior_dataset = load_previous_dataset(prior_dataset)
-            except:
-                # soft-fail if load failed
-                print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
-                prior_dataset = None
         if dataset is not None:
             # validate the 2 datasets are compatiable -> same number channels in X
             d_nch = [ x.shape[0] for (x,_) in dataset ]
@@ -258,9 +262,8 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
     if dataset:
         try:
             import pickle
-
             pickle.dump(dict(dataset=dataset),
-                        open('calibration_dataset_{}.pk'.format(uname),'wb'))
+                        open(os.path.join(LOGSDIR,'calibration_dataset_{}.pk'.format(uname)),'wb'))
         except:
             print('Error saving cal data')
 
@@ -310,7 +313,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 try:
                     import pickle
                     pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
-                                open('summary_statistics_{}.pk'.format(uname),'wb'))
+                                open(os.path.join(LOGSDIR,'summary_statistics_{}.pk'.format(uname)),'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
@@ -318,7 +321,6 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
-                logsdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/')
                 plt.figure(1)
                 plt.savefig(os.path.join(logsdir,'model_{}.png'.format(uname)))
                 #plt.figure(2)
@@ -611,13 +613,12 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
     
-    calibration_dataset = None
     current_mode = "idle"
     # clean shutdown when told shutdown
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
+            prior_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
@@ -626,7 +627,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             doPredictionStatic(ui, clsfr)
 
         elif current_mode.lower() in ("reset"):
-            calibration_dataset = None
+            prior_dataset = None
             clsfr.clear()
 
         # check for new mode-messages
