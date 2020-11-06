@@ -30,7 +30,7 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         return 1, 1, None, None, None, None, -1, 1
 
     # remove trials with no-true-label info
-    keep = np.any(Fy[..., objIDs == 0], (-2, -1) if Fy.ndim<3 else (0,-2,-1)) # [ nTrl ]
+    keep = np.any(Fy[..., objIDs == 0], (-2, -1) if Fy.ndim<=3 else (0,-2,-1)) # [ nTrl ]
     if not np.all(keep):
         Fy = Fy[..., keep, :, :]
         print('Discarded %d trials without true-label info'%(sum(np.logical_not(keep))))
