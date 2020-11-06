@@ -388,7 +388,6 @@ class MultiCCA(BaseSequence2Sequence):
         maxrank = max(ranks)
         self.rank = maxrank
         scores = [[] for i in range(len(ranks))]
-        Fy = np.zeros((len(ranks),)+Y.shape,dtype=X.dtype)
         for i, (train_idx, valid_idx) in enumerate(cv):
             if verbose > 0:
                 print(".", end='', flush=True)
@@ -409,8 +408,8 @@ class MultiCCA(BaseSequence2Sequence):
                 self.fit_b(X[train_idx,...])
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
-                if i==0 and ri==0 and Fyi.ndim >= Fy.ndim: # reshape Fy to include the extra model dim
-                    Fy = np.zeros((len(ranks),)+Fyi.shape[:-3]+Y.shape, dtype=X.dtype)       
+                if i==0 and ri==0: # reshape Fy to include the extra model dim
+                    Fy = np.zeros((len(ranks),)+Fyi.shape[:-3]+Y.shape, dtype=np.float32)       
                 if Fyi.ndim > Y.ndim:
                     # Warning: strange indexing bug.  if use [ri,..] then dim-shapes get reversed!!
                     Fy[ri:ri+1,:,valid_idx,...]=Fyi

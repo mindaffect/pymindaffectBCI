@@ -112,7 +112,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     if normSum:
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
         # TODO: use N= number non-zero entries rather than just length..
-        sFy_scale = np.sqrt(sigma2*np.maximum(.01,N)) # [ nDecis x nTrl ]
+        sFy_scale = np.sqrt(sigma2*np.maximum(.01,N,dtype=sigma2.dtype)) # [ nDecis x nTrl ]
     else:
         sFy_scale = np.sqrt(sigma2)
     #plt.clf();plt.subplot(221);plt.plot(Fy[:, :, 0].T);plt.title('Fy');plt.subplot(222);plt.plot(fFy[:, :, 0].T);plt.title('fFy');plt.subplot(223);plt.plot(sFy[:, :, 0].T);plt.title('sFy');plt.subplot(224);plt.plot(sfFy[:, :, 0].T);plt.title('sfFy');plt.show()
@@ -132,11 +132,11 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         cf = c4(N/np.maximum(1, nEpochCorrection)) 
         #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
         # include the multiple comparsiosn correction factors
-        sFy_scale = sFy_scale / cf
+        sFy_scale = sFy_scale / cf.astype(sFy_scale.dtype)
 
     # apply the normalization to convert to z-score (i.e. unit-noise)
     sFy_scale[sFy_scale == 0] = 1
-    ssFy = sFy/sFy_scale[:, :, np.newaxis]
+    ssFy = sFy/sFy_scale[:, :, np.newaxis].astype(sFy.dtype)
 
     # reverse the time reversal for backward accumulation    
     if bwdAccumulate:
@@ -238,14 +238,14 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
 
     # variance of the summed scores over outputs for each time point
     # if independent then this should be a constant slope increase over time.
-    var2csFy = np.sum(scFy**2, -1) / np.maximum(.1,nY[:,np.newaxis]-1) # (nTr,nEp) var over outputs for each cumsum
+    var2csFy = np.sum(scFy**2, -1) / np.maximum(.1,nY[:,np.newaxis]-1,dtype=scFy.dtype) # (nTr,nEp) var over outputs for each cumsum
 
     # normalize out the constant slope over time, to get the equivalent slope if 
     # we had N-indenpendent samples  
-    nvar2csFy = var2csFy / np.maximum(.1, N) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
+    nvar2csFy = var2csFy / np.maximum(.1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
 
     # compute the average of the estimated slopes for each integeration length
-    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(.1, N) # np.arange(1,nvar2csFy.shape[-1]+1) # ave per-stime-stamp vars before each time-point
+    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(.1, N, dtype=scFy.dtype) # np.arange(1,nvar2csFy.shape[-1]+1) # ave per-stime-stamp vars before each time-point
     
     # return the ave-cumsum-var-slope at each decision length
     sigma2 = muvar2csFy[:,decisIdx] # (nTr,nDecis)
@@ -258,6 +258,7 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )
         osigma2= np.mean(sigma2)
         sigma2 = (sigma2*decisIdx + priorsigma[0]*priorsigma[1]) / ( decisIdx + priorsigma[1] )
+        sigma2 = sigma2.astype(Fy.dtype)
         #print('sigma2 = {}  prior={} -> {}'.format(osigma2,priorsigma,np.mean(sigma2)))
     
     return sigma2, N

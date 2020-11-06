@@ -30,6 +30,8 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
         Fe = Fe.reshape((1,)*(4-Fe.ndim)+Fe.shape)    
     if dedup0 is not None: # remove duplicate copies output=0
         Ye = dedupY0(Ye)
+    # ensure Ye has same type of Fe
+    Ye = Ye.astype(Fe.dtype)
 
     # inner-product score
     if offset is None:

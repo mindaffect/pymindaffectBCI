@@ -612,14 +612,14 @@ class butterfilt_and_downsample(TransformerMixin):
                 resamp_start = self.resamprate_ - resamp_start
             
             # allow non-integer resample rates
-            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_)
+            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_,dtype=X.dtype)
 
             if self.resamprate_%1 > 0 and idx.size>0 : # non-integer re-sample, interpolate
                 idx_l = np.floor(idx).astype(int) # sample above
                 idx_u = np.ceil(idx).astype(int) # sample below
                 # BODGE: guard for packet ending at sample boundary.
                 idx_u[-1] = idx_u[-1] if idx_u[-1]<X.shape[self.axis] else X.shape[self.axis]-1
-                w_u   = idx - idx_l # linear weight of the upper sample
+                w_u   = (idx - idx_l).astype(X.dtype) # linear weight of the upper sample
                 X = X[...,idx_u,:] * w_u[:,np.newaxis] + X[...,idx_l,:] * (1-w_u[:,np.newaxis]) # linear interpolation
                 if Y is not None:
                     Y = Y[...,idx_u,:] * w_u[:,np.newaxis] + Y[...,idx_l,:] * (1-w_u[:,np.newaxis])

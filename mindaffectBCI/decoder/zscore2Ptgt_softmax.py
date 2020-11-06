@@ -53,12 +53,12 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
 
     # include the scaling
     # N.B. horrible np-hack to make softmaxscale the right size, by adding 1 dims to end
-    f = f * softmaxscale.reshape((-1,1,1))
+    f = f * softmaxscale.reshape((-1,1,1)).astype(f.dtype)
 
     # inlude the prior
     if prior is not None:
         logprior = np.log(np.maximum(prior,1e-8))
-        f = f + logprior
+        f = f + logprior.astype(f.dtype)
     
     # multiple models
     if ((marginalizemodels and f.ndim > 3 and f.shape[0] > 1) or 
@@ -95,7 +95,7 @@ def softmax(f, axis=-1, validTgt=None):
     p = np.exp( f - np.max(f, axis, keepdims=True) ) # (nTrl,nDecis,nY) [ nY x nDecis x nTrl ]
     # cancel out the missing outputs
     if validTgt is not None and not all(validTgt.ravel()):
-        p = p * validTgt[..., np.newaxis, :]
+        p = p * validTgt[..., np.newaxis, :].astype(f.dtype)
     # convert to softmax, with guard for div by zero
     p = p / np.maximum(np.sum(p, axis, keepdims=True),1e-6)
     return p
@@ -122,10 +122,10 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     if prior is not None:
         logprior = np.log(np.maximum(prior,1e-8))
-        f = f + logprior
+        f = f + logprior.astype(f.dtype)
 
     maxf = np.max(f, axis=axis, keepdims=True) # remove for numerical robustness
-    z = np.exp( f - maxf ) # non-normalized Ptgt
+    z = np.exp( f - maxf ).astype(f.dtype) # non-normalized Ptgt
     p = z / np.sum(z, axis, keepdims=True) # normalized Ptgt
     #p = softmax(f,axis=axis)
     f = np.sum(f * p, axis, keepdims=keepdims) # marginalized score
