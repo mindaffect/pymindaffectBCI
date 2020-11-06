@@ -5,8 +5,9 @@ import subprocess
 from time import sleep
 import json
 import argparse
+import traceback
 
-def startHubProcess(label):
+def startHubProcess(label, logdir=None):
     """Start the process to manage the central utopia-hub
 
     Args:
@@ -19,7 +20,7 @@ def startHubProcess(label):
         hub (Process): sub-process for managing the started acquisation driver
     """    
     from mindaffectBCI.decoder import startUtopiaHub
-    hub = startUtopiaHub.run(label=label)
+    hub = startUtopiaHub.run(label=label, logdir=logdir)
     #hub = Process(target=startUtopiaHub.run, kwargs=dict(label=label), daemon=True)
     #hub.start()
     sleep(1)
@@ -27,7 +28,7 @@ def startHubProcess(label):
 
 
 
-def startAcquisationProcess(label,acquisation,acq_args):
+def startAcquisationProcess(label, acquisation, acq_args, logdir=None):
     """Start the process to manage the acquisation of data from the amplifier
 
     Args:
@@ -103,7 +104,7 @@ def startAcquisationProcess(label,acquisation,acq_args):
     
     return acquisation
 
-def startDecoderProcess(label,decoder,decoder_args):
+def startDecoderProcess(label,decoder,decoder_args, logdir=None):
     """start the EEG decoder process
 
     Args:
@@ -112,6 +113,7 @@ def startDecoderProcess(label,decoder,decoder_args):
                   'decoder' - use the mindaffectBCI.decoder.decoder
                   'none' - don't start a decoder
         decoder_args (dict): dictionary of additional arguments to pass to the decoder
+        logdir (str, optional): directory to save log/save files.
 
     Raises:
         ValueError: unrecognised arguments, e.g. acquisation type.
@@ -123,6 +125,8 @@ def startDecoderProcess(label,decoder,decoder_args):
         from mindaffectBCI.decoder import decoder
         if decoder_args is None:
             decoder_args = dict(calplots=True)
+        if not 'logdir' in decoder_args or decoder_args['logdir']==None: 
+            decoder_args['logdir']=logdir
         decoder = Process(target=decoder.run, kwargs=decoder_args, daemon=True)
         decoder.start()
         # allow time for the decoder to startup
@@ -131,11 +135,12 @@ def startDecoderProcess(label,decoder,decoder_args):
         decoder = None
     return decoder
 
-def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
+def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
     """[summary]
 
     Args:
         label (str, optional): string label for the saved data file. Defaults to ''.
+        logdir (str, optional): directory to save log files / data files.  Defaults to None = $installdir$/logs.
         acquisation (str, optional): the name of the acquisation driver to use. Defaults to None.
         acq_args (dict, optional): dictionary of optoins to pass to the acquisation driver. Defaults to None.
         decoder (str, optional): the name of the decoder function to use.  Defaults to 'decoder'.
@@ -156,43 +161,57 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         #--------------------------- HUB ------------------------------
         # start the utopia-hub process
         if hub_proc is None or not hub_proc.poll() is None:
-            hub_proc = startHubProcess(label)
+            try:
+                hub_proc = startHubProcess(label, logdir=logdir)
+            except:
+                hub_proc = None
+                traceback.print_exc()
 
         #---------------------------ACQUISATION ------------------------------
         if acquisation_proc is None or not acquisation_proc.is_alive():
-            acquisation_proc = startAcquisationProcess(label,acquisation,acq_args)
+            try:
+                acquisation_proc = startAcquisationProcess(label, acquisation, acq_args, logdir=logdir)
+            except:
+                acquisation_proc = None
+                traceback.print_exc()
 
         #---------------------------DECODER ------------------------------
         # start the decoder process - with default settings for a noise-tag
         if decoder_proc is None or not decoder_proc.is_alive():
-            decoder_proc = startDecoderProcess(label, decoder, decoder_args)
+            try:
+                decoder_proc = startDecoderProcess(label, decoder, decoder_args, logdir=logdir)
+            except:
+                decoder_proc = None
+                traceback.print_exc()
 
         # terminate if all started successfully
         # check all started up and running..
         component_failed=False
-        if hub_proc is not None and not hub_proc.poll() is None:
+        if hub_proc is None or hub_proc is not None and not hub_proc.poll() is None:
             print("Hub didn't start correctly!")
             component_failed=True
-        if acquisation_proc is not None and not acquisation_proc.is_alive():
+        if acquisation_proc is None or acquisation_proc is not None and not acquisation_proc.is_alive():
             print("Acq didn't start correctly!")
             component_failed=True
-        if decoder_proc is not None and not decoder_proc.is_alive():
-            print("Acq didn't start correctly!")
+        if decoder_proc is None or decoder_proc is not None and not decoder_proc.is_alive():
+            print("Decoder didn't start correctly!")
             component_failed=True
 
         # stop re-starting if all are running fine
         if not component_failed:
             break
+        else:
+            sleep(1)
 
-    if hub_proc is not None and not hub_proc.poll() is None:
+    if hub_proc is None or hub_proc is not None and not hub_proc.poll() is None:
         print("Hub didn't start correctly!")
         shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Hub didn't start correctly!")
-    if acquisation_proc is not None and not acquisation_proc.is_alive():
+    if acquisation_proc is None or acquisation_proc is not None and not acquisation_proc.is_alive():
         print("Acq didn't start correctly!")
         shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Acquisation didn't start correctly!")
-    if decoder_proc is not None and not decoder_proc.is_alive():
+    if decoder_proc is None or decoder_proc is not None and not decoder_proc.is_alive():
         shutdown(hub_proc,acquisation_proc,decoder_proc)
         raise ValueError("Decoder didn't start correctly!")
 
@@ -207,7 +226,6 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         try:
             selectionMatrix.run(**presentation_args)
         except:
-            import traceback
             traceback.print_exc()
 
     elif presentation == 'none':
@@ -215,7 +233,6 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
         try:
             sigViewer()
         except:
-            import traceback
             traceback.print_exc()
 
     else:
@@ -225,6 +242,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             pres.run(**presentation_args)
         except:
             print("Error: could not run the presentation method")
+            traceback.print_exc()
 
     # TODO []: pop-up a monitoring object / dashboard!
 
@@ -296,6 +314,7 @@ def parse_args():
     parser.add_argument('--decoder_args', type=json.loads, help='set JSON dictionary of keyword arguments to pass to the decoder. Note: need to doublequote the keywords!', default=None)
     parser.add_argument('--presentation', type=str, help='set stimulus presentation function to use: one-of: "none","selectionMatrix"', default=None)
     parser.add_argument('--presentation_args', type=json.loads, help='set JSON dictionary of keyword arguments to pass to the presentation system', default=None)
+    parser.add_argument('--logdir', type=str, help='directory where the BCI output files will be saved. Uses $installdir$/logs if None.', default=None)
 
     args = parser.parse_args()
 
@@ -321,6 +340,6 @@ def parse_args():
 # N.B. we need this guard for multiprocessing on Windows!
 if __name__ == '__main__':
     args = parse_args()
-    run(label=args.label, acquisation=args.acquisation, acq_args=args.acq_args, 
+    run(label=args.label, logdir=args.logdir, acquisation=args.acquisation, acq_args=args.acq_args, 
                           decoder=args.decoder, decoder_args=args.decoder_args, 
                           presentation=args.presentation, presentation_args=args.presentation_args)

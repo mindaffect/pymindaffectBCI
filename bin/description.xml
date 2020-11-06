@@ -12,7 +12,7 @@
     <manufacturerURL>http://www.mindaffect.nl</manufacturerURL>
     <modelDescription>Utopia-HUB BCI server</modelDescription>
     <modelName>Utopia-HUB_v1.0</modelName>
-    <UDN>uuid:0cbe9cd5-875f-4ee0-a2d3-32b0d134335d</UDN>
+    <UDN>uuid:f70b8012-a1f0-448b-b198-5126f50700c5</UDN>
     <serviceList>
 /</serviceList>
     <presentationURL>http://http://192.168.178.171/description.xml</presentationURL>

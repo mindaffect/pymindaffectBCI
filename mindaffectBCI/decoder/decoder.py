@@ -13,7 +13,7 @@ from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 
 PYDIR = os.path.dirname(os.path.abspath(__file__))
-LOGSDIR = os.path.join(PYDIR,'../../logs/')
+LOGDIR = os.path.join(PYDIR,'../../logs/')
 
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
@@ -173,7 +173,7 @@ def load_previous_dataset(f:str):
         f = search_directories_for_file(f,
                                         PYDIR,
                                         os.path.join(PYDIR,'..','..'),
-                                        os.path.join(PYDIR,'..','..','logs'))
+                                        LOGDIR)
         # pick the most recent if multiple files match
         f = max(glob.glob(f), key=os.path.getctime)
         if f:
@@ -235,7 +235,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         X : the calibration data as a 3-d array (tr,samp,d)
         Y : the calibration stimulus as a 3-d array (tr,samp,num-outputs)
     """   
-    global uname
+    global UNAME
     perr = None 
     X = None
     Y = None
@@ -263,7 +263,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         try:
             import pickle
             pickle.dump(dict(dataset=dataset),
-                        open(os.path.join(LOGSDIR,'calibration_dataset_{}.pk'.format(uname)),'wb'))
+                        open(os.path.join(LOGDIR,'calibration_dataset_{}.pk'.format(UNAME)),'wb'))
         except:
             print('Error saving cal data')
 
@@ -313,7 +313,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 try:
                     import pickle
                     pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
-                                open(os.path.join(LOGSDIR,'summary_statistics_{}.pk'.format(uname)),'wb'))
+                                open(os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME)),'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
@@ -322,13 +322,13 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.show(block=False)
                 # save figures
                 plt.figure(1)
-                plt.savefig(os.path.join(logsdir,'model_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'model_{}.png'.format(UNAME)))
                 #plt.figure(2)
-                #plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
+                #plt.savefig(os.path.join(LOGDIR,'decoding_curve_{}.png'.format(UNAME)))
                 plt.figure(3)
-                plt.savefig(os.path.join(logsdir,'summary_statistics_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'summary_statistics_{}.png'.format(UNAME)))
                 plt.figure(4)
-                plt.savefig(os.path.join(logsdir,'erp_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'erp_{}.png'.format(UNAME)))
             except:
                 pass
 
@@ -556,7 +556,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         host:str=None, prior_dataset:str=None,
         tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
         stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5,
-        prediction_offsets=None,
+        prediction_offsets=None, logdir=None,
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -569,6 +569,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         offset_ms (float, optiona): offset in ms to shift the analysis window. Use to compensate for response lag.  Defaults to 0.
         stopband (tuple, optional): temporal filter specification for `UtopiaDataInterface.butterfilt_and_downsample`. Defaults to ((45,65),(5.5,25,'bandpass'))
         ftype (str, optional): type of temporal filter to use.  Defaults to 'butter'.
+        logdir (str, optional): location to save output files.  Defaults to None.
         order (int, optional): order of temporal filter to use.  Defaults to 6.
         out_fs (float, optional): sample rate after the pre-processor. Defaults to 100.
         evtlabs (tuple, optional): the brain event coding to use.  Defaults to None.
@@ -577,7 +578,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         prior_dataset ([str,(dataset)]): calibration data from a previous run of the system.  Used to pre-seed the model.  Defaults to None.
         prediction_offsets ([ListInt], optional): a list of stimulus offsets to try at prediction time to cope with stimulus timing jitter.  Defaults to None.
     """
-    global CALIBRATIONPLOTS, PREDICTIONPLOTS
+    global CALIBRATIONPLOTS, PREDICTIONPLOTS, UNAME, LOGDIR
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
     try :
@@ -587,11 +588,13 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         guiplots=False
 
     # setup the saving label
-    global uname
     from datetime import datetime 
-    uname = datetime.now().strftime("%y%m%d_%H%M")
+    UNAME = datetime.now().strftime("%y%m%d_%H%M")
     if label is not None: # include label as prefix
-        uname = "{}_{}".format(label,uname)
+        UNAME = "{}_{}".format(label,UNAME)
+    # setup saving location
+    if logdir:
+        LOGDIR=logdir
 
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:

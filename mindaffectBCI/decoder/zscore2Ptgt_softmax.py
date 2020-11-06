@@ -60,23 +60,28 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
         logprior = np.log(np.maximum(prior,1e-8))
         f = f + logprior.astype(f.dtype)
     
-    # multiple models
-    if ((marginalizemodels and f.ndim > 3 and f.shape[0] > 1) or 
-        (marginalizedecis and f.shape[-2] > 1)): # mulitple decis points 
+    # marginalization over multiple models
+    # get the axis to marginalize over
+    marginalize_axis=[]
+    if marginalizemodels and f.ndim>3 and f.shape[0] > 1: # marginalize the models axis
+        marginalize_axis.append(-4)
+    if marginalizedecis and f.shape[-2] > 1: # marginalize the decision points axis
+        marginalize_axis.append(-2)
+    marginalize_axis=tuple(marginalize_axis)
 
-        # marginalize for the P values.
-        # get the axis to marginalize over
-        axis=[]
-        if f.ndim>3 and marginalizemodels: # marginalize the models axis
-            axis.append(-4)
-        if marginalizedecis: # marginalize the decision points axis
-            axis.append(-2)
-        axis=tuple(axis)
+    if marginalize_axis:
+        if False: # marginalize then softmax
+            f = marginalize_scores(f, marginalize_axis, keepdims=False)
 
-        f = marginalize_scores(f, axis, keepdims=False)
+            # get the prob each output conditioned on the model
+            Ptgt = softmax(f,axis=-1,validTgt=validTgt) # ((nM,)nTrl,nDecis,nY)
+        else: # softmax then sum
 
-    # get the prob each output conditioned on the model
-    Ptgt = softmax(f,axis=-1,validTgt=validTgt) # ((nM,)nTrl,nDecis,nY)
+            Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
+            Ptgt = np.sum(Ptgt,axis=marginalize_axis)
+    else:
+        Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
+
 
     if any(np.isnan(Ptgt.ravel())):
         if not all(np.isnan(Ptgt.ravel())):
@@ -97,7 +102,7 @@ def softmax(f, axis=-1, validTgt=None):
     if validTgt is not None and not all(validTgt.ravel()):
         p = p * validTgt[..., np.newaxis, :].astype(f.dtype)
     # convert to softmax, with guard for div by zero
-    p = p / np.maximum(np.sum(p, axis, keepdims=True),1e-6)
+    p = p / np.maximum(np.sum(p, axis, keepdims=True), 1e-6, dtype=f.dtype)
     return p
 
 def softmax_nout_corr(n):
@@ -197,10 +202,10 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, 
     
     sFy=np.cumsum(Fy,-2)
     from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
-    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1)
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=100, normSum=False)
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
-    smax = softmax(ssFy)
+    smax = softmax(ssFy,axis=(-4,-2,-1))
     #print("{}".format(smax.shape))
     Ptgt=zscore2Ptgt_softmax(ssFy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis) # (nTrl,nEp,nY)
     #print("Ptgt={}".format(Ptgt.shape))
@@ -208,20 +213,23 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, 
     plt.clf()
     tri=1
     for mi in range(nM):
-        plt.subplot(4,nM,0*nM+mi+1);plt.cla();
+        plt.subplot(4,nM,0*nM+mi+1);plt.cla()
         plt.plot(sFy[mi,tri,:,:])
         plt.plot(scale_sFy[mi,tri,:],'k')
-        plt.title('sFy')
+        if mi==0 : plt.ylabel('sFy')
+        plt.ylim((np.min(sFy.ravel()),np.max(sFy.ravel())))
         plt.grid()
     
         plt.subplot(4,nM,1*nM+mi+1);plt.cla();
         plt.plot(ssFy[mi,tri,:,:])
-        plt.title('ssFy')
+        plt.ylim((np.min(ssFy.ravel()),np.max(ssFy.ravel())))
+        if mi==0 : plt.ylabel('ssFy')
         plt.grid()
         
         plt.subplot(4,nM,2*nM+mi+1);plt.cla()
         plt.plot(smax[mi,tri,:,:])
-        plt.title('softmax')
+        plt.ylim((np.min(smax.ravel()),np.max(smax.ravel())))
+        if mi==0: plt.ylabel('softmax')
         plt.grid()
         
     plt.subplot(414);plt.cla()    
@@ -229,7 +237,8 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, 
     plt.title('Ptgt')
     plt.grid()
     plt.show()
-    
+    plt.tight_layout()
+
     maxP=np.max(Ptgt,-1) # (nTrl,nEp) [ nEp x nTrl ]
     estopi=[ np.flatnonzero(maxP[tri,:]>.9)[-1] for tri in range(Ptgt.shape[0])]
 

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
 savefile = '~/Desktop/khash/mindaffectBCI*.txt'
 savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
+savefile = '~/Desktop/mark/mindaffectBCI_noisetag_bci_cyton_201026_1531.txt' # score bug
 #savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'

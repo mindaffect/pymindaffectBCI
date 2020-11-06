@@ -230,7 +230,7 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
     # compute the cumulative sum
     scFy = np.cumsum(cFy, -2) # cum-sum from start # (nTr, nEp, nY)
 
-    # remove per-example offset (if enough outputs to do reliably)
+    # remove per-sample offset (if enough outputs to do reliably)
     if centFy and np.all(nY>3):
         # center at each time point, with guard for no active outputs (when mu should == 0)
         muFy_y = np.sum(scFy, -1, keepdims=True) / nY[:, np.newaxis, np.newaxis] # mean at each time-point
@@ -245,9 +245,9 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
     nvar2csFy = var2csFy / np.maximum(.1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
 
     # compute the average of the estimated slopes for each integeration length
-    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(.1, N, dtype=scFy.dtype) # np.arange(1,nvar2csFy.shape[-1]+1) # ave per-stime-stamp vars before each time-point
+    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(.1, N, dtype=scFy.dtype) # ave per-stime-stamp vars before each time-point
     
-    # return the ave-cumsum-var-slope at each decision length
+    # return the ave-cumsum-slope-of-variance at each decision length
     sigma2 = muvar2csFy[:,decisIdx] # (nTr,nDecis)
     N = N[:,decisIdx]
 
