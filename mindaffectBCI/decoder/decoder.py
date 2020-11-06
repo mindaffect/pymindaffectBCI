@@ -164,13 +164,17 @@ def load_previous_dataset(f:str):
         f (str, file-like): buffered interface to the data and stimulus streams
     """
     import pickle
+    import glob
     if isinstance(f,str): # filename to load from
         # search in likely dataset locations for the file to load
         f = search_directories_for_file(f,
                                         os.path.join(os.path.dirname(os.path.abspath(__file__))),
                                         os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
-        with open(f,'rb') as file:
-            dataset = pickle.load(file)
+        # pick the most recent if multiple files match
+        f = max(glob.glob(f), key=os.path.getctime)
+        if f:
+            with open(f,'rb') as file:
+                dataset = pickle.load(file)
     else: # is it a byte-stream to load from?
         dataset = pickle.load(f)
     if isinstance(dataset,dict):
@@ -254,6 +258,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
     if dataset:
         try:
             import pickle
+
             pickle.dump(dict(dataset=dataset),
                         open('calibration_dataset_{}.pk'.format(uname),'wb'))
         except:
@@ -377,7 +382,7 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # N.B. for network efficiency, only send for non-zero probability outputs
     nonzero_idx = np.flatnonzero(Ptgt)
-    print("{}={}".format(Ptgt,nonzero_idx))
+    # print("{}={}".format(Ptgt,nonzero_idx))
     # ensure a least one entry
     if nonzero_idx.size == 0: 
         nonzero_idx = [0]

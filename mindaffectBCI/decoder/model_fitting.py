@@ -393,6 +393,9 @@ class MultiCCA(BaseSequence2Sequence):
             if verbose > 0:
                 print(".", end='', flush=True)
             #print("trn={} val={}".format(train_idx,valid_idx))
+            if X[valid_idx,...].size==0:
+                print("Warning: no-validation trials!!! using all data!")
+                valid_idx = slice(X.shape[0])
 
             # 1) fit with max-rank            
             self.fit(X[train_idx, ...], Y[train_idx, ...], **fit_params)

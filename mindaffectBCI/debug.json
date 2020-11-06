@@ -13,7 +13,7 @@
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
         "prediction_offsets" : [-1,0,1],
-        "prior_dataset": "calibration_dataset_debug.pk",
+        "prior_dataset": "calibration_dataset_*.pk",
         "calplots" : true,
         "predplots" : false
     },

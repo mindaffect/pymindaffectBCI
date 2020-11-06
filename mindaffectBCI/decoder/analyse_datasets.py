@@ -756,11 +756,6 @@ if __name__=="__main__":
     import glob
     import os
 
-
-    analyse_datasets('lowlands',loader_args=dict(fs_out=100,stopband=((45,65),(5.5,25,'bandpass'))),
-                    preprocess_args=dict(badChannelThresh=None, badTrialThresh=None, whiten=False, whiten_spectrum=.1),
-                    model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe','ntre'),rank=1),ranks=(1,2,3,5), prediction_offsets=(-1,0,1)) #cv=[(slice(10),slice(10,None))],retrain_on_all=False,
-
     #debug_test_single_dataset('p300_prn',dataset_args=dict(label='rc_5_flash'),
     #              loader_args=dict(fs_out=32,stopband=((0,1),(12,-1)),subtriallen=None),
     #              model='cca',tau_ms=750,evtlabs=('re','anyre'),rank=3,reg=.02)
