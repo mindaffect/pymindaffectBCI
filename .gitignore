@@ -9,7 +9,7 @@ __pycache__
 *.log
 *.res
 .gradle*
-logs*
+*logs*
 *build*
 *dist*
 *.ipynb_checkpoints*

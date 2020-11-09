@@ -240,6 +240,7 @@ def run(label='', acquisation=None, acq_args=None, decoder='decoder', decoder_ar
             print_exc()
             print("Error: could not run the presentation method")
 
+            
     # TODO []: pop-up a monitoring object / dashboard!
 
     #--------------------------- SHUTDOWN ------------------------------

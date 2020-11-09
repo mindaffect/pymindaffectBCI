@@ -39,7 +39,8 @@ def draw():
     # get the updated stimulus state info
     global nt, leds, framerate
     nt.updateStimulusState()
-    stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
+    stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
+    target_state = stimulus_state[target_idx] if target_idx>=0 else -1
 
     # BODGE: sleep to limit the stimulus update rate
     time.sleep(1/framerate_hz)

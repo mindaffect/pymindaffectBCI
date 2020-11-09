@@ -157,6 +157,9 @@ class MenuScreen(InstructionScreen):
     def set_message(self,message:str):
         self.set_text(self.menu_text+'\n\n\n'+message)
 
+    def set_message(self,message:str):
+        self.set_text(self.menu_text+'\n\n\n'+message)
+
     def is_done(self):
         # check termination conditions
         if not self.isRunning:

@@ -3,7 +3,25 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt
 
-def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=None, passband=None, stopband=((45,65),(0,5),(25,-1)), verb=0, ch_names=None):
+def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, stopband=((45,65),(5,25,'bandpass')), verb=0, ch_names=None):
+    """Load and pre-process a brainstream offline save-file and return the EEG data, and stimulus information
+
+    Args:
+        datadir (str): root of the data directory tree
+        sessdir (str, optional): sub-directory for the session to load. Defaults to None.
+        sessfn (str, optional): filename for the session information. Defaults to None.
+        fs_out (float, optional): [description]. Defaults to 100.
+        ifs (float, optional): the input data sample rate.
+        fr (float, optional): the input stimulus frame rate.
+        stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
+        ch_names (tuple, optional): Names for the channels of the EEG data.
+
+    Returns:
+        X (np.ndarray (nTrl,nSamp,nCh)): the pre-processed per-trial EEG data
+        Y (np.ndarray (nTrl,nSamp,nY)): the up-sampled stimulus information for each output
+        coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
+                          "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
+    """    
 
     # load the data file
     Xfn = datadir
@@ -82,8 +100,8 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=No
         else:
             fr = 60
     fs = ifs
-    if ofs is None:
-        ofs = ifs
+    if fs_out is None:
+        fs_out = ifs
         
     X  = X.astype("float32") # [ ch x samp x trl ]:float - raw eeg
     X  = np.moveaxis(X, (0, 1, 2), (2, 1, 0)) # (nTrl, nSamp, d)
@@ -104,10 +122,10 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, ofs=60, ifs=None, fr=No
         X = X - X[...,0:1,:]
         if verb > 0:
             print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X, stopband, fs, passband=passband)
+        X, _, _ = butter_sosfilt(X, stopband, fs)
     
     # preprocess -> downsample
-    resamprate = round(2*fs/ofs)/2 # round to nearest .5
+    resamprate = round(2*fs/fs_out)/2 # round to nearest .5
     if resamprate > 1:
         if 1 or verb > 0:
             print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
@@ -148,7 +166,7 @@ def testcase():
         fn = sys.argv[3]
 
     from load_brainstream import load_brainstream
-    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, ofs=60, stopband=((0,5.5),(24,-1)))
+    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, fs_out=60, stopband=((0,5.5),(24,-1)))
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
     

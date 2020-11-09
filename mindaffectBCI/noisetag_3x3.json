@@ -9,7 +9,7 @@
 
     "decoder":"decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[0,3],[25,-1]],
+        "stopband" : [[45,65],[5.5,25,"bandpass"]],
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
@@ -22,11 +22,13 @@
         "ncal":10,
         "npred":10,
         "selectionThreshold":0.1,
+        "calibration_symbols":"3x3.txt",
         "symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
         "fullscreen_stimulus":true,
+        "simple_calibration":true,
         "host":"-"
     }
 }

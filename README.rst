@@ -15,7 +15,9 @@ To install the code:
        git clone https://github.com/mindaffect/pymindaffectBCI
 
   #. Install the necessary bits to your local python path:
+
     1. change to the directory where you cloned the repository.
+
     #. Add this module to the python path, and install dependencies::
    
          pip install -e .
@@ -238,7 +240,8 @@ Now we write a function which,
     # N.B. update raises StopIteration when noisetag sequence has finished
     try : 
         nt.updateStimulusState()
-        stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
+        stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
+        target_state = stimulus_state[target_idx] if target_idx>=0 else -1
     except StopIteration :
         pyglet.app.exit() # terminate app when noisetag is done
         return

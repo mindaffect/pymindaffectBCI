@@ -3,6 +3,7 @@ from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_
 from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
 import matplotlib.pyplot as plt
 from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
+from mindaffectBCI.decoder.utils import robust_mean
 
 def timestampPlot(filename=None):
     import glob
@@ -23,9 +24,10 @@ def timestampPlot(filename=None):
     print("{} dp".format(len(dp)))
     samp = np.array([ m.samples.shape[0] for m in dp])
     svr = np.array([ m.sts for m in dp])
+    rcv = np.array([ m.rts for m in dp])
     client = np.array([ m.timestamp for m in dp])
     samp = np.cumsum(samp)
-    samp2ms = np.median(np.diff(svr)/np.diff(samp))
+    samp2ms, _ = robust_mean(np.diff(svr)/np.maximum(1,np.diff(samp)),(3,3))
 
     lbt = lower_bound_tracker(a0=samp2ms)
     svr_filt = np.zeros(svr.shape)
@@ -36,16 +38,19 @@ def timestampPlot(filename=None):
     print("{}".format(samp.shape))
     print("Sample : {}".format(samp[:10]))
     print("Server : {}".format(svr[:10]))
+    print("Reciev : {}".format(rcv[:10]))
     print("Client : {}".format(client[:10]))
     print("svr_flt: {}".format(svr_filt[:10]))
     print("{} samp = {}s".format(samp[-1],samp[-1]*samp2ms/1000))
     svr_err = svr - samp*samp2ms- svr[0]
     client_err = client - samp*samp2ms- client[0]
     svr_filt_err = svr_filt - samp*samp2ms- svr_filt[0]
-    cent = np.median(svr_err); scale=np.median(np.abs(svr_err-cent))
-    plt.plot(samp*samp2ms,svr_err,label='samp*samp2ms - server')
-    plt.plot(samp*samp2ms,client_err,label='samp*samp2ms - client')
-    plt.plot(samp*samp2ms,svr_filt_err,label='samp*samp2ms - filt(server)')
+    cent = np.median(svr_err) 
+    scale=np.percentile(np.abs(svr_err-cent), 75)
+    plt.plot(samp*samp2ms,svr_err,'.-',label='samp*samp2ms - server')
+    plt.plot(samp*samp2ms,client_err,'.-',label='samp*samp2ms - client')
+    plt.plot(samp*samp2ms,svr_filt_err,'.-',label='samp*samp2ms - filt(server)')
+    plt.plot(samp*samp2ms,svr_err - client_err,'.-',label='server - client')
     plt.ylim((cent-scale*samp2ms,cent+scale*samp2ms))
     plt.xlabel('Time (ms)')
     plt.ylabel('time stamp error (ms)')
@@ -57,8 +62,10 @@ def timestampPlot(filename=None):
 if __name__=="__main__":
     #filename = "~/Desktop/trig_check/mindaffectBCI_*brainflow*.txt"
     #filename = '~/Desktop/mark/mindaffectBCI*ganglion*1411*.txt'
-    filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
-    filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
+    #filename = '~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_201001_1859.txt'
+    #filename = '~/Desktop/trig_check/mindaffectBCI_*brainflow2*.txt'
+    filename = '~/Desktop/trig_check/mindaffectBCI_*timestamp*.txt'
+    filename = '~/Downloads/mindaffectBCI*.txt'
     #filename=None
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*_200928_2004.txt'; #mindaffectBCI_noisetag_bci_201002_1026.txt'
     timestampPlot(filename)

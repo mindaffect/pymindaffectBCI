@@ -126,6 +126,12 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     maxf = np.max(f, axis=axis, keepdims=True) # remove for numerical robustness
     z = np.exp( f - maxf ) # non-normalized Ptgt
+    f = np.log(np.sum(z, axis=axis, keepdims=keepdims)) + maxf
+
+    return f
+
+    maxf = np.max(f, axis=axis, keepdims=True) # remove for numerical robustness
+    z = np.exp( f - maxf ) # non-normalized Ptgt
     p = z / np.sum(z, axis, keepdims=True) # normalized Ptgt
     #p = softmax(f,axis=axis)
     f = np.sum(f * p, axis, keepdims=keepdims) # marginalized score
@@ -137,7 +143,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
     Args:
-     f ((nM,)nTrl,nDecis,nY): normalized accumulated scores]
+     f ((nM,)nTrl,nDecis,nY): normalized accumulated scores
      validTgt(bool (nM,)nTrl,nY): which targets are valid in which trials
      scales (list:int): set of possible soft-max scales to try
      MINP (float): minimium P-value.  We clip the true-target p-val to this level as a way

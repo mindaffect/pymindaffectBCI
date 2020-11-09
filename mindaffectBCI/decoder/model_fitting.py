@@ -325,6 +325,7 @@ class MultiCCA(BaseSequence2Sequence):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
+
     def fit(self, X, Y, stimTimes=None):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, Y)'''
         # map to event sequence

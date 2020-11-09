@@ -240,6 +240,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 # soft-fail if load failed
                 print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
                 prior_dataset = None
+    if prior_dataset is not None:
         if dataset is not None:
             dataset.extend(prior_dataset)
         else: 
