@@ -1,16 +1,10 @@
-<<<<<<< HEAD
-Setup & fitting
-===============
 
-Setup
-=======
 .. _fittingRef:
 
 Set-up & fitting
 ===============
 
 Set-up
->>>>>>> 4402b21a9d487ae976aeab944e8e5e157038b3d1
 -----
 To prepare the headset:
 

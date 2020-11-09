@@ -1,7 +1,6 @@
 Tutorials
 =========
-All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <https://github.com/mindaffect/pymindaffectBCI/tree/open_source>`_ to run them locally from your *pymindaffectBCI/mindaffectBCI* directory::
-	
+All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <https://github.com/mindaffect/pymindaffectBCI/tree/open_source>`_ to run them locally from your *pymindaffectBCI/docs/source* directory::
 	jupyter notebook first_run.ipynb
 
 
