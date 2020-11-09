@@ -101,7 +101,8 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
 
         elif etype == 'onset':
             # first stimulus RE for any output
-            F = np.cumsum(M>0, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
+            F = equals_subarray(M, [0, 1], axis) # find RE's
+            F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
             F[F>1] = 0 # zero out if more than 1 stimulus since trial start
 
         else:

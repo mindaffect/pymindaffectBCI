@@ -5,7 +5,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
                           bwdAccumulate=False,
-                          priorsigma=None, normSum=True, marginalizemodels=True):
+                          priorsigma=None, normSum=False, marginalizemodels=True):
     '''
     normalize the raw output scores to feed into the Perr computation
 
@@ -45,14 +45,14 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         Fy = Fy[np.newaxis, :, :]
 
     # get info on the number of valid Epochs or Outputs in each trial
-    nY, nEp, validTgt = get_valid_epochs_outputs(Fy)
-    maxnEp = np.max(nEp.ravel())
+    nY, nEp, lastEp, validTgt, validEp = get_valid_epochs_outputs(Fy)
 
-    if maxnEp < 1: # guard no data to analyse
+    if np.max(nEp.ravel()) < 1: # guard no data to analyse
         ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
         return ssFy, None, 0, None, None
 
     # estimate the points at which we may make a decision
+    maxnEp = np.max(lastEp.ravel())
     decisIdx = np.array([maxnEp-1], dtype=int) # default to single decision at max-length
     if minDecisLen > 0 and minDecisLen < maxnEp:
         # exp-distributed decision points
@@ -82,29 +82,23 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     # compute the summed scores
     if abs(minDecisLen) > Fy.shape[-2]:
-        decisIdx = Fy.shape[-2]-1
+        decisIdx = [Fy.shape[-2]-1]
         N = nEp[:, np.newaxis] # (nTrl, nDecis) [nDecis x nTrl] number elements in the sum
-        sFy = np.sum(Fy, -2)
+        sFy = np.sum(Fy, -2, keepdims=True)
     else:
         if (bwdAccumulate): # (nM, nTrl, nEp, nY) # [nY, nEp, nTrl, nM]
-            if not np.all(nEp == nEp[0]):
-                for ti in range(Fy.shape[-3]):
-                    Fy[..., ti, :nEp[ti], :] = Fy[..., ti, nEp[ti]-1::-1, :]
-            else:
-                Fy = Fy[..., ::-1, :]
+            for ti in range(Fy.shape[-3]):
+                Fy[..., ti, :lastEp[ti], :] = Fy[..., ti, lastEp[ti]-1::-1, :]
 
         sFy = np.cumsum(Fy, -2)
         sFy = sFy[..., decisIdx, :]
-        # (nTrl, nDecis) number points in each sum
-        N   = np.cumsum(np.any(Fy!=0, axis=(-1 if Fy.ndim<4 else (0,-1))), -1) # (nTrl,nEp)
-        N   = N[:, decisIdx]
 
-        #N = np.tile(decisIdx[np.newaxis, :], (Fy.shape[-3], 1)) # (nTrl, nDecis) number points in each sum [ nDecis x nTrl ]
-        #for ti, nti in enumerate(nEp): # and limit to trial length
-        #    N[ti, :] = np.minimum(nti, N[ti, :])
+        # number points in each sum.
+        N = np.cumsum(validEp,-1)[:,decisIdx]
+        #N = np.minimum(decisIdx[np.newaxis,:], nEp[:,np.newaxis])
 
     # compute the noise scale to transform to standardized units
-    sigma2, Nsigma = estimate_Fy_noise_variance_2(Fy, decisIdx=decisIdx, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
+    sigma2, Nsigma = estimate_Fy_noise_variance(Fy, decisIdx=decisIdx, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
 
     # same variance for all models
     if marginalizemodels and Fy.ndim>3:
@@ -165,17 +159,20 @@ def get_valid_epochs_outputs(Fy,validTgt=None):
     Returns:
         nY ([np.ndarray]): (nTrl,) number valid outputs per trial
         nEp ([np.ndarray]): (nTrl,) number valid epochs per trial
-        validTgt ([np.ndarray]): (nTrl,nY) flag if this output is used in this trial 
+        lastEp (nTrl,): index of the last stimulus in each trial
+        validTgt ([np.ndarray]): (nTrl,nY) flag if this output is used in this trial
+        validEp (nTrl,nEp): flag if this epoch is a stimulus epoch in this trial 
     """    
     validTgt =  np.any(Fy != 0, axis=(-2 if Fy.ndim<4 else (0,-2)) ) # (nTrl,nY)
     nY  = np.sum(validTgt, -1) # number active outputs in this trial (nTrl)
 
     validEp  =  np.any(Fy != 0, axis=(-1 if Fy.ndim<4 else (0,-1)) ) # (nTrl,nEp)
-    nEp = np.zeros((validTgt.shape[0],),dtype=int)
+    nStim = np.sum(validEp, -1) # numer active time-points in this trial
+    lastEp = np.zeros((validEp.shape[0],),dtype=int)
     for ti in range(validEp.shape[0]):
-        tmp = np.flatnonzero(validEp[ti,:])
-        nEp[ti] = tmp[-1] if tmp.size>0 else 0 # num active epochs/samples
-    return nY, nEp, validTgt
+         tmp = np.flatnonzero(validEp[ti,:])
+         lastEp[ti] = tmp[-1] if tmp.size>0 else 0 # num active epochs/samples
+    return nY, nStim, lastEp, validTgt, validEp
 
 def filter_Fy(Fy, filtLen=None, B=None):
     # apply the temporal smoothing filter to the raw scores
@@ -208,7 +205,7 @@ def filter_Fy(Fy, filtLen=None, B=None):
     #sfFy  = np.cumsum(fFy, -2)[:, decisIdx, :] # (nTrl, nDecis, nY) [ nY x nDecis x nTrl] sfFy(y, T) = \sum_t=0^T fFy(y, t)
     return fFy
 
-def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False, priorsigma=None,  verb=0):
+def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, priorsigma=None,  verb=0):
     """Estimate the noise variance for Fy
 
     Args:
@@ -233,7 +230,7 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
 
     if detrendFy:
         # center over time also (to remove any signal)
-        muFy_t = np.sum(cFy,-2,keepdims=True)/np.maximum(.1,N[:,-1:,np.newaxis],dtype=cFy.dtype)
+        muFy_t = np.sum(cFy,-2,keepdims=True)/np.maximum(1,N[:,-1:,np.newaxis],dtype=cFy.dtype)
         cFy = cFy - muFy_t
 
     # compute the cumulative sum
@@ -242,26 +239,26 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
     # remove per-sample offset (if enough outputs to do reliably)
     if centFy and np.any(nY>3):
         # center at each time point, with guard for no active outputs (when mu should == 0)
-        muFy_y = np.sum(scFy, -1, keepdims=True) / np.maximum(.1,nY[:, np.newaxis, np.newaxis],dtype=scFy.dtype) # mean at each time-point
+        muFy_y = np.sum(scFy, -1, keepdims=True) / np.maximum(1,nY[:, np.newaxis, np.newaxis],dtype=scFy.dtype) # mean at each time-point
         scFy[...,nY>3,:,:] = scFy[...,nY>3,:,:] - muFy_y[...,nY>3,:,:]
 
     # variance of the summed scores over outputs for each time point
     # if independent then this should be a constant slope increase over time.
-    var2csFy = np.sum(scFy**2, -1) / np.maximum(.1,nY[:,np.newaxis]-1,dtype=scFy.dtype) # (nTr,nEp) var over outputs for each cumsum
+    var2csFy = np.sum(scFy**2, -1) / np.maximum(1, nY[:,np.newaxis]-1, dtype=scFy.dtype) # (nTr,nEp) var over outputs for each cumsum
 
     # normalize out the constant slope over time, to get the equivalent slope if 
     # we had N-indenpendent samples  
-    nvar2csFy = var2csFy / np.maximum(.1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
+    nvar2csFy = var2csFy / np.maximum(1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
 
     # compute the average of the estimated slopes for each integeration length
-    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(.1, N, dtype=scFy.dtype) # ave per-stime-stamp vars before each time-point
+    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(1,np.cumsum(N>0,-1))[np.newaxis,:,:] #arange(1,nvar2csFy.shape[-1]+1)[np.newaxis,np.newaxis,:] #np.maximum(1, N, dtype=scFy.dtype) # ave per-stime-stamp vars before each time-point
     
     # return the ave-cumsum-slope-of-variance at each decision length
     sigma2 = muvar2csFy[...,decisIdx] # (nTr,nDecis)
     N = N[...,decisIdx]
 
     # include the prior if needed
-    if priorsigma is not None and priorsigma[0]>0 :
+    if priorsigma is not None and priorsigma[1]>0 :
         # include the effect of the prior, sigma is weighted combo pior and data
         #  sigma'^2 = 1 / ( N_0/sigma_0^2 + N / sigma^2) 
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )
@@ -274,7 +271,7 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
     return sigma2, N
 
 
-def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, priorsigma=None,  verb=0):
+def estimate_Fy_noise_variance_old(Fy, decisIdx=None, centFy=True, detrendFy=False, priorsigma=None,  verb=0):
     """Estimate the noise variance for Fy
 
     Args:
@@ -388,7 +385,7 @@ def plot_normalizedScores(Fy, ssFy, scale_sFy, decisIdx):
 
 
 #@function
-def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.5, offsetstr=10, trlenfrac=.25):
+def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, offsetstr=10, trlenfrac=.25):
     import numpy as np
     noise = np.random.standard_normal((nM, nTrl, nEp, nY))
     noise = noise - np.mean(noise.ravel())
@@ -397,12 +394,7 @@ def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.5, off
     offset = offsetstr*np.random.standard_normal((noise.shape[-2])) # (nEp)
     noise = noise+offset[:, np.newaxis] # (nM, nTrl, nEp, nY) [ nYxnEpxnTrlxnM ]
 
-
     sigamp = sigstr*np.ones((noise.shape[-2])) # (nEp)
-    # no signal at the start of the trial
-    startupNoise_samp = int(nEp*startupNoisefrac)
-    sigamp[:startupNoise_samp] = 0
-    noise[:,:,:startupNoise_samp,:]=0
 
     # measure is sig + noise
     Fy = noise
@@ -417,10 +409,16 @@ def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.5, off
         # trial end time
         nEp[ti] = Fy.shape[-2]*(np.random.uniform()*trlenfrac + (1-trlenfrac))
         Fy[:, ti, nEp[ti]:, :] = 0
+
+    # no signal at the start of the trial
+    startupNoise_samp = int(Fy.shape[1]*startupNoisefrac)
+    sigamp[:startupNoise_samp] = 0
+    noise[:,:,:startupNoise_samp,:]=0
+
     return Fy, nEp
 
 def testcase():
-    detrendFy=True
+    detrendFy=False
     centFy=True
 
     from normalizeOutputScores import mktestFy,  normalizeOutputScores
@@ -437,20 +435,29 @@ def testcase():
 
     print("Fy={}".format(Fy.shape))
 
-    priorsigma=(1,1e6)
+    # test all at once, vs. incremental computation.
+    step=50
+    ssFy_all, scale_sFy_all, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=step, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
+    for i,len in enumerate(decisIdx):
+        ssFyL, scale_sFyl, _, _, _ = normalizeOutputScores(Fy[:,:,:len,...], minDecisLen=9999, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
+        print("{}) all={} once={}".format(len,scale_sFy_all[0,i],scale_sFyl[0,0]))
+
+
+    priorsigma=(1,0)
     ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
     print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
     #%matplotlib
     plt.figure(1)
-    plot_normalizedScores(oFy[0,0,...],ssFy[0,:,:],scale_sFy[0,:],decisIdx)
+    plot_normalizedScores(oFy[0,0,...],ssFy[0,0,:,:],scale_sFy[0,:],decisIdx)
 
 
     # visualize all trials true-target normalized scores
+    priorsigma=(1,1e6)
     ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy)
     print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
     #%matplotlib
     plt.figure(1)
-    plot_normalizedScores(oFy[0,0,...],ssFy[0,:,:],scale_sFy[0,:],decisIdx)
+    plot_normalizedScores(oFy[0,0,...],ssFy[0,0,:,:],scale_sFy[0,:],decisIdx)
 
     # introduce temporal correlations and visualize
     Fy = filter_Fy(Fy, filtLen=10)
@@ -459,7 +466,7 @@ def testcase():
     #%matplotlib
     plt.figure(1)
     plt.suptitle("filtered {}".format(10))
-    plot_normalizedScores(Fy[0,0,:,:],ssFy[0,:,:],scale_sFy[0,:],decisIdx)
+    plot_normalizedScores(Fy[0,0,:,:],ssFy[0,0,:,:],scale_sFy[0,:],decisIdx)
 
     # introduce temporal correlations and visualize
     Fy = filter_Fy(Fy, B=np.array([1,0,0,-1]))
@@ -468,7 +475,7 @@ def testcase():
     #%matplotlib
     plt.figure(1)
     plt.suptitle('anti-correlated')
-    plot_normalizedScores(Fy[0,0,:,:],ssFy[0,:,:],scale_sFy[0,:],decisIdx)
+    plot_normalizedScores(Fy[0,0,:,:],ssFy[0,0,:,:],scale_sFy[0,:],decisIdx)
 
 if __name__=="__main__":
     testcase()

@@ -184,7 +184,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
     return softmaxscale
 
 
-def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.4, normSum=False, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=0, startup_lag=.1):
+def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=100, priorweight=0, startup_lag=.1):
     import numpy as np
     print("{}".format(locals()))
 
@@ -205,8 +205,13 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.4, normSum=False, marginal
     #print("Fy={}".format(Fy))
     
     sFy=np.cumsum(Fy,-2)
-    from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
-    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
+    from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
+    sigma0, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
+    #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
+    sigma0 = np.nanmedian(sigma0)  # ave
+    print('Sigma0 = {}'.format(sigma0))
+
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
     softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
@@ -264,7 +269,7 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.4, normSum=False, marginal
     from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
     #ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
     #softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
-    (dc) = decodingCurveSupervised(Fy,nInt=(100,50),marginalizemodels=marginalizemodels,normSum=normSum,softmaxscale=softmaxscale)
+    (dc) = decodingCurveSupervised(Fy,nInt=(100,50),marginalizemodels=marginalizemodels,normSum=normSum,nEpochCorrection=nEpochCorrection,softmaxscale=softmaxscale,priorsigma=(sigma0,priorweight))
     plt.figure()
     plot_decoding_curve(*dc)
     plt.show()
@@ -272,4 +277,6 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.4, normSum=False, marginal
 
 
 if __name__=="__main__":
-    testcase()
+    testcase(nY=10, nM=4, nEp=340, nTrl=200, sigstr=.4, startup_lag=.1, 
+            normSum=False, marginalizemodels=True, marginalizedecis=False, 
+            nEpochCorrection=0, priorweight=0)

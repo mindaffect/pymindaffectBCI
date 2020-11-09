@@ -28,7 +28,7 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     pshape = np.ones(a.ndim+1, dtype=int); pshape[axis+1] = pat.size
     pat =  np.array(pat.ravel(),dtype=a.dtype).reshape(pshape) # [ ... x l x...]
     # window a into pat-len pieces
-    aw = window_axis(a, pat.size, axis=axis) # [ ... x t-l x l x ...]
+    aw = window_axis(a, pat.size, axis=axis, step=1) # [ ... x t-l x l x ...]
     # do the match
     F  = np.all(np.equal(aw, pat), axis=axis+1) # [... x t-l x ...]
     # pad to make the same shape as input

@@ -284,12 +284,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         #self.sigma0_ = np.sum(Fy.ravel()**2) / Fy.size
         #print('Fy={}'.format(Fy.shape))
         # N.B. need to match the filter used in the decoder..
-        if Fy.ndim>3:
-            self.sigma0_, _ = estimate_Fy_noise_variance(Fy[0,...], priorsigma=None)  # per-model+trial
-        else:
-            self.sigma0_, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
+        sigma0, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
         #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
-        self.sigma0_ = np.nanmedian(self.sigma0_.ravel())  # ave
+        self.sigma0_ = np.nanmedian(sigma0.ravel())  # ave
         print('Sigma0 = {}'.format(self.sigma0_))
 
         if calibrate_softmax:
