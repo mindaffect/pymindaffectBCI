@@ -11,6 +11,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistic
 from mindaffectBCI.decoder.utils import search_directories_for_file
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
+import traceback
 
 PYDIR = os.path.dirname(os.path.abspath(__file__))
 LOGDIR = os.path.join(PYDIR,'../../logs/')
@@ -209,7 +210,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
     dataset = getCalibration_dataset(ui)
 
     # fit the model to this data
-    perr, dataset, X, Y = doModelFitting(clsfr,dataset,**kwargs)
+    perr, dataset, X, Y = doModelFitting(clsfr,dataset, fs=ui.fs, **kwargs)
 
     # send message with calibration performance score, if we got one
     if perr is not None:
@@ -219,7 +220,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
 
 def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
-                   cv=2, prior_dataset=None, ranks=(1,2,3,5), **kwargs):
+                   cv=2, prior_dataset=None, ranks=(1,2,3,5), fs=None, **kwargs):
     """
     fit a model given a dataset 
 
@@ -283,7 +284,6 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             score = np.mean(cvscores['test_score'])
             print("clsfr={} => {}".format(clsfr, score))
         except:
-            import traceback
             traceback.print_exc()
             return None, None, None
 
@@ -299,28 +299,28 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model(fs=ui.fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
+                clsfr.plot_model(fs=fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
                 plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
                 plt.suptitle("Model + Decoding Performance")
                 #  from analyse_datasets import debug_test_dataset
-                #  debug_test_dataset(X,Y,None,fs=ui.fs)
+                #  debug_test_dataset(X,Y,None,fs=fs)
                 plt.figure(3) # plot the CCA info
                 Y_true = clsfr.stim2event(Y)
                 Y_true = Y_true[...,0:1,:]
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
-                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=ui.fs)
+                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=fs)
                 plt.suptitle("Summary Statistics")
                 try:
                     import pickle
                     fn = os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME))
                     print('Saving SS to {}'.format(fn))
-                    pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
+                    pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=fs),
                                 open(fn,'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
-                plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=ui.fs)
+                plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=fs)
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
@@ -333,6 +333,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.figure(4)
                 plt.savefig(os.path.join(LOGDIR,'erp_{}.png'.format(UNAME)))
             except:
+                traceback.print_exc()
                 pass
 
     return perr, dataset, X, Y
@@ -620,7 +621,11 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             evtlabs = evtlabs.split(',')
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
-    
+
+    # pre-train the model if the prior_dataset is given
+    if prior_dataset is not None:
+        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+
     current_mode = "idle"
     # clean shutdown when told shutdown
     while current_mode.lower != "shutdown".lower():
@@ -630,7 +635,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
-                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset)
+                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
 
             doPredictionStatic(ui, clsfr)
 
