@@ -5,26 +5,27 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores
     
     Args:
-        Fy  = (nModel,nTrl,nEp,nY) [nY x nEpoch x nTrl x nModel ] similarity score for each input epoch for each output
+        Fy (nModel,nTrl,nEp,nY) : similarity score for each input epoch for each output
                 N.B. Supervised decoder only has 1 model!!!
-        objIDs = (nY,) mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
+        objIDs (nY,) : mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
                 N.B. if objIDs > size(Fy,2), then additional virtual outputs are added
-        nInt = (2,) the number of integeration lengths to use, numThresholds. Defaults to ([30,25])
+        nInt (2,) : the number of integeration lengths to use, numThresholds. Defaults to ([30,25])
+
     Returns:
-        integerationLengths - [nInt] the actual integeration lengths in samples
-        ProbErr: (nInt,)float empherical error probablility at this integeration length
-        ProbErrEst(np.ndarray): (nInt: float) decoder estimate of the error rate for each integeration length
-        StopPerr - (nInt,) error rate at this average trial length when using ProbErrEst-thresholding based stopping
-        StopThresh - (nInt,) ProbErrEst threshold used to get this average trial length.
-        Yerr(np.ndarray): (nTrl,nInt : bool) flag if estimate was correct at this integeration length for this trial 
-        Perr(np.ndarray): (nTrl,nInt : float) compute probability of error for this integeration length and trial
+        integerationLengths (int (nInt,)) : the actual integeration lengths in samples
+        ProbErr (float (nInt,)) : empherical error probablility at this integeration length
+        ProbErrEst (float (nInt,)) : decoder estimate of the error rate for each integeration length
+        StopPerr (nInt,) : error rate at this average trial length when using ProbErrEst-thresholding based stopping
+        StopThresh (nInt,) : ProbErrEst threshold used to get this average trial length.
+        Yerr (bool (nTrl,nInt)) : flag if prediction was *incorrect* at this integeration length for this trial 
+        Perr (float (nTrl,nInt)) : compute probability of incorrect prediction for this integeration length and trial
     '''
     if objIDs is None:
         objIDs = np.arange(Fy.shape[-1])   
     if nInt is None:
         nInt = [min(Fy.shape[-2], 30), 25]
     if not hasattr(nInt,'__iter__'):
-        Int = (nInt,nInt)
+        nInt = (nInt,nInt)
     if Fy is None:
         return 1, 1, None, None, None, None, -1, 1
     if Fy.ndim > 3:
@@ -53,11 +54,15 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     #print("intlen={}".format(integerationLengths))
         
     Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy,objIDs,integerationLengths, **kwargs)
+    # up-size Yerr, Perr to match input number of trials
+    if not np.all(keep):
+        tmp=Yerr; Yerr=np.ones((len(keep),)+Yerr.shape[1:],dtype=Yerr.dtype); Yerr[keep,...]=tmp
+        tmp=Perr; Perr=np.ones((len(keep),)+Perr.shape[1:],dtype=Perr.dtype); Perr[keep,...]=tmp
 
     stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
     
     print(print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh))
-    
+
     return integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh, Yerr, Perr
 
 
@@ -65,19 +70,19 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
     """compute the decoding curves from the given epoch+output scores in Fy
 
     Args:
-        Fy ([np.ndarray]): (nTrl,nEp,nY) per-epoch output scores
-        objIDs ([float]): (nY,) the objectIDs for the outputs in Fy
-        integerationLengths ([type]): (nInt,) a list of integeration lengths to compute peformance at
+        Fy (float: (nTrl,nEp,nY)) : per-epoch output scores
+        objIDs (float: (nY,)) : the objectIDs for the outputs in Fy
+        integerationLengths (float (nInt,)) : a list of integeration lengths to compute peformance at
 
     Returns:
-        Yerr(np.ndarray): (nTrl,nInt : bool) flag if estimate was correct at this integeration length for this trial 
-        Perr(np.ndarray): (nTrl,nInt : float) compute probability of error for this integeration length and trial
-        aveProbErr: (nInt: float) average error probablility at this integeration length
-        aveProbErrEst(np.ndarray): (nInt: float) averaget estimated error probability for this integeration length
+        Yerr (nTrl,nInt : bool) : flag if prediction was *incorrect* at this integeration length for this trial 
+        Perr (nTrl,nInt : float) : compute probability of error for this integeration length and trial
+        aveProbErr (nInt: float) : average error probablility at this integeration length
+        aveProbErrEst (nInt: float):  average estimated error probability for this integeration length
     """    
-    Yidx=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Yest=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Perr=np.zeros((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Yidx=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Yest=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Perr= np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
 
     print("Int Lens:", end='')
     for li,nep in enumerate(integerationLengths):
@@ -97,6 +102,18 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
 
 
 def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
+    """compute the stopping curve -- which is the performance at times when stopping threshold (Perr) is passed
+
+    Args:
+        nInt (int): number of time points to compute the stopping curve at
+        integerationLengths (list int): the set of integeration lengths at which stopping curve is computed
+        Perr ( nTrl,nInt): Probability of error at each time point
+        Yerr ( nTrl,nInt): For each time point if the 'best' prediction is correct or not
+
+    Returns:
+        [type]: [description]
+    """    
+    
     nthresh=nInt[1] if len(nInt)>1 else nInt[0]
     if nthresh < 0:
         nthresh=20
@@ -162,6 +179,7 @@ def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopY
     return s
 
 
+
 def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     ''' plot the decoding curve '''
     import matplotlib.pyplot as plt
@@ -170,6 +188,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
         # multiple datasets
         plt.plot(integerationLengths.T,aveProbErr.T)
         plt.plot(np.mean(integerationLengths,0), np.mean(aveProbErr,0), 'k', linewidth=5, label="mean")
+        plt.title('Decoding Curve\n(nDatasets={})'.format(aveProbErr.shape[0]))
     
     else:
         # single dataset
@@ -178,15 +197,18 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
             Perr = args[6-2].copy() #(nTrl,nInt)
+            Perr[Yerr<0]=np.NaN
             Perr[Yerr==True]=np.NaN # disable points where it was in error
             # est when was correct
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(objID == 0)')
+            plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
             plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
             # est when incorrect..
             Perr = args[6-2].copy() #(nTrl,nInt)
-            Perr[Yerr==False]=np.NaN # disable points where it was in error
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(objID ~= 0)')
+            Perr[Yerr<0]=np.NaN
+            Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
+            plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
+            plt.title('Decoding Curve\n(nTrl={})'.format(Yerr.shape[0]))
 
     plt.ylim((0,1))
     plt.xlabel('Integeration Length (samples)')

@@ -9,7 +9,26 @@ ERP_STIM_DUR = 80/1000 # 80ms
 MI_STIM_DUR = 4 # 3s
 SSVEP_STIM_DUR = 4
 
-def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True):
+def load_openBMI(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,1),(25,-1)), CAR=False, verb=1, trlen_ms=None, offset_ms=(0,0), ppMI=True, ch_names=None):
+    """Load and pre-process a openBMI <https://academic.oup.com/gigascience/article/8/5/giz002/5304369> offline save-file and return the EEG data, and stimulus information
+
+    Args:
+        datadir (str): root of the data directory tree
+        sessdir (str, optional): sub-directory for the session to load. Defaults to None.
+        sessfn (str, optional): filename for the session information. Defaults to None.
+        fs_out (float, optional): [description]. Defaults to 100.
+        stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
+        trlen_ms (float, optional): Trial duration in milli-seconds.  If None then this is deduced from the stimulus information. Defaults to None.
+        offset_ms (tuple, (2,) optional): Offset in milliseconds from the trial start/end for the returned data such that X has range [tr_start+offset_ms[0] -> tr_end+offset_ms[0]]. Defaults to (-500,500).
+        ch_names (tuple, optional): Names for the channels of the EEG data.
+        CAR (bool): flag if we should common-average-reference the raw EEG data
+
+    Returns:
+        X (np.ndarray (nTrl,nSamp,nCh)): the pre-processed per-trial EEG data
+        Y (np.ndarray (nTrl,nSamp,nY)): the up-sampled stimulus information for each output
+        coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
+                          "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
+    """    
     
     if offset_ms is None:
         offset_ms = (0, 0)
@@ -39,7 +58,8 @@ def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(
         return v
 
     fs = squeeze(data['fs'])
-    ch_names = [d for d in data['chan'][0,:]]
+    if ch_names is None:
+        ch_names = [d for d in data['chan'][0,:]]
     X = squeeze(data['x']) # (nSamp,d)
     X = np.asarray(X, order='C', dtype='float32')
     print("X={}".format(X.shape),flush=True)
@@ -151,7 +171,7 @@ def load_openBMI(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(
 
         
     # preprocess -> downsample
-    resamprate = int(fs/ofs)
+    resamprate = int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
             print("resample: {}->{}hz rsrate={}".format(fs, fs/resamprate, resamprate))
@@ -214,11 +234,11 @@ def testcase():
         sessfn = sys.argv[1]
 
     from load_openBMI import load_openBMI
-    X, Y, coords = load_openBMI(sessfn, CAR=True, offset_ms=(-400,1000), sessfn=sessfn, ofs=60, stopband=((0,1),(30,-1)))
+    X, Y, coords = load_openBMI(sessfn, CAR=True, offset_ms=(-400,1000), sessfn=sessfn, fs_out=60, stopband=((0,1),(30,-1)))
     fs = coords[1]['fs']
-    # CAR=False,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
-    # CAR=True,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
-    # CAR=True,ofs=60,stopband=((0,3),(29,-1)),rcond=1e-8 : audc=36 Perr[-1]=.30
+    # CAR=False,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
+    # CAR=True,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-3 : audc=36 Perr[-1]=.30
+    # CAR=True,fs_out=60,stopband=((0,3),(29,-1)),rcond=1e-8 : audc=36 Perr[-1]=.30
 
     
     if 'SSVEP' in sessfn:

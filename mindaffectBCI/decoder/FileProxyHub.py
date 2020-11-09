@@ -57,7 +57,7 @@ class FileProxyHub:
         self.lasttimestamp = self.lasttimestamp + timeout_ms
         return msgs
 
-def testcase(filename, fs=200, ofs=200, stopband=((45,65),(0,3),(25,-1)), order=4):
+def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
     import numpy as np
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker, butterfilt_and_downsample
 
@@ -65,7 +65,7 @@ def testcase(filename, fs=200, ofs=200, stopband=((45,65),(0,3),(25,-1)), order=
     tsfilt = timestamp_interpolation(fs=fs,sample2timestamp=linear_trend_tracker(500))
 
     if stopband is not None:
-        ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=ofs)
+        ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=fs_out)
     else:
         ppfn = None
     

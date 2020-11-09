@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 
 trigger_event='stimulus.note.play' # the actual times the user hit the button
 
-def load_brainsonfire(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, chIdx=slice(64), verb=2):
+def load_brainsonfire(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, chIdx=slice(64), verb=2):
     
     # load the data file
     Xfn = datadir
@@ -68,7 +68,7 @@ def load_brainsonfire(datadir, sessdir=None, sessfn=None, ofs=60, stopband=((45,
         X, _, _ = butter_sosfilt(X,stopband,fs)
     
     # preprocess -> downsample
-    resamprate = int(fs/ofs)
+    resamprate = int(fs/fs_out)
     if resamprate > 1:
         if verb > 0:
             print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
@@ -119,7 +119,7 @@ def testcase():
  
     from load_brainsonfire import load_brainsonfire
     print("Loading: {}".format(sessfn))
-    oX, oY, coords = load_brainsonfire(sessfn, ofs=60)
+    oX, oY, coords = load_brainsonfire(sessfn, fs_out=60)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']

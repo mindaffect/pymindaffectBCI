@@ -20,7 +20,7 @@ l,f,_=get_dataset('openBMI_MI')
 #X,Y,coords=l(f[1],stopband=((0,3),(29,-1)),CAR=False,offset_ms=None,ppMI=False)
 offset_ms=(0,0);(-6000,12000)
 stopband=None #((0,3),(30,-1))
-X,Y,coords=l(f[0],stopband=stopband,CAR=True,offset_ms=offset_ms,ppMI=False,ofs=100)
+X,Y,coords=l(f[0],stopband=stopband,CAR=True,offset_ms=offset_ms,ppMI=False,fs_out=100)
 oX=X.copy()
 fs=coords[1]['fs']
 lab=coords[0]['lab']

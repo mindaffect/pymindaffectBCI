@@ -25,6 +25,7 @@
         "framesperbit":1,
         "fullscreen":false,
         "fullscreen_stimulus":true,
+        "simple_calibration":true,
         "host":"-"
     }
 }
