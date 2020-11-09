@@ -51,13 +51,14 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     #print("intlen={}".format(integerationLengths))
         
     Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy, objIDs, integerationLengths, **kwargs)
+
+    stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
+    
     # up-size Yerr, Perr to match input number of trials
     if not np.all(keep):
         tmp=Yerr; Yerr=np.ones((len(keep),)+Yerr.shape[1:],dtype=Yerr.dtype); Yerr[keep,...]=tmp
         tmp=Perr; Perr=np.ones((len(keep),)+Perr.shape[1:],dtype=Perr.dtype); Perr[keep,...]=tmp
 
-    stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
-    
     print(print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh))
 
     return integerationLengths, aveProbErr, aveProbErrEst, stopYerr, stopPerrThresh, Yerr, Perr
@@ -128,7 +129,7 @@ def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
     aveThreshPerrIntYerr=np.mean(perrstopiYerr,0) # (nThresh,4) [4 x nThresh] average stopping time for each threshold
     # BODGE: map into integeration lengths to allow use the same ploting routines
 
-    # threshold with closes average stopping time
+    # threshold with closest average stopping time
     mi=np.argmin(np.abs(integerationLengths[:,np.newaxis]-aveThreshPerrIntYerr[:,2:3].T),1) # [ nInt ] 
 
     stopThresh=aveThreshPerrIntYerr[mi,0]

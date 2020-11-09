@@ -137,7 +137,7 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
+def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -184,17 +184,21 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.5,1,1.5,
     return softmaxscale
 
 
-def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.2, normSum=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=0):
+def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.4, normSum=False, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=0, startup_lag=.1):
     import numpy as np
+    print("{}".format(locals()))
+
     np.random.seed(0)
     noise = np.random.standard_normal((nM,nTrl,nEp,nY))
     noise = noise - np.mean(noise.ravel())
     noise = noise / np.std(noise.ravel())
 
     sigamp=sigstr*np.ones(noise.shape[-2]) # [ nEp ]
+
+
     # no signal ast the start of the trial
-  #startupNoise_samp=nEp*.5;
-  #sigamp((1:size(sigamp,2))<startupNoise_samp)=0;
+    startuplag_samp=int(nEp*startup_lag)
+    sigamp[:startuplag_samp]=0
     Fy = np.copy(noise)
     # add the signal
     Fy[0, :, :, 0] = Fy[0, :, :, 0] + sigamp
@@ -260,7 +264,7 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=1000, sigstr=.2, normSum=True, marginali
     from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
     #ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
     #softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
-    (dc) = decodingCurveSupervised(Fy,nInt=(100,25),marginalizemodels=marginalizemodels,normSum=normSum,softmaxscale=softmaxscale)
+    (dc) = decodingCurveSupervised(Fy,nInt=(100,50),marginalizemodels=marginalizemodels,normSum=normSum,softmaxscale=softmaxscale)
     plt.figure()
     plot_decoding_curve(*dc)
     plt.show()

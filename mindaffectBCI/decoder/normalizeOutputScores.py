@@ -133,7 +133,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     if nEpochCorrection is not None and nEpochCorrection > 0 :
         #cf = c4(1 + N/np.maximum(1, nEpochCorrection)) 
         #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
-        cf = 1 + np.sqrt(np.maximum(1,nEpochCorrection)/N)
+        cf = 1 + np.sqrt(nEpochCorrection/np.maximum(N,1))
         # include the multiple comparsiosn correction factors
         sFy_scale = sFy_scale * cf.astype(sFy_scale.dtype)
 
@@ -231,19 +231,19 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
     # TODO [] : make more computationally efficient? e.g. no explicit centering
     cFy = Fy.copy()
 
-    if centFy:
+    if detrendFy:
         # center over time also (to remove any signal)
-        muFy_t = np.sum(cFy,-2,keepdims=True)/N[:,-1:,np.newaxis]
+        muFy_t = np.sum(cFy,-2,keepdims=True)/np.maximum(.1,N[:,-1:,np.newaxis],dtype=cFy.dtype)
         cFy = cFy - muFy_t
 
     # compute the cumulative sum
     scFy = np.cumsum(cFy, -2) # cum-sum from start # (nTr, nEp, nY)
 
     # remove per-sample offset (if enough outputs to do reliably)
-    if centFy and np.all(nY>3):
+    if centFy and np.any(nY>3):
         # center at each time point, with guard for no active outputs (when mu should == 0)
-        muFy_y = np.sum(scFy, -1, keepdims=True) / nY[:, np.newaxis, np.newaxis] # mean at each time-point
-        scFy = scFy - muFy_y
+        muFy_y = np.sum(scFy, -1, keepdims=True) / np.maximum(.1,nY[:, np.newaxis, np.newaxis],dtype=scFy.dtype) # mean at each time-point
+        scFy[...,nY>3,:,:] = scFy[...,nY>3,:,:] - muFy_y[...,nY>3,:,:]
 
     # variance of the summed scores over outputs for each time point
     # if independent then this should be a constant slope increase over time.
@@ -265,10 +265,11 @@ def estimate_Fy_noise_variance_2(Fy, decisIdx=None, centFy=True, detrendFy=False
         # include the effect of the prior, sigma is weighted combo pior and data
         #  sigma'^2 = 1 / ( N_0/sigma_0^2 + N / sigma^2) 
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )
-        osigma2= np.mean(sigma2)
+        osigma2= sigma2
         sigma2 = (sigma2*decisIdx + priorsigma[0]*priorsigma[1]) / ( decisIdx + priorsigma[1] )
-        sigma2 = sigma2.astype(Fy.dtype)
-        #print('sigma2 = {}  prior={} -> {}'.format(osigma2,priorsigma,np.mean(sigma2)))
+        sigma2[osigma2==0] = 0
+        sigma2 = np.maximum(osigma2,sigma2) # sigma2.astype(Fy.dtype)
+        #print('sigma2 = {}  prior={} -> {}'.format(np.mean(osigma2),priorsigma,np.mean(sigma2)))
     
     return sigma2, N
 
