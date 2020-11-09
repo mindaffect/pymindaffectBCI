@@ -12,6 +12,9 @@ from mindaffectBCI.decoder.utils import search_directories_for_file
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 
+PYDIR = os.path.dirname(os.path.abspath(__file__))
+LOGDIR = os.path.join(PYDIR,'../../logs/')
+
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 
@@ -164,13 +167,18 @@ def load_previous_dataset(f:str):
         f (str, file-like): buffered interface to the data and stimulus streams
     """
     import pickle
+    import glob
     if isinstance(f,str): # filename to load from
         # search in likely dataset locations for the file to load
         f = search_directories_for_file(f,
-                                        os.path.join(os.path.dirname(os.path.abspath(__file__))),
-                                        os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
-        with open(f,'rb') as file:
-            dataset = pickle.load(file)
+                                        PYDIR,
+                                        os.path.join(PYDIR,'..','..'),
+                                        LOGDIR)
+        # pick the most recent if multiple files match
+        f = max(glob.glob(f), key=os.path.getctime)
+        if f:
+            with open(f,'rb') as file:
+                dataset = pickle.load(file)
     else: # is it a byte-stream to load from?
         dataset = pickle.load(f)
     if isinstance(dataset,dict):
@@ -227,30 +235,36 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         X : the calibration data as a 3-d array (tr,samp,d)
         Y : the calibration stimulus as a 3-d array (tr,samp,num-outputs)
     """   
-    global uname
+    global UNAME
     perr = None 
     X = None
     Y = None
 
+    if isinstance(prior_dataset,str): # filename to load the data from?
+        try:
+            prior_dataset = load_previous_dataset(prior_dataset)
+        except:
+            # soft-fail if load failed
+            print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
+            prior_dataset = None
     if prior_dataset is not None: # combine with the old calibration data
-        if isinstance(prior_dataset,str): # filename to load the data from?
-            try:
-                prior_dataset = load_previous_dataset(prior_dataset)
-            except:
-                # soft-fail if load failed
-                print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
-                prior_dataset = None
-    if prior_dataset is not None:
         if dataset is not None:
-            dataset.extend(prior_dataset)
+            # validate the 2 datasets are compatiable -> same number channels in X
+            d_nch = [ x.shape[0] for (x,_) in dataset ]
+            p_nch = [ x.shape[0] for (x,_) in prior_dataset ]
+            if max(d_nch) == max(p_nch): # match the max channels info
+                dataset.extend(prior_dataset)
+            else:
+                print("Warning: prior dataset not compatiable with current.  Ignored!")
         else: 
             dataset = prior_dataset
 
     if dataset:
         try:
             import pickle
-            pickle.dump(dict(dataset=dataset),
-                        open('calibration_dataset_{}.pk'.format(uname),'wb'))
+            fn = os.path.join(LOGDIR,'calibration_dataset_{}.pk'.format(UNAME))
+            print('Saving calibration data to {}'.format(fn))
+            pickle.dump(dict(dataset=dataset), open(fn,'wb'))
         except:
             print('Error saving cal data')
 
@@ -259,7 +273,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
 
         # guard against empty training dataset
         if X is None or Y is None :
-            return None, None, None, None
+            return None, None, None
         Y, used_idx = strip_unused(Y)
         
         # now call the clsfr fit method, on the true-target info
@@ -271,7 +285,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         except:
             import traceback
             traceback.print_exc()
-            return None, None, None, None
+            return None, None, None
 
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
@@ -299,8 +313,10 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.suptitle("Summary Statistics")
                 try:
                     import pickle
+                    fn = os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME))
+                    print('Saving SS to {}'.format(fn))
                     pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
-                                open('summary_statistics_{}.pk'.format(uname),'wb'))
+                                open(fn,'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
@@ -308,15 +324,14 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
-                logsdir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/')
                 plt.figure(1)
-                plt.savefig(os.path.join(logsdir,'model_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'model_{}.png'.format(UNAME)))
                 #plt.figure(2)
-                #plt.savefig(os.path.join(logsdir,'decoding_curve_{}.png'.format(uname)))
+                #plt.savefig(os.path.join(LOGDIR,'decoding_curve_{}.png'.format(UNAME)))
                 plt.figure(3)
-                plt.savefig(os.path.join(logsdir,'summary_statistics_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'summary_statistics_{}.png'.format(UNAME)))
                 plt.figure(4)
-                plt.savefig(os.path.join(logsdir,'erp_{}.png'.format(uname)))
+                plt.savefig(os.path.join(LOGDIR,'erp_{}.png'.format(UNAME)))
             except:
                 pass
 
@@ -372,7 +387,7 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     #print(" Pred= used_idx:{} ptgt:{}".format(used_idx,Ptgt))
     # N.B. for network efficiency, only send for non-zero probability outputs
     nonzero_idx = np.flatnonzero(Ptgt)
-    print("{}={}".format(Ptgt,nonzero_idx))
+    # print("{}={}".format(Ptgt,nonzero_idx))
     # ensure a least one entry
     if nonzero_idx.size == 0: 
         nonzero_idx = [0]
@@ -544,7 +559,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         host:str=None, prior_dataset:str=None,
         tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
         stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5,
-        prediction_offsets=None,
+        prediction_offsets=None, logdir=None,
         calplots:bool=False, predplots:bool=False, label:str=None, **kwargs):
     """ run the main decoder processing loop
 
@@ -557,6 +572,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         offset_ms (float, optiona): offset in ms to shift the analysis window. Use to compensate for response lag.  Defaults to 0.
         stopband (tuple, optional): temporal filter specification for `UtopiaDataInterface.butterfilt_and_downsample`. Defaults to ((45,65),(5.5,25,'bandpass'))
         ftype (str, optional): type of temporal filter to use.  Defaults to 'butter'.
+        logdir (str, optional): location to save output files.  Defaults to None.
         order (int, optional): order of temporal filter to use.  Defaults to 6.
         out_fs (float, optional): sample rate after the pre-processor. Defaults to 100.
         evtlabs (tuple, optional): the brain event coding to use.  Defaults to None.
@@ -565,7 +581,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         prior_dataset ([str,(dataset)]): calibration data from a previous run of the system.  Used to pre-seed the model.  Defaults to None.
         prediction_offsets ([ListInt], optional): a list of stimulus offsets to try at prediction time to cope with stimulus timing jitter.  Defaults to None.
     """
-    global CALIBRATIONPLOTS, PREDICTIONPLOTS
+    global CALIBRATIONPLOTS, PREDICTIONPLOTS, UNAME, LOGDIR
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
     try :
@@ -575,11 +591,15 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         guiplots=False
 
     # setup the saving label
-    global uname
     from datetime import datetime 
-    uname = datetime.now().strftime("%y%m%d_%H%M")
+    UNAME = datetime.now().strftime("%y%m%d_%H%M")
     if label is not None: # include label as prefix
-        uname = "{}_{}".format(label,uname)
+        UNAME = "{}_{}".format(label,UNAME)
+    # setup saving location
+    if logdir:
+        LOGDIR=os.path.expanduser(logdir)
+
+    print("LOGDIR={}".format(LOGDIR))
 
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
@@ -601,13 +621,12 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
     
-    calibration_dataset = None
     current_mode = "idle"
     # clean shutdown when told shutdown
     while current_mode.lower != "shutdown".lower():
 
         if  current_mode.lower() in ("calibration.supervised","calibrate.supervised"):
-            calibration_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
+            prior_dataset, _, _ = doCalibrationSupervised(ui, clsfr, cv=cv, prior_dataset=prior_dataset)
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
@@ -616,7 +635,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             doPredictionStatic(ui, clsfr)
 
         elif current_mode.lower() in ("reset"):
-            calibration_dataset = None
+            prior_dataset = None
             clsfr.clear()
 
         # check for new mode-messages
@@ -654,6 +673,7 @@ if  __name__ == "__main__":
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
+    parser.add_argument('--logdir', type=str, help='directory to save log/data files', default='~/Desktop/logs')
 
     args = parser.parse_args()
 
