@@ -2,10 +2,10 @@
 import numpy as np
 
 def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
-                          normSum=False, centFy=False, detrendFy=False, 
+                          normSum=False, centFy=True, detrendFy=False, 
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
-                          bwdAccumulate=False,
+                          bwdAccumulate=True,
                           priorsigma=None, marginalizemodels=True):
     '''
     normalize the raw output scores to feed into the Perr computation
@@ -77,21 +77,25 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     if maxDecisLen > 0 and maxDecisLen >= decisIdx[0]:
         decisIdx = decisIdx[decisIdx <= maxDecisLen]
 
-    # For computational efficiency remove data outside the max decision points
-    if np.max(decisIdx[-1]) < min(Fy.shape[-2]*0.7, Fy.shape[-2]-100): # (nM, nTrl, nEp, nY)
-        maxLen = int(np.max(decisIdx[-1]))
-        Fy = Fy[:, :maxLen+1, :]
-
     # compute the summed scores
     if abs(minDecisLen) > Fy.shape[-2]:
         decisIdx = np.array([Fy.shape[-2]-1])
         N = nEp[:, np.newaxis] # (nTrl, nDecis) number elements in the sum
         sFy = np.sum(Fy, -2, keepdims=True)
-    else:
-        if (bwdAccumulate): # (nM, nTrl, nEp, nY) 
+    else:            
+        if (bwdAccumulate): # (nM, nTrl, nEp, nY)
+            #print("Fy={} lastEp={}".format(Fy.shape,lastEp)) 
+            oFy=Fy.copy()
+            Fy=Fy.copy()
             for ti in range(Fy.shape[-3]): # time-reverse in the valid data range
-                Fy[..., ti, :lastEp[ti], :] = Fy[..., ti, lastEp[ti]-1::-1, :]
-                validEp[..., :lastEp[ti] ] = validEp[...,lastEp[ti]-1::-1]
+                if lastEp[ti]>0:
+                    Fy[..., ti, :lastEp[ti]+1, :] = Fy[..., ti, lastEp[ti]::-1, :]
+                    validEp[..., :lastEp[ti]+1 ] = validEp[...,lastEp[ti]::-1]
+
+        # For computational efficiency remove data outside the max decision points
+        if False and np.max(decisIdx[-1]) < min(Fy.shape[-2]*0.7, Fy.shape[-2]-100): # (nM, nTrl, nEp, nY)
+            maxLen = int(np.max(decisIdx[-1]))
+            Fy = Fy[..., :maxLen+1, :]
 
         sFy = np.cumsum(Fy, -2)
         sFy = sFy[..., decisIdx, :]
@@ -437,7 +441,7 @@ def testcase():
     step=50
     ssFy_all, scale_sFy_all, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=step, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
     for i,len in enumerate(decisIdx):
-        ssFyL, scale_sFyl, _, _, _ = normalizeOutputScores(Fy[:,:,:len,...], minDecisLen=9999, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
+        ssFyL, scale_sFyl, _, _, _ = normalizeOutputScores(Fy[:,:,:len,...], minDecisLen=9999, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, bwdAccumulate=False, priorsigma=(0,0))
         print("{}) all={} once={}".format(len,scale_sFy_all[0,i],scale_sFyl[0,0]))
 
 

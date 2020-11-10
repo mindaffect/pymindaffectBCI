@@ -153,8 +153,6 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Args:
             Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
             minDecisLen (int,optional): minimum number of samples on which to make a prediction
-            marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to False.
-            minDecisLen (int,optional): minimum number of samples on which to make a prediction
             marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
             marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
 

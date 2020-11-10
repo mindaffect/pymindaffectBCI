@@ -203,37 +203,43 @@ def mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag):
 
     return Fy, noise, sigamp
 
-def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, bwdAccumulate=False, minDecisLen=-1,
-            marginalizemodels=True, marginalizedecis=False, 
-            nEpochCorrection=20, priorweight=1e2):
+def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
+            marginalizemodels, marginalizedecis, 
+            nEpochCorrection, priorweight, minDecisLen=-1):
     import numpy as np
     #print("{}".format(locals()))
     
-    sFy=np.cumsum(Fy,-2)
     from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
     sigma0, _ = estimate_Fy_noise_variance(Fy, priorsigma=None)
     #print('Sigma0{} = {}'.format(self.sigma0_.shape,self.sigma0_))
     sigma0 = np.nanmedian(sigma0)  # ave
     print('Sigma0 = {}'.format(sigma0))
 
-    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
-                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=bwdAccumulate,
+    sFy=np.cumsum(Fy,-2)
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
+                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
                                 marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
     softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
+
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
+                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
+                                marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
     smax = softmax(ssFy*softmaxscale,axis=((-4,-1) if ssFy.ndim>3 else -1))
     #print("{}".format(smax.shape))
     Ptgt=zscore2Ptgt_softmax(ssFy, marginalizemodels=marginalizemodels, marginalizedecis=False, softmaxscale=softmaxscale) # (nTrl,nEp,nY)
+    if Ptgt.ndim>3 and Ptgt.shape[0]==1: # strip singlenton model dim
+        Ptgt=Ptgt[0,...]
     #print("Ptgt={}".format(Ptgt.shape))
     import matplotlib.pyplot as plt
     plt.clf()
-    tri=1
+    tri=min(1,Fy.shape[-3]-1)
     nM=Fy.shape[-4] if Fy.ndim>3 else 1
     for mi in range(nM):
         sFyi  = sFy[mi,tri,:,:] if sFy.ndim>3 else sFy[tri,:,:]
         ssFyi = ssFy[mi,tri,:,:] if ssFy.ndim>3 else ssFy[tri,:,:]
-        smaxi = smaxi[mi,tri,:,:] if smax.ndim>3 else smax[tri,:,:]
+        smaxi = smax[mi,tri,:,:] if smax.ndim>3 else smax[tri,:,:]
 
         if mi==0 :
             a = plt.subplot(4,nM,0*nM+mi+1)
@@ -269,11 +275,26 @@ def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, bwdAccumulate=False, 
         plt.ylim((np.min(smax.ravel()),np.max(smax.ravel())))
         if mi==0: plt.ylabel('softmax')
         plt.grid()
-        
-    plt.subplot(414);plt.cla()    
-    plt.plot(Ptgt[tri,...])
-    plt.title('Ptgt')
-    plt.grid()
+
+
+        if Ptgt.ndim>3 :
+            if mi==0:
+                a=plt.subplot(4,nM,3*nM+mi+1, sharex=xax)
+                yax2=a
+            else:
+                a=plt.subplot(4,nM,3*nM+mi+1, sharex=xax, sharey=yax2)
+            plt.cla()
+            plt.plot(Ptgt[mi,tri,:,:])
+            plt.ylim((0,1))
+            if mi==0: plt.ylabel('Ptgt')
+            plt.grid()
+
+    if Ptgt.ndim<4 or Ptgt.shape[0]==1:
+        plt.subplot(414);plt.cla()    
+        plt.plot(Ptgt[tri,...])
+        plt.ylabel('Ptgt')
+        plt.grid()
+
     plt.show(block=False)
     plt.tight_layout()
 
@@ -290,24 +311,26 @@ def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, bwdAccumulate=False, 
     plot_decoding_curve(*dc)
     plt.show()
 
-def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=True, centFy=True, detrendFy=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=20, priorweight=1e2, startup_lag=.1):
+def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=True, centFy=True, detrendFy=True, marginalizemodels=True, marginalizedecis=False, bwdAccumulate=False, nEpochCorrection=20, priorweight=1e2, startup_lag=.1):
 
     # mk the test dataset
     Fy, noise, sigamp = mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag)
 
     # visualize it
-    visPtgt(Fy,normSum,centFy,detrendFy,marginalizemodels,marginalizedecis,nEpochCorrection,priorweight)
+    visPtgt(Fy,normSum,centFy,detrendFy,bwdAccumulate,marginalizemodels,marginalizedecis,nEpochCorrection,priorweight)
 
 
 if __name__=="__main__":
-    if False:
-        Fy, noise, sigamp = mkTestFy(nY=10,nM=4,nEp=640,nTrl=200,sigstr=.15,startup_lag=.05)
+    if True:
+        Fy, noise, sigamp = mkTestFy(nY=10,nM=1,nEp=640,nTrl=200,sigstr=.15,startup_lag=.3)
     else:
         import pickle
         stopping=pickle.load(open('stopping.pk','rb'))
         Fy = stopping['Fy']
+        Y=stopping['Y']
         keep = np.any(Fy>0,axis=(-2,-1) if Fy.ndim<4 else (-4,-2,-1))
         Fy=Fy[...,keep,:,:]
+        Y=Y[...,keep,:,:]
 
-    visPtgt(Fy,normSum=False,centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
+    visPtgt(Fy.copy(),normSum=False, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
             marginalizemodels=True,marginalizedecis=True,nEpochCorrection=50,priorweight=200)
