@@ -1,0 +1,7 @@
+mindaffectBCI
+mindaffectBCI/decoder
+mindaffectBCI/decoder/offline
+mindaffectBCI/examples/acquisition
+mindaffectBCI/examples/output
+mindaffectBCI/examples/presentation
+mindaffectBCI/examples/utilities
