@@ -79,7 +79,7 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
         else: # softmax then sum
 
             Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
-            Ptgt = np.sum(Ptgt, axis=marginalize_axis)
+            Ptgt = np.sum(Ptgt, axis=marginalize_axis, keepdims=True)
     else:
         Ptgt = softmax(f,axis=(-1,)+marginalize_axis, validTgt=validTgt)
 
@@ -203,7 +203,9 @@ def mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag):
 
     return Fy, noise, sigamp
 
-def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=20, priorweight=1e2):
+def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, bwdAccumulate=False, minDecisLen=-1,
+            marginalizemodels=True, marginalizedecis=False, 
+            nEpochCorrection=20, priorweight=1e2):
     import numpy as np
     #print("{}".format(locals()))
     
@@ -215,14 +217,14 @@ def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, marginalizemodels=Tru
     print('Sigma0 = {}'.format(sigma0))
 
     ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
-                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, 
+                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=bwdAccumulate,
                                 marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
     softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
     smax = softmax(ssFy*softmaxscale,axis=((-4,-1) if ssFy.ndim>3 else -1))
     #print("{}".format(smax.shape))
-    Ptgt=zscore2Ptgt_softmax(ssFy, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, softmaxscale=softmaxscale) # (nTrl,nEp,nY)
+    Ptgt=zscore2Ptgt_softmax(ssFy, marginalizemodels=marginalizemodels, marginalizedecis=False, softmaxscale=softmaxscale) # (nTrl,nEp,nY)
     #print("Ptgt={}".format(Ptgt.shape))
     import matplotlib.pyplot as plt
     plt.clf()
@@ -280,8 +282,9 @@ def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, marginalizemodels=Tru
     #ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
     #softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
     (dc) = decodingCurveSupervised(Fy,nInt=(100,50),
-                    marginalizemodels=marginalizemodels,
-                    normSum=normSum, detrendFy=detrendFy, centFy=centFy, nEpochCorrection=nEpochCorrection,
+                    marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen,
+                    normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=bwdAccumulate, 
+                    nEpochCorrection=nEpochCorrection,
                     softmaxscale=softmaxscale,priorsigma=(sigma0,priorweight))
     plt.figure()
     plot_decoding_curve(*dc)
@@ -306,5 +309,5 @@ if __name__=="__main__":
         keep = np.any(Fy>0,axis=(-2,-1) if Fy.ndim<4 else (-4,-2,-1))
         Fy=Fy[...,keep,:,:]
 
-    visPtgt(Fy,normSum=False,centFy=False,detrendFy=False,
-            marginalizemodels=True,marginalizedecis=False,nEpochCorrection=50,priorweight=200)
+    visPtgt(Fy,normSum=False,centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=50,priorweight=200)

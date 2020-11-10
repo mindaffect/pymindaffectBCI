@@ -174,7 +174,11 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             kwargs['softmaxscale']=self.softmaxscale_
 
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
-        return Ptgt #(nTrl, nEp, nY)
+        if marginalizemodels and Fy.ndim>3 and Ptgt.shape[0]>0: # hide our internal model dimension?
+            Yest=Yest[0,...]
+            Perr=Perr[0,...]
+            Ptgt=Ptgt[0,...]
+        return Ptgt #(nM, nTrl, nEp, nY)
 
     
     def predict_proba(self, X, Y, marginalizemodels=True, marginalizedecis=False, startup_correction=100, minDecisLen=-1, dedup0=True, prevY=None):

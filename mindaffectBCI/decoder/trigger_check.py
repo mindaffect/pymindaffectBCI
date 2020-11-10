@@ -131,9 +131,9 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
         
 
     # get the classifier predictions
-    Ptgt = clsfr.predict_proba(X,Y) # (tr,decis,ny) get predicted target probability for each trial
+    Ptgt = clsfr.predict_proba(X,Y) # (nM,tr,decis,ny) get predicted target probability for each trial
     #Ptgt[Ptgt==0]=1
-    Yerr = np.any(Ptgt[:,-1,:1] < Ptgt[:,-1,1:], axis=-1) # use last prediction to decide if correct
+    Yerr = np.any(Ptgt[...,-1,:1] < Ptgt[...,-1,1:], axis=-1) # use last prediction to decide if correct
 
     # get the event-coded version of Y
     Ye = clsfr.stim2event(Y)

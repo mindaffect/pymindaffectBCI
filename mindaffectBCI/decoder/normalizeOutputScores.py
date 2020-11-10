@@ -80,20 +80,18 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # For computational efficiency remove data outside the max decision points
     if np.max(decisIdx[-1]) < min(Fy.shape[-2]*0.7, Fy.shape[-2]-100): # (nM, nTrl, nEp, nY)
         maxLen = int(np.max(decisIdx[-1]))
-        if bwdAccumulate:
-            Fy = Fy[:, Fy.shape[-2]-maxLen:, :]
-        else:
-            Fy = Fy[:, :maxLen+1, :]
+        Fy = Fy[:, :maxLen+1, :]
 
     # compute the summed scores
     if abs(minDecisLen) > Fy.shape[-2]:
-        decisIdx = [Fy.shape[-2]-1]
-        N = nEp[:, np.newaxis] # (nTrl, nDecis) [nDecis x nTrl] number elements in the sum
+        decisIdx = np.array([Fy.shape[-2]-1])
+        N = nEp[:, np.newaxis] # (nTrl, nDecis) number elements in the sum
         sFy = np.sum(Fy, -2, keepdims=True)
     else:
-        if (bwdAccumulate): # (nM, nTrl, nEp, nY) # [nY, nEp, nTrl, nM]
-            for ti in range(Fy.shape[-3]):
+        if (bwdAccumulate): # (nM, nTrl, nEp, nY) 
+            for ti in range(Fy.shape[-3]): # time-reverse in the valid data range
                 Fy[..., ti, :lastEp[ti], :] = Fy[..., ti, lastEp[ti]-1::-1, :]
+                validEp[..., :lastEp[ti] ] = validEp[...,lastEp[ti]-1::-1]
 
         sFy = np.cumsum(Fy, -2)
         sFy = sFy[..., decisIdx, :]
@@ -141,16 +139,11 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     ssFy = sFy/sFy_scale[:, :, np.newaxis].astype(sFy.dtype)
 
     # reverse the time reversal for backward accumulation    
-    if bwdAccumulate:
-        ssFy = ssFy[:, ::-1, :]
-        sFy_scale = sFy_scale[:, ::-1, :]
-        N = N[::-1]
-
-    # if len(Fyshape)>3 : # convert back to have model dimension
-    #     ssFy      = np.reshape(ssFy, (Fyshape[:-2]+ssFy.shape[-2:]))
-    #     sFy_scale = np.reshape(sFy_scale, (Fyshape[:-2]+sFy_scale.shape[-1:]))
-    #     nEp       = np.reshape(nEp, Fyshape[:-2])
-    #     nY        = np.reshape(nY, Fyshape[:-2])
+    # if bwdAccumulate:
+    #     for ti in range(Fy.shape[-3]):
+    #         ssFy = ssFy[..., ::-1, :]
+    #         sFy_scale = sFy_scale[..., ::-1, :]
+    #         N = N[...,::-1]
 
     return ssFy, sFy_scale, decisIdx, nEp, nY
 

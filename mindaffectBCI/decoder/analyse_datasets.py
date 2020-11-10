@@ -478,7 +478,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
     plt.show()
 
-    return score, res, Fy, clsfr
+    return score, res, Fy, clsfr, rawFy
 
 def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
     """generate a plot summarizing the inputs (X,Y) and outputs (Fe,Fe) for every trial in a dataset for debugging purposes
@@ -516,6 +516,11 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
     Fylim = (np.min(Fy.ravel()),np.max(Fy.ravel()))
     if Fe is not None:
         Felim = (np.min(Fe.ravel()),np.max(Fe.ravel()))
+
+    if Py is not None:
+        if Py.ndim>3 :
+            print("Multiple models? accumulated away")
+            Py = np.sum(Py,0)
 
     nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl)*1.8)); h = int(np.ceil(nTrl/w))
     fig = plt.figure(figsize=(20,10))
@@ -584,8 +589,8 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
             # Py (if given)
             if Py is not None:
                 plt.axes(botax)
-                plt.plot(times[:Py.shape[1]],Py[ti,:,:], color='.5')
-                plt.plot(times[:Py.shape[1]],Py[ti,:,0],'k-')
+                plt.plot(times[:Py.shape[-2]],Py[ti,:,:], color='.5')
+                plt.plot(times[:Py.shape[-2]],Py[ti,:,0],'k-')
                 if hi==h-1: # only bottom plots
                     plt.xlabel('time ({})'.format(xunit))
                 else:

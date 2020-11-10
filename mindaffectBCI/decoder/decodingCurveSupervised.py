@@ -87,11 +87,16 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
     print("Int Lens:", end='')
     for li,nep in enumerate(integerationLengths):
         Yidxli,Perrli,_,_,_=decodingSupervised(Fy[..., :nep, :], **kwargs)
-        # BODGE: only use result from last decision point
-        Yidx[:,li]=Yidxli[:,-1]
-        Perr[:,li]=Perrli[:,-1]
+        # BODGE: only use result from first-model & last decision point!!!!
+        if Yidxli.ndim>1:
+            if  Yidxli.shape[-1]>1 or (Yidxli.ndim>2 and Yidxli.shape[0]>1):
+                print("Warning: multiple decision points or models, taking the last one!")
+            Yidxli=Yidxli[:,-1] if Yidxli.ndim==2 else Yidxli[-1,:,-1]
+            Perrli=Perrli[:,-1] if Perrli.ndim==2 else Perrli[-1,:,-1]
+        Yidx[:,li]=Yidxli
+        Perr[:,li]=Perrli
         # convert from Yidx to Yest, note may be invalid = -1
-        Yest[:,li]=[ objIDs[yi] if yi in objIDs else -1 for yi in Yidxli[:,-1] ]
+        Yest[:,li]=[ objIDs[yi] if yi in objIDs else -1 for yi in Yidxli ]
         print('.',end='',flush=True)
     print("\n")
 
