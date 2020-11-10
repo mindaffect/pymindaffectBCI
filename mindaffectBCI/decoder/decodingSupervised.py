@@ -45,6 +45,8 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   if Fy is None:
       return -1, 1, None, None, None
   
+  #print("decodingSup args={}".format(kwargs))
+
   # get the info on which outputs are zero in each trial
   validTgt = np.any(Fy != 0, axis=-2) # valid if non-zero for any epoch..# (nModel,nTrl,nY)  
   # normalize the raw scores for each model to have nice distribution

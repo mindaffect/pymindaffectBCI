@@ -120,7 +120,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
     print("score={}".format(score))
 
     # compute decoding curve
-    (dc) = decodingCurveSupervised(rawFy, marginalizedecis=True, minDecisLen=100, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
+    (dc) = decodingCurveSupervised(rawFy, marginalizedecis=True, minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
 
     return score, dc, Fy, clsfr, res
 

@@ -52,7 +52,7 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=200, startup_correction=50, prediction_offsets=None, verb=0):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=200, startup_correction=50, prediction_offsets=None, minDecisLen=100, bwdAccumulate=True, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -66,7 +66,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
           startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
         """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets, verb)
+        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb, self.minDecisLen, self.bwdAccumulate = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets, verb, minDecisLen, bwdAccumulate)
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
@@ -147,12 +147,13 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fe = Fe[0,...]
         return Fe
 
-    def decode_proba(self, Fy, minDecisLen=0, marginalizemodels=True, marginalizedecis=False):
+    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=True, marginalizemodels=True, marginalizedecis=False):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
             Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
-            minDecisLen (int,optional): minimum number of samples on which to make a prediction
+            minDecisLen (int,optional): minimum number of samples on which to make a prediction. Defaults to 0.
+            bwdAccumulate (bool, optional): accumulate information backwards in the trials.  Defaults to True.
             marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
             marginalizedecis (bool, optional): flag if we should marginalize over decision points when have multiple. Defaults to False.
 
@@ -171,7 +172,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
             kwargs['softmaxscale']=self.softmaxscale_
 
-        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
+        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
         if marginalizemodels and Fy.ndim>3 and Ptgt.shape[0]>0: # hide our internal model dimension?
             Yest=Yest[0,...]
             Perr=Perr[0,...]
@@ -179,7 +180,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return Ptgt #(nM, nTrl, nEp, nY)
 
     
-    def predict_proba(self, X, Y, marginalizemodels=True, marginalizedecis=False, startup_correction=100, minDecisLen=-1, dedup0=True, prevY=None):
+    def predict_proba(self, X, Y, marginalizemodels=True, marginalizedecis=True, minDecisLen=None, bwdAccumulate=True, dedup0=True, prevY=None):
         """Predict the probability of each output for paired data/stimulus sequences
 
         Args:
@@ -196,9 +197,11 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
         Returns:
             Ptgt (np.ndarray (tr,nDecis,nY): Probability of each output being the target.  Higher score means more 'likely' to be the 'true' target
-        """        
+        """
         Fy = self.predict(X, Y, dedup0=dedup0, prevY=prevY)
-        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, minDecisLen=minDecisLen)
+        if minDecisLen is None: minDecisLen = self.minDecisLen
+        if bwdAccumulate is None: bwdAccumulate = self.bwdAccumulate
+        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate)
 
     def score(self, X, Y):
         '''score this model on this data, N.B. for model_selection higher is *better*'''

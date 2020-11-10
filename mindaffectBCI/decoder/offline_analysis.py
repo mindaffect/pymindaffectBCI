@@ -26,8 +26,15 @@ print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1][
 print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.shape))
 
 # train *only* on 1st 10 trials
-score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5), prediction_offsets=(-2,-1,0,1,2), priorweight=500, startup_correction=0)
+score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
+                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca',
+                        ranks=(1,2,3,5), prediction_offsets=(-1,0,1), priorweight=200, startup_correction=0, 
+                        bwdAccumulate=True, minDecisLen=0)
+
+# score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
+#                         cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', 
+#                         ranks=(1,2,3,5), prediction_offsets=(-1,0,1), priorweight=200, startup_correction=0, 
+#                         bwdAccumulate=True, minDecisLen=0)
 
 try:
     import pickle
@@ -36,8 +43,6 @@ except:
     print("problem saving the scores..")
 
 sys.exit(0)
-#score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
-#                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', ranks=(1,2,3,5))
 
 
 # test the auto-offset compensation
