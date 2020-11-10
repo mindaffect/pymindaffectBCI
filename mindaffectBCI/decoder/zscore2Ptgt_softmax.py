@@ -1,3 +1,4 @@
+from mindaffectBCI.decoder.normalizeOutputScores import mktestFy
 import numpy as np
 
 def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=True):
@@ -183,11 +184,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
     print("softmaxscale={}".format(softmaxscale))
     return softmaxscale
 
-
-def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=100, priorweight=0, startup_lag=.1):
-    import numpy as np
-    print("{}".format(locals()))
-
+def mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag):
     np.random.seed(0)
     noise = np.random.standard_normal((nM,nTrl,nEp,nY))
     noise = noise - np.mean(noise.ravel())
@@ -203,6 +200,12 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
     # add the signal
     Fy[0, :, :, 0] = Fy[0, :, :, 0] + sigamp
     #print("Fy={}".format(Fy))
+
+    return Fy, noise, sigamp
+
+def visPtgt(Fy, normSum=True, centFy=True, detrendFy=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=20, priorweight=1e2):
+    import numpy as np
+    #print("{}".format(locals()))
     
     sFy=np.cumsum(Fy,-2)
     from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
@@ -211,18 +214,25 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
     sigma0 = np.nanmedian(sigma0)  # ave
     print('Sigma0 = {}'.format(sigma0))
 
-    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
+    ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
+                                normSum=normSum, detrendFy=detrendFy, centFy=centFy, 
+                                marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
     softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
     #print('ssFy={}'.format(ssFy.shape))
     from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax, softmax
-    smax = softmax(ssFy*sigstr,axis=(-4,-1))
+    smax = softmax(ssFy*softmaxscale,axis=((-4,-1) if ssFy.ndim>3 else -1))
     #print("{}".format(smax.shape))
     Ptgt=zscore2Ptgt_softmax(ssFy, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, softmaxscale=softmaxscale) # (nTrl,nEp,nY)
     #print("Ptgt={}".format(Ptgt.shape))
     import matplotlib.pyplot as plt
     plt.clf()
     tri=1
+    nM=Fy.shape[-4] if Fy.ndim>3 else 1
     for mi in range(nM):
+        sFyi  = sFy[mi,tri,:,:] if sFy.ndim>3 else sFy[tri,:,:]
+        ssFyi = ssFy[mi,tri,:,:] if ssFy.ndim>3 else ssFy[tri,:,:]
+        smaxi = smaxi[mi,tri,:,:] if smax.ndim>3 else smax[tri,:,:]
+
         if mi==0 :
             a = plt.subplot(4,nM,0*nM+mi+1)
             xax=a
@@ -230,7 +240,7 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
         else:
             a = plt.subplot(4,nM,0*nM+mi+1,sharex=xax, sharey=yax0)
         plt.cla()
-        plt.plot(sFy[mi,tri,:,:])
+        plt.plot(sFyi)
         plt.plot(scale_sFy[tri,:],'k')
         if mi==0 : plt.ylabel('sFy')
         plt.ylim((np.min(sFy.ravel()),np.max(sFy.ravel())))
@@ -242,7 +252,7 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
         else:
             a=plt.subplot(4,nM,1*nM+mi+1, sharex=xax, sharey=yax1)
         plt.cla()
-        plt.plot(ssFy[mi,tri,:,:])
+        plt.plot(ssFyi)
         plt.ylim((np.min(ssFy.ravel()),np.max(ssFy.ravel())))
         if mi==0 : plt.ylabel('ssFy')
         plt.grid()
@@ -253,8 +263,8 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
         else:
             a=plt.subplot(4,nM,2*nM+mi+1, sharex=xax, sharey=yax2)
         plt.cla()
-        plt.plot(smax[mi,tri,:,:])
-        plt.ylim((np.min(smax[:,tri,:,:].ravel()),np.max(smax[:,tri,:,:].ravel())))
+        plt.plot(smaxi)
+        plt.ylim((np.min(smax.ravel()),np.max(smax.ravel())))
         if mi==0: plt.ylabel('softmax')
         plt.grid()
         
@@ -269,14 +279,32 @@ def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=False, marginali
     from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, plot_decoding_curve
     #ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy,minDecisLen=-1, nEpochCorrection=nEpochCorrection, normSum=normSum, marginalizemodels=marginalizemodels)
     #softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels)
-    (dc) = decodingCurveSupervised(Fy,nInt=(100,50),marginalizemodels=marginalizemodels,normSum=normSum,nEpochCorrection=nEpochCorrection,softmaxscale=softmaxscale,priorsigma=(sigma0,priorweight))
+    (dc) = decodingCurveSupervised(Fy,nInt=(100,50),
+                    marginalizemodels=marginalizemodels,
+                    normSum=normSum, detrendFy=detrendFy, centFy=centFy, nEpochCorrection=nEpochCorrection,
+                    softmaxscale=softmaxscale,priorsigma=(sigma0,priorweight))
     plt.figure()
     plot_decoding_curve(*dc)
     plt.show()
 
+def testcase(nY=10, nM=4, nEp=340, nTrl=500, sigstr=.4, normSum=True, centFy=True, detrendFy=True, marginalizemodels=True, marginalizedecis=False, nEpochCorrection=20, priorweight=1e2, startup_lag=.1):
+
+    # mk the test dataset
+    Fy, noise, sigamp = mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag)
+
+    # visualize it
+    visPtgt(Fy,normSum,centFy,detrendFy,marginalizemodels,marginalizedecis,nEpochCorrection,priorweight)
 
 
 if __name__=="__main__":
-    testcase(nY=10, nM=4, nEp=340, nTrl=200, sigstr=.4, startup_lag=.1, 
-            normSum=False, marginalizemodels=True, marginalizedecis=False, 
-            nEpochCorrection=0, priorweight=0)
+    if False:
+        Fy, noise, sigamp = mkTestFy(nY=10,nM=4,nEp=640,nTrl=200,sigstr=.15,startup_lag=.05)
+    else:
+        import pickle
+        stopping=pickle.load(open('stopping.pk','rb'))
+        Fy = stopping['Fy']
+        keep = np.any(Fy>0,axis=(-2,-1) if Fy.ndim<4 else (-4,-2,-1))
+        Fy=Fy[...,keep,:,:]
+
+    visPtgt(Fy,normSum=False,centFy=False,detrendFy=False,
+            marginalizemodels=True,marginalizedecis=False,nEpochCorrection=50,priorweight=200)

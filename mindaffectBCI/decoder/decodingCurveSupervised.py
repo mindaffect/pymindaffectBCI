@@ -29,6 +29,8 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     if Fy is None:
         return 1, 1, None, None, None, None, -1, 1
 
+    #print("kwargs={}".format(kwargs))
+
     # remove trials with no-true-label info
     keep = np.any(Fy[..., objIDs == 0], (-2, -1) if Fy.ndim<=3 else (0,-2,-1)) # [ nTrl ]
     if not np.all(keep):
@@ -193,7 +195,12 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
         if len(args)>=7-2:
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
-            Perr = args[6-2].copy() #(nTrl,nInt)
+            oPerr = args[6-2] #(nTrl,nInt)
+            keep = np.any(oPerr<1,axis=-1) #(nTrl)
+            Yerr=Yerr[keep,:]
+            oPerr=oPerr[keep,:]
+
+            Perr=oPerr.copy()
             plt.plot(integerationLengths.T,Perr.T,color='.95') # line per trial
             Perr[Yerr<0]=np.NaN
             Perr[Yerr==True]=np.NaN # disable points where it was in error
@@ -201,7 +208,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
             plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
             # est when incorrect..
-            Perr = args[6-2].copy() #(nTrl,nInt)
+            Perr = oPerr.copy() #(nTrl,nInt)
             Perr[Yerr<0]=np.NaN
             Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
             plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')

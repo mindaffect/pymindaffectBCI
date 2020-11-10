@@ -1,11 +1,12 @@
+#from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import numpy as np
 
 def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
-                          centFy=True, detrendFy=False, 
+                          normSum=False, centFy=False, detrendFy=False, 
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
                           bwdAccumulate=False,
-                          priorsigma=None, normSum=False, marginalizemodels=True):
+                          priorsigma=None, marginalizemodels=True):
     '''
     normalize the raw output scores to feed into the Perr computation
 
@@ -34,6 +35,10 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     if Fy is None or Fy.size == 0:
         ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
         return ssFy, None, 0, None, None
+
+    # print('args={}'.format(dict(marginalizemodels=marginalizemodels,normSum=normSum,
+    #                         detrendFy=detrendFy,centFy=centFy,nEpochCorrection=nEpochCorrection,
+    #                         priorsigma=priorsigma)))
 
     # compress out the model dimension
     # Fyshape = Fy.shape # (nM,nTrl,nEp,nY)
@@ -251,7 +256,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
     nvar2csFy = var2csFy / np.maximum(1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
 
     # compute the average of the estimated slopes for each integeration length
-    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(1,np.cumsum(N>0,-1))[np.newaxis,:,:] #arange(1,nvar2csFy.shape[-1]+1)[np.newaxis,np.newaxis,:] #np.maximum(1, N, dtype=scFy.dtype) # ave per-stime-stamp vars before each time-point
+    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(1, np.cumsum(N>0,-1))  # ave per-stime-stamp vars before each time-point
     
     # return the ave-cumsum-slope-of-variance at each decision length
     sigma2 = muvar2csFy[...,decisIdx] # (nTr,nDecis)
