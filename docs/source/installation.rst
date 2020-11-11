@@ -4,11 +4,12 @@ Installation
 Requirements
 ------------
 - Python (3.x) installation (Suggested: Anaconda_ )
-- Java_ 8
+- JDK_ or openJDK_ 
 - EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion )
  
 .. _Anaconda: https://docs.anaconda.com/anaconda/install/
-.. _Java: https://www.java.com/download/help/download_options.html
+.. _JDK: https://www.java.com/download/help/download_options.html
+.. _openJDK: https://openjdk.java.net/ 
  
 Recommended Setup
 *****************
@@ -38,12 +39,8 @@ To install the code:
   1. Clone or download the pymindaffectBCI repository::
  
        git clone https://github.com/mindaffect/pymindaffectBCI
- 
-  2. Switch to the open_source branch::
-                          	
-                          	git checkout open_source
                                          	
-  3. Install the necessary bits to your local python path:
+  2. Install the necessary bits to your local python path:
  
     1. change to the directory where you cloned the repository.
     2. Add this module to the python path, and install dependencies::
