@@ -1,4 +1,4 @@
-mindaffectBCI
+Python API
 =============
 
 .. toctree::
