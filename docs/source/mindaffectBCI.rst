@@ -1,4 +1,4 @@
-mindaffectBCI package
+Python API
 =====================
 
 Subpackages
