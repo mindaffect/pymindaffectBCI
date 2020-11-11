@@ -541,7 +541,6 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # map to probabilities, including the prior over sigma! as the clsfr is configured
                 Ptgt = clsfr.decode_proba(Fy[...,used_idx], marginalizedecis=True, marginalizemodels=True,
                                           minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate)
-                #  _, _, Ptgt, _, _ = decodingSupervised(Fy[...,used_idx])
                 # BODGE: only  use the last (most data?) prediction...
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
                 # send prediction with last recieved stimulus_event timestamp

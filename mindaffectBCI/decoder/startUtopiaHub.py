@@ -31,4 +31,5 @@ def run(label='', logdir=None):
     return utopiaHub
 
 if __name__=="__main__":
-    run()
+    hub=run()
+    hub.communicate()

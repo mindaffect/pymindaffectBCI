@@ -172,7 +172,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
             kwargs['softmaxscale']=self.softmaxscale_
 
-        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, nEpochCorrection=self.startup_correction, **kwargs)
+        Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
+                                     marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
+                                     nEpochCorrection=self.startup_correction, **kwargs)
         if marginalizemodels and Fy.ndim>3 and Ptgt.shape[0]>0: # hide our internal model dimension?
             Yest=Yest[0,...]
             Perr=Perr[0,...]
