@@ -7,14 +7,29 @@ import re
 import struct
 
 def ip_is_local(ip_string):
-    """
-    Uses a regex to determine if the input ip is on a local network. Returns a boolean. 
+    """Uses a regex to determine if the input ip is on a local network. Returns a boolean. 
     It's safe here, but never use a regex for IP verification if from a potentially dangerous source.
-    """
+
+    Args:
+        ip_string ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
     combined_regex = "(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^192\.168\.)"
     return re.match(combined_regex, ip_string) is not None # is not None is just a sneaky way of converting to a boolean
 
 def get_ip_address( NICname ):
+    """[summary]
+
+    Args:
+        NICname ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
     import fcntl
     import struct
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -25,9 +40,12 @@ def get_ip_address( NICname ):
     )[20:24])
 
 def nic_info():
-    """
-    Return a list with tuples containing NIC and IPv4 address
-    """
+    """Return a list with tuples containing NIC and IPv4 address
+
+    Returns:
+        [type]: [description]
+    """    
+    
     nic = []
     for ix in socket.if_nameindex():
         name = ix[1]
@@ -37,6 +55,12 @@ def nic_info():
     return nic    
 
 def get_all_ips():
+    """[summary]
+
+    Returns:
+        [type]: [description]
+    """   
+
     try:
         ips = [ i[1] for i in nic_info() ]
     except:
@@ -45,6 +69,12 @@ def get_all_ips():
     return ips
 
 def get_local_ip():
+    """[summary]
+
+    Returns:
+        [type]: [description]
+    """ 
+
     # socket.getaddrinfo returns a bunch of info, so we just get the IPs it returns with this list comprehension.
     local_ips = [ i for i in get_all_ips() if ip_is_local(i) ]
     # prefer one with internet access..
@@ -53,6 +83,12 @@ def get_local_ip():
     return local_ip
 
 def get_remote_ip():
+    """[summary]
+
+    Returns:
+        [type]: [description]
+    """    
+
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(.5)
@@ -64,6 +100,12 @@ def get_remote_ip():
     return ip
 
 class ssdpDiscover :
+    """[summary]
+
+    Returns:
+        [type]: [description]
+    """ 
+
     ssdpv4group = ("239.255.255.250", 1900)
     ssdpv6group= ("FF08::C", 1900)
     ssdpgroup = None
@@ -74,17 +116,42 @@ class ssdpDiscover :
         'MAN: "ssdp:discover"',
         'ST: {st}', 'MX: {mx}', '', ''])
     def __init__(self,servicetype="ssdp:all",discoverytimeout=3):
+        """[summary]
+
+        Args:
+            servicetype (str, optional): [description]. Defaults to "ssdp:all".
+            discoverytimeout (int, optional): [description]. Defaults to 3.
+        """  
+
         self.servicetype=servicetype
         self.queryt=None
         self.sock=None
 
     def makeDiscoveryMessage(self,ssdpgroup,servicetype,timeout):
+        """[summary]
+
+        Args:
+            ssdpgroup ([type]): [description]
+            servicetype ([type]): [description]
+            timeout ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """    
+
         msearchMessage = self.msearchTemplate.format(*ssdpgroup, st=servicetype, mx=timeout)
         if sys.version_info[0] == 3:
             msearchMessage = msearchMessage.encode("utf-8")
         return msearchMessage
     
     def initSocket(self,  v6=False, intf=None):
+        """[summary]
+
+        Args:
+            v6 (bool, optional): [description]. Defaults to False.
+            intf ([type], optional): [description]. Defaults to None.
+        """ 
+
         # TODO[]: listening socket on each local interface..
         # make the UDP socket to the multicast group with timeout
         if v6 and socket.has_ipv6:
@@ -137,8 +204,19 @@ class ssdpDiscover :
 
         
     def discover(self,timeout=.001,querytimeout=5,v6=False,intf=None):
-        '''auto-discover the utopia-hub using ssdp discover messages,
-           timeout is time to wait for a response.  query timeout is time between re-sending the ssdp-discovery query message.'''
+        """auto-discover the utopia-hub using ssdp discover messages,
+           timeout is time to wait for a response.  query timeout is time between re-sending the ssdp-discovery query message.
+
+        Args:
+            timeout (float, optional): [description]. Defaults to .001.
+            querytimeout (int, optional): [description]. Defaults to 5.
+            v6 (bool, optional): [description]. Defaults to False.
+            intf ([type], optional): [description]. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """        
+        
         # make and send the discovery message
         if self.sock is None:
             try : 
@@ -177,6 +255,16 @@ class ssdpDiscover :
         return responses
 
     def wait_msearch_response(self,timeout,verb=0):
+        """[summary]
+
+        Args:
+            timeout ([type]): [description]
+            verb (int, optional): [description]. Defaults to 0.
+
+        Returns:
+            [type]: [description]
+        """        
+
         self.sock.settimeout(timeout)
         if verb>0 : print("Waiting responses")
         try:
@@ -225,7 +313,17 @@ class ssdpDiscover :
 
 
 def ipscanDiscover(port:int, ip:str=None, timeout=.5):
-    ''' scan for service by trying all 255 possible final ip-addresses'''
+    """ scan for service by trying all 255 possible final ip-addresses
+
+    Args:
+        port (int): [description]
+        ip (str, optional): [description]. Defaults to None.
+        timeout (float, optional): [description]. Defaults to .5.
+
+    Returns:
+        [type]: [description]
+    """    
+
     if ip is None:
         ip = get_remote_ip()
     if ip is None:
@@ -253,6 +351,9 @@ def ipscanDiscover(port:int, ip:str=None, timeout=.5):
 
 
 def testIncrementalScanning():
+    """[summary]
+    """    
+
     disc=ssdpDiscover("utopia/1.1")
     while True:
         d0 = time.time()
@@ -268,6 +369,16 @@ def testIncrementalScanning():
         time.sleep(1)
 
 def discoverOrIPscan(port:int = 8400, timeout_ms:int = 15000):
+    """[summary]
+
+    Args:
+        port (int, optional): [description]. Defaults to 8400.
+        timeout_ms (int, optional): [description]. Defaults to 15000.
+
+    Returns:
+        [type]: [description]
+    """    
+    
     disc=ssdpDiscover("utopia/1.1")
     hosts = disc.discover(timeout=timeout_ms/1000.0,v6=False)
     
