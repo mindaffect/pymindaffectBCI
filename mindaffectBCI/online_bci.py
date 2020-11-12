@@ -7,7 +7,8 @@ import json
 import argparse
 import traceback
 
-def startHubProcess(label, logdir=None):
+hub_proc=None
+def startHubProcess(label='hub', logdir=None):
     """Start the process to manage the central utopia-hub
 
     Args:
@@ -27,7 +28,7 @@ def startHubProcess(label, logdir=None):
     return hub
 
 
-
+acquisition_proc=None
 def startacquisitionProcess(label, acquisition, acq_args, logdir=None):
     """Start the process to manage the acquisition of data from the amplifier
 
@@ -104,6 +105,8 @@ def startacquisitionProcess(label, acquisition, acq_args, logdir=None):
     
     return acquisition
 
+
+decoder_proc=None
 def startDecoderProcess(label,decoder,decoder_args, logdir=None):
     """start the EEG decoder process
 
@@ -151,6 +154,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
     """    
+    global hub_proc, acquisition_proc, decoder_proc
     if acquisition is None: 
         acquisition = 'brainflow'
 
@@ -251,7 +255,14 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
     shutdown(hub_proc, acquisition_proc, decoder_proc)
 
 
-def shutdown(hub,acquisition,decoder):    
+def shutdown(hub=hub_proc, acquisition=acquisition_proc, decoder=decoder_proc):    
+    """shutdown any background processes started for the BCI
+
+    Args:
+        hub (subprocess, optional): handle to the hub subprocess object. Defaults to hub_proc.
+        acquisition (subprocess, optional): the acquisatin subprocess object. Defaults to acquisition_proc.
+        decoder (subprocess, optional): the decoder subprocess object. Defaults to decoder_proc.
+    """    
     try: 
         decoder.terminate()
         decoder.join()
@@ -284,9 +295,11 @@ def load_config(config_file):
         if not os.path.splitext(config_file)[1] == '.json':
             config_file = config_file + '.json'
         config_file = search_directories_for_file(config_file,os.path.dirname(os.path.abspath(__file__)))
+        print("Loading config from: {}".format(config_file))
         with open(config_file,'r') as f:
             config = json.load(f)
     else:
+        print("Loading config from: {}".format(f))
         config = json.load(f)
 
     # set the label from the config file
