@@ -1168,7 +1168,8 @@ class UtopiaClient:
 
         Args:
             clientstate ([type], optional): [description]. Defaults to None.
-        """        
+        """   
+             
         self.isConnected = False
         self.sock = []
         self.udpsock=None
@@ -1189,7 +1190,8 @@ class UtopiaClient:
 
         Raises:
             ValueError: [description]
-        """        
+        """    
+
         if not hasattr(tsClock,'getTimeStamp'):
             raise ValueError("Time Stamp clock must have getTimeStamp method")
         self.tsClock = tsClock
@@ -1198,14 +1200,16 @@ class UtopiaClient:
 
         Returns:
             [type]: [description]
-        """        
+        """    
+
         return self.tsClock.getTimeStamp()
     def disableHeartbeats(self):
         '''' stop sending hearbeat messages. Use, e.g. when you want to use your own time-stamp clock. '''
         self.sendHeartbeats = False
     def enableHeartbeats(self):
         """[summary]
-        """        
+        """ 
+
         self.sendHeartbeats = True
 
     def connect(self, hostname=None, port=8400):
@@ -1218,6 +1222,7 @@ class UtopiaClient:
         Returns:
             [type]: [description]
         """        
+
         if hostname is None:       hostname = UtopiaClient.DEFAULTHOST
         if port is None or port<0: port     = UtopiaClient.DEFAULTPORT
         print("Trying to connect to: %s:%d"%(hostname, port))
@@ -1246,7 +1251,8 @@ class UtopiaClient:
 
         Raises:
             socket.error: [description]
-        """                
+        """  
+
         if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname == '-' : hostname = None
         if hostname is None:
@@ -1300,7 +1306,8 @@ class UtopiaClient:
             hostname ([type]): [description]
             port ([type], optional): [description]. Defaults to None.
             timeout_ms (int, optional): [description]. Defaults to 5000.
-        """        
+        """     
+
         if ":" in hostname:
             hostname, port=hostname.split(":")
             port=int(port)
@@ -1323,6 +1330,7 @@ class UtopiaClient:
         Returns:
             [type]: [description]
         """        
+
         if self.isConnected:
             hp=self.sock.getpeername()
             return ":".join(str(i) for i in hp)
@@ -1343,7 +1351,8 @@ class UtopiaClient:
 
         Raises:
             IOError: [description]
-        """        
+        """    
+
         if not(self.isConnected):
             raise IOError('Not connected to utopia server')
 
@@ -1357,7 +1366,8 @@ class UtopiaClient:
 
         Args:
             request ([type]): [description]
-        """        
+        """      
+
         self.udpsock.sendto(request, self.sock.getsockname())
 
     def sendMessage(self, msg):
@@ -1365,7 +1375,8 @@ class UtopiaClient:
 
         Args:
             msg ([type]): [description]
-        """        
+        """    
+
         if not msg is RawMessage: # convert to raw for sending
             if msg.timestamp is None: # insert valid time-stamp, N.B. all messages have timestamp!
                 msg.timestamp = self.getTimeStamp()
@@ -1378,7 +1389,8 @@ class UtopiaClient:
 
         Args:
             timestamp ([type], optional): [description]. Defaults to None.
-        """        
+        """    
+
         if not self.sendHeartbeats:
             return
         if timestamp is None:
@@ -1433,7 +1445,8 @@ class UtopiaClient:
 
         Returns:
             [type]: [description]
-        """        
+        """   
+
         # get all the data in the socket
         buf = self.recvall(timeout_ms)
         # append to the receive buffer
@@ -1452,7 +1465,8 @@ class UtopiaClient:
 
         Args:
             delays_ms ([type], optional): [description]. Defaults to [50]*10.
-        """        
+        """   
+
         if not self.sendHeartbeats:
             print("Warning: not sending heartbeats as they are disabled!")
             return
@@ -1466,7 +1480,8 @@ class UtopiaClient:
 
         Args:
             timeout_ms (int, optional): [description]. Defaults to 1000.
-        """        
+        """    
+
         client.sendMessage(Subscribe(None, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")) # subcribe to everything...
         while True:
             newmessages = client.getNewMessages(timeout_ms)
@@ -1479,7 +1494,8 @@ class UtopiaClient:
 
         Args:
             timeout_ms (int, optional): [description]. Defaults to 500.
-        """        
+        """     
+
         # loop waiting for messages and printing them
         for i in range(20):
             self.sendMessage(StimulusEvent(i, [0, 1, 2, 3], [i+1, i+2, i+3, i+4]))
@@ -1492,6 +1508,7 @@ class UtopiaClient:
 def testSerialization():
     """[summary]
     """    
+
     rm=RawMessage(1, 0, "payload")
     print("RawMessage: %s"%(rm))
     print("serialized: %s"%(rm.serialize()))
@@ -1584,6 +1601,7 @@ def testSerialization():
 def testSending():
     """[summary]
     """    
+
     client = UtopiaClient()        
     client.autoconnect()
 
