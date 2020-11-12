@@ -423,7 +423,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
 
     plot_trial_summary(X, Y, Fy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
-    plt.gcf().set_size_inches((40,20))
+    plt.gcf().set_size_inches((15,9))
     plt.savefig("{}_trial_summary".format(label)+".pdf")
     plt.pause(.5)
 

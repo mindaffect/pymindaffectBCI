@@ -32,7 +32,7 @@ savefile = '~/Desktop/khash/mindaffectBCI*2131.txt'
 savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
 #savefile = '~/Desktop/mark/mindaffectBCI_noisetag_bci_*1319_ganglion.txt' # score bug
 
-savefile = '~/Downloads/mindaffectBCI*.txt'
+savefile = '~/Downloads/mindaffectBCI*ipad2python.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
@@ -52,8 +52,8 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
                          cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca', 
-                         ranks=(1,2,3,5), prediction_offsets=(-1,0,1), priorweight=200, startup_correction=0, 
-                         bwdAccumulate=True, minDecisLen=0)
+                         ranks=(1,2,3,5), prediction_offsets=(0,1,2,3,4), priorweight=200, startup_correction=0, 
+                         bwdAccumulate=True, minDecisLen=100)
 
 try:
     import pickle
