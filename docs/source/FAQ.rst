@@ -8,7 +8,7 @@ How do I improve my calibration accuracy?
 First, open the signal viewer by pressing 0 in the main menu to check the quality of the EEG signal. If the reported noise to signal ratio is high, try to reduce the noise as follows:  
 
 - Make sure your headset is properly set up and fitted. See our instructions here: :ref:`fittingRef`.	
-- Move away from wall outlets, plugged in electronic devices, and other potential sources of 50Hz noise.  
+- Move away from wall outlets, plugged in electronic devices, and other potential sources of line-noise.  
 - If possible, place the amplifier behind you so your body is between the machine running the mindaffcetBCI and the amplifier.
 - Place the EEG hardware close to or on your body and run the electrode cables over your back.  
 - Check all the connections between the electrodes in your headset and the amplifier. 
@@ -19,7 +19,7 @@ To do this we provide tutorials on:
 
 - :ref:`optobuildRef`
 - Building a trigger circuit
-- Analysing your opto and trigger data
+- :ref:`triggercheckRef` Analysing your opto and trigger data
 
 My calibration accuracy is fine but prediction mode does not work.
 -------------------------------------------------------------
@@ -46,10 +46,16 @@ To run the BCI in full-screen mode set the :code:`fullscreen` parameter in the :
 Can I use the mindaffectBCI without an EEG acquisition device?
 --------------------------------------------------------------
 In some scenarios it is useful to run the BCI without having to connect an amplifier that's streaming real brain data (e.g. debugging/developing other components of the BCI). 
-To run the full BCI stack with a fake data stream, launch it with the :code:`debug.json` config file::
+To run the full BCI stack (i.e. hub, acquisition, decoder and presentation) with a fake data stream, launch it with the :code:`debug.json` config file::
 
 	python -m mindaffectBCI.online_bci --config_file debug.json
-	
+
+Alternatively, do run full decoder stack (i.e. hub, acquisation and decoder) *without* presenation use::
+
+	python -m mindaffectBCI.online_bci --config_file fake_recogniser.json
+
 When using the fake data stream, calibration and cued prediction performance will be 100%. In Free Typing mode selections are made randomly. 
+
+
 
  
