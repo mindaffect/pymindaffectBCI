@@ -1,3 +1,20 @@
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+# This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
+#
+# pymindaffectBCI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pymindaffectBCI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
+
 from mindaffectBCI.decoder.utils import idOutliers, butter_sosfilt
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
@@ -40,7 +57,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         print("whiten:{}".format(reg))
         X, W = spatially_whiten(X,reg=reg)
 
-    if stopband is not None:
+    if stopband is not None and stopband is not False:
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
     if whiten_spectrum > 0:
@@ -58,7 +75,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         print("Standardize channel power:{}".format(reg))
         X, W = standardize_channel_power(X, axis=-2, reg=reg)
 
-    if filterbank is not None:
+    if filterbank is not None and filterbank is not False:
         if fs is None and coords is not None: 
             fs = coords[-2]['fs']
         #X, _, _ = butter_filterbank(X,filterbank,fs=fs)

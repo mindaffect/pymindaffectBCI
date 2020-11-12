@@ -1,11 +1,40 @@
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+# This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
+#
+# pymindaffectBCI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pymindaffectBCI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
+
 import numpy as np
 from mindaffectBCI.decoder.utils import RingBuffer
 
 class lower_bound_tracker():
-    """ sliding window linear trend tracker
+    """ sliding window lower bound trend tracker, which fits a line to the lower-bound of the inputs x,y
     """   
 
     def __init__(self, window_size=200, C=(.1,None), outlier_thresh=(1,None), step_size=10, step_threshold=2, a0=1, b0=0, warmup_size=10):
+        """sliding window lower bound trend tracker, which fits a line to the lower-bound of the inputs x,y
+
+        Args:
+            window_size (int, optional): number of points in the sliding window. Defaults to 200.
+            C (tuple, optional): relative cost for over-vs-under estimates. Defaults to (.1,None).
+            outlier_thresh (tuple, optional): threshold for detection of outlying over (resp. under) estimated inputs. Defaults to (1,None).
+            step_size (int, optional): number of points in the step-detection sliding window. Defaults to 10.
+            step_threshold (int, optional): threshold (in std-dev) for step-detection. Defaults to 2.
+            a0 (int, optional): initial slope. Defaults to 1.
+            b0 (int, optional): initial offset. Defaults to 0.
+            warmup_size (int, optional): number of points before which we trust or fit. Defaults to 10.
+        """        
         self.window_size = window_size
         self.step_size = int(step_size*window_size) if step_size<1 else step_size
         self.a0 = a0 if a0 is not None else 1
@@ -20,6 +49,11 @@ class lower_bound_tracker():
             self.C = None
 
     def reset(self, keep_model=False):
+        """reset the data for model fitting
+
+        Args:
+            keep_model (bool, optional): keep the model as well as data. Defaults to False.
+        """        
         self.buffer.clear()
         if not keep_model:
             self.a = self.a0
@@ -52,6 +86,8 @@ class lower_bound_tracker():
         return self.getY(X)
 
     def update(self):
+        """update the model based on the data in the sliding window
+        """        
         if self.buffer.shape[0]>0 and self.buffer.shape[0] < self.warmup_size :
             if self.buffer.shape[0]>2:
                 self.a = np.median(np.diff(self.buffer[:,1])/np.diff(self.buffer[:,0]))
