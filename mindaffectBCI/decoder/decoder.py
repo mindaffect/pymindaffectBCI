@@ -272,7 +272,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
 
         # guard against empty training dataset
         if X is None or Y is None :
-            return None, None, None
+            return None, None, None, None
         Y, used_idx = strip_unused(Y)
         
         # now call the clsfr fit method, on the true-target info
@@ -284,7 +284,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         except:
             import traceback
             traceback.print_exc()
-            return None, None, None
+            return None, None, None, None
 
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
@@ -301,7 +301,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model(fs=ui.fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
+                clsfr.plot_model(ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
                 plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
                 plt.suptitle("Model + Decoding Performance")
@@ -311,7 +311,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 Y_true = clsfr.stim2event(Y)
                 Y_true = Y_true[...,0:1,:]
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
-                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=ui.fs)
+                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
                 plt.suptitle("Summary Statistics")
                 try:
                     import pickle
@@ -320,7 +320,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
-                plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=ui.fs)
+                plot_erp(Cxy,evtlabs=clsfr.evtlabs)
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures

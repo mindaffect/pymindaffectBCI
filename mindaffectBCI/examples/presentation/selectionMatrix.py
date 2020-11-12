@@ -1051,7 +1051,23 @@ class ExptScreenManager(Screen):
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1):
+                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1, permute_codebook=False):
+        """Setup the experiment application
+
+        Args:
+            window (pyglet.window): window to draw in
+            noisetag (mindaffectBCI.noisetag): noise tag object for stim + communications
+            symbols ([[str]]): list of list of strings for the symbol matrix to show
+            nCal (int, optional): number of calibration trials. Defaults to 1.
+            nPred (int, optional): number of prediction trials. Defaults to 1.
+            framesperbit (int, optional): number of video-frames per stimlus codebook 'bits'. Defaults to None.
+            fullscreen_stimulus (bool, optional): run the stimulus always at fullscreen. Defaults to True.
+            selectionThreshold (float, optional): Perr threshold for selection to register. Defaults to .1.
+            optosensor (bool, optional): flag if we show the opto-sensor box at top-left. Defaults to True.
+            simple_calibration (bool, optional): flag if we do 'simple' calibration where only the cued target flickers. Defaults to False.
+            calibration_symbols ([type], optional): list-of-lists-of-strings the symbol matrix to show during calibration. Defaults to None.
+            bgFraction (float, optional): the fractional gap between selection grid 'buttons'. Defaults to .1.
+        """        
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -1069,6 +1085,7 @@ class ExptScreenManager(Screen):
         self.nCal = nCal
         self.nPred = nPred
         self.framesperbit = framesperbit
+        self.permute_codebook = permute_codebook
         self.fullscreen_stimulus = fullscreen_stimulus
         self.selectionThreshold = selectionThreshold
         self.simple_calibration = simple_calibration
@@ -1086,6 +1103,8 @@ class ExptScreenManager(Screen):
         return self.screen is None
 
     def transitionNextPhase(self):
+        """transition to the next phase in the experiment, e.g. cal-instruction -> calibration
+        """
         print("stage transition")
 
         # move to the next stage
@@ -1151,7 +1170,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
 
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
+            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit, permute=self.permute_codebook)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
 
@@ -1181,7 +1200,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1203,7 +1222,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1361,7 +1380,8 @@ def load_symbols(fn):
 
 def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1):
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, 
+        bgFraction=.1, permute_codebook=False):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1373,6 +1393,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
         simple_calibration (bool, optional): flag if we only show the *target* during calibration.  Defaults to False
+        permute_codebook (bool, optional): flag if we should permute the codebook->output mapping.  Defaults to False.
     """
     global nt, ss
     # N.B. init the noise-tag first, so asks for the IP
@@ -1410,7 +1431,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, bgFraction=bgFraction)
+                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
+                        bgFraction=bgFraction, permute_codebook=permute_codebook)
 
     # set per-frame callback to the draw function
     if drawrate > 0:

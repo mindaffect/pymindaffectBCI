@@ -22,8 +22,8 @@
 
 import time
 import random
-from .stimseq import StimSeq
-from .utopiaController import UtopiaController, TimeStampClock
+from mindaffectBCI.stimseq import StimSeq
+from mindaffectBCI.utopiaController import UtopiaController, TimeStampClock
 import os
 scriptpath=os.path.dirname(os.path.realpath(__file__))
 default_stimFile=os.path.join(scriptpath,'mgold_61_6521_psk_60hz.txt')
@@ -80,26 +80,30 @@ class WaitFor(FSM):
 class Flicker(FSM):
     ''' do a normal flicker sequence'''
     def __init__(self,stimSeq=None,
-                 numframes=4*isi, 
-                 tgtidx=-1,
-                 sendEvents=True, 
-                 framesperbit=1): 
+                 numframes:int=4*isi, 
+                 tgtidx:int=-1,
+                 sendEvents:bool=True, 
+                 framesperbit:int=1,
+                 permute:bool=False): 
         """Object to provide state information for a flicker sequence
 
         Args:
-            stimSeq ([type], optional): the stimulus sequence to use. Defaults to None.
-            numframes ([type], optional): number for frames to flicker for. Defaults to 4*isi.
+            stimSeq ( list-of-lists (nbits,noutputs), optional): the stimulus sequence to use. Defaults to None.
+            numframes (int, optional): number for frames to flicker for. Defaults to 4*isi.
             tgtidx (int, optional): the target output, -1 for no target. Defaults to -1
             sendEvents (bool, optional): should we send stimulus events.  Defaults to True
             framesperbit (int, optional): number of video-frames, i.e. calls to next, per stimsequence bit.  Defaults to 1.
+            permute (bool, optional): flag, should we permute the codebook to output mapping.  Defaults to False.
         """    
         self.stimSeq=stimSeq
         self.numframes=numframes
         self.nframe=0
         self.tgtidx=tgtidx
-        #self.tgtstate=-1
         self.sendEvents=sendEvents
         self.framesperbit=framesperbit if framesperbit is not None else 1
+        self.permute = permute 
+        if self.permute == True:
+            self.update_codebook_permutation()
 
         # ensure right length
         self.ss=None
@@ -107,9 +111,20 @@ class Flicker(FSM):
         #for i in range(len(self.objIDs)):
         #    print(["objID %d = %s"%(i,"".join([ '*' if self.stimSeq[t][i]==1 else '.' for t in range(len(self.stimSeq))]))])
         print('flicker: %d frames, tgt %d'%(self.numframes,tgtidx if tgtidx >=0 else -1))
-        
+
+    def update_codebook_permutation(self):
+        """update the permutation randomly mapping between codebook rows and outputs
+        """
+        self.codebook_permutation = list(range(len(self.stimSeq[0]))) # linear index
+        random.shuffle(self.codebook_permutation) # N.B. in-place permutation
+
     def next(self,t):
         self.nframe=self.nframe+1
+        # do wrap-around specific processing
+        if len(self.stimSeq)>1 and self.nframe//self.framesperbit % len(self.stimSeq) == 0:
+            if self.permute:
+                print("Update Permutation: {} {}".format(self.nframe, len(self.stimSeq)))
+                self.update_codebook_permutation()
         if self.nframe>self.numframes:
             raise StopIteration()
 
@@ -119,18 +134,14 @@ class Flicker(FSM):
             # final frame is blank screen
             self.ss[:] = [0 for i in range(len(self.stimSeq[0]))]
             self.tgtState = -1
-        else:            
+        else:
             self.ss       = self.stimSeq[self.nframe//self.framesperbit % len(self.stimSeq)]
-            # extract the current target state, for these objects
-            #self.tgtstate = self.ss[self.tgtidx] if self.tgtidx>=0 else -1
+            if self.permute: # permute the codebook -> objID mapping if wanted
+                self.ss = [self.ss[p] for p in self.codebook_permutation]
         
     def get(self):
         # update the curent stimulus state info
         self.update_ss()        
-        # default to the stored set active objIDs
-        #if objIDs is None : objIDs=self.objIDs
-        # get the state info for the given set of objectIDs
-        #ss =[self.ss[i] for i in objIDs-1]
         return (self.ss,self.tgtidx,None,self.sendEvents)
 
     
@@ -142,8 +153,18 @@ class FlickerWithSelection(Flicker):
                  tgtidx=-1,
                  utopiaController=None,
                  framesperbit=1,
-                 sendEvents=True):
-        super().__init__(stimSeq,numframes,tgtidx,sendEvents,framesperbit)
+                 sendEvents=True, permute=False):
+        """Object to provide state information for a flicker sequence, with early-stopping on selection
+
+        Args:
+            stimSeq ( list-of-lists (nbits,noutputs), optional): the stimulus sequence to use. Defaults to None.
+            numframes (int, optional): number for frames to flicker for. Defaults to 4*isi.
+            tgtidx (int, optional): the target output, -1 for no target. Defaults to -1
+            sendEvents (bool, optional): should we send stimulus events.  Defaults to True
+            framesperbit (int, optional): number of video-frames, i.e. calls to next, per stimsequence bit.  Defaults to 1.
+            permute (bool, optional): flag, should we permute the codebook to output mapping.  Defaults to False.
+        """    
+        super().__init__(stimSeq,numframes,tgtidx,sendEvents,framesperbit,permute)
         self.utopiaController = utopiaController
         if self.utopiaController is None : raise ValueError("must have utopiaController")
         # ensure old predictions are gone..
@@ -177,7 +198,7 @@ class HighlightObject(Flicker):
             stimSeq = [[0]*MAXOBJID]
             if tgtidx>=0:
                 stimSeq[0][tgtidx]=tgtState
-        super().__init__(stimSeq,numframes,tgtidx,sendEvents=sendEvents)
+        super().__init__(stimSeq,numframes,tgtidx,sendEvents=sendEvents,permute=False)
         print('highlight: tgtidx=%d nframes=%d'%(tgtidx if tgtidx>=0 else -1,numframes))
 
 class SingleTrial(FSM):
@@ -187,7 +208,7 @@ class SingleTrial(FSM):
                  numframes=None,framesperbit=1,
                  selectionThreshold=None,
                  duration=4,cueduration=1,feedbackduration=1,waitduration=1,
-                 cueframes=None,feedbackframes=None,waitframes=None):
+                 cueframes=None,feedbackframes=None,waitframes=None, permute=True):
         self.tgtidx=tgtidx
         self.stimSeq=stimSeq
         self.utopiaController = utopiaController
@@ -198,6 +219,7 @@ class SingleTrial(FSM):
         self.feedbackframes=feedbackframes if feedbackframes else feedbackduration/isi
         self.waitframes=waitframes if waitframes else waitduration/isi
         self.selectionThreshold=selectionThreshold
+        self.permute = permute
         self.stage=0
         self.stagestart = self.utopiaController.getTimeStamp()
         print("tgtidx=%d"%(self.tgtidx if self.tgtidx>=0 else -1))
@@ -236,7 +258,7 @@ class SingleTrial(FSM):
                                          self.tgtidx,
                                          self.utopiaController,
                                          framesperbit=self.framesperbit,
-                                         sendEvents=True))
+                                         sendEvents=True, permute=self.permute))
             else: # no selection based stopping
                 self.stimulusStateStack.push(
                     Flicker(self.stimSeq,
