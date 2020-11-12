@@ -27,7 +27,13 @@ import socket
 import sys
 
 class UtopiaMessage:
-    """Class for a generic UtopiaMessage, i.e. the common structure of all messages """
+    """
+    Class for a generic UtopiaMessage, i.e. the common structure of all messages
+
+    Returns:
+        [type]: [description]
+    """    
+    
     def __init__(self, msgID=0, msgName=None, version=0):
         self.msgID   = msgID
         self.msgName = msgName
@@ -37,14 +43,38 @@ class UtopiaMessage:
         return '%i\n'%(self.msgID)
 
 class TimeStampClock:
-    """ Base class for time-stamp sources.  Match this prototype to replace the default timestamp source """
+    """
+    Base class for time-stamp sources.  Match this prototype to replace the default timestamp source
+
+    Returns:
+        [type]: [description]
+    """    
+    
     def getTimeStamp(self):
-        ''' get the time-stamp in milliseconds ! N.B. **must** fit in an int32! '''
+        """
+        get the time-stamp in milliseconds ! N.B. **must** fit in an int32!
+
+        Returns:
+            [type]: [description]
+        """        
         return (int(time.perf_counter()*1000) % (1<<31))
 
 class RawMessage(UtopiaMessage):
+    """
+    Class for a raw utopia message, i.e. decoded header but raw payload
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Raises:
+        Exception: [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
     msgName="RAW"
-    """Class for a raw utopia message, i.e. decoded header but raw payload"""
+    
     def __init__(self, msgID, version, payload):
         """Construct a raw message from given msgID and payload"""
         super().__init__(msgID, RawMessage.msgName, version)
@@ -56,21 +86,50 @@ class RawMessage(UtopiaMessage):
         
     @classmethod
     def fromUtopiaMessage(cls, msg):
-        """Construct a raw-message wrapper from a normal payload message"""
+        """
+        Construct a raw-message wrapper from a normal payload message
+
+        Args:
+            msg ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """    
+
         return cls(msg.msgID, msg.version, msg.serialize())
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return '%c(%d) [%i]\n'%(chr(self.msgID), self.msgID, len(self.payload))
     
     def serialize(self):
-        """convert the raw message to the string to make it network ready"""
+        """
+        convert the raw message to the string to make it network ready
+
+        Returns:
+            [type]: [description]
+        """        
+        
         S= struct.pack("<BBH", self.msgID, self.version, len(self.payload))
         S = S + self.payload
         return S
 
     @classmethod
     def deserialize(cls, buf):
-        """Read a raw message from a byte-buffer, return the read message and the number of bytes used from the bytebuffer, or None, 0 if message is mal-formed"""
+        """
+        Read a raw message from a byte-buffer, return the read message and the number of bytes used from the bytebuffer, or None, 0 if message is mal-formed
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+        
         bufsize = len(buf)
         if bufsize < 4:
             print("Buffer too short for header")
@@ -90,7 +149,16 @@ class RawMessage(UtopiaMessage):
 
     @classmethod
     def deserializeMany(cls, buf):
-        """decode multiple RawMessages from the byte-buffer of data, return the length of data consumed."""
+        """
+        decode multiple RawMessages from the byte-buffer of data, return the length of data consumed.
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+        
         msgs=[]
         nconsumed=0
         while nconsumed < len(buf):            
@@ -103,7 +171,14 @@ class RawMessage(UtopiaMessage):
     
     
 class Heartbeat(UtopiaMessage):    
-    """ the HEARTBEAT utopia message class """
+    """the HEARTBEAT utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('H')
@@ -117,9 +192,14 @@ class Heartbeat(UtopiaMessage):
             self.version = 1
 
     def serialize(self):
-        """Returns the contents of this event as a string, ready to send over the network, 
-           or None in case of conversion problems.
         """
+        Returns the contents of this event as a string, ready to send over the network, 
+        or None in case of conversion problems.
+
+        Returns:
+            [type]: [description]
+        """        
+        
         S = struct.pack('<i', int(self.timestamp))
         if self.statemessage is not None:
             S = S + bytes(self.statemessage, 'utf8')
@@ -127,7 +207,14 @@ class Heartbeat(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -139,11 +226,23 @@ class Heartbeat(UtopiaMessage):
             return (Heartbeat(timestamp), 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i"%(self.msgID, self.msgID, self.msgName, self.timestamp)
 
 
 class StimulusEvent(UtopiaMessage):
-    """ the STIMULUEVENT utopia message class """
+    """the STIMULUEVENT utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     
     # Static definitions of the class type constants
     msgID=ord('E')
@@ -157,7 +256,11 @@ class StimulusEvent(UtopiaMessage):
 
     def serialize(self):
         """Converts this message to a string representation to send over the network
-        """
+
+        Returns:
+            [type]: [description]
+        """        
+        
         S = struct.pack("<i", int(self.timestamp)) # timestamp
         S = S + struct.pack("<B", len(self.objIDs))  # nObj
         for objid, objstate in zip(self.objIDs, self.objState):
@@ -166,7 +269,14 @@ class StimulusEvent(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
+        """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 5:
             return (None, 0)
@@ -183,10 +293,23 @@ class StimulusEvent(UtopiaMessage):
         return (msg, 5+nobj*2)
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%s %i"%(self.msgName, self.timestamp) + "".join("(%i, %i)"%(x, y) for x, y in zip(self.objIDs, self.objState))
 
 class PredictedTargetProb(UtopiaMessage):    
-    """ the PREDICTEDTARGETPROB utopia message class """
+    """the PREDICTEDTARGETPROB utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
 
     # Static definitions of the class type constants
     msgID=ord('P')
@@ -201,13 +324,24 @@ class PredictedTargetProb(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
+
+        Returns:
+            [type]: [description]
         """
+
         S = struct.pack('<ibf', int(self.timestamp), int(self.Yest), self.Perr)
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -216,18 +350,37 @@ class PredictedTargetProb(UtopiaMessage):
         return (msg, 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i Yest=%d Perr=%f"%(self.msgID, self.msgID, self.msgName, self.timestamp, self.Yest, self.Perr)
 
 
 
 class PredictedTargetDist(UtopiaMessage):
-    """ the PredictedTargetDist utopia message class """
+    """the PredictedTargetDist utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     
     # Static definitions of the class type constants
     msgID=ord('F')
     msgName="PREDICTEDTARGETDIST"
 
     def __init__(self, timestamp=None, objIDs=None, pTgt=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            objIDs ([type], optional): [description]. Defaults to None.
+            pTgt ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(PredictedTargetDist.msgID, PredictedTargetDist.msgName)
         self.timestamp=timestamp
         self.objIDs=objIDs
@@ -235,7 +388,10 @@ class PredictedTargetDist(UtopiaMessage):
 
     def serialize(self):
         """Converts this message to a string representation to send over the network
-        """
+
+        Returns:
+            [type]: [description]
+        """        
         S = struct.pack("<i", int(self.timestamp)) # timestamp
         S = S + struct.pack("<B", len(self.objIDs))  # nObj
         for objid, pTgt in zip(self.objIDs, self.pTgt):
@@ -244,7 +400,15 @@ class PredictedTargetDist(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a PREDICTEDTARGETDIST class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
+        """Static method to create a PREDICTEDTARGETDIST class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+        
         bufsize = len(buf)
         if bufsize < 5:
             return (None, 0)
@@ -261,24 +425,47 @@ class PredictedTargetDist(UtopiaMessage):
         return (msg, 5+nobj*2)
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%s %i"%(self.msgName, self.timestamp) + "".join("(%i, %f)"%(x, y) for x, y in zip(self.objIDs, self.pTgt))
 
 
 class DataPacket(UtopiaMessage):
-    """ the DATAPACKET utopia message class """
+    """the DATAPACKET utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     
     # Static definitions of the class type constants
     msgID=ord('D')
     msgName="DATAPACKET"
 
     def __init__(self, timestamp=None, samples=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            samples ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(DataPacket.msgID, DataPacket.msgName)
         self.timestamp=timestamp
         self.samples=samples
 
     def serialize(self):
         """Converts this message to a string representation to send over the network
-        """
+
+
+        Returns:
+            [type]: [description]
+        """     
+
         S = struct.pack("<i", int(self.timestamp)) # timestamp
         S = S + struct.pack("<i", len(self.samples))  # nsamp
         for tp in self.samples:
@@ -287,7 +474,15 @@ class DataPacket(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
+        """Static method to create a STIMULUSEVENT class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+        
         bufsize = len(buf)
         if bufsize < 8:
             return (None, 0)
@@ -301,6 +496,11 @@ class DataPacket(UtopiaMessage):
         return (msg, 8+nsamp*nch*8)
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         ss="%c(%d) %s %i "%(self.msgID, self.msgID, self.msgName, self.timestamp)
         ss= ss+ "[%dx%d]"%(len(self.samples), len(self.samples[0]))
         for chs in self.samples:
@@ -310,13 +510,29 @@ class DataPacket(UtopiaMessage):
 
 
 class DataHeader(UtopiaMessage):
-    """ the DATAHEADER utopia message class """
+    """
+    the DATAHEADER utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     
     # Static definitions of the class type constants
     msgID=ord('A')
     msgName="DATAHEADER"
 
     def __init__(self, timestamp=None, fsample=None, nchannels=None, labels=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            fsample ([type], optional): [description]. Defaults to None.
+            nchannels ([type], optional): [description]. Defaults to None.
+            labels ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(DataHeader.msgID, DataHeader.msgName)
         self.timestamp=timestamp
         self.fsample=fsample
@@ -324,8 +540,12 @@ class DataHeader(UtopiaMessage):
         self.labels=labels
 
     def serialize(self):
-        """Converts this message to a string representation to send over the network
-        """
+        """ Converts this message to a string representation to send over the network
+
+
+        Returns:
+            [type]: [description]
+        """        
         S = struct.pack("<i", int(self.timestamp)) # timestamp
         S = S + struct.pack("<i", self.nchannels)
         S = S + struct.pack("<f", self.fsample)
@@ -336,7 +556,16 @@ class DataHeader(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a HEADER class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf"""
+        """ 
+        Static method to create a HEADER class from a **PAYLOAD** byte-stream, return created object and the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+
         bufsize = len(buf)
         if bufsize < 12:
             return (None, 0)
@@ -347,19 +576,38 @@ class DataHeader(UtopiaMessage):
         return (msg, bufsize)
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         ss="%c(%d) %s %i "%(self.msgID, self.msgID, self.msgName, self.timestamp)
         ss= ss+ "%dch @ %gHz"%(self.nchannels, self.fsample)
         ss= ss+ ", ".join(self.labels)
         return  ss
 
-class NewTarget(UtopiaMessage):    
-    """ the NEWTARGET utopia message class """
+class NewTarget(UtopiaMessage):  
+    """ 
+    the NEWTARGET utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """      
 
     # Static definitions of the class type constants
     msgID=ord('N')
     msgName="NEWTARGET"
     
     def __init__(self, timestamp=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+        """        
+
         super().__init__(NewTarget.msgID, NewTarget.msgName)
         self.timestamp=timestamp
 
