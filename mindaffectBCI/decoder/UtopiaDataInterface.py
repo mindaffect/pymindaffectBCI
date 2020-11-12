@@ -93,16 +93,7 @@ class UtopiaDataInterface:
         self.preproc_power = None
 
     def connect(self, host=None, port=-1, queryifhostnotfound=True):
-        """[make a connection to the utopia host]
-
-        Args:
-            host ([type], optional): [description]. Defaults to None.
-            port (int, optional): [description]. Defaults to -1.
-            queryifhostnotfound (bool, optional): [description]. Defaults to True.
-
-        Returns:
-            [type]: [description]
-        """        
+        '''make a connection to the utopia host'''
         if host:
             self.host = host
         if port > 0:
@@ -114,11 +105,6 @@ class UtopiaDataInterface:
         return self.U.isConnected
     
     def isConnected(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
         return self.U.isConnected if self.U is not None else False
 
     def getTimeStamp(self):
@@ -126,30 +112,15 @@ class UtopiaDataInterface:
         return self.U.getTimeStamp()
 
     def sendMessage(self, msg: UtopiaMessage):
-        """[send a UtopiaMessage to the utopia hub]
-
-        Args:
-            msg (UtopiaMessage): [description]
-        """        
+        ''' send a UtopiaMessage to the utopia hub'''
         self.U.sendMessage(msg)
 
     def getNewMessages(self, timeout_ms=0):
-        """[get new messages from the UtopiaHub]
-
-        Args:
-            timeout_ms (int, optional): [description]. Defaults to 0.
-
-        Returns:
-            [type]: [description]
-        """        
+        ''' get new messages from the UtopiaHub '''
         return self.U.getNewMessages(timeout_ms)
 
     def initDataRingBuffer(self):
-        """[initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.]
-
-        Returns:
-            [type]: [description]
-        """        
+        '''initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.'''
         print("geting some initial data to setup the ring buffer")
         # get some initial data to get data shape and sample rate
         databuf = []
@@ -225,14 +196,7 @@ class UtopiaDataInterface:
         self.stimulus_ringbuffer = RingBuffer(maxsize=self.fs*self.datawindow_ms/1000, shape=(257,), dtype=np.float32)
 
     def preprocess_message(self, m:UtopiaMessage):
-        """[Apply pre-processing to topia message before any more work]
-
-        Args:
-            m (UtopiaMessage): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        ''' apply pre-processing to topia message before any more work '''
         #  WARNING BODGE: fit time-stamp in 24bits for float32 ring buffer
         #  Note: this leads to wrap-arroung in (1<<24)/1000/3600 = 4.6 hours
         #        but that shouldn't matter.....
@@ -240,14 +204,7 @@ class UtopiaDataInterface:
         return m
     
     def processDataPacket(self, m: DataPacket):
-        """[pre-process a datapacket message ready to be inserted into the ringbuffer]
-
-        Args:
-            m (DataPacket): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        '''pre-process a datapacket message ready to be inserted into the ringbuffer'''
         #print("DP: {}".format(m))
         # extract the raw data
         d = np.array(m.samples, dtype=np.float32) # process as singles
@@ -298,13 +255,7 @@ class UtopiaDataInterface:
         return d
 
     def plot_raw_preproc_data(self, d_raw, d_preproc, ts):
-        """[debugging function to check the diff between the raw and pre-processed data]
-
-        Args:
-            d_raw ([type]): [description]
-            d_preproc ([type]): [description]
-            ts ([type]): [description]
-        """        
+        '''debugging function to check the diff between the raw and pre-processed data'''
         if not hasattr(self,'rawringbuffer'):
             self.preprocringbuffer=RingBuffer(maxsize=self.fs*3,shape=(d_preproc.shape[-1]+1,))
             self.rawringbuffer=RingBuffer(maxsize=self.raw_fs*3,shape=(d_raw.shape[-1]+1,))
@@ -323,14 +274,7 @@ class UtopiaDataInterface:
 
 
     def processStimulusEvent(self, m: StimulusEvent):
-        """[pre-process a StimulusEvent message ready to be inserted into the stimulus ringbuffer]
-
-        Args:
-            m (StimulusEvent): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        '''pre-process a StimulusEvent message ready to be inserted into the stimulus ringbuffer'''
         # get the vector to hold the stimulus info
         d = np.zeros((257,),dtype=np.float32)
 
@@ -350,13 +294,7 @@ class UtopiaDataInterface:
         return d
 
     def update_and_send_ElectrodeQualities(self, d_raw: np.ndarray, d_preproc: np.ndarray, ts: int):
-        """[compute running estimate of electrode qality and stream it]
-
-        Args:
-            d_raw (np.ndarray): [description]
-            d_preproc (np.ndarray): [description]
-            ts (int): [description]
-        """        
+        ''' compute running estimate of electrode qality and stream it '''
         raw_power, preproc_power = self.update_electrode_powers(d_raw, d_preproc)
 
         # convert to average amplitude
@@ -399,15 +337,7 @@ class UtopiaDataInterface:
                     plt.show(block=False)
 
     def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
-        """[track exp-weighted-moving average centered power for 2 input streams]
-
-        Args:
-            d_raw (np.ndarray): [description]
-            d_preproc (np.ndarray): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        ''' track exp-weighted-moving average centered power for 2 input streams '''
         if self.raw_power is None:
             mu_hl, pow_hl = self.noise2sig_halflife_ms
             self.raw_power = power_tracker(mu_hl, pow_hl, self.raw_fs)
@@ -525,11 +455,7 @@ class UtopiaDataInterface:
 
 
     def push_back_newmsgs(self,oldmsgs):
-        """[put unprocessed messages back onto the newmessages queue]
-
-        Args:
-            oldmsgs ([type]): [description]
-        """        
+        '''put unprocessed messages back onto the newmessages queue'''
         # TODO []: ensure  this preserves message time-stamp order?
         self.newmsgs.extend(oldmsgs)
 
@@ -561,15 +487,7 @@ class UtopiaDataInterface:
         return extract_ringbuffer_segment(self.stimulus_ringbuffer,bgn_ts,end_ts)
     
     def extract_msgs_segment(self, bgn_ts, end_ts=None):
-        """[extract the messages between start/end time stamps]
-
-        Args:
-            bgn_ts ([type]): [description]
-            end_ts ([type], optional): [description]. Defaults to None.
-
-        Returns:
-            [type]: [description]
-        """        
+        ''' extract the messages between start/end time stamps'''
         msgs = [] # store the trial stimEvents
         for m in reversed(self.msg_ringbuffer):
             if m.timestamp <= bgn_ts:
@@ -582,11 +500,7 @@ class UtopiaDataInterface:
         return msgs
 
     def run(self, timeout_ms=30000):
-        """[test run the interface forever, just getting and storing data]
-
-        Args:
-            timeout_ms (int, optional): [description]. Defaults to 30000.
-        """        
+        '''test run the interface forever, just getting and storing data'''
         t0 = self.getTimeStamp()
         # test getting 5s data
         tstart = self.data_timestamp
@@ -610,23 +524,11 @@ try:
 except:
     # fake the class if sklearn is not available, e.g. Android/iOS
     class TransformerMixin:
-        """[summary]
-        """        
         def __init__():
             pass
         def fit(self,X):
-            """[summary]
-
-            Args:
-                X ([type]): [description]
-            """            
             pass
         def transform(self,X):
-            """[summary]
-
-            Args:
-                X ([type]): [description]
-            """            
             pass
 
 
@@ -657,16 +559,6 @@ class butterfilt_and_downsample(TransformerMixin):
         self.ftype = ftype
 
     def fit(self, X, fs:float =None, zi=None):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-            fs (float, optional): [description]. Defaults to None.
-            zi ([type], optional): [description]. Defaults to None.
-
-        Returns:
-            [type]: [description]
-        """        
         if fs is not None: # parameter overrides stored fs
             self.fs = fs
 
@@ -700,15 +592,6 @@ class butterfilt_and_downsample(TransformerMixin):
         return self
 
     def transform(self, X, Y=None):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-            Y ([type], optional): [description]. Defaults to None.
-
-        Returns:
-            [type]: [description]
-        """        
         # propogate the filter coefficients between calls
         if not hasattr(self,'sos_'):
             self.fit(X[0:1,:])
@@ -888,25 +771,9 @@ class power_tracker(TransformerMixin):
         self.sXX = None
 
     def hl2alpha(self,hl):
-        """[summary]
-
-        Args:
-            hl ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         return np.exp(np.log(.5)/hl)
 
     def fit(self,X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         self.sX_N = X.shape[0]
         if self.car:
             X = X.copy() - np.mean(X,-1,keepdims=True)
@@ -916,14 +783,7 @@ class power_tracker(TransformerMixin):
         return self.power()
 
     def transform(self, X: np.ndarray):
-        """[compute the exponientially weighted centered power of X]
-
-        Args:
-            X (np.ndarray): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        ''' compute the exponientially weighted centered power of X '''
         if self.sX is None: # not fitted yet!
             return self.fit(X)
         if self.car:
@@ -939,18 +799,8 @@ class power_tracker(TransformerMixin):
         return self.power()
     
     def mean(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
         return self.sX / self.sX_N
     def power(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
         return self.sXX / self.sXX_N
     
     def testcase(self):
@@ -1005,12 +855,6 @@ class timestamp_interpolation(TransformerMixin):
         self.max_delta = max_delta
 
     def fit(self,ts,nsamp=1):
-        """[summary]
-
-        Args:
-            ts ([type]): [description]
-            nsamp (int, optional): [description]. Defaults to 1.
-        """        
         self.last_sample_timestamp_ = ts
         self.n_ = 0
 
@@ -1094,11 +938,6 @@ class temporal_decorrelator(TransformerMixin):
         self.axis=axis
 
     def fit(self,X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-        """        
         self.W_ = np.zeros((self.order,X.shape[-1]),dtype=X.dtype)
         self.W_[-1,:]=1
         _, self.W_ = self.transform(X[1:,:])
@@ -1163,11 +1002,6 @@ class channel_power_standardizer(TransformerMixin):
         self.axis=axis
 
     def fit(self,X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-        """        
         self.sigma2_ = np.zeros((X.shape[-1],), dtype=X.dtype)
         self.sigma2_ = X[0,:]*X[0,:] # warmup with 1st sample power
         self.transform(X[1:,:])
@@ -1189,13 +1023,6 @@ class channel_power_standardizer(TransformerMixin):
         return X
 
     def testcase(self, dur=3, fs=100, blksize=10):
-        """[summary]
-
-        Args:
-            dur (int, optional): [description]. Defaults to 3.
-            fs (int, optional): [description]. Defaults to 100.
-            blksize (int, optional): [description]. Defaults to 10.
-        """        
         import numpy as np
         import matplotlib.pyplot as plt
         from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
@@ -1225,16 +1052,12 @@ class channel_power_standardizer(TransformerMixin):
 
 
 def testRaw():
-    """[summary]
-    """    
     # test with raw
     ui = UtopiaDataInterface()
     ui.connect()
     sigViewer(ui,30000) # 30s sigviewer
 
 def testPP():
-    """[summary]
-    """    
     from sigViewer import sigViewer
     # test with a filter + downsampler
     ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=100)
@@ -1244,12 +1067,6 @@ def testPP():
     sigViewer(ui)
 
 def testFileProxy(filename,fs_out=999):
-    """[summary]
-
-    Args:
-        filename ([type]): [description]
-        fs_out (int, optional): [description]. Defaults to 999.
-    """    
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
     U = FileProxyHub(filename)
     from sigViewer import sigViewer
@@ -1262,11 +1079,6 @@ def testFileProxy(filename,fs_out=999):
     sigViewer(ui)
 
 def testFileProxy2(filename):
-    """[summary]
-
-    Args:
-        filename ([type]): [description]
-    """    
     from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
     U = FileProxyHub(filename)
     fs = 200
@@ -1302,23 +1114,11 @@ def testFileProxy2(filename):
         pickle.dump(dict(data=data,stim=stim),open('pp_udi.pk','wb'))
 
 def testERP():
-    """[summary]
-    """    
     ui = UtopiaDataInterface()
     ui.connect()
     erpViewer(ui,evtlabs=None) # 30s sigviewer
 
 def testElectrodeQualities(X,fs=200,pktsize=20):
-    """[summary]
-
-    Args:
-        X ([type]): [description]
-        fs (int, optional): [description]. Defaults to 200.
-        pktsize (int, optional): [description]. Defaults to 20.
-
-    Returns:
-        [type]: [description]
-    """    
     # recurse if more dims than we want...
     if X.ndim>2:
         sigq=[]
