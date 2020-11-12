@@ -614,13 +614,25 @@ class NewTarget(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """     
+
         S = struct.pack('<i', int(self.timestamp))
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -629,16 +641,34 @@ class NewTarget(UtopiaMessage):
         return (msg, 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i"%(self.msgID, self.msgID, self.msgName, self.timestamp)
 
 class Selection(UtopiaMessage):    
-    """ the SELECTION utopia message class """
+    """the SELECTION utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('S')
     msgName="SELECTION"
     
     def __init__(self, timestamp=None, objID=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            objID ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(Selection.msgID, Selection.msgName)
         self.timestamp=timestamp
         self.objID    =objID
@@ -646,14 +676,25 @@ class Selection(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """        
+        
         S = struct.pack('<i', int(self.timestamp))
         S = S + struct.pack('<B', self.objID)
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a SELECTION class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a SELECTION class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 5:
             return (None, 0)
@@ -662,29 +703,57 @@ class Selection(UtopiaMessage):
         return (msg, 5)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i id:%i"%(self.msgID, self.msgID, self.msgName, self.timestamp, self.objID)
     
 class Reset(UtopiaMessage):    
-    """ the RESET utopia message class """
+    """the RESET utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('R')
     msgName="RESET"
     
     def __init__(self, timestamp=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(Reset.msgID, Reset.msgName)
         self.timestamp=timestamp
 
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """   
+
         S = struct.pack('<i', int(self.timestamp))
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a HEARTBEAT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -693,18 +762,36 @@ class Reset(UtopiaMessage):
         return (msg, 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i"%(self.msgID, self.msgID, self.msgName, self.timestamp)
 
     
 
 class ModeChange(UtopiaMessage):    
-    """ the MODECHANGE utopia message class """
+    """the MODECHANGE utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('M')
     msgName="MODECHANGE"
     
     def __init__(self, timestamp=None, newmode=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            newmode ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(ModeChange.msgID, ModeChange.msgName)
         self.timestamp=timestamp
         self.newmode  =newmode
@@ -712,14 +799,24 @@ class ModeChange(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """        
         S = struct.pack('<i', int(self.timestamp))
         S = S + bytes(self.newmode, 'utf-8')
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -729,16 +826,34 @@ class ModeChange(UtopiaMessage):
         return (msg, 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i %s"%(self.msgID, self.msgID, self.msgName, self.timestamp, self.newmode)
 
 class Log(UtopiaMessage):    
-    """ the LOG utopia message class """
+    """the LOG utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('L')
     msgName="LOG"
     
     def __init__(self, timestamp=None, logmsg=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            logmsg ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(Log.msgID, Log.msgName)
         self.timestamp=timestamp
         self.logmsg  =logmsg
@@ -746,14 +861,25 @@ class Log(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """     
+
         S = struct.pack('<i', int(self.timestamp))
         S = S + bytes(self.logmsg, 'utf-8')
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a MODECHANGE class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -763,17 +889,35 @@ class Log(UtopiaMessage):
         return (msg, 4)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i %s"%(self.msgID, self.msgID, self.msgName, self.timestamp, self.logmsg)
 
 
 class SignalQuality(UtopiaMessage):    
-    """ the SIGNALQUALITY utopia message class """
+    """the SIGNALQUALITY utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('Q')
     msgName="SIGNALQUALITY"
     
     def __init__(self, timestamp=None, signalQuality=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            signalQuality ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(SignalQuality.msgID, SignalQuality.msgName)
         self.timestamp=timestamp
         self.signalQuality=signalQuality
@@ -781,14 +925,24 @@ class SignalQuality(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """        
         S = struct.pack('<i', int(self.timestamp))
         S = S + b''.join([ struct.pack('<f', float(q)) for q in self.signalQuality ])
         return S
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a SIGNALQUALIYT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a SIGNALQUALIYT class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -799,16 +953,34 @@ class SignalQuality(UtopiaMessage):
         return (msg, bufsize)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i [%s]"%(self.msgID, self.msgID, self.msgName, self.timestamp, ", ".join(["%f"%q for q in self.signalQuality]))
 
 class Subscribe(UtopiaMessage):    
-    """ the SUBSCRIBE utopia message class """
+    """the SUBSCRIBE utopia message class
+
+    Args:
+        UtopiaMessage ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     # Static definitions of the class type constants
     msgID=ord('B')
     msgName="SUBSCRIBE"
     
     def __init__(self, timestamp=None, messageIDs=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+            messageIDs ([type], optional): [description]. Defaults to None.
+        """        
         super().__init__(Subscribe.msgID, Subscribe.msgName)
         self.timestamp=timestamp
         self.messageIDs=messageIDs
@@ -816,7 +988,10 @@ class Subscribe(UtopiaMessage):
     def serialize(self):
         """Returns the contents of this event as a string, ready to send over the network, 
            or None in case of conversion problems.
-        """
+
+        Returns:
+            [type]: [description]
+        """        
         S = struct.pack('<i', int(self.timestamp))
         if type(self.messageIDs) is str:#str
             S = S + bytes(self.messageIDs, 'utf-8')
@@ -826,7 +1001,14 @@ class Subscribe(UtopiaMessage):
 
     @staticmethod
     def deserialize(buf):
-        """Static method to create a SIGNALQUALITY class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf"""
+        """Static method to create a SIGNALQUALITY class from a **PAYLOAD** byte-stream, return the number of bytes consumed from buf
+
+        Args:
+            buf ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         bufsize = len(buf)
         if bufsize < 4:
             return (None, 0)
@@ -837,12 +1019,24 @@ class Subscribe(UtopiaMessage):
         return (msg, bufsize)
     
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return "%c(%d) %s %i [%s]"%(self.msgID, self.msgID, self.msgName, self.timestamp, "{}".format(self.messageIDs))
 
     
 # Helper functions for dealing with raw-messages -> classes    
 def decodeRawMessage(msg):
-    """decode utopia RawMessages into actual message objects"""
+    """decode utopia RawMessages into actual message objects
+
+    Args:
+        msg ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     if msg.msgID==StimulusEvent.msgID:
         decodedmsg, _= StimulusEvent.deserialize(msg.payload)
     elif msg.msgID==Heartbeat.msgID:
@@ -870,11 +1064,27 @@ def decodeRawMessage(msg):
     return decodedmsg
 
 def decodeRawMessages(msgs):
-    """decode utopia RawMessages into actual message objects"""
+    """decode utopia RawMessages into actual message objects
+
+    Args:
+        msgs ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     return [ decodeRawMessage(msg) for msg in msgs ]
 
 def ssdpDiscover(servicetype=None, timeout=3, numretries=1):
-    '''auto-discover the utopia-hub using ssdp discover messages'''
+    """auto-discover the utopia-hub using ssdp discover messages
+
+    Args:
+        servicetype ([type], optional): [description]. Defaults to None.
+        timeout (int, optional): [description]. Defaults to 3.
+        numretries (int, optional): [description]. Defaults to 1.
+
+    Returns:
+        [type]: [description]
+    """    
     ssdpgroup = ("239.255.255.250", 1900)
     msearchTemplate = "\r\n".join([
         'M-SEARCH * HTTP/1.1', 
@@ -935,7 +1145,16 @@ def ssdpDiscover(servicetype=None, timeout=3, numretries=1):
     return responses
 
 class UtopiaClient:
-    """Class for managing a client connection to a UtopiaServer."""
+    """Class for managing a client connection to a UtopiaServer.
+
+    Raises:
+        ValueError: [description]
+        socket.error: [description]
+        IOError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     UTOPIA_SSDP_SERVICE="utopia/1.1"
     DEFAULTHOST='localhost'
@@ -945,6 +1164,11 @@ class UtopiaClient:
     MAXMESSAGESIZE = 1024 * 1024
 
     def __init__(self, clientstate=None):
+        """[summary]
+
+        Args:
+            clientstate ([type], optional): [description]. Defaults to None.
+        """        
         self.isConnected = False
         self.sock = []
         self.udpsock=None
@@ -958,20 +1182,42 @@ class UtopiaClient:
 
     # time-stamp management
     def setTimeStampClock(self, tsClock):
+        """[summary]
+
+        Args:
+            tsClock ([type]): [description]
+
+        Raises:
+            ValueError: [description]
+        """        
         if not hasattr(tsClock,'getTimeStamp'):
             raise ValueError("Time Stamp clock must have getTimeStamp method")
         self.tsClock = tsClock
     def getTimeStamp(self):
-        """Get the time-stamp for the current time"""
+        """Get the time-stamp for the current time
+
+        Returns:
+            [type]: [description]
+        """        
         return self.tsClock.getTimeStamp()
     def disableHeartbeats(self):
         '''' stop sending hearbeat messages. Use, e.g. when you want to use your own time-stamp clock. '''
         self.sendHeartbeats = False
     def enableHeartbeats(self):
+        """[summary]
+        """        
         self.sendHeartbeats = True
 
     def connect(self, hostname=None, port=8400):
-        """connect([hostname, port]) -- make a connection, default host:port is localhost:1972"""
+        """connect([hostname, port]) -- make a connection, default host:port is localhost:1972
+
+        Args:
+            hostname ([type], optional): [description]. Defaults to None.
+            port (int, optional): [description]. Defaults to 8400.
+
+        Returns:
+            [type]: [description]
+        """        
         if hostname is None:       hostname = UtopiaClient.DEFAULTHOST
         if port is None or port<0: port     = UtopiaClient.DEFAULTPORT
         print("Trying to connect to: %s:%d"%(hostname, port))
@@ -988,6 +1234,19 @@ class UtopiaClient:
 
     def autoconnect(self, hostname=None, port=None, timeout_ms=5000, 
                 queryifhostnotfound=False, localhostifhostnotfound=True, scanifhostnotfound=False):
+        """[summary]
+
+        Args:
+            hostname ([type], optional): [description]. Defaults to None.
+            port ([type], optional): [description]. Defaults to None.
+            timeout_ms (int, optional): [description]. Defaults to 5000.
+            queryifhostnotfound (bool, optional): [description]. Defaults to False.
+            localhostifhostnotfound (bool, optional): [description]. Defaults to True.
+            scanifhostnotfound (bool, optional): [description]. Defaults to False.
+
+        Raises:
+            socket.error: [description]
+        """                
         if port is None: port = UtopiaClient.DEFAULTPORT
         if hostname == '-' : hostname = None
         if hostname is None:
@@ -1035,6 +1294,13 @@ class UtopiaClient:
             raise socket.error('Connection Refused!')
 
     def try_connect(self, hostname, port=None, timeout_ms=5000):
+        """[summary]
+
+        Args:
+            hostname ([type]): [description]
+            port ([type], optional): [description]. Defaults to None.
+            timeout_ms (int, optional): [description]. Defaults to 5000.
+        """        
         if ":" in hostname:
             hostname, port=hostname.split(":")
             port=int(port)
@@ -1052,6 +1318,11 @@ class UtopiaClient:
 
 
     def gethostport(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         if self.isConnected:
             hp=self.sock.getpeername()
             return ":".join(str(i) for i in hp)
@@ -1065,7 +1336,14 @@ class UtopiaClient:
             self.isConnected = False
 
     def sendRaw(self, request):
-        """Send all bytes of the string 'request' out to socket."""
+        """Send all bytes of the string 'request' out to socket.
+
+        Args:
+            request ([type]): [description]
+
+        Raises:
+            IOError: [description]
+        """        
         if not(self.isConnected):
             raise IOError('Not connected to utopia server')
 
@@ -1075,9 +1353,19 @@ class UtopiaClient:
             nw += self.sock.send(request[nw:])
 
     def sendRawUDP(self, request):
+        """[summary]
+
+        Args:
+            request ([type]): [description]
+        """        
         self.udpsock.sendto(request, self.sock.getsockname())
 
     def sendMessage(self, msg):
+        """[summary]
+
+        Args:
+            msg ([type]): [description]
+        """        
         if not msg is RawMessage: # convert to raw for sending
             if msg.timestamp is None: # insert valid time-stamp, N.B. all messages have timestamp!
                 msg.timestamp = self.getTimeStamp()
@@ -1086,6 +1374,11 @@ class UtopiaClient:
         self.sendHeartbeatIfTimeout()
 
     def sendHeartbeatIfTimeout(self, timestamp=None):
+        """[summary]
+
+        Args:
+            timestamp ([type], optional): [description]. Defaults to None.
+        """        
         if not self.sendHeartbeats:
             return
         if timestamp is None:
@@ -1099,12 +1392,24 @@ class UtopiaClient:
         
     def sendMessages(self, msgs):
         """sends single or multiple utopia-messages to the utopia server
-        """
+
+        Args:
+            msgs ([type]): [description]
+        """    
+        
         for msg in msgs:
             self.sendMessage(msg)
             
     def recvall(self, timeout_ms=0):
-        """Read all the data from the socket immeaditely or block for timeout_ms if nothing to do."""
+        """Read all the data from the socket immeaditely or block for timeout_ms if nothing to do.
+
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 0.
+
+        Returns:
+            [type]: [description]
+        """
+
         if timeout_ms>0:
             self.sock.setblocking(1)
             self.sock.settimeout(timeout_ms/1000.0)
@@ -1121,7 +1426,14 @@ class UtopiaClient:
         return bytes(data)
     
     def getNewMessages(self, timeout_ms=250):
-        """Wait for new messages from the utopia-server (with optional timeout), decode them and return the list of new messages"""
+        """Wait for new messages from the utopia-server (with optional timeout), decode them and return the list of new messages
+
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 250.
+
+        Returns:
+            [type]: [description]
+        """        
         # get all the data in the socket
         buf = self.recvall(timeout_ms)
         # append to the receive buffer
@@ -1136,7 +1448,11 @@ class UtopiaClient:
 
     def initClockAlign(self, delays_ms=[50]*10):
         """Send some initial heartbeat messages to seed the alignment of the server clock with
-        our local clock"""
+        our local clock
+
+        Args:
+            delays_ms ([type], optional): [description]. Defaults to [50]*10.
+        """        
         if not self.sendHeartbeats:
             print("Warning: not sending heartbeats as they are disabled!")
             return
@@ -1146,7 +1462,11 @@ class UtopiaClient:
             self.sendMessage(Heartbeat(self.getTimeStamp(),self.clientstate))
     
     def messagelogger(self, timeout_ms=1000):
-        """Simple message logger, infinite loop waiting for and printing messages from the server"""
+        """Simple message logger, infinite loop waiting for and printing messages from the server
+
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 1000.
+        """        
         client.sendMessage(Subscribe(None, "ABCDEFGHIJKLMNOPQRSTUVWXYZ")) # subcribe to everything...
         while True:
             newmessages = client.getNewMessages(timeout_ms)
@@ -1155,7 +1475,11 @@ class UtopiaClient:
 
 
     def messagePingPong(self, timeout_ms=500):
-        """Testing system sending 20 messages and printing any responses """
+        """Testing system sending 20 messages and printing any responses
+
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 500.
+        """        
         # loop waiting for messages and printing them
         for i in range(20):
             self.sendMessage(StimulusEvent(i, [0, 1, 2, 3], [i+1, i+2, i+3, i+4]))
@@ -1166,6 +1490,8 @@ class UtopiaClient:
 
             
 def testSerialization():
+    """[summary]
+    """    
     rm=RawMessage(1, 0, "payload")
     print("RawMessage: %s"%(rm))
     print("serialized: %s"%(rm.serialize()))
@@ -1256,6 +1582,8 @@ def testSerialization():
 
 
 def testSending():
+    """[summary]
+    """    
     client = UtopiaClient()        
     client.autoconnect()
 
