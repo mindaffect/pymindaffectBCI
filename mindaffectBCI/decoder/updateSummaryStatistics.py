@@ -586,6 +586,8 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
 
 
 def testSlicedvsContinuous():
+    """[summary]
+    """    
     import numpy as np
     from utils import testSignal, sliceData, sliceY
     irf=(0,0,0,0,0,1,0,0,0,0)
@@ -620,6 +622,14 @@ def testSlicedvsContinuous():
     print("Sliced={}s".format(dur/1000))
 
     def slicenuss(X, Y, stimTimes, tau):
+        """[summary]
+
+        Args:
+            X ([type]): [description]
+            Y ([type]): [description]
+            stimTimes ([type]): [description]
+            tau ([type]): [description]
+        """        
         Xe = sliceData(X, stimTimes, tau)
         Ye = sliceY(Y, stimTimes)
         Cxx, Cxy, Cyy = updateSummaryStatistics(Xe, Ye, stimTimes, tau=tau)
@@ -631,6 +641,8 @@ def testSlicedvsContinuous():
 
 
 def testComputationMethods():
+    """[summary]
+    """    
     import numpy as np
     from utils import testSignal, sliceData, sliceY
     irf=(0,0,0,0,0,1,0,0,0,0)
@@ -671,6 +683,8 @@ def testComputationMethods():
     
     
 def testCases():
+    """[summary]
+    """    
     import numpy as np
     from utils import testSignal, sliceData, sliceY
     from updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
