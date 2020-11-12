@@ -31,7 +31,7 @@ Alternative BCI types / Stimulus
 By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol letter matrix for presentation.  You can easily try different types of stimulus and selection matrices by modifying the `symbols` and `stimfile` in `presentation_args` section of the configuration file `online_bci.json <mindaffectBCI/online_bci.json>`_.  Where:
  * _symbols_ : can either by a list-of-lists of the actual text to show, for example for a 2x2 grid of sentences.
 
-.. code-block:: JSON
+ .. code-block:: JSON
 
     "presentation_args":{
         "symbols":[ ["I'm happy","I'm sad"], ["I want to play","I want to sleep"] ],
@@ -39,19 +39,19 @@ By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol le
         "framesperbit":1
     }
 
-    or a file from which to load the set of symbols as a *comma-separated* list of strings like the file [symbols.txt](mindaffectBCI/examples/presentation/symbols.txt).
+ or a file from which to load the set of symbols as a *comma-separated* list of strings like the file [symbols.txt](mindaffectBCI/examples/presentation/symbols.txt).
 
 * _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like.
 
- You can clearly see the difference between the two main types of BCI stimulus file used here when viewed as an image.   Firstly, this is the stimulus file for the noisecodes::
+ You can clearly see the difference between the two main types of BCI stimulus file used here when viewed as an image.   Firstly, this is the stimulus file for the noisecodes.
 
-.. image :: images/mgold_61_6521_psk_60hz.png
+ .. image :: images/mgold_61_6521_psk_60hz.png
 
  which clearly shows the noise-like character of this code.   
 
- By contrast the, classical P300 row-column speller stimulus sequence looks like::
+ By contrast the, classical P300 row-column speller stimulus sequence looks like.
 
-.. image :: images/rc5x5.png
+ .. image :: images/rc5x5.png
 
  which shows the more structured row-column structure, and that only a few outputs are 'on' at any time.
  
@@ -67,7 +67,7 @@ The default settings for noisetagging are
 .. code-block:: JSON
 
     "decoder_args":{
-        "stopband" : [0,3,25,"bandpass"],
+        "stopband" : [3,25,"bandpass"],
         "out_fs" : 80,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
@@ -77,7 +77,7 @@ The default settings for noisetagging are
 
 The key parameters here are:
 
-  * `stopband`: this is a `temporal filter <https://en.wikipedia.org/wiki/Filter_(signal_processing)>`_ which is applied as a pre-processing step to the incomming data.  This is important to remove external noise so the decoder can focus on the target brain signals.   Here the filter is specified as a list of `band stop <https://en.wikipedia.org/wiki/Band-stop_filter>`_ filters, which specify which signal frequencies should be suppressed, (where, in classic python fashion -1 indicates the max-possible frequency).  Thus, in this example all frequencies below 3Hz and above 25Hz are removed.
+  * `stopband`: this is a `temporal filter <https://en.wikipedia.org/wiki/Filter_(signal_processing)>`_ which is applied as a pre-processing step to the incomming data.  This is important to remove external noise so the decoder can focus on the target brain signals.   Here the filter is specified as a list of bandpass or `band stop <https://en.wikipedia.org/wiki/Band-stop_filter>`_ filters, which specify which signal frequencies should be suppressed, (where, in classic python fashion -1 indicates the max-possible frequency).  Thus, in this example only frequencies between 3 and 25Hz remain after filtering.
 
   * `out_fs`: this specifies the post-filtering sampling rate of the data.  This reduces the amount of data which will be processed by the rest of the decoder.  Thus, in this example after filtering the data is re-sampled to 80Hz.  (Note: to avoid []() out_fs should be greater than 2x the maximum frequency passed by the stop-band).
 
