@@ -86,12 +86,30 @@ def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt
 
 
 def entropy(p,axis=-1):
+    """[summary]
+
+    Args:
+        p ([type]): [description]
+        axis (int, optional): [description]. Defaults to -1.
+
+    Returns:
+        [type]: [description]
+    """    
     ent = np.sum(p*np.log(np.maximum(p, 1e-08)), axis) # / -np.log(Ptgtepmdl.shape[-1]) # (nDecis)
     return ent
 
 
 def softmax(f, axis=-1, validTgt=None):
-    ''' simple softmax over final dim of input array, with compensation for missing inputs with validTgt mask. '''
+    """[simple softmax over final dim of input array, with compensation for missing inputs with validTgt mask. ]
+
+    Args:
+        f ([type]): [description]
+        axis (int, optional): [description]. Defaults to -1.
+        validTgt ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """    
     p = np.exp( f - np.max(f, axis, keepdims=True) ) # (nTrl,nDecis,nY) [ nY x nDecis x nTrl ]
     # cancel out the missing outputs
     if validTgt is not None and not all(validTgt.ravel()):
@@ -101,7 +119,14 @@ def softmax(f, axis=-1, validTgt=None):
     return p
 
 def softmax_nout_corr(n):
-    ''' approximate correction factor for probabilities out of soft-max to correct for number of outputs'''
+    """[approximate correction factor for probabilities out of soft-max to correct for number of outputs]
+
+    Args:
+        n ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     #return np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
     return np.ones(n.shape) #np.minimum(2.45,1.25+np.log2(np.maximum(1,n))/5.5)/2.45
 
@@ -186,6 +211,17 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.05,.1,.2,.5,1,1.5,2,2.5,3,
 
 #@function
 def testcase(nY=10, nM=4, nEp=340, nTrl=100, sigstr=.5, marginalizemodels=True, marginalizedecis=False):
+    """[summary]
+
+    Args:
+        nY (int, optional): [description]. Defaults to 10.
+        nM (int, optional): [description]. Defaults to 4.
+        nEp (int, optional): [description]. Defaults to 340.
+        nTrl (int, optional): [description]. Defaults to 100.
+        sigstr (float, optional): [description]. Defaults to .5.
+        marginalizemodels (bool, optional): [description]. Defaults to True.
+        marginalizedecis (bool, optional): [description]. Defaults to False.
+    """    
     import numpy as np
     np.random.seed(0)
     noise = np.random.standard_normal((nM,nTrl,nEp,nY))
