@@ -17,23 +17,27 @@
 
 import numpy as np
 from mindaffectBCI.decoder.utils import equals_subarray
-def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
+def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=None):
     '''
     convert per-sample stimulus sequence into per-sample event sequence (e.g. rising/falling edge, or long/short flash)
 
     Args:
      M  (...samp) or (...,samp,nY): for and/non-target features
-     evnames - [nE]:str list of strings:
+     evnames (tuple (nE), optional): str list of strings.  Defaults to ('re','fe')
         "0", "1", "00", "11", "01" (aka. 're'), "10" (aka, fe), "010" (aka. short), "0110" (aka long)
         "nt"+evtname : non-target event, i.e. evtname occured for any other target
         "any"+evtname: any event, i.e. evtname occured for *any* target
+        "first"+evtname: first occurance of event
+        "last"+evtname: last occurace of event
         "rest" - not any of the other event types, N.B. must be *last* in event list
         "raw" - unchanged input intensity coding
         "grad" - 1st temporal derivative of the raw intensity
-     axis - (-1) the axis of M which runs along 'time'
-     oM - (...osamp) or (...,osamp,nY) prefix stimulus values of M, used to incrementally compute the  stimulus features
-    Outputs:
-     evt    - (M.shape,nE) event sequence
+     axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
+     oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
+
+    Returns:
+     evt (M.shape,nE): the computed event sequence
+
     Examples:
       #For a P300 bci, with target vs. non-target response use:
         M = np.array([[1,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,0],[0,0,0,0,1,0,0,0]]).T
@@ -57,13 +61,14 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
     if len(M) == 0: # guard empty inputs
         return E
     for ei, etype in enumerate(evtypes):
+
+        # extract the stimulus modifier
         modifier = None
-        if etype.startswith("nt"):
-            modifier = "nt"
-            etype = etype[len(modifier):]
-        if etype.startswith("any"):
-            modifier = "any"
-            etype = etype[len(modifier):]
+        for mod in ('nt','any','onset','offset','first','last'):
+            if etype.startswith(mod):
+                modifier = mod
+                etype = etype[len(mod):]
+                break
             
         # 1-bit
         if etype == "flash" or etype == '1':
@@ -116,12 +121,6 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
         elif etype == 'grad': # i.e. gradient of the stimulus
             F = np.diff(M,axis=axis)
 
-        elif etype == 'onset':
-            # first stimulus RE for any output
-            F = equals_subarray(M, [0, 1], axis) # find RE's
-            F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
-            F[F>1] = 0 # zero out if more than 1 stimulus since trial start
-
         else:
             raise ValueError("Unrecognised evttype:{}".format(etype))
 
@@ -140,6 +139,16 @@ def stim2event(M, evtypes=('re','fe'), axis=-1, oM=None):
                 raise ValueError("any feature only for axis==-2")   
             # any, means true if any target is true, N.B. use logical_or to broadcast
             F = np.any(F > 0, axis=-1, keepdims=True)
+
+        elif modifier in ('onset','first'):
+            # first stimulus RE for any output
+            F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
+            F[F>1] = 0 # zero out if more than 1 stimulus since trial start
+
+        elif modifier in ('offset','last'):
+            # first stimulus RE for any output
+            F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
+            F[F>1] = 0 # zero out if more than 1 stimulus since trial start
 
         E[..., ei] = F
 

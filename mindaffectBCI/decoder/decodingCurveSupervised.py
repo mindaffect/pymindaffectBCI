@@ -209,7 +209,7 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     if aveProbErr.ndim > 1:
         # multiple datasets
         plt.plot(integerationLengths.T,aveProbErr.T)
-        plt.plot(np.mean(integerationLengths,0), np.mean(aveProbErr,0), 'k', linewidth=5, label="mean")
+        plt.plot(np.nanmean(integerationLengths,0), np.nanmean(aveProbErr,0), 'k', linewidth=5, label="mean")
         plt.title('Decoding Curve\n(nDatasets={})'.format(aveProbErr.shape[0]))
     
     else:

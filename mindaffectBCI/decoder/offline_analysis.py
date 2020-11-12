@@ -24,13 +24,15 @@ from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
 from mindaffectBCI.decoder.timestamp_check import timestampPlot
 import matplotlib.pyplot as plt
 
-#savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
-savefile = '~/Desktop/khash/mindaffectBCI*2131.txt'
-#savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
-#savefile = '~/Desktop/mark/mindaffectBCI_noisetag_bci_*1319_ganglion.txt' # score bug
+# last file saved to default save location
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-#savefile = '~/Downloads/mindaffectBCI*.txt'
+#savefile = '~/Desktop/mark/mindaffectBCI*1239.txt'
+savefile = '~/Desktop/khash/mindaffectBCI*2131.txt'
+savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
+#savefile = '~/Desktop/mark/mindaffectBCI_noisetag_bci_*1319_ganglion.txt' # score bug
+
+savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 

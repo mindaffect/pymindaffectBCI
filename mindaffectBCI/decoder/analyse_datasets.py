@@ -180,7 +180,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     print("\n--------\n\n Ave-score={}\n".format(avescore))
     # extract averaged decoding curve info
     int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
-    print("Ave-DC\n{}\n".format(print_decoding_curve(np.mean(int_len,0),np.mean(prob_err,0),np.mean(prob_err_est,0),np.mean(se,0),np.mean(st,0))))
+    print("Ave-DC\n{}\n".format(print_decoding_curve(np.nanmean(int_len,0),np.nanmean(prob_err,0),np.nanmean(prob_err_est,0),np.nanmean(se,0),np.nanmean(st,0))))
     plot_decoding_curve(int_len,prob_err)
     plt.suptitle("{} ({}) AUDC={:3.2f}(n={} ncls={})\nloader={}\nclsfr={}({})".format(dataset,dataset_args,avescore,len(scores),avenout-1,loader_args,model,clsfr_args))
     plt.savefig("{}_decoding_curve.png".format(dataset))
@@ -528,7 +528,7 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
     if sumFy:
         Fy = np.cumsum(Fy,axis=-2)
 
-    Xlim = (np.min(X.ravel()),np.max(X.ravel()))
+    Xlim = (np.min(X[...,0].ravel()),np.max(X[...,-1].ravel()))
 
     Fylim = (np.min(Fy.ravel()),np.max(Fy.ravel()))
     if Fe is not None:
@@ -559,7 +559,7 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
             plt.plot(times,X[ti,:,:] + np.arange(X.shape[-1])*xspacing)
             plt.gca().set_xticklabels(())
             plt.grid(True)
-            plt.ylim((Xlim[0],Xlim[1]+X.shape[-1]*xspacing))
+            plt.ylim((Xlim[0],Xlim[1]+(X.shape[-1]-1)*xspacing))
             if wi==0: # only left-most-plots
                 plt.ylabel('X')
             plt.gca().set_yticklabels(())

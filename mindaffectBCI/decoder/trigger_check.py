@@ -284,9 +284,10 @@ if __name__=="__main__":
     filename=None # on-line trigger check
     # load the most recent matching file
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI_*.txt'
-    #filename='~/Downloads/mindaffectBCI*cyton*.txt'
+    filename='~/Downloads/mindaffectBCI*.txt'
     #filename='~/Desktop/mark/mindaffectBCI_*1239.txt'
-    filename='-'
+
+    #filename='-'  # take last file save in logs directory
     #filename='~/Desktop/pymindaffectBCI/logs/mindaffectBCI*.txt'
 
     if filename is None:
