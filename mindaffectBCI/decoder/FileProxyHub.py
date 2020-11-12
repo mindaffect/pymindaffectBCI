@@ -23,6 +23,11 @@ class FileProxyHub:
         self.file = open(self.filename,'r')
     
     def getTimeStamp(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return self.lasttimestamp
     
     def autoconnect(self, *args,**kwargs):
