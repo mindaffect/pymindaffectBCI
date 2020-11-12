@@ -20,7 +20,17 @@ PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 
 def get_trial_start_end(msgs, start_ts=None):
-    '''get the start+end times of the trials in a utopia message stream'''
+    """
+    get the start+end times of the trials in a utopia message stream
+
+    Args:
+        msgs ([type]): [description]
+        start_ts ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """    
+    
     trials = []
     keeplast = False
     for mi, m in enumerate(msgs):
