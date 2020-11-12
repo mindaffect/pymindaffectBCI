@@ -141,6 +141,18 @@ def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
 
     
 def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopYerr=None,stopPerrThresh=None):
+    """[summary]
+
+    Args:
+        integerationLengths ([type]): [description]
+        aveProbErr ([type]): [description]
+        aveProbErrEst ([type], optional): [description]. Defaults to None.
+        stopYerr ([type], optional): [description]. Defaults to None.
+        stopPerrThresh ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """    
     MINSCALEPERR=0.1
     
     s=''    
@@ -181,7 +193,14 @@ def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopY
 
 
 def plot_decoding_curve(integerationLengths, aveProbErr, *args):
-    ''' plot the decoding curve '''
+    """
+    plot the decoding curve
+
+    Args:
+        integerationLengths ([type]): [description]
+        aveProbErr ([type]): [description]
+    """    
+
     import matplotlib.pyplot as plt
 
     if aveProbErr.ndim > 1:
@@ -217,6 +236,8 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     plt.grid(True)
 
 def testcase():
+    """[summary]
+    """    
     import numpy as np
     Fy=np.random.standard_normal((10,100,50))
     Fy[:,:,0]=Fy[:,:,0] + 0.3
