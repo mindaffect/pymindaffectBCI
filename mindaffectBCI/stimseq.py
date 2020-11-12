@@ -22,16 +22,40 @@
 
 
 class StimSeq :
+    """[summary]
+
+    Raises:
+        Exception: [description]
+        Exception: [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
     stimSeq     = None # [ nEvent x nSymb ] stimulus code for each time point for each stimulus
     stimTime_ms = None # time stim i ends, i.e. stimulus i is on screen from stimTime_ms[i-1]-stimTime_ms[i]
     eventSeq    = None # events to send at each stimulus point
 
     def __init__(self,st=None,ss=None,es=None):
+        """[summary]
+
+        Args:
+            st ([type], optional): [description]. Defaults to None.
+            ss ([type], optional): [description]. Defaults to None.
+            es ([type], optional): [description]. Defaults to None.
+        """        
+
         self.stimSeq     = ss
         self.stimTime_ms = st
         self.eventSeq    = es
 
     def __str__(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
+
         res = "#stimTimes: ";
         if not self.stimTime_ms is None:
             res += "(1," + str(len(self.stimTime_ms)) + ")\n"
@@ -54,11 +78,28 @@ class StimSeq :
         return res
 
     def convertstimSeq2int(self,scale=1):
+        """[summary]
+
+        Args:
+            scale (int, optional): [description]. Defaults to 1.
+        """        
+
         self.stimSeq = self.float2int(self.stimSeq)
 
     @staticmethod
     def float2int(stimSeq,scale=1,minval=None,maxval=None):
-        '''convert float list of lists to integer'''
+        """convert float list of lists to integer
+
+        Args:
+            stimSeq ([type]): [description]
+            scale (int, optional): [description]. Defaults to 1.
+            minval ([type], optional): [description]. Defaults to None.
+            maxval ([type], optional): [description]. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """        
+
         if type(stimSeq[0][0]) is float :
             for i in range(len(stimSeq)):
                 for j in range(len(stimSeq[i])):
@@ -69,11 +110,29 @@ class StimSeq :
         return stimSeq
 
     def setStimRate(self,rate):
-        '''rewrite the stimtimes to equal given rate in hz'''
+        """rewrite the stimtimes to equal given rate in hz
+
+        Args:
+            rate ([type]): [description]
+        """        
+
         setStimRate(self.stimTime_ms,rate)
         
     @staticmethod
     def readArray(f,width=-1):
+        """[summary]
+
+        Args:
+            f ([type]): [description]
+            width (int, optional): [description]. Defaults to -1.
+
+        Raises:
+            Exception: [description]
+
+        Returns:
+            [type]: [description]
+        """    
+
         array=[]
         nEmpty=0
         for line in f:
@@ -93,7 +152,18 @@ class StimSeq :
 
     @staticmethod
     def fromString(f):
-        """read a stimulus-sequence definition from a string"""
+        """read a stimulus-sequence definition from a string
+
+        Args:
+            f ([type]): [description]
+
+        Raises:
+            Exception: [description]
+
+        Returns:
+            [type]: [description]
+        """  
+
         st=StimSeq.readArray(f) # read the stim times
         if len(st) > 1:
             raise Exception
@@ -106,7 +176,15 @@ class StimSeq :
 
     @staticmethod
     def fromFile(fname):
-        """read a stimulus-sequence from a file on disk"""
+        """read a stimulus-sequence from a file on disk
+
+        Args:
+            fname ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """  
+
         import os.path
         if not os.path.isfile(fname):
             pydir = os.path.dirname(os.path.abspath(__file__))
@@ -130,6 +208,12 @@ class StimSeq :
         return ss
 
     def toFile(self, fname):
+        """[summary]
+
+        Args:
+            fname ([type]): [description]
+        """ 
+
         if '.png' in fname:
             # write out as a .png file
             # convert to byte with range 0-255
@@ -150,10 +234,28 @@ class StimSeq :
                 f.write(str(self))
 
 def transpose(M):
+    """[summary]
+
+    Args:
+        M ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
     return [[row[i] for row in M] for i in range(len(M[0]))]
 
 def setStimRate(stimTime_ms,framerate):
-    # rewrite the stim-times to a new frequency
+    """rewrite the stim-times to a new frequency
+
+    Args:
+        stimTime_ms ([type]): [description]
+        framerate ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
     for i in range(len(stimTime_ms)):
         stimTime_ms[i] = i*1000/framerate
     return stimTime_ms
@@ -207,6 +309,8 @@ def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1
 
 
 def mkCodes():
+    """[summary]
+    """    
     # test generators
     rc=mkRowCol(width=5,height=5, repeats=10)
     rc.toFile('rc5x5.png')
