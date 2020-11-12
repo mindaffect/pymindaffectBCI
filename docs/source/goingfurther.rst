@@ -41,9 +41,21 @@ By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol le
 
     or a file from which to load the set of symbols as a *comma-separated* list of strings like the file [symbols.txt](mindaffectBCI/examples/presentation/symbols.txt).
 
-* _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like: 
+* _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like.
+
+ You can clearly see the difference between the two main types of BCI stimulus file used here when viewed as an image.   Firstly, this is the stimulus file for the noisecodes::
+
+.. image :: images/mgold_61_6521_psk_60hz.png
+
+ which clearly shows the noise-like character of this code.   
+
+ By contrast the, classical P300 row-column speller stimulus sequence looks like::
 
 .. image :: images/rc5x5.png
+
+ which shows the more structured row-column structure, and that only a few outputs are 'on' at any time.
+ 
+
 
 Change Decoder parameters
 -------------------------
