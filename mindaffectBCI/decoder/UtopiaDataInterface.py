@@ -93,7 +93,17 @@ class UtopiaDataInterface:
         self.preproc_power = None
 
     def connect(self, host=None, port=-1, queryifhostnotfound=True):
-        '''make a connection to the utopia host'''
+        """[make a connection to the utopia host]
+
+        Args:
+            host ([type], optional): [description]. Defaults to None.
+            port (int, optional): [description]. Defaults to -1.
+            queryifhostnotfound (bool, optional): [description]. Defaults to True.
+
+        Returns:
+            [type]: [description]
+        """        
+        
         if host:
             self.host = host
         if port > 0:
@@ -105,14 +115,30 @@ class UtopiaDataInterface:
         return self.U.isConnected
     
     def isConnected(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
+
         return self.U.isConnected if self.U is not None else False
 
     def getTimeStamp(self):
-        '''get the current timeStamp'''
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
+
         return self.U.getTimeStamp()
 
     def sendMessage(self, msg: UtopiaMessage):
-        ''' send a UtopiaMessage to the utopia hub'''
+        """[send a UtopiaMessage to the utopia hub]
+
+        Args:
+            msg (UtopiaMessage): [description]
+        """        
+        
         self.U.sendMessage(msg)
 
     def getNewMessages(self, timeout_ms=0):
