@@ -12,7 +12,7 @@ This page contains the documentation of the open source Brain Computer Interface
    :caption: Getting started
    
    installation
-   OnlineBCI_quickstart
+   quickstart
    tutorials
    modules
    FAQ
