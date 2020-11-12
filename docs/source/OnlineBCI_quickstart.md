@@ -18,7 +18,7 @@ To launch all these components at once:
 
 1.  Power on the  OpenBCI Ganglion. (toggle on/off button)
 2.  Open a command prompt / your Anaconda virtual python environment
-3.  Run the BCI by typing: `python -m mindaffectBCI.online_bci`
+3.  Run the BCI by typing: `python3 -m mindaffectBCI.online_bci`
 
 If all is installed it should start the selection matrix with all the other components in the background.
 
@@ -27,7 +27,7 @@ When the blue light on the ganglion does not turn solid after starting the BCI y
 
 ## Using the MindAffect BCI:
 
-Now that the system is up and running, you can go through the following steps to use the BCI!
+Now that the system is up and running, you can go through the following steps to use the BCI.
 
 
 
@@ -59,7 +59,7 @@ You can run the BCI in different modes by specifying different arguments on the 
 
 ### Alternative Amplifiers
 
-This online_bci uses [brainflow](http://brainflow.org) by default for interfacing with the EEG amplifier.  Specificially the file in [examples\acquisation\utopia_brainflow.py](mindaffectBCI/examples/acquisation/utopia_brainflow.py) is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the [brainflow documentation](https://brainflow.readthedocs.io/en/stable/SupportedBoards.html).
+This online_bci uses [brainflow](http://brainflow.org) by default for interfacing with the EEG amplifier.  Specificially the file in [examples\acquisition\utopia_brainflow.py](mindaffectBCI/examples/acquisition/utopia_brainflow.py) is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the [brainflow documentation](https://brainflow.readthedocs.io/en/stable/SupportedBoards.html).
 
 You can specify the configuration for your amplifer in the `acq_args` section of the configuration file [online_bci.json](mindaffectBCI/online_bci.json).  For example to specify to use a simulated board use:
 
