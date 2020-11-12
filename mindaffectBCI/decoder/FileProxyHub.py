@@ -31,27 +31,12 @@ class FileProxyHub:
         return self.lasttimestamp
     
     def autoconnect(self, *args,**kwargs):
-        """[summary]
-        """        
         pass
 
     def sendMessage(self, msg):
-        """[summary]
-
-        Args:
-            msg ([type]): [description]
-        """        
         pass
 
     def getNewMessages(self, timeout_ms):
-        """[summary]
-
-        Args:
-            timeout_ms ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         msgs = []
         for line in self.file:
             msg = read_mindaffectBCI_message(line)
