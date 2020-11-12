@@ -63,7 +63,16 @@ def get_trial_start_end(msgs, start_ts=None):
     return (trials, start_ts, msgs)
 
 def getCalibration_dataset(ui):
-    ''' extract a labelled dataset from the utopiaInterface, which are trials between modechange messages '''
+    """
+    extract a labelled dataset from the utopiaInterface, which are trials between modechange messages
+
+    Args:
+        ui ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
     # run until we get a mode change gathering training data in trials
     dataset = []
     start_ts = None  # assume we have just started the first trial?
@@ -154,7 +163,16 @@ def dataset_to_XY_ndarrays(dataset):
 
 
 def strip_unused(Y):
-    """ strip unused outputs from the stimulus info in Y """
+    """
+    strip unused outputs from the stimulus info in Y
+
+    Args:
+        Y ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
     Y = Y[..., used_y]
@@ -340,7 +358,19 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
 
 
 def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=None):
-    ''' given the current trials data, apply the classifier and decoder to make target predictions '''
+    """
+    given the current trials data, apply the classifier and decoder to make target predictions
+
+    Args:
+        clsfr (BaseSequence2Sequence): [description]
+        data ([type]): [description]
+        stimulus ([type]): [description]
+        prev_stimulus ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """    
+    
     X = data[:, :-1]
     X_ts = data[:, -1]
     Y = stimulus[:, :-1]
@@ -363,6 +393,14 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
 
 
 def combine_Ptgt(pvals_objIDs):
+    """[summary]
+
+    Args:
+        pvals_objIDs ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
     pvals = [p[0] for p in pvals_objIDs] 
     objIDs = [p[1] for p in pvals_objIDs]
     if not all(np.isequal(objIDs[0], oi) for oi in objIDs):
