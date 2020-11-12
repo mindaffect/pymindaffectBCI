@@ -44,6 +44,13 @@ class Utopia2Output:
         self.client = UtopiaClient()
 
     def connect(self,host=None,port=None,timeout_ms=30000):
+        """[summary]
+
+        Args:
+            host ([type], optional): [description]. Defaults to None.
+            port ([type], optional): [description]. Defaults to None.
+            timeout_ms (int, optional): [description]. Defaults to 30000.
+        """        
         print('Connecting to utopia on',host,":",port,",",timeout_ms)
         self.client.autoconnect(host,port,timeout_ms)
         self.client.initClockAlign()
@@ -57,10 +64,16 @@ class Utopia2Output:
             print('In PerrMode')
 
     def perrModeOutput(self,msgs):
-        """process a perr-message generating appropriate output.  
+        """
+        process a perr-message generating appropriate output.  
            To avoid 'key-bounce' we use a press-release semantics, where the output is 'Pressed' 
            so the output is generated when the Perr < outputPressThreshold, then further
-           output is inhibited until Perr > outputReleaseThreshold."""
+           output is inhibited until Perr > outputReleaseThreshold.
+
+        Args:
+            msgs ([type]): [description]
+        """        
+        
         for msg in msgs:
             if not msg.msgID==PredictedTargetProb.msgID: continue
             #print('OutputnMode:',msg)
@@ -73,9 +86,15 @@ class Utopia2Output:
                 self.outputActivated=False # relase output -> allow a new selection
 
     def selectionModeOutput(self,msgs):
-        """ Process selection message to generate output.  
-            Basically generate output if the messages objectID is one of the ones
-            we are tasked with generating output for"""
+        """
+        Process selection message to generate output.  
+        Basically generate output if the messages objectID is one of the ones
+        we are tasked with generating output for
+
+        Args:
+            msgs ([type]): [description]
+        """        
+        
         for msg in msgs:
             if not msg.msgID==Selection.msgID: 
                 continue
@@ -83,12 +102,17 @@ class Utopia2Output:
             self.doOutput(msg.objID) # call function to make output happen
 
     def run(self,timeout_ms=3000):
-        """mainloop of utopia-to-output mapping
+        """
+        mainloop of utopia-to-output mapping
         runs an infinite loop, waiting for new messages from utopia, filtering out 
         those mesages which contain an output prediction (i.e. PREDICTEDTARGETPROB message)
         and if the output prediction is sufficiently confident forwarding this to the output
         device and sending a NEWTARGET to the recogniser to indicate the output was sent
-        """
+        
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 3000.
+        """        
+        
         if not self.client.isConnected :
             self.connect()
         print("Waiting for messages")
