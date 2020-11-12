@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jason@mindaffect.nl>
+# This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
+#
+# pymindaffectBCI is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# pymindaffectBCI is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
+
 import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
 from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb
@@ -24,11 +41,13 @@ def get_trial_start_end(msgs, start_ts=None):
     get the start+end times of the trials in a utopia message stream
 
     Args:
-        msgs ([type]): [description]
-        start_ts ([type], optional): [description]. Defaults to None.
+        msgs ([mindaffectBCI.UtopiaMessage]): list of messages recenty recieved
+        start_ts (float, optional): time-stamp for start of *current* trial. Defaults to None.
 
     Returns:
-        [type]: [description]
+        (list (start_ts,end_ts)): list of completed trial (start_ts,end_ts) time-stamp tuples
+        (float): start_ts for trial started but not finished
+        (list UtopiaMessage): list of unprocessed messages
     """    
     
     trials = []
@@ -72,16 +91,16 @@ def get_trial_start_end(msgs, start_ts=None):
     # N.B. start_ts is not None if trail start without end..
     return (trials, start_ts, msgs)
 
-def getCalibration_dataset(ui):
+def getCalibration_dataset(ui:UtopiaDataInterface):
     """
     extract a labelled dataset from the utopiaInterface, which are trials between modechange messages
 
     Args:
-        ui ([type]): [description]
+        ui (UtopiaDataInterface): the data interface object
 
     Returns:
-        [type]: [description]
-    """    
+        (list (data,stimulus)): list of pairs of time-stamped data and stimulus information as 2d (time,ch) (or (time,output)) numpy arrays
+    """
     
     # run until we get a mode change gathering training data in trials
     dataset = []
@@ -177,10 +196,10 @@ def strip_unused(Y):
     strip unused outputs from the stimulus info in Y
 
     Args:
-        Y ([type]): [description]
+        Y (np.ndarray (time,outputs)): the full stimulus information, potentionally with many unused outputs
 
     Returns:
-        [type]: [description]
+        (np.ndarray (time,used-outputs)): Y with unused outputs removed
     """    
     
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
@@ -190,10 +209,13 @@ def strip_unused(Y):
 
 def load_previous_dataset(f:str):
     """
-    load a previously saved (pickled) calibration dataset
+    search standard directory locations and load a previously saved (pickled) calibration dataset
 
     Args:
         f (str, file-like): buffered interface to the data and stimulus streams
+
+    Returns:
+        (list of (data,stimulus)): list of stimulus,data pairs for each trial
     """
     import pickle
     import glob
@@ -302,7 +324,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
 
         # guard against empty training dataset
         if X is None or Y is None :
-            return None, None, None
+            return None, None, None, None
         Y, used_idx = strip_unused(Y)
         
         # now call the clsfr fit method, on the true-target info
@@ -313,7 +335,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             print("clsfr={} => {}".format(clsfr, score))
         except:
             traceback.print_exc()
-            return None, None, None
+            return None, None, None, None
 
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
@@ -372,13 +394,13 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
     given the current trials data, apply the classifier and decoder to make target predictions
 
     Args:
-        clsfr (BaseSequence2Sequence): [description]
-        data ([type]): [description]
-        stimulus ([type]): [description]
-        prev_stimulus ([type], optional): [description]. Defaults to None.
+        clsfr (BaseSequence2Sequence): the trained classifier to apply to the data
+        data (np.ndarray (time,channels)): the pre-processed EEG data
+        stimulus (np.ndarray (time,outputs)): the raw stimulus information
+        prev_stimulus (np.ndarray, optional): previous stimulus before stimulus -- poss needed for correct event coding. Defaults to None.
 
     Returns:
-        [type]: [description]
+        (np.ndarray (time,outputs)): Fy scores for each output at each time-point
     """    
     
     X = data[:, :-1]
@@ -403,13 +425,14 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
 
 
 def combine_Ptgt(pvals_objIDs):
-    """[summary]
+    """combine target probabilities in a correct way
 
     Args:
-        pvals_objIDs ([type]): [description]
+        pvals_objIDs (list (pval,objId)): list of Ptgt,objID pairs for outputs at different time points.
 
     Returns:
-        [type]: [description]
+        (np.ndarray (outputs,)) : target probabilities
+        (np.ndarray (outputs,)) : object IDs for the targets
     """    
     pvals = [p[0] for p in pvals_objIDs] 
     objIDs = [p[1] for p in pvals_objIDs]
@@ -422,13 +445,13 @@ def combine_Ptgt(pvals_objIDs):
     return Ptgt, objIDs
 
 
-def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
+def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp:int=-1):
     """Send the current prediction information to the utopia-hub
 
     Args:
         ui (UtopiaDataInterface): the interface to the data-hub
-        Ptgt ([type]): the current distribution of target probabilities over outputs
-        used_idx ([type], optional): a set of output indices currently used. Defaults to None.
+        Ptgt (np.ndarray (outputs,)): the current distribution of target probabilities over outputs
+        used_idx (np.ndarray, optional): a set of output indices currently used. Defaults to None.
         timestamp (int, optional): time stamp for which this prediction applies. Defaults to -1.
     """ 
     if Ptgt is None or len(Ptgt)==0 :
@@ -461,7 +484,7 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     ui.sendMessage(PredictedTargetDist(timestamp, used_idx, Ptgt))
     
 
-def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type='trial', timeout_ms=None, block_step_ms=100, maxDecisLen_ms=8000):
+def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type:str='trial', timeout_ms:float=None, block_step_ms:float=100, maxDecisLen_ms:float=8000):
     """ 
     do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
 
