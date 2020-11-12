@@ -2,7 +2,7 @@
 #
 
 # Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Khashayar Sharif <khash@mindaffect.nl>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -21,9 +21,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-
-from utopiaclient import *
+from mindaffectBCI.utopiaclient import *
 import subprocess
 class Utopia2Harmony:    
     """Example class for a utopia OUTPUT module.  Connects to the utopia server
@@ -32,7 +30,7 @@ class Utopia2Harmony:
     place
     """
     
-    def __init__(self,outputPressThreshold=.1,outputReleaseThreshold=None,myObjectIDs=None):
+    def __init__(self,outputPressThreshold=.1,outputReleaseThreshold=None,myObjectIDs=None,ip_address_harmony=None):
         self.VERB=0
         self.outputPressThreshold=outputPressThreshold
         if outputReleaseThreshold is not None :
@@ -41,6 +39,8 @@ class Utopia2Harmony:
             self.outputReleaseThreshold=outputReleaseThreshold
         self.myObjectIDs=myObjectIDs # this is the set of object IDs we generate output for
         self.client = UtopiaClient()
+        self.ip_address_harmony=input("please enter the Ip address of the Harmony hub:")
+
 
     def connect(self,host=UtopiaClient.DEFAULTHOST,port=UtopiaClient.DEFAULTPORT,timeout_ms=30000):
         self.client.autoconnect(host,port,timeout_ms)
@@ -94,56 +94,41 @@ class Utopia2Harmony:
 
             
     def doOutputHarmony(self,objID):
+        
+        obj_ID_to_Harmony = {
+          96: "PowerToggle",
+          97: "VolumeUp",
+          98: "VolumeDown",
+          99:"ChannelUp",
+          100:"ChannelDown",
+          101:"Mute",
+        #  102:"",
+        #  103:"",
+          104:"DirectionUp",
+          105:"DirectionRight",
+          106:"DirectionDown",
+          107:"DirectionLeft",
+          108:"select",
+          109:"menu",
+}
+        Device_ID_Harmony ={
+            'id_Apple_TV': "63944910",
+            'id_Telenet': "63961272",
+            }
+
         """This function is run when objID has sufficiently low error to mean that 
         and output should be generated for this objID. 
         N.B. Override/Replace this function with your specific output method."""
         print("Generated output for Target %d"%(objID))
         #Set the ip address of the harmony hub
-        ip_address = "192.168.1.31"
+        ip_address = "192.168.1.15"
+        ip_address=self.ip_address_harmony
         # set the device id
-        id_Telenet = "63961272"
-        id_Apple_TV = "63944910"
+        #id_Telenet = "63961272"
+        #id_Apple_TV = "63944910"
+        rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", Device_ID_Harmony['id_Apple_TV'], "--command", obj_ID_to_Harmony.get(objID,"unprogrammed button")]);
+        print("Target %d is chosen"%(objID))
         # check for selection messages and send the related infrared/bluetooth signal
-        if objID ==96 : 	  
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "PowerToggle"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==97 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "VolumeUp"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==98 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "VolumeDown"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==99 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "ChannelUp"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==100 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "ChannelDown"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==101 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Telenet, "--command", "Mute"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==104 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "DirectionUp"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==105 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "DirectionRight"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==106 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "DirectionDown"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==107 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "DirectionLeft"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==108 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "select"]);
-            print("Target %d is good enough!"%(objID))
-        elif objID ==109 : 
-            rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "menu"]);
-            print("Target %d is good enough!"%(objID))
-        else :
-           # rtn = subprocess.call(["aioharmony","--harmony_ip",ip_address,"send_command","--device_id", id_Apple_TV, "--command", "menu"]);
-            print("an Unprogrammed button (ID = %d) is chosen!"%(objID))
-
 
 ''' simple driver for testing '''
 if __name__ == "__main__":
