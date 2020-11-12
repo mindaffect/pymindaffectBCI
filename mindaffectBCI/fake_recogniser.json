@@ -16,16 +16,5 @@
         "predplots" : false
     },
 
-    "presentation":"none",
-    "presentation_args":{
-        "ncal":2,
-        "npred":10,
-        "selectionThreshold":0.1,
-        "symbols":"symbols.txt",
-        "stimfile":"mgold_65_6532_psk_60hz.png",
-        "framesperbit":1,
-        "fullscreen":false,
-        "fullscreen_stimulus":true,
-        "host":"-"
-    }
+    "presentation":false
 }

@@ -49,7 +49,7 @@ To install from source:
 
 To install as a python library. (Note: installing from source is recommended as you can directly access the examples and configuration files.)::
 
-	pip install --upgrade pymindaffectBCI
+	pip install --upgrade mindaffectBCI
 
 Installation Check
 ------------------

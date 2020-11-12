@@ -1,11 +1,11 @@
 
 .. _fittingRef:
 
-Set-up & fitting
-===============
+Set-up & fitting of MindAffect **water** electrodes
+===================================================
 
 Set-up
------
+------
 To prepare the headset:
 
 1. Get a glass of water
@@ -20,7 +20,7 @@ Fitting
 -------
 
 Before positioning the headset on the user’s head, inspect it to see if there are no damaged parts that might hurt the user. 
-Please remove any metal parts in the hair (hair clips, ornaments, etc). Please notes that the picture on the left contains an older version of the headset. The newer versions have the logo displayed on the left instead of the outer left electrode in the images. 
+Please remove any metal parts in the hair (hair clips, ornaments, etc). Please note that the picture on the left contains an older version of the headset. The newer versions have the logo displayed on the left instead of the outer left electrode in the images. 
 When using the system with several users or when the headset has become soiled, you can clean the headset using a moistened (by water) cloth. Do not use detergents, as this might damage the electrodes. 
 The headset needs to be placed directly above the inion (a small protrusion at the back of the skull).
 

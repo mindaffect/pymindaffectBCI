@@ -1359,7 +1359,7 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=None,
+def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1):
     """ run the selection Matrix with default settings
