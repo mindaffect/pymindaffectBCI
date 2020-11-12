@@ -2,18 +2,7 @@ import numpy as np
 
 # time-series tests
 def window_axis(a, winsz, axis=0, step=1, prependwindowdim=False):
-    """[efficient view-based slicing of equal-sized equally-spaced windows along a selected axis of a numpy nd-array]
-
-    Args:
-        a ([type]): [description]
-        winsz ([type]): [description]
-        axis (int, optional): [description]. Defaults to 0.
-        step (int, optional): [description]. Defaults to 1.
-        prependwindowdim (bool, optional): [description]. Defaults to False.
-
-    Returns:
-        [type]: [description]
-    """    
+    ''' efficient view-based slicing of equal-sized equally-spaced windows along a selected axis of a numpy nd-array '''
     if axis < 0: # no negative axis indices
         axis = len(a.shape)+axis
 
@@ -31,17 +20,7 @@ def window_axis(a, winsz, axis=0, step=1, prependwindowdim=False):
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
 def equals_subarray(a, pat, axis=-1, match=-1):
-    """[efficiently find matches of a 1-d sub-array along axis within an nd-array]
-
-    Args:
-        a ([type]): [description]
-        pat ([type]): [description]
-        axis (int, optional): [description]. Defaults to -1.
-        match (int, optional): [description]. Defaults to -1.
-
-    Returns:
-        [type]: [description]
-    """     
+    ''' efficiently find matches of a 1-d sub-array along axis within an nd-array ''' 
     if axis < 0: # no negative dims
         axis = a.ndim+axis
     # reshape to match dims of a
@@ -62,11 +41,7 @@ def equals_subarray(a, pat, axis=-1, match=-1):
 
 
 class RingBuffer:
-    """[time efficient linear ring-buffer for storing packed data, e.g. continguous np-arrays]
-
-    Returns:
-        [type]: [description]
-    """    
+    ''' time efficient linear ring-buffer for storing packed data, e.g. continguous np-arrays '''
     def __init__(self, maxsize, shape, dtype=np.float32):
         self.elementshape = shape
         self.bufshape = (int(maxsize), )+shape
@@ -85,25 +60,11 @@ class RingBuffer:
         self.copysize=0
 
     def append(self, x):
-        """[add single element to the ring buffer]
-
-        Args:
-            x ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """                
+        '''add single element to the ring buffer'''
         return self.extend(x[np.newaxis, ...])
     
     def extend(self, x):
-        """[add a group of elements to the ring buffer]
-
-        Args:
-            x ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
+        '''add a group of elements to the ring buffer'''
         # TODO[] : incremental copy to the 1st half, to spread the copy cost?
         nx = x.shape[0]
         if self.pos+nx >= self.buffer.shape[0]:
@@ -123,11 +84,6 @@ class RingBuffer:
     
     @property
     def shape(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
         return (min(self.n,self.bufshape[0]),)+self.bufshape[1:]
     
     def unwrap(self):
@@ -135,35 +91,13 @@ class RingBuffer:
         return self.buffer[self.pos-min(self.n,self.bufshape[0]):self.pos, :].reshape(self.shape)
 
     def __getitem__(self, item):
-        """[summary]
-
-        Args:
-            item ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         return self.unwrap()[item]
 
     def __iter__(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
         return iter(self.unwrap())
 
 def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
-    """[extract the data between start/end time stamps, from time-stamps contained in the last channel of a nd matrix]
-
-    Args:
-        rb ([type]): [description]
-        bgn_ts ([type]): [description]
-        end_ts ([type], optional): [description]. Defaults to None.
-
-    Returns:
-        [type]: [description]
-    """    
+    ''' extract the data between start/end time stamps, from time-stamps contained in the last channel of a nd matrix'''
     # get the data / msgs from the ringbuffers
     X = rb.unwrap() # (nsamp,nch+1)
     X_ts = X[:, -1] # last channel is timestamps
@@ -188,15 +122,7 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
     return X
 
 def unwrap(x,range=None):
-    """[ unwrap a list of numbers to correct for truncation due to limited bit-resolution, e.g. time-stamps stored in 24bit integers]
-
-    Args:
-        x ([type]): [description]
-        range ([type], optional): [description]. Defaults to None.
-
-    Returns:
-        [type]: [description]
-    """        
+    ''' unwrap a list of numbers to correct for truncation due to limited bit-resolution, e.g. time-stamps stored in 24bit integers'''
     if range is None: 
         range = 1<< int(np.ceil(np.log2(max(x))))
     wrap_ind = np.diff(x) < -range/2
@@ -207,8 +133,6 @@ def unwrap(x,range=None):
     return x
 
 def unwrap_test():
-    """[summary]
-    """    
     x = np.cumsum(np.random.rand(6000,1))
     xw = x%(1<<10)
     xuw = unwrap(x)
@@ -243,17 +167,6 @@ def search_directories_for_file(f,*args):
 
 #@function
 def randomSummaryStats(d=10, nE=2, tau=10, nY=1):
-    """[summary]
-
-    Args:
-        d (int, optional): [description]. Defaults to 10.
-        nE (int, optional): [description]. Defaults to 2.
-        tau (int, optional): [description]. Defaults to 10.
-        nY (int, optional): [description]. Defaults to 1.
-
-    Returns:
-        [type]: [description]
-    """    
     import numpy as np
     # pure random test-case
     Cxx = np.random.standard_normal((d, d))
@@ -262,20 +175,6 @@ def randomSummaryStats(d=10, nE=2, tau=10, nY=1):
     return (Cxx, Cxy, Cyy)
 
 def testNoSignal(d=10, nE=2, nY=1, isi=5, tau=None, nSamp=10000, nTrl=1):
-    """[summary]
-
-    Args:
-        d (int, optional): [description]. Defaults to 10.
-        nE (int, optional): [description]. Defaults to 2.
-        nY (int, optional): [description]. Defaults to 1.
-        isi (int, optional): [description]. Defaults to 5.
-        tau ([type], optional): [description]. Defaults to None.
-        nSamp (int, optional): [description]. Defaults to 10000.
-        nTrl (int, optional): [description]. Defaults to 1.
-
-    Returns:
-        [type]: [description]
-    """    
     # Simple test-problem -- no real signal
     if tau is None:
         tau = 10*isi
@@ -287,24 +186,6 @@ def testNoSignal(d=10, nE=2, nY=1, isi=5, tau=None, nSamp=10000, nTrl=1):
     return (X, Y, stimTimes_samp)
 
 def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000, stimthresh=.6, noise2signal=1, irf=None):
-    """[summary]
-
-    Args:
-        nTrl (int, optional): [description]. Defaults to 1.
-        d (int, optional): [description]. Defaults to 5.
-        nE (int, optional): [description]. Defaults to 2.
-        nY (int, optional): [description]. Defaults to 30.
-        isi (int, optional): [description]. Defaults to 5.
-        tau ([type], optional): [description]. Defaults to None.
-        offset (int, optional): [description]. Defaults to 0.
-        nSamp (int, optional): [description]. Defaults to 10000.
-        stimthresh (float, optional): [description]. Defaults to .6.
-        noise2signal (int, optional): [description]. Defaults to 1.
-        irf ([type], optional): [description]. Defaults to None.
-
-    Returns:
-        [type]: [description]
-    """    
     #simple test problem, with overlapping response
     import numpy as np
     if tau is None:
@@ -351,8 +232,6 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
 
 
 def testtestSignal():
-    """[summary]
-    """    
     import matplotlib.pyplot as plt
     plt.clf()
     # shift by 5
@@ -370,16 +249,6 @@ def testtestSignal():
     
 
 def sliceData(X, stimTimes_samp, tau=10):
-    """[summary]
-
-    Args:
-        X ([type]): [description]
-        stimTimes_samp ([type]): [description]
-        tau (int, optional): [description]. Defaults to 10.
-
-    Returns:
-        [type]: [description]
-    """    
     # make a sliced version
     dst = np.diff(stimTimes_samp)
     if np.all(dst == dst[0]) and stimTimes_samp[0] == 0: # fast path equaly spaced stimTimes
@@ -483,11 +352,7 @@ def upsample_codebook(trlen, cb, ep_idx, stim_dur_samp, offset_samp=(0, 0)):
 
 
 def lab2ind(lab,lab2class=None):
-        """[convert a list of labels (as integers) to a class indicator matrix]
-
-        Returns:
-            [type]: [description]
-        """    
+    ''' convert a list of labels (as integers) to a class indicator matrix'''
     if lab2class is None:
         lab2class = [ (l,) for l in set(lab) ] # N.B. list of lists
     if not isinstance(lab,np.ndarray):
@@ -600,40 +465,10 @@ except:
 #if True:
     # use the pure-python fallbacks
     def sosfilt(sos,X,axis,zi):
-        """[summary]
-
-        Args:
-            sos ([type]): [description]
-            X ([type]): [description]
-            axis ([type]): [description]
-            zi ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         return sosfilt_2d_py(sos,X,axis=axis,zi=zi)
     def sosfilt_zi(sos):
-        """[summary]
-
-        Args:
-            sos ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         return sosfilt_zi_py(sos)
     def butter(order,freq,btype,output):
-        """[summary]
-
-        Args:
-            order ([type]): [description]
-            freq ([type]): [description]
-            btype ([type]): [description]
-            output ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
         return butter_py(order,freq,btype,output)
 
 def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
@@ -671,22 +506,7 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
     return zi
 
 def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
-    """[ given a set of filter cutoffs return butterworth or bessel sos coefficients]
-
-    Args:
-        stopband ([type]): [description]
-        fs ([type]): [description]
-        order (int, optional): [description]. Defaults to 4.
-        ftype (str, optional): [description]. Defaults to 'butter'.
-        passband ([type], optional): [description]. Defaults to None.
-        verb (int, optional): [description]. Defaults to 0.
-
-    Raises:
-        ValueError: [description]
-
-    Returns:
-        [type]: [description]
-    """    
+    ''' given a set of filter cutoffs return butterworth or bessel sos coefficients '''
 
     # convert to normalized frequency, Note: not to close to 0/1
     if stopband is None:
@@ -785,15 +605,7 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
     return (X, sos, zi)
 
 def save_butter_sosfilt_coeff(filename=None, stopband=((45,65),(5.5,25,'bandpass')), fs=200, order=6, ftype='butter'):
-    """[design a butterworth sos filter cascade and save the coefficients]
-
-    Args:
-        filename ([type], optional): [description]. Defaults to None.
-        stopband (tuple, optional): [description]. Defaults to ((45,65),(5.5,25,'bandpass')).
-        fs (int, optional): [description]. Defaults to 200.
-        order (int, optional): [description]. Defaults to 6.
-        ftype (str, optional): [description]. Defaults to 'butter'.
-    """    
+    ''' design a butterworth sos filter cascade and save the coefficients '''
     import pickle
     sos = iir_sosfilt_sos(stopband, fs, order, passband=None, ftype=ftype)
     zi = sosfilt_zi(sos)
@@ -807,8 +619,6 @@ def save_butter_sosfilt_coeff(filename=None, stopband=((45,65),(5.5,25,'bandpass
         f.close()
 
 def test_butter_sosfilt():
-    """[summary]
-    """    
     fs= 100
     X = np.random.randn(fs*10,2)
     X = np.cumsum(X,0)
@@ -856,23 +666,7 @@ def test_butter_sosfilt():
 # TODO[] : cythonize?
 # TODO[X] : vectorize over d? ---- NO. 2.5x *slower*
 def sosfilt_2d_py(sos,X,axis=-2,zi=None):
-    """[pure python fallback for second-order-sections filter in case scipy isn't available]
-
-    Args:
-        sos ([type]): [description]
-        X ([type]): [description]
-        axis (int, optional): [description]. Defaults to -2.
-        zi ([type], optional): [description]. Defaults to None.
-
-    Raises:
-        ValueError: [description]
-        ValueError: [description]
-        ValueError: [description]
-
-    Returns:
-        [type]: [description]
-    """    
-    
+    ''' pure python fallback for second-order-sections filter in case scipy isn't available '''
     X = np.asarray(X)
     sos = np.asarray(sos)
 
@@ -935,17 +729,7 @@ def sosfilt_2d_py(sos,X,axis=-2,zi=None):
         return X
 
 def sosfilt_zi_py(sos):
-    """[compute an initial state for a second-order section filter]
-
-    Args:
-        sos ([type]): [description]
-
-    Raises:
-        ValueError: [description]
-
-    Returns:
-        [type]: [description]
-    """    
+    ''' compute an initial state for a second-order section filter '''
     sos = np.asarray(sos)
     if sos.ndim != 2 or sos.shape[1] != 6:
         raise ValueError('sos must be shape (n_sections, 6)')
@@ -971,8 +755,6 @@ def sosfilt_zi_py(sos):
     return zi
 
 def test_sosfilt_py():
-    """[summary]
-    """    
     import pickle
     with open('butter_stopband((0, 5), (25, -1))_fs200.pk','rb') as f:
         sos = pickle.load(f)
