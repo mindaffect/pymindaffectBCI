@@ -1,8 +1,9 @@
 Installation
-=========================
+============
  
 Requirements
-------------
+************
+
 - Python (3.x) installation (Suggested: Anaconda_ )
 - JDK_ or openJDK_ 
 - EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion )
@@ -33,7 +34,7 @@ From our testing we found that the following things help in improving timing acc
  
  
 Installing the package
-----------------------
+****************
  
 To install from source:
   1. Clone or `download <https://github.com/mindaffect/pymindaffectBCI/>`_ the pymindaffectBCI repository::
@@ -52,7 +53,8 @@ To install as a python library. (Note: installing from source is recommended as 
 	pip install --upgrade mindaffectBCI
 
 Installation Check
-------------------
+****************
+
 As a quick check if the software has installed correctly into your python environment you can run::
                python3 -m mindaffectBCI.online_bci --acquisition fakedata
 
@@ -65,7 +67,8 @@ If you now press 2 you should see a flickering grid of "buttons" like below.  Yo
 If all this works then you have successfully installed the mindaffectBCI python software.  You should now ensure your hardware (display, amplifier) is correctly configured before jumping into BCI control.
  
 FrameRate Check
----------------
+***************
+
 For rapid visual stimulation BCI (like the noisetagging BCI), it is very important that the visual flicker be displayed accurately.
 However, as the graphics performance of computers varies widely it is hard to know in advance if a particular configuration is accurate enough.
 To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.
@@ -80,7 +83,7 @@ Many graphics cards turn this off by default, as it (in theory) gives higher fra
 However, for our system, frame-rate is less important than exact timing, hence always turn vsync on for visual Brain-Compuber-Interfaces!
 
 Amplifier configuration
------------------------
+****************
 
 In addition to configuring the software, you should ensure that your EEG hardware is correctly configured to optimise BCI performance.  
 For the `openBCI <www.openbci.com>`_ cyton and ganglion see this page :ref:`ampref` for how to configure these amplifiers and get the required COM-port information. 

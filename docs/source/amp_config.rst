@@ -1,4 +1,5 @@
 .. _ampref:
+
 Amplifier Configuration: openBCI Cyton and Ganglion
 ===================================================
 
