@@ -21,6 +21,7 @@ from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA,
 try:
     from sklearn.linear_model import Ridge, LogisticRegression
     from sklearn.svm import LinearSVR, LinearSVC
+    from sklearn.model_selection import GridSearchCV
 except:
     pass
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, plot_factoredmodel
@@ -101,7 +102,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         # hyper-parameter optimization by cross-validation
         if tuned_parameters is not None:
             # hyper-parameter optimization with cross-validation
-            from sklearn.model_selection import GridSearchCV
+
             cv_clsfr = GridSearchCV(clsfr, tuned_parameters)
             print('HyperParameter search: {}'.format(tuned_parameters))
             cv_clsfr.fit(X, Y)
@@ -127,14 +128,18 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         clsfr.fit(X,Y)
         Fy = clsfr.predict(X, Y, dedup0=True)
 
+    # use the raw scores, i.e. inc model dim, in computing the decoding curve
+    rawFy = res['rawestimator'] if 'rawestimator' in res else Fy
+
     # assess model performance
     score=clsfr.audc_score(Fy)
     print(clsfr)
     print("score={}".format(score))
-    (dc) = decodingCurveSupervised(Fy, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_)
 
-    return score,dc,Fy,clsfr
+    # compute decoding curve
+    (dc) = decodingCurveSupervised(rawFy, marginalizedecis=True, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
 
+    return score, dc, Fy, clsfr, res
 
 
 def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loader_args:dict=None, preprocess_args:dict=None, clsfr_args:dict=None, tuned_parameters:dict=None, **kwargs):
@@ -162,7 +167,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
             X, Y, coords = loader(fi, **loader_args)
             if preprocess_args is not None:
                 X, Y, coords = preprocess(X, Y, coords, **preprocess_args)
-            score, decoding_curve, _, _ = analyse_dataset(X, Y, coords, model, tuned_parameters=tuned_parameters, **clsfr_args, **kwargs)
+            score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model, tuned_parameters=tuned_parameters, **clsfr_args, **kwargs)
             nout.append(Y.shape[-1] if Y.ndim<=3 else Y.shape[-2])
             scores.append(score)
             decoding_curves.append(decoding_curve)
@@ -175,7 +180,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     print("\n--------\n\n Ave-score={}\n".format(avescore))
     # extract averaged decoding curve info
     int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
-    print("Ave-DC\n{}\n".format(print_decoding_curve(np.mean(int_len,0),np.mean(prob_err,0),np.mean(prob_err_est,0),np.mean(se,0),np.mean(st,0))))
+    print("Ave-DC\n{}\n".format(print_decoding_curve(np.nanmean(int_len,0),np.nanmean(prob_err,0),np.nanmean(prob_err_est,0),np.nanmean(se,0),np.nanmean(st,0))))
     plot_decoding_curve(int_len,prob_err)
     plt.suptitle("{} ({}) AUDC={:3.2f}(n={} ncls={})\nloader={}\nclsfr={}({})".format(dataset,dataset_args,avescore,len(scores),avenout-1,loader_args,model,clsfr_args))
     plt.savefig("{}_decoding_curve.png".format(dataset))
@@ -373,7 +378,8 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.figure(12);plt.clf()
     plot_erp(Cxy, ch_names=ch_names, evtlabs=evtlabs, times=times)
     plt.suptitle("ERP")
-    plt.show()
+    plt.show(block=False)
+    plt.pause(.5)
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
     # fit the model
@@ -384,15 +390,25 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
     clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
-    score, res, Fy, clsfr = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
+    score, res, Fy, clsfr, cvres = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
     Fe = clsfr.transform(X)
-    Yerr = res[5]
-    Perr = res[6]
 
-    plot_trial_summary(X,Y,Fy,fs=fs,Yerr=Yerr[:,-1],Fe=Fe,label=label)
+
+    # get the prob scores, per-sample
+    if 'rawestimator' in cvres:   
+        rawFy = cvres['rawestimator'] 
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1)
+    else:
+        Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1)
+
+    Yerr = res[5] # (nTrl,nSamp)
+    Perr = res[6] # (nTrl,nSamp)
+
+    plot_trial_summary(X, Y, Fy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
-    plt.gcf().set_size_inches((40,20))
+    plt.gcf().set_size_inches((15,9))
     plt.savefig("{}_trial_summary".format(label)+".pdf")
+    plt.pause(.5)
 
     plt.figure(14)
     plot_decoding_curve(*res)
@@ -464,16 +480,17 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
         plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
         plt.show()
 
-    return score, res, Fy, clsfr
+    return score, res, Fy, clsfr, rawFy
 
-def plot_trial_summary(X, Y, Fy, Fe=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
+def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
     """generate a plot summarizing the inputs (X,Y) and outputs (Fe,Fe) for every trial in a dataset for debugging purposes
 
     Args:
         X (nTrl,nSamp,d): The preprocessed EEG data
         Y (nTrl,nSamp,nY): The stimulus information
         Fy (nTrl,nSamp,nY): The output scores obtained by comping the stimulus-scores (Fe) with the stimulus information (Y)
-        Fe (nTrl,nSamp,nY,nE, optional): The stimulus scores, for the different event types, obtained by combining X with the decoding model. Defaults to None.
+        Fe ((nTrl,nSamp,nY,nE), optional): The stimulus scores, for the different event types, obtained by combining X with the decoding model. Defaults to None.
+        Py ((nTrl,nSamp,nY), optional): The target probabilities for each output, derived from Fy. Defaults to None.
         fs (float, optional): sample rate of X, Y, used to set the time-axis. Defaults to None.
         label (str, optional): A textual label for this dataset, used for titles & save-files. Defaults to None.
         centerx (bool, optional): Center (zero-mean over samples) X for plotting. Defaults to True.
@@ -496,25 +513,69 @@ def plot_trial_summary(X, Y, Fy, Fe=None, fs=None, label=None, evtlabs=None, cen
     if sumFy:
         Fy = np.cumsum(Fy,axis=-2)
 
-    Xlim = (np.min(X.ravel()),np.max(X.ravel()))
+    Xlim = (np.min(X[...,0].ravel()),np.max(X[...,-1].ravel()))
 
     Fylim = (np.min(Fy.ravel()),np.max(Fy.ravel()))
     if Fe is not None:
         Felim = (np.min(Fe.ravel()),np.max(Fe.ravel()))
 
+    if Py is not None:
+        if Py.ndim>3 :
+            print("Multiple models? accumulated away")
+            Py = np.sum(Py,0)
+
     nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl)*1.8)); h = int(np.ceil(nTrl/w))
     fig = plt.figure(figsize=(20,10))
     trial_grid = fig.add_gridspec( nrows=h, ncols=w, figure=fig, hspace=.05, wspace=.05) # per-trial grid
+    nrows= 5 + (0 if Fe is None else 1) + (0 if Py is None else 1)
     ti=0
     for hi in range(h):
         for wi in range(w):
             if ti>=X.shape[0]:
                 break
 
-            gs = trial_grid[ti].subgridspec( nrows= 5 if Fe is None else 6, ncols=1, hspace=0 )
+            gs = trial_grid[ti].subgridspec( nrows=nrows, ncols=1, hspace=0 )
 
-            # plot Fy
-            axFy = fig.add_subplot(gs[-1,0])
+            # pre-make bottom plot
+            botax = fig.add_subplot(gs[-1,0])
+
+            # plot X (0-3)
+            fig.add_subplot(gs[:3,:], sharex=botax)
+            plt.plot(times,X[ti,:,:] + np.arange(X.shape[-1])*xspacing)
+            plt.gca().set_xticklabels(())
+            plt.grid(True)
+            plt.ylim((Xlim[0],Xlim[1]+(X.shape[-1]-1)*xspacing))
+            if wi==0: # only left-most-plots
+                plt.ylabel('X')
+            plt.gca().set_yticklabels(())
+            # group 'title'
+            plt.text(.5,1,'{}{}'.format(ti,'*' if Yerr is not None and Yerr[ti]==False else ''), ha='center', va='top', fontweight='bold', transform=plt.gca().transAxes)
+
+            # imagesc Y
+            fig.add_subplot(gs[3,:], sharex=botax)
+            plt.imshow(Y[ti,:,:].T, origin='upper', aspect='auto', cmap='gray', extent=[times[0],times[-1],0,Y.shape[-1]], interpolation=None)
+            plt.gca().set_xticklabels(())
+            if wi==0: # only left-most-plots
+                plt.ylabel('Y')
+            plt.gca().set_yticklabels(())
+
+            # Fe (if given)
+            if Fe is not None:
+                fig.add_subplot(gs[4,:], sharex=botax)
+                plt.plot(times,Fe[ti,:,:] + np.arange(Fe.shape[-1])[np.newaxis,:])
+                plt.gca().set_xticklabels(())
+                plt.grid(True)
+                if wi==0: # only left-most-plots
+                    plt.ylabel('Fe')
+                plt.gca().set_yticklabels(())
+                plt.ylim((Felim[0],Felim[1]+Fe.shape[-1]-1))
+
+            # Fy
+            if Py is None:
+                plt.axes(botax) # no Py, Fy is bottom axis
+            else:
+                row = 4 if Fe is None else 5
+                fig.add_subplot(gs[row,:], sharex=botax)
             plt.plot(times,Fy[ti,:,:], color='.5')
             plt.plot(times,Fy[ti,:,0],'k-')
             if hi==h-1: # only bottom plots
@@ -527,36 +588,20 @@ def plot_trial_summary(X, Y, Fy, Fe=None, fs=None, label=None, evtlabs=None, cen
             plt.gca().set_yticklabels(())
             plt.ylim(Fylim)
 
-            # plot X (0-3)
-            fig.add_subplot(gs[:3,:], sharex=axFy)
-            plt.plot(times,X[ti,:,:] + np.arange(X.shape[-1])*xspacing)
-            plt.gca().set_xticklabels(())
-            plt.grid(True)
-            plt.ylim((Xlim[0],Xlim[1]+X.shape[-1]*xspacing))
-            if wi==0: # only left-most-plots
-                plt.ylabel('X')
-            plt.gca().set_yticklabels(())
-            # group 'title'
-            plt.text(.5,1,'{}{}'.format(ti,'*' if Yerr is not None and Yerr[ti]==False else ''), ha='center', va='top', fontweight='bold', transform=plt.gca().transAxes)
-
-            # imagesc Y
-            fig.add_subplot(gs[3,:], sharex=axFy)
-            plt.imshow(Y[ti,:,:].T, origin='upper', aspect='auto', cmap='gray', extent=[times[0],times[-1],0,Y.shape[-1]], interpolation=None)
-            plt.gca().set_xticklabels(())
-            if wi==0: # only left-most-plots
-                plt.ylabel('Y')
-            plt.gca().set_yticklabels(())
-
-            # Fe (if given)
-            if Fe is not None:
-                fig.add_subplot(gs[4,:], sharex=axFy)
-                plt.plot(times,Fe[ti,:,:] + np.arange(Fe.shape[-1])[np.newaxis,:])
-                plt.gca().set_xticklabels(())
+            # Py (if given)
+            if Py is not None:
+                plt.axes(botax)
+                plt.plot(times[:Py.shape[-2]],Py[ti,:,:], color='.5')
+                plt.plot(times[:Py.shape[-2]],Py[ti,:,0],'k-')
+                if hi==h-1: # only bottom plots
+                    plt.xlabel('time ({})'.format(xunit))
+                else:
+                    plt.gca().set_xticklabels(())
+                if wi==0: # only left most plots
+                    plt.ylabel("Py")
                 plt.grid(True)
-                if wi==0: # only left-most-plots
-                    plt.ylabel('Fe')
                 plt.gca().set_yticklabels(())
-                plt.ylim((Felim[0],Felim[1]+Fe.shape[-1]-1))
+                plt.ylim((0,1))
 
             ti=ti+1
 
