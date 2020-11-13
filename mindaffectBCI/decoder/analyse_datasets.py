@@ -285,7 +285,7 @@ def flatten_decoding_curves(decoding_curves):
     return il,pe,pee,se,st
 
 
-def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), **kwargs):
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), triggerPlot=False, normalizedFy=False, **kwargs):
     """Debug a data set, by pre-processing, model-fitting and generating various visualizations
 
     Args:
@@ -355,24 +355,6 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
 
-    print("Plot X+Y")
-    trli=min(3,X.shape[0]-1)
-    plt.figure(10); plt.clf()
-    plt.subplot(211)
-    plt.imshow(X[trli,:,:].T,aspect='auto')
-    plt.colorbar()
-    plt.title('X')
-    plt.xlabel('time (samp)')
-    plt.subplot(212)
-    if Y.ndim == 3:
-        plt.imshow(Y[trli, :, :].T, aspect='auto', cmap='gray', interpolation=None)
-        plt.xlabel('time (samp)')
-        plt.ylabel('target')
-    else:
-        plt.plot(Y[trli, :, 0, :])
-    plt.title('Y')
-    plt.show(block=False)
-
     print("Plot summary stats")
     if Y.ndim == 4: # already transformed
         Yevt = Y
@@ -434,10 +416,11 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.grid()
     plt.show(block=False)
 
-    plt.figure(20)
-    triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
-    plt.show(block=False)
-    plt.savefig("{}_triggerplot".format(label)+".pdf",format='pdf')
+    if triggerPlot:
+        plt.figure(20)
+        triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
+        plt.show(block=False)
+        plt.savefig("{}_triggerplot".format(label)+".pdf",format='pdf')
 
     print("Plot Model")
     plt.figure(15)
@@ -468,17 +451,18 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # plt.suptitle("Fy")
     # plt.show()
 
-    from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
-    print("normalized Fy")
-    plt.figure(20);plt.clf()
-    # normalize every sample
-    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1)
-    plot_Fy(ssFy,label=label,cumsum=False)
-    plt.show(block=False)
+    if normalizedFy:
+        from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
+        print("normalized Fy")
+        plt.figure(20);plt.clf()
+        # normalize every sample
+        ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1)
+        plot_Fy(ssFy,label=label,cumsum=False)
+        plt.show(block=False)
 
-    plt.figure(21)
-    plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
-    plt.show()
+        plt.figure(21)
+        plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
+        plt.show()
 
     return score, res, Fy, clsfr
 
