@@ -58,7 +58,7 @@ class GSM(FSM):
         """        
         self.stack=[]
 
-    def push(self,s:GSM):
+    def push(self,s):
         """add a new state machine to the stack
 
         Args:
