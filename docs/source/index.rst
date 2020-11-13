@@ -20,6 +20,8 @@ This page contains the documentation of the open source Brain Computer Interface
 
    quickstart
    tutorials
+   goingfurther
+   project_ideas
 
 .. toctree::
    :maxdepth: 2
