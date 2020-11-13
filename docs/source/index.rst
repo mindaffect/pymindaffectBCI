@@ -14,20 +14,11 @@ This page contains the documentation of the open source Brain Computer Interface
    installation
    amp_config
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
    quickstart
    tutorials
 
-.. toctree::
-   :maxdepth: 2
-   :caption: FAQ
    FAQ
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Reference
    modules
    
 .. toctree::
