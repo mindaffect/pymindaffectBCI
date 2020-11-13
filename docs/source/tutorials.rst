@@ -5,7 +5,7 @@ All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <h
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
    first_run
    simple_output_tutorial
