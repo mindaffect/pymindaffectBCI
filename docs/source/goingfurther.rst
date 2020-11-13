@@ -3,6 +3,7 @@
 Going Further : Amplifiers, BCI-types, Decoder Config
 =============
 
+
 You can run the BCI in different modes by specifying different arguments on the command line.  Or by modifying the basic configuration file  [online_bci.json](mindaffectBCI/online_bci.json)
 
 Alternative Amplifiers

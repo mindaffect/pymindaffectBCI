@@ -14,4 +14,4 @@ All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <h
    build_your_own_optical_sensor
    stimulus_time-lock_test_tutorial
    offline_analysis
-   goingfurther
+
