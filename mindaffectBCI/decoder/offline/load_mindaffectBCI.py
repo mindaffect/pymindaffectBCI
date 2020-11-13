@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsam
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
 
-def load_mindaffectBCI(source, datadir=None, sessdir=None, fs_out=100, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', verb=0, iti_ms=1000, trlen_ms=None, offset_ms=(-500,500), ch_names=None, **kwargs):
+def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=100, stopband=((45,65),(5.5,25,'bandpass')), order:int=6, ftype:str='butter', verb:int=0, iti_ms:float=1000, trlen_ms:float=None, offset_ms:float=(-500,500), ch_names=None, **kwargs):
     """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
 
     Args:
