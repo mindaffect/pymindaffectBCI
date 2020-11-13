@@ -241,15 +241,15 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         if presentation_args is None:
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
-        from mindaffectBCI.examples.presentation import selectionMatrix
         try:
+            from mindaffectBCI.examples.presentation import selectionMatrix
             selectionMatrix.run(**presentation_args)
         except:
             traceback.print_exc()
 
     elif presentation == 'sigviewer':
-        from mindaffectBCI.decoder.sigViewer import sigViewer
         try:
+            from mindaffectBCI.decoder.sigViewer import sigViewer
             sigViewer()
         except:
             traceback.print_exc()
