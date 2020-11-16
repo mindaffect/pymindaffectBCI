@@ -35,10 +35,20 @@ Modern BCIs (including our own) rely heavily on machine learning techniques to p
  * Firstly, by making it easier to rapidly gather relatively large EEG datasets by using consumer grade EEG devices and applications designed in your prefered application development framework.  For example, by using a raspberry Pi, headphones, and EEG headband and an openBCI ganglion to measure the brains response to different music types.
  * Secondly, by providing a `sklearn <scikit-learn.org>`_ compatiable interface for machine learning developers to experiment with different learning algorithms, both in larger off-line dataset analysis and then directly in on-line applications.
 
-## Project ideas for users.
+## Project ideas for users
 
-1) Brain controlled robot arm - use a laser or projector to illuminate objects to move, e.g. chess pieces, or food to eat, and the BCI to select which piece to move and where too.  Lazy chess or snacking.
+1) Brain controlled robot arm - use a laser or projector to illuminate objects to move, e.g. chess pieces, or food to eat, and the BCI to select which piece to move and where too.  Lazy chess or snacking. See `here https://youtu.be/brN0YOg1AvY>`_ for an example.
 
 2) Neural `shazam <https://www.shazam.com/>`_ or Percieved music detection - Identify what music someone is listening to directly from their brain response. 
 
 3) Tactile BCI - Allow someone to answer yes-no-questions (or even spell words) by concentrating on different parts of their body.
+
+4) Brain Defenders -- Play `missle-command <https://en.wikipedia.org/wiki/Missile_Command>`_ using only your brain to pick where to send your defending missles.  Or go further and do it in `Virtual Reality <https://youtu.be/kKdPnhxWhow>`_
+
+5) Brain home-automation - Use brain control to change the color of your lights, like `Philips Hue control <https://youtu.be/6Vppourxiiw>`_, or to controll your TV.
+
+6) Real-world telekinesis -  Use your brain to shoot storm-troopers in a modern tin-can-alley, like `this <https://youtu.be/MsWDKX7Bqbs>`_
+
+7) Brain-Golf (or chrochet)-- play golf with your brain by controlling a `sphero <https://sphero.com/>` from a tablet.  See `Sphero control <https://youtu.be/0Bu0caBzeDw>`_ for some inspiration.
+
+8) Brain control of your phone?  Use our unity or iOS APIs to build a phone app controllable with your brain?Like `this <https://youtu.be/1BB0kgKJ0_w>`_
