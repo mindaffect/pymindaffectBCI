@@ -1,7 +1,7 @@
 Print Your Own Headset
 =========================
 
-Find the files on `Github <https://github.com/mindaffect/Headset>`_, and a quick tutorial on `YouTube <https://youtu.be/I6QnkIDc_q0>`_ of V1.0 made by Nikolai Schauer. Please read the printing guide before trying to print.
+Find the files on `Github <https://github.com/mindaffect/Headset>`_, and a quick tutorial on `YouTube <https://youtu.be/Aez5LA2C2G4>`_ of V1.0 made by Nikolai Schauer. Please read the printing guide before trying to print.
 
 Parts
 -----
