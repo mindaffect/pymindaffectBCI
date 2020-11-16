@@ -7,7 +7,7 @@ All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <h
 .. toctree::
    :maxdepth: 1
    
-   first_run
+   DIY_brain_computer_interfacing
    simple_output_tutorial
    simple_presentation_tutorial
    simple_integration_tutorial
