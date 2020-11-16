@@ -3,15 +3,16 @@ Project Ideas / Inspiration
 
 To inspire you with some things that you can build and brain control, checkout our demo videos:
 
-- `[Speller on the iPad <https://www.youtube.com/watch?v=OH1_Rxbq8ug>`_
-- `Lego BOOST laser control <https://www.youtube.com/watch?v=HeT2iP_3dxw>`_
-- `Philips Hue control <https://www.youtube.com/watch?v=i5vfPAPRlaY>`_
-- `Sphero control <https://www.youtube.com/watch?v=AFW_So9Bx-Q>`_
-- `VR gaming <https://www.youtube.com/watch?v=87wPorhvICU>`_
-- `Space Invaders <https://www.youtube.com/watch?v=ulKkQ1LjCdI>`_
-- `Speller iPhone <https://www.youtube.com/watch?v=SxbwNzbKSHs>`_
+- `Brain Control in Untity <https://youtu.be/ZH6YY4DUY7Y>`_
+- `Lego BOOST laser control <https://youtu.be/brN0YOg1AvY>`_
+- `Philips Hue control <https://youtu.be/6Vppourxiiw>`_
+- `Sphero control <https://youtu.be/0Bu0caBzeDw>`_
+- `VR gaming <https://youtu.be/kKdPnhxWhow>`_
+- `Space Invaders <https://youtu.be/Btgc2h1tRKQ>`_
+- `Speller iPhone <https://youtu.be/1BB0kgKJ0_w>`_
+- `Tin Throwing <https://youtu.be/MsWDKX7Bqbs>`_
 
 Other media:
-- `National Geographic feature <https://www.youtube.com/watch?v=zWmq9EV8ais>`_
-- `Helping ALS patient <https://www.youtube.com/watch?v=Vrlv_LWHKxc>`_
-- `TechCrunch Berlin <https://www.youtube.com/watch?v=9MAm_XHfS_k>`_
+- `National Geographic feature <https://youtu.be/sC5IY7FwTGQ>`_
+- `Helping ALS patient <https://youtu.be/DSB925fY9mk>`_
+- `TechCrunch Berlin <https://youtu.be/AJD_BIX2pyA>`_
