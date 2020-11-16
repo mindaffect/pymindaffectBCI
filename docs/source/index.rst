@@ -11,6 +11,7 @@ This page contains the documentation of the open source Brain Computer Interface
    :maxdepth: 2
    :caption: Setting up
    
+   overview
    installation
    amp_config
 
