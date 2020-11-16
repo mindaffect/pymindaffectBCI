@@ -169,50 +169,50 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
     """    
-    global hub_proc, acquisition_proc, decoder_proc
+    global hub_process, acquisition_process, decoder_process
     if acquisition is None: 
         acquisition = 'brainflow'
 
-    hub_proc = None
-    acquisition_proc = None
-    decoder_proc = None
+    hub_process = None
+    acquisition_process = None
+    decoder_process = None
     for retries in range(10):
         #--------------------------- HUB ------------------------------
         # start the utopia-hub process
-        if hub_proc is None or not hub_proc.poll() is None:
+        if hub_process is None or not hub_process.poll() is None:
             try:
-                hub_proc = startHubProcess(label=label, logdir=logdir)
+                hub_process = startHubProcess(label=label, logdir=logdir)
             except:
-                hub_proc = None
+                hub_process = None
                 traceback.print_exc()
 
         #---------------------------acquisition ------------------------------
-        if acquisition_proc is None or not acquisition_proc.is_alive():
+        if acquisition_process is None or not acquisition_process.is_alive():
             try:
-                acquisition_proc = startacquisitionProcess(acquisition, acq_args, label=label, logdir=logdir)
+                acquisition_process = startacquisitionProcess(acquisition, acq_args, label=label, logdir=logdir)
             except:
-                acquisition_proc = None
+                acquisition_process = None
                 traceback.print_exc()
 
         #---------------------------DECODER ------------------------------
         # start the decoder process - with default settings for a noise-tag
-        if decoder_proc is None or not decoder_proc.is_alive():
+        if decoder_process is None or not decoder_process.is_alive():
             try:
-                decoder_proc = startDecoderProcess(decoder, decoder_args, label=label, logdir=logdir)
+                decoder_process = startDecoderProcess(decoder, decoder_args, label=label, logdir=logdir)
             except:
-                decoder_proc = None
+                decoder_process = None
                 traceback.print_exc()
 
         # terminate if all started successfully
         # check all started up and running..
         component_failed=False
-        if hub_proc is None or hub_proc.poll() is not None:
+        if hub_process is None or hub_process.poll() is not None:
             print("Hub didn't start correctly!")
             component_failed=True
-        if acquisition_proc is None or not acquisition_proc.is_alive():
+        if acquisition_process is None or not acquisition_process.is_alive():
             print("Acq didn't start correctly!")
             component_failed=True
-        if decoder_proc is None or not decoder_proc.is_alive():
+        if decoder_process is None or not decoder_process.is_alive():
             print("Decoder didn't start correctly!")
             component_failed=True
 
@@ -222,16 +222,16 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         else:
             sleep(1)
 
-    if hub_proc is None or not hub_proc.poll() is None:
+    if hub_process is None or not hub_process.poll() is None:
         print("Hub didn't start correctly!")
-        shutdown(hub_proc,acquisition_proc,decoder_proc)
+        shutdown(hub_process,acquisition_process,decoder_process)
         raise ValueError("Hub didn't start correctly!")
-    if acquisition_proc is None or not acquisition_proc.is_alive():
+    if acquisition_process is None or not acquisition_process.is_alive():
         print("Acq didn't start correctly!")
-        shutdown(hub_proc,acquisition_proc,decoder_proc)
+        shutdown(hub_process,acquisition_process,decoder_process)
         raise ValueError("acquisition didn't start correctly!")
-    if decoder_proc is None or not decoder_proc.is_alive():
-        shutdown(hub_proc,acquisition_proc,decoder_proc)
+    if decoder_process is None or not decoder_process.is_alive():
+        shutdown(hub_process,acquisition_process,decoder_process)
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
@@ -271,30 +271,30 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
 
     #--------------------------- SHUTDOWN ------------------------------
     # shutdown the background processes
-    shutdown(hub_proc, acquisition_proc, decoder_proc)
+    shutdown(hub_process, acquisition_process, decoder_process)
 
 
 def check_is_running(hub=None, acquisition=None, decoder=None):
     """check if the background processes are still running
 
     Args:
-        hub_proc ([type], optional): the hub subprocess. Defaults to hub_proc.
-        acquisition_proc ([type], optional): the acquisation subprocess. Defaults to acquisition_proc.
-        decoder_proc ([type], optional): the decoder subprocess. Defaults to decoder_proc.
+        hub_process ([type], optional): the hub subprocess. Defaults to hub_process.
+        acquisition_process ([type], optional): the acquisation subprocess. Defaults to acquisition_process.
+        decoder_process ([type], optional): the decoder subprocess. Defaults to decoder_process.
 
     Returns:
         bool: true if all are running else false
     """
     # use module globals if not given?
     if hub is None: 
-        global hub_proc
-        hub = hub_proc
+        global hub_process
+        hub = hub_process
     if acquisition is None:
-        global acquisition_proc
-        acquisition = acquisition_proc
+        global acquisition_process
+        acquisition = acquisition_process
     if decoder is None:
-        global decoder_proc
-        decoder = decoder_proc
+        global decoder_process
+        decoder = decoder_process
 
     isrunning=True
     if hub is None or not hub.poll() is None:
@@ -312,20 +312,20 @@ def shutdown(hub=None, acquisition=None, decoder=None):
     """shutdown any background processes started for the BCI
 
     Args:
-        hub (subprocess, optional): handle to the hub subprocess object. Defaults to hub_proc.
-        acquisition (subprocess, optional): the acquisatin subprocess object. Defaults to acquisition_proc.
-        decoder (subprocess, optional): the decoder subprocess object. Defaults to decoder_proc.
+        hub (subprocess, optional): handle to the hub subprocess object. Defaults to hub_process.
+        acquisition (subprocess, optional): the acquisatin subprocess object. Defaults to acquisition_process.
+        decoder (subprocess, optional): the decoder subprocess object. Defaults to decoder_process.
     """    
     # use module globals if not given?
     if hub is None: 
-        global hub_proc
-        hub = hub_proc
+        global hub_process
+        hub = hub_process
     if acquisition is None:
-        global acquisition_proc
-        acquisition = acquisition_proc
+        global acquisition_process
+        acquisition = acquisition_process
     if decoder is None:
-        global decoder_proc
-        decoder = decoder_proc
+        global decoder_process
+        decoder = decoder_process
 
     hub.terminate()
 
@@ -342,9 +342,9 @@ def shutdown(hub=None, acquisition=None, decoder=None):
     
     hub.wait()
 #    if os.name == 'nt': # hard kill
-#        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_proc.pid))
+#        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_process.pid))
 #    else: # hard kill
-#        os.kill(hub_proc.pid, signal.SIGTERM)
+#        os.kill(hub_process.pid, signal.SIGTERM)
     #print('exit online_bci')
 
 
