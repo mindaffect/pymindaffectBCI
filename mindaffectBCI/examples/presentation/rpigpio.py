@@ -26,24 +26,23 @@ import time
 from mindaffectBCI.noisetag import Noisetag
 from gpiozero import LED 
 
-
 nt=None
 leds=[]
 objIDs=[]
-framerate_hz = 60
+frameduration_s = 1/60
 
 #---------------------------------------------------------------------
 def draw():
-    """draw the LED state"""
+    """draw the GPIO output with the flicker state as obtained from the noisetag object"""
     #print("Background state"+str(backgroundstate))
     # get the updated stimulus state info
-    global nt, leds, framerate
+    global nt, leds, frameduration_s
     nt.updateStimulusState()
     stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
     target_state = stimulus_state[target_idx] if target_idx>=0 else -1
 
     # BODGE: sleep to limit the stimulus update rate
-    time.sleep(1/framerate_hz)
+    time.sleep(frameduration_s)
     # update the state of each LED to match the stimulusstate
     for i,led in enumerate(leds): 
         # get the background state of this cell
@@ -59,13 +58,29 @@ def draw():
     nt.sendStimulusState()
 
 def selectionHandler(objID):
+    """function called back when a BCI selection is made which prints something
+    Modify this function if you would like something more exciting to happen on BCI selection
+
+    Args:
+        objID (int): the ID number of the selected object
+    """    
     print("Selection: objID=%d"%(objID))
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init(numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
-    global nt, objIDs, leds
+def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
+    """setup the pi for GPIO based presentation
+
+    Args:
+        framerate_hz (float, optional): framerate for the flicker. Defaults to 15.
+        numleds (int, optional): number of leds to flicker. Defaults to 2.
+        led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
+        nCal (int, optional): number of calibration trials to use. Defaults to 10.
+        nPred (int, optional): number of prediction trials to use. Defaults to 10.
+    """    
+    global nt, objIDs, leds, frameduration_s
     
+    frameduration_s = 1.0/framerate_hz
     if led2gpiopin is None:
         led2gpiopin = list(range(numleds))
     leds=[]
@@ -82,8 +97,20 @@ def init(numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 
-if __name__=="__main__":
-    framerate_hz = 15
-    init(numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=100)
+
+def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=10):
+    """run the pi GPIO based presentation 
+
+    Args:
+        framerate_hz (float, optional): framerate for the flicker. Defaults to 15.
+        numleds (int, optional): number of leds to flicker. Defaults to 2.
+        led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
+        nCal (int, optional): number of calibration trials to use. Defaults to 10.
+        nPred (int, optional): number of prediction trials to use. Defaults to 10.
+    """    
+    init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=nCal, nPred=nPred)
     while True :
         draw()
+
+if __name__=="__main__":
+    run(framerate_hz = 15, numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=100)
