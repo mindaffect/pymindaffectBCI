@@ -5,7 +5,7 @@ Evoked Response Brain Computer Interfaces, which are also called or Event Relate
 
 The schematic below illustrates the general principles of (visual) ERP BCIs:
 
-<img src='images/VisualEvokedResponseBCI.png'>
+.. image:: images/VisualEvokedResponseBCI.png
 
 To briefly describe this schematic, the aim of a BCI in general is to control an output device (in this case a robot arm) with your thoughts. In this specific case we control the robot arm by selecting actions perform as flickering virtual buttons on a tablet screen.  (See Mindaffect LABS for a video of the system in action) :
 
