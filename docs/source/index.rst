@@ -28,6 +28,7 @@ This page contains the documentation of the open source Brain Computer Interface
    :maxdepth: 2
    :caption: Reference
 
+   how_an_evoked_bci_works
    FAQ
    modules
    
