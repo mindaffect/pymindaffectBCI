@@ -140,7 +140,7 @@ class InstructionScreen(Screen):
         global flipstats
         flipstats.update_statistics()
         self.framerate.begin_update()
-        self.framerate.text = "{:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma)
+        self.framerate.text = "{:4.1f} +/-{:4.1f}ms".format(flipstats.median,flipstats.sigma)
         self.framerate.end_update()
         self.framerate.draw()
 
@@ -987,7 +987,7 @@ class SelectionGridScreen(Screen):
         if self.framerate_display:
             global flipstats
             flipstats.update_statistics()
-            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(flipstats.med,flipstats.sigma))
+            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(flipstats.median,flipstats.sigma))
 
 
 
@@ -1049,9 +1049,11 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.Q:ExptPhases.Quit}
 
     def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
+                 calibration_trialduration=4.2, prediction_trialduration=10,  waitduration=1, feedbackduration=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1):
+                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1,
+                 calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
@@ -1066,9 +1068,27 @@ class ExptScreenManager(Screen):
         self.selectionGrid = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
+
         self.nCal = nCal
         self.nPred = nPred
         self.framesperbit = framesperbit
+        self.calibration_trialduration = calibration_trialduration
+        self.prediction_trialduration = prediction_trialduration
+        self.waitduration = waitduration
+        self.feedbackduration = feedbackduration
+        self.calibration_args = calibration_args if calibration_args else dict()
+        self.prediction_args = prediction_args if prediction_args else dict()
+        self.calibration_args['nTrials']=self.nCal
+        self.prediction_args['nTrials']=self.nPred
+        self.calibration_args['framesperbit'] = self.framesperbit
+        self.prediction_args['framesperbit'] = self.framesperbit
+        self.calibration_args['numframes'] = self.calibration_trialduration / isi
+        self.prediction_args['numframes'] = self.prediction_trialduration / isi
+        self.calibration_args['waitframes'] = self.waitduration / isi
+        self.prediction_args['waitframes'] = self.waitduration / isi
+        self.calibration_args['feedbackframes'] = self.feedbackduration / isi
+        self.prediction_args['feedbackframes'] = self.feedbackduration / isi
+
         self.fullscreen_stimulus = fullscreen_stimulus
         self.selectionThreshold = selectionThreshold
         self.simple_calibration = simple_calibration
@@ -1151,7 +1171,11 @@ class ExptScreenManager(Screen):
             self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence('Calibration: look at the green cue.')
 
-            self.selectionGrid.noisetag.startCalibration(nTrials=self.nCal, numframes=4.2/isi, waitduration=1, framesperbit=self.framesperbit)
+            self.calibration_args['framesperbit'] = self.framesperbit
+            self.calibration_args['numframes'] = self.calibration_trialduration / isi
+            self.calibration_args['selectionThreshold']=self.selectionThreshold
+
+            self.selectionGrid.noisetag.startCalibration(**self.calibration_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
 
@@ -1181,7 +1205,11 @@ class ExptScreenManager(Screen):
             self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
+            self.prediction_args['framesperbit'] = self.framesperbit
+            self.prediction_args['numframes'] = self.prediction_trialduration / isi
+            self.prediction_args['selectionThreshold']=self.selectionThreshold
+
+            self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1203,7 +1231,12 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold)
+
+            self.prediction_args['framesperbit'] = self.framesperbit
+            self.prediction_args['numframes'] = self.prediction_trialduration * isi
+            self.prediction_args['selectionThreshold']=self.selectionThreshold
+            
+            self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1359,9 +1392,10 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThreshold:float=.1,
+def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, stimfile=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1):
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1,
+        calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1373,6 +1407,10 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
         simple_calibration (bool, optional): flag if we only show the *target* during calibration.  Defaults to False
+        calibration_trialduration (float, optional): flicker duration for the calibration trials. Defaults to 4.2.
+        prediction_trialduration (float, optional): flicker duration for the prediction trials.  Defaults to 10.
+        calibration_args (dict, optional): additional keyword arguments to pass to `noisetag.startCalibration`. Defaults to None.
+        prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
     """
     global nt, ss
     # N.B. init the noise-tag first, so asks for the IP
@@ -1410,7 +1448,10 @@ def run(symbols=None, ncal:int=10, npred:int=10, stimfile=None, selectionThresho
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, bgFraction=bgFraction)
+                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
+                        bgFraction=bgFraction, 
+                        calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
+                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
 
     # set per-frame callback to the draw function
     if drawrate > 0:
