@@ -254,7 +254,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         except:
             traceback.print_exc()
 
-    elif presentation == 'hue':
+    elif presentation == 'hue' or presentation == "colorwheel":
         try:
             from mindaffectBCI.examples.presentation import colorwheel
             colorwheel.run(**presentation_args)

@@ -26,7 +26,7 @@ import sys
 import time
 import math
 
-from mindaffectBCI.noisetag import Noisetag
+from mindaffectBCI.noisetag import Noisetag, sumstats
 
 class Quad:
     '''object to hold a single graphics quad'''
@@ -70,6 +70,7 @@ class DrawWindow(pyglet.window.Window):
         self.objIDs=[]
         self.noisetag=None
         self.lastfliptime=0
+        self.flipstats = sumstats()
         self.fliplogtime=self.lastfliptime
         self.noisetag=noisetag
         

@@ -1083,9 +1083,10 @@ class sumstats:
         self.buf=[0]*(bufsize) # ring-buffer, 700 entries
         self.N=0
         self.sx=0
-        self.mu=-1
+        self.mu=None
+        self.median=None
         self.sx2=0
-        self.sigma2=-1
+        self.sigma2=None
         self.minx=0
         self.maxx=0
 
@@ -1129,7 +1130,7 @@ class sumstats:
         import statistics
         buf = self.buf[:min(len(self.buf),self.N)]
         self.mu = statistics.mean(buf) if len(buf)>0 else -1
-        self.med= statistics.median(buf) if len(buf)>0 else -1
+        self.median= statistics.median(buf) if len(buf)>0 else -1
         self.sigma=statistics.stdev(buf) if len(buf)>2 else -1
         self.min = min(buf) if len(buf)>0 else -1
         self.max = max(buf) if len(buf)>0 else -1
