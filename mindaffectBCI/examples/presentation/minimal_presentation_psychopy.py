@@ -23,6 +23,10 @@
 from mindaffectBCI.noisetag import Noisetag, sumstats
 from psychopy import visual, core
 
+nt = None
+opto = None
+squares = None
+
 # dictionary mapping from stimulus-state to colors
 state2color={0:(-.8,-.8,-.8), # off=grey
              1:(1,1,1),    # on=white
@@ -30,15 +34,14 @@ state2color={0:(-.8,-.8,-.8), # off=grey
              3:(-1,-1,1)}    # feedback=blue
 def draw(time):
     '''draw the display with colors from noisetag'''
-    global lastfliptime, window
+    global lastfliptime, nt, opto, squares
     # send info on the *previous* stimulus state, with the recorded vsync time (if available)
     fliptime = lastfliptime if lastfliptime is not None else nt.getTimeStamp()
     nt.sendStimulusState(timestamp=fliptime)
     # update and get the new stimulus state to display
     try : 
         nt.updateStimulusState()
-        stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
-        target_state = stimulus_state[target_idx] if target_idx>=0 else -1
+        stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
     except StopIteration :
         exit() # terminate app when noisetag is done
         return
@@ -63,32 +66,44 @@ lastfliptime=0
 def selectionHandler(objID):
     print("Selected: %d"%(objID))    
 
+def init(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
+    global lastfliptime, nt, opto, squares
+    # Initialize the noise-tagging connection
+    nt = Noisetag()
+    nt.connect(timeout_ms=5000)
+    nt.addSelectionHandler(selectionHandler)
+    # tell the noisetag framework to run a full : calibrate->prediction sequence
+    nt.setnumActiveObjIDs(2)
+    nt.startExpt(nCal=nCal,nPred=nPred,duration=duration,framesperbit=framesperbit,cuedprediction=cuedprediction)
 
-# Initialize the noise-tagging connection
-nt = Noisetag()
-nt.connect(timeout_ms=5000)
-nt.addSelectionHandler(selectionHandler)
-# tell the noisetag framework to run a full : calibrate->prediction sequence
-nt.setnumActiveObjIDs(2)
-nt.startExpt(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True)
+    # Initialize the drawing window
+    # make a default window, with fixed size for simplicty, and vsync for timing
+    if False:
+        window = visual.Window(size=(640,480),color=(-1,-1,-1))
+    else:
+        window = visual.Window(fullscr=True,color=(-1,-1,-1))
 
-# Initialize the drawing window
-# make a default window, with fixed size for simplicty, and vsync for timing
-if False:
-    window = visual.Window(size=(640,480),color=(-1,-1,-1))
-else:
-    window = visual.Window(fullscr=True,color=(-1,-1,-1))
+    # grid
+    squares = [visual.Rect(window,pos=(-.5,0),size=(.4,.4),autoDraw=True),
+            visual.Rect(window,pos=(.5,0),size=(.4,.4),autoDraw=True)]
+    # opto-sensor
+    opto = visual.Rect(window,pos=(-1,1),size=(.4,.4),autoDraw=True)
 
-# grid
-squares = [visual.Rect(window,pos=(-.5,0),size=(.4,.4),autoDraw=True),
-           visual.Rect(window,pos=(.5,0),size=(.4,.4),autoDraw=True)]
-# opto-sensor
-opto = visual.Rect(window,pos=(-1,1),size=(.4,.4),autoDraw=True)
+def run(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
+    """run the psychopy based presentation 
 
-# run the main loop
-clock = core.Clock()
-while True:
-    draw(clock.getTime())
-    ffliptime = window.flip() # flip-time in seconds...
-    lastfliptime = nt.getTimeStamp()
-    #lastfliptime = ffliptime/1000.0 # don't use, need to fix hearbeats also!
+    Args:
+        nCal (int, optional): number of calibration trials to use. Defaults to 10.
+        nPred (int, optional): number of prediction trials to use. Defaults to 10.
+    """    
+    init(nCal,nPred,duration,framesperbit,cuedprediction)
+    # run the main loop
+    clock = core.Clock()
+    while True:
+        draw(clock.getTime())
+        ffliptime = window.flip() # flip-time in seconds...
+        lastfliptime = nt.getTimeStamp()
+        #lastfliptime = ffliptime/1000.0 # don't use, need to fix hearbeats also!
+
+if __name__=="__main__":
+    run()
