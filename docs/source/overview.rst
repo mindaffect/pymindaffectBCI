@@ -6,7 +6,7 @@ The `mindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>`_ is an open-
 What makes mindaffectBCI different
 ----------------------------------
 
-There are already a number excellent of open-source BCI frameworks out there, such as `bci2000 <www.bci2000.org>`_ and `openVibe <http://openvibe.inria.fr/>`_, with large active user communities.   So why develop another one?
+There are already a number excellent of open-source BCI frameworks out there, such as `bci2000 <https://www.bci2000.org>`_ and `openVibe <http://openvibe.inria.fr/>`_, with large active user communities.   So why develop another one?
 
 When we looked at the existing frameworks, we noticed that whilst they were great and extreemly flexible, they weren't so easy to use for developing end-user applications.   So they didn't quite meet our objective of making it easy to develop new modes of interaction using brain signals.  
 
@@ -26,7 +26,7 @@ User Interface Designers
 
 The main target users for the mindaffectBCI are Application Developers who would like to add brain control to their applications, for example to add brain controls to a smart TV application.  Within that we provide tools for particular user groups.
 
- * Game Designers:  Do you want to add brain controls to an exsiting game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platorm way, using our `unity <unity.com>_` plugin available `here <github.com/mindaffect/unitymindaffectBCI>`.
+ * Game Designers:  Do you want to add brain controls to an exsiting game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platorm way, using our `unity <https://unity.com>`_ plugin available `here <https://github.com/mindaffect/unitymindaffectBCI>`_.
 
  * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for exmaple for fewer or more letters, or control of novel output devices.  
  
@@ -50,7 +50,7 @@ Modern BCIs (including our own) rely heavily on machine learning techniques to p
 Project ideas for users
 -----------------------
 
-1) Brain controlled robot arm - use a laser or projector to illuminate objects to move, e.g. chess pieces, or food to eat, and the BCI to select which piece to move and where too.  Lazy chess or snacking. See `here https://youtu.be/brN0YOg1AvY>`_ for an example.
+1) Brain controlled robot arm - use a laser or projector to illuminate objects to move, e.g. chess pieces, or food to eat, and the BCI to select which piece to move and where too.  Lazy chess or snacking. See `here <https://youtu.be/brN0YOg1AvY>`_ for an example.
 
 2) Neural `shazam <https://www.shazam.com/>`_ or Percieved music detection - Identify what music someone is listening to directly from their brain response. 
 
