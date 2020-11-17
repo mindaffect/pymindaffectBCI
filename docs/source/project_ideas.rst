@@ -11,6 +11,7 @@ To inspire you with some things that you can build and brain control, checkout o
 - `Space Invaders <https://youtu.be/Btgc2h1tRKQ>`_
 - `Speller iPhone <https://youtu.be/1BB0kgKJ0_w>`_
 - `Tin Throwing <https://youtu.be/MsWDKX7Bqbs>`_
+- `Brain Controlled TV Remote <https://youtu.be/98E4-BglDp8>`_
 
 Other media:
 - `National Geographic feature <https://youtu.be/sC5IY7FwTGQ>`_
