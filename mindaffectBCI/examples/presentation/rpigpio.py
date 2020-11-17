@@ -98,19 +98,19 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
     nt.addSelectionHandler(selectionHandler)
 
 
-def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=10):
+def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10):
     """run the pi GPIO based presentation 
 
     Args:
         framerate_hz (float, optional): framerate for the flicker. Defaults to 15.
         numleds (int, optional): number of leds to flicker. Defaults to 2.
         led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
-        nCal (int, optional): number of calibration trials to use. Defaults to 10.
-        nPred (int, optional): number of prediction trials to use. Defaults to 10.
+        ncal (int, optional): number of calibration trials to use. Defaults to 10.
+        npred (int, optional): number of prediction trials to use. Defaults to 10.
     """    
-    init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=nCal, nPred=nPred)
+    init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=ncal, nPred=npred)
     while True :
         draw()
 
 if __name__=="__main__":
-    run(framerate_hz = 15, numleds=1, led2gpiopin=(2,3,4), nCal=10, nPred=100)
+    run(framerate_hz = 15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=100)

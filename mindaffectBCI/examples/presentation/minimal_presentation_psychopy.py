@@ -26,6 +26,7 @@ from psychopy import visual, core
 nt = None
 opto = None
 squares = None
+window = None
 
 # dictionary mapping from stimulus-state to colors
 state2color={0:(-.8,-.8,-.8), # off=grey
@@ -41,7 +42,8 @@ def draw(time):
     # update and get the new stimulus state to display
     try : 
         nt.updateStimulusState()
-        stimulus_state,target_state,objIDs,sendEvents=nt.getStimulusState()
+        stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
+        target_state = stimulus_state[target_idx] if target_idx>=0 else -1
     except StopIteration :
         exit() # terminate app when noisetag is done
         return
@@ -66,8 +68,8 @@ lastfliptime=0
 def selectionHandler(objID):
     print("Selected: %d"%(objID))    
 
-def init(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
-    global lastfliptime, nt, opto, squares
+def init(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True, fullscreen=False):
+    global window, lastfliptime, nt, opto, squares
     # Initialize the noise-tagging connection
     nt = Noisetag()
     nt.connect(timeout_ms=5000)
@@ -78,10 +80,10 @@ def init(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
 
     # Initialize the drawing window
     # make a default window, with fixed size for simplicty, and vsync for timing
-    if False:
-        window = visual.Window(size=(640,480),color=(-1,-1,-1))
-    else:
+    if fullscreen:
         window = visual.Window(fullscr=True,color=(-1,-1,-1))
+    else:
+        window = visual.Window(size=(640,480),color=(-1,-1,-1))
 
     # grid
     squares = [visual.Rect(window,pos=(-.5,0),size=(.4,.4),autoDraw=True),
@@ -89,14 +91,15 @@ def init(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
     # opto-sensor
     opto = visual.Rect(window,pos=(-1,1),size=(.4,.4),autoDraw=True)
 
-def run(nCal=5,nPred=10,duration=4,framesperbit=1,cuedprediction=True):
+def run(ncal=5,npred=10,duration=4,framesperbit=1,cuedprediction=True,fullscreen=False,**kwargs):
     """run the psychopy based presentation 
 
     Args:
-        nCal (int, optional): number of calibration trials to use. Defaults to 10.
-        nPred (int, optional): number of prediction trials to use. Defaults to 10.
-    """    
-    init(nCal,nPred,duration,framesperbit,cuedprediction)
+        ncal (int, optional): number of calibration trials to use. Defaults to 10.
+        npred (int, optional): number of prediction trials to use. Defaults to 10.
+    """
+    global window    
+    init(ncal,npred,duration,framesperbit,cuedprediction,fullscreen=fullscreen)
     # run the main loop
     clock = core.Clock()
     while True:
