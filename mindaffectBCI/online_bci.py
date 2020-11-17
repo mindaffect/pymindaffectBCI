@@ -247,7 +247,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         except:
             traceback.print_exc()
 
-    elif presentation == 'sigviewer':
+    elif presentation == 'sigviewer' or presentation=='none':
         try:
             from mindaffectBCI.decoder.sigViewer import sigViewer
             sigViewer()
@@ -261,7 +261,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         except:
             traceback.print_exc()
 
-    elif isinstance(presentation,str):
+    elif isinstance(presentation,str) and not presentation == 'none':
         try:
             import importlib
             pres = importlib.import_module(presentation)
@@ -271,7 +271,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
             traceback.print_exc()
     
     elif presentation is None or presentation is False:
-        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()`')
+        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
         return
 
     # TODO []: pop-up a monitoring object / dashboard!
