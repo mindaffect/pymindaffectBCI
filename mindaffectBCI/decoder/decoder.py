@@ -686,6 +686,8 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                                  stimulus_preprocessor=None,
                                  timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
+    ui.update()
+    
     # use a multi-cca for the model-fitting
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
@@ -732,9 +734,6 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             for i in plt.get_fignums():
                 plt.figure(i).canvas.flush_events()
 
-def mainloop(*args,**kwargs):
-    run(*args,**kwargs)
-
 if  __name__ == "__main__":
     import argparse
     import json
@@ -750,6 +749,7 @@ if  __name__ == "__main__":
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
     parser.add_argument('--logdir', type=str, help='directory to save log/data files', default='~/Desktop/logs')
+    parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
 

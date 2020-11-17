@@ -71,18 +71,18 @@ class InstructionScreen(Screen):
         self.isDone = False
         self.clearScreen = True
         # initialize the instructions screen
-        self.instructLabel = pyglet.text.Label(x=window.width//2,
-                                               y=window.height//2,
+        self.instructLabel = pyglet.text.Label(x=self.window.width//2,
+                                               y=self.window.height//2,
                                                anchor_x='center',
                                                anchor_y='center',
                                                font_size=24,
                                                color=(255, 255, 255, 255),
                                                multiline=True,
-                                               width=int(window.width*.8))
+                                               width=int(self.window.width*.8))
         self.set_text(text)
 
         # add the framerate box
-        self.framerate=pyglet.text.Label("", font_size=12, x=window.width, y=window.height,
+        self.framerate=pyglet.text.Label("", font_size=12, x=self.window.width, y=self.window.height,
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top')
         
@@ -91,9 +91,9 @@ class InstructionScreen(Screen):
                                                os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..'))
             logo = pyglet.image.load(logo)
         logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-        self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16)
-        self.logo.update(scale_x=window.width*.1/logo.width, 
-                         scale_y=window.height*.1/logo.height)
+        self.logo = pyglet.sprite.Sprite(logo,self.window.width,self.window.height-16)
+        self.logo.update(scale_x=self.window.width*.1/logo.width, 
+                         scale_y=self.window.height*.1/logo.height)
 
     def reset(self):
         self.isRunning = False
@@ -418,7 +418,7 @@ class ElectrodequalityScreen(Screen):
         self.batch      = pyglet.graphics.Batch()
         self.background = pyglet.graphics.OrderedGroup(0)
         self.foreground = pyglet.graphics.OrderedGroup(1)
-        winw, winh = window.get_size()
+        winw, winh = self.window.get_size()
         r = (winh*.8)/(nch+1)
         # TODO[X] use bounding box
         self.chrect = (int(winw*.1), 0, r, r) # bbox for each signal, (x, y, w, h)
@@ -742,14 +742,25 @@ class SelectionGridScreen(Screen):
         self.liveSelections = value
 
     def getSymb(self,idx):
-        ii=0
-        for i in range(len(self.symbols)): # rows
-            for j in range(len(self.symbols[i])): # cols
-                if self.symbols[i][j] is None: continue
-                if ii==idx:
+        ii=0 # linear index
+        for i in range(len(self.symbols)):
+            for j in range(len(self.symbols[i])):
+                if idx==(i,j) or idx==ii :
                     return self.symbols[i][j]
                 ii = ii + 1
         return None
+    
+    def setSymb(self,idx,val):
+        ii=0
+        for i in range(len(self.symbols)):
+            for j in range(len(self.symbols[i])):
+                if idx==ii or idx==(i,j):
+                    self.symbols[i][j] = val
+                    break
+                ii = ii + 1
+        # update the label object to the new value
+        if self.labels[ii]:
+            self.labels[ii].text=val
 
     def doSelection(self, objID):
         if self.liveSelections == True:
@@ -779,14 +790,15 @@ class SelectionGridScreen(Screen):
 
     def set_grid(self, symbols=None, objIDs=None, bgFraction=.3, sentence="What you type goes here", logo=None):
         '''set/update the grid of symbols to be selected from'''
-        winw, winh=window.get_size()
+        winw, winh=self.window.get_size()
         # tell noisetag which objIDs we are using
         if symbols is not None:
             self.symbols = symbols
         else:
             symbols = self.symbols
         # Number of non-None symbols
-        nsymb      = sum([sum([(s is not None) for s in x ]) for x in symbols])
+        nsymb      = sum([len(x) for x in symbols])
+        #nsymb      = sum([len(x) sum([(s is not None) for s in x ]) for x in symbols])
 
         if objIDs is not None:
             self.objIDs = objIDs
@@ -819,8 +831,8 @@ class SelectionGridScreen(Screen):
             y = (gridheight-1-i-1)/gridheight*winh # top-edge cell
             for j in range(len(symbols[i])): # cols
                 # skip unused positions
-                if symbols[i][j] is None: continue
                 idx = idx+1
+                if symbols[i][j] is None: continue
                 x = j/gridwidth*winw # left-edge cell
                 # create a 1x1 white image for this grid cell
                 img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
@@ -866,13 +878,13 @@ class SelectionGridScreen(Screen):
             logo = search_directories_for_file(logo,os.path.dirname(__file__),os.path.join(os.path.dirname(__file__),'..','..','..'))
             logo = pyglet.image.load(logo)
             logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-            self.logo = pyglet.sprite.Sprite(logo,window.width,window.height-16) # sprite a window top-right
+            self.logo = pyglet.sprite.Sprite(logo, self.window.width, self.window.height-16) # sprite a window top-right
         if self.logo:
             self.logo.batch = self.batch
             self.logo.group = self.foreground
-            self.logo.update(x=window.width,  y=window.height-16,
-                            scale_x=window.width*.1/logo.width, 
-                            scale_y=window.height*.1/logo.height)
+            self.logo.update(x=self.window.width,  y=self.window.height-16,
+                            scale_x=self.window.width*.1/logo.width, 
+                            scale_y=self.window.height*.1/logo.height)
 
 
     def is_done(self):
@@ -893,7 +905,7 @@ class SelectionGridScreen(Screen):
         if not self.isRunning:
             self.isRunning=True
         self.framestart=self.noisetag.getTimeStamp()
-        winflip = window.lastfliptime
+        winflip = self.window.lastfliptime
         if winflip > self.framestart or winflip < self.frameend:
             print("Error: frameend={} winflip={} framestart={}".format(self.frameend,winflip,self.framestart))
         self.nframe = self.nframe+1
@@ -928,7 +940,7 @@ class SelectionGridScreen(Screen):
 
         # draw the white background onto the surface
         if self.clearScreen:
-            window.clear()
+            self.window.clear()
         # update the state
         # TODO[]: iterate over objectIDs and match with those from the
         #         stimulus state!
@@ -938,8 +950,10 @@ class SelectionGridScreen(Screen):
                 ssi = stimulus_state[idx]
                 if self.target_only and not target_idx == idx :
                     ssi = 0
-                self.objects[idx].color=self.state2color[ssi]
-                self.labels[idx].color=(255,255,255,255) # reset labels
+                if self.objects[idx]:
+                    self.objects[idx].color=self.state2color[ssi]
+                if self.labels[idx]:
+                    self.labels[idx].color=(255,255,255,255) # reset labels
             except KeyError:
                 pass
 
@@ -1209,7 +1223,7 @@ class ExptScreenManager(Screen):
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
 
-            self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
+            self.selectionGrid.noisetag.startPrediction(cuedprediction=True, **self.prediction_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1231,9 +1245,8 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
 
-
             self.prediction_args['framesperbit'] = self.framesperbit
-            self.prediction_args['numframes'] = self.prediction_trialduration * isi
+            self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
             
             self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
@@ -1336,7 +1349,6 @@ def initPyglet(fullscreen=False):
     window.last_key_press=None
     window.last_text=None
 
-    global nframe; nframe=0
     # override window's flip method to record the exact *time* the
     # flip happended
     window.flip = types.MethodType(timedflip, window)
@@ -1363,6 +1375,24 @@ def draw(dt):
         print('app exit')
         pyglet.app.exit()
     #print('.', end='', flush=True)
+
+def run_screen(screen:Screen, win=None, drawrate=-1):
+    global ss, window, nframe
+    nframe = 0
+    ss = screen
+    if win is not None:
+        window = win 
+    # set per-frame callback to the draw function
+    if drawrate > 0:
+        # slow down for debugging
+        pyglet.clock.schedule_interval(draw, drawrate)
+    else:
+        # call the draw method as fast as possible, i.e. at video frame rate!
+        pyglet.clock.schedule(draw)
+    # mainloop
+    pyglet.app.run()
+    pyglet.app.EventLoop().exit()
+    window.set_visible(False)
 
 def load_symbols(fn):
     """load a screen layout from a text file
@@ -1412,7 +1442,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
         calibration_args (dict, optional): additional keyword arguments to pass to `noisetag.startCalibration`. Defaults to None.
         prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
     """
-    global nt, ss
+    global nt, ss, window
     # N.B. init the noise-tag first, so asks for the IP
     if stimfile is None:
         stimfile = 'mgold_61_6521_psk_60hz.txt'
@@ -1425,7 +1455,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
         nt.connect(host, queryifhostnotfound=False)
 
     # init the graphics system
-    initPyglet(fullscreen=fullscreen)
+    window = initPyglet(fullscreen=fullscreen)
 
     # the logical arrangement of the display matrix
     if symbols is None:
@@ -1453,20 +1483,9 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
                         calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
                         prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
 
-    # set per-frame callback to the draw function
-    if drawrate > 0:
-        # slow down for debugging
-        pyglet.clock.schedule_interval(draw, drawrate)
-    else:
-        # call the draw method as fast as possible, i.e. at video frame rate!
-        pyglet.clock.schedule(draw)
-    # mainloop
-    pyglet.app.run()
-    pyglet.app.EventLoop().exit()
-    window.set_visible(False)
+    run_screen(ss,drawrate)
 
-
-if __name__ == "__main__":
+def parse_args():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=10)
@@ -1482,6 +1501,9 @@ if __name__ == "__main__":
     parser.add_argument('--calibration_symbols',type=str,help='file name for the symbols grid to use for calibration',default=None)
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
+    return args
 
+if __name__ == "__main__":
+    args = parse_args()
     run(**vars(args))
 
