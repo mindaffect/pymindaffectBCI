@@ -11,6 +11,7 @@ There are already a number excellent of open-source BCI frameworks out there, su
 When we looked at the existing frameworks, we noticed that whilst they were great and extreemly flexible, they weren't so easy to use for developing end-user applications.   So they didn't quite meet our objective of making it easy to develop new modes of interaction using brain signals.  
 
 Our aim is to simplify or hide the brain-signals aspect of the BCI as much as possible (or wanted) and so allow developers to focus on their applications.  With this im mind mindaffectBCI is designed to be;
+
   * **modular** 
   * **cross-platorm** -- run on all major desktop OSs (talk to `us <info@mindaffect.nl>`_ if you are interested in mobile)
   * **hardware neutral** -- support (via `brainflow <https://github.com/OpenBCI/brainflow>`_) many existing amplifiers, with instructions to easily add more,
@@ -24,9 +25,12 @@ User Interface Designers
 ++++++++++++++++++++++++
 
 The main target users for the mindaffectBCI are Application Developers who would like to add brain control to their applications, for example to add brain controls to a smart TV application.  Within that we provide tools for particular user groups.
-    * Game Designers:  Do you want to add brain controls to an exsiting game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platorm way, using our `unity <unity.com>_` plugin available `here <github.com/mindaffect/unitymindaffectBCI>`.
-    * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for exmaple for fewer or more letters, or control of novel output devices.  
-    * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or LASERS(!!!) to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
+
+ * Game Designers:  Do you want to add brain controls to an exsiting game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platorm way, using our `unity <unity.com>_` plugin available `here <github.com/mindaffect/unitymindaffectBCI>`.
+
+ * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for exmaple for fewer or more letters, or control of novel output devices.  
+ 
+ * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or LASERS(!!!) to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
 
 Neuroscience Students and Researchers
 +++++++++++++++++++++++++++++++++++++
@@ -38,7 +42,9 @@ Machine Learning Engineers / DataScientists
 +++++++++++++++++++++++++++++++++++++++++++
 
 Modern BCIs (including our own) rely heavily on machine learning techniques to process the noisy data gathered from EEG sensors and cope with the high degree of variability in responses over different individuals and locations.  MindAffect firmly believes that with more sophiscated machine learning techniques more useful information can be extracted from even 'low quality' consumer grade EEG data.  What is really needed is a combination of more and larger datasets on which to train the algorithms and better techniques tuned to the specific issues of neural data.  The mindaffect BCI aims to facilitate this data lead approach to BCI in two ways. 
+
  * Firstly, by making it easier to rapidly gather relatively large EEG datasets by using consumer grade EEG devices and applications designed in your prefered application development framework.  For example, by using a raspberry Pi, headphones, and EEG headband and an openBCI ganglion to measure the brains response to different music types.
+
  * Secondly, by providing a `sklearn <scikit-learn.org>`_ compatiable interface for machine learning developers to experiment with different learning algorithms, both in larger off-line dataset analysis and then directly in on-line applications.
 
 Project ideas for users
