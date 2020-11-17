@@ -412,11 +412,15 @@ class SingleTrial(FSM):
                                         tgtState=3,
                                         sendEvents=False,
                                         numblinkframes=0))
+                else: # no selection do the intertrial
+                    print('3.wait')
+                    self.stimulusStateStack.push(
+                        HighlightObject(self.waitframes,-1))
                     
         else :
             raise StopIteration
         self.stagestart = self.utopiaController.getTimeStamp()
-        self.stage=self.stage+1
+        self.stage = self.stage+1
         
 class CalibrationPhase(FSM):
     """do a complete calibration phase with nTrials x CalibrationTrial
