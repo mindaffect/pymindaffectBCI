@@ -1,11 +1,11 @@
 ## Utopia : Message Specification
 
-[TOC]
-
 
 ### Purpose
 
 This document describes in simple terms the messages which are passed between the different components of the Utopia Noisetagging BCI system, and the structure used for the messages.  The message specification is *transport agnostic* in that the messages themselves may be sent over different ‘wire-protocols’, such as BTLE, UDP, TCP, etc.
+
+Note: This specification is intended for developing new low-level components to interface to the mindaffectBCI.  Most developers / users can directly use one of the provided higher-level APIs, such as [python](https://github.com/mindaffect/pymindaffectBCI), [java](https://github.com/mindaffect/javamindaffectBCI), [c#/unity](https://github.com/mindaffect/unitymindaffectBCI).
 
 
 ### Objectives
@@ -453,7 +453,7 @@ Note:
   <tr>
    <td colspan="2" >Purpose:
 <p>
-Provide the recogniser with updated information about the current stimulus state.
+Provide the decoder with updated information about the current stimulus state.
 <p>
 Note this message format is designed to allow for *stateless* updates with very small message sizes.  Thus, each message is a self-contained report of (part of) the stimulus state at a given time, allowing to cut simulus-state updates over multiple messages without having to worry about message sequence numbers etc.
 <p>
@@ -590,7 +590,7 @@ N.B. objectUID=0 is <strong>reserved </strong>for the <strong>true-target </stro
    </td>
    <td>1 (2)
    </td>
-   <td>The updated stimulus state for the object with objectUID. The stimulus state indicates a relevant characteristic of the stimulus used by the recogniser.  For example if this object is in a high or low brightness state.
+   <td>The updated stimulus state for the object with objectUID. The stimulus state indicates a relevant characteristic of the stimulus used by the decoder.  For example if this object is in a high or low brightness state.
    </td>
   </tr>
 </table>
@@ -602,7 +602,7 @@ NOTES:
 
 *   **objectID **- an object UID is (as the name implies) a *****unique*** **identifier for a particular stimulus object.  This is used ****both** **for indication of the stimulus state of an object **and **for indication of the identified target object when predictions are generated. 
 
-    Object IDs for which *no* stimulus state information has been provided since the last recogniser reset command are assumed to not be stimulated.  Object IDs do *not* have to be consecutive, and can be allocated arbitarly by the STIMULUS component 
+    Object IDs for which *no* stimulus state information has been provided since the last decoder reset command are assumed to not be stimulated.  Object IDs do *not* have to be consecutive, and can be allocated arbitarly by the STIMULUS component 
 
 *   **Stimulusstate **- The **encoding** used by the stimulus state is flexible in this version of the spec.  By convention stimulus state is treated as a **single **continuous level of the stimulus intensity, e.g. a grey-scale value.  However other encoding formats as possible without changing the message spec.  Example encodings could be; bit 0=long, bit(1)=short, or bits 0-4 for intensity and bits5-8 for color.   **It is the responsibility of CONFIG to ensure that STIMULUS and RECOGNISER agree on the interperation of the stimulus state object. **
 *   Example Bandwidth Requirements: for a 36 output display with messages packed into 20bytes (as in BLE).  We have 6 bytes header overhead, leaving 7 objects in the message packet.  Thus we require 6 packets for a update on all objects in the display, i.e. 6*20 = 120 bytes / display update.  Thus @ 60 display rate we require: 120*60 = 7200 bytes/sec.  The spec for BLE gives, an *application* data rate of .27Mbit/sec = 270000 bit/sec = 33750 byte/sec.  Thus we need about 25% of the total available BLE bandwidth for this common use-case.
@@ -853,7 +853,7 @@ TARGETERRORDIST
 
 
 
-## Controller or Output  -> All {#controller-or-output->-all}
+### Controller or Output  -> All
 
 
 <table>
@@ -879,9 +879,9 @@ TARGETERRORDIST
   <tr>
    <td colspan="2" >Purpose:
 <p>
-Tell the recogniser to switch to a new operating mode, e.g. switch from calibration to testing.
+Tell the decoder to switch to a new operating mode, e.g. switch from calibration to testing.
 <p>
-Currently, we have the following operating modes for the recogniser:
+Currently, we have the following operating modes for the decoder:
 <ul>
 
 <li>Calibration.supervised - calibration with user target instruction.
@@ -954,7 +954,7 @@ Currently, we have the following operating modes for the recogniser:
    </td>
    <td>[1] of string
    </td>
-   <td>String with the new recogniser mode to enter.  One-of:
+   <td>String with the new decoder mode to enter.  One-of:
 <p>
  Calibration.supervised,  Calibration.unsupervised, 
 <p>
@@ -997,7 +997,7 @@ ElectrodeQuality
   <tr>
    <td colspan="2" >Purpose:
 <p>
-Tell the recogniser that the user has switched to attempt selection of a new target.  For example, in the speller because the OUTPUT has made a character selection and the user is moving on to the next letter.  The RECOGNISER is expected to use this message to clear it’s prediction history and start fresh on a new output.
+Tell the decoder that the user has switched to attempt selection of a new target.  For example, in the speller because the OUTPUT has made a character selection and the user is moving on to the next letter.  The RECOGNISER is expected to use this message to clear it’s prediction history and start fresh on a new output.
    </td>
   </tr>
   <tr>
@@ -1375,7 +1375,7 @@ Recogniser
   <tr>
    <td colspan="2" ><strong>Purpose:</strong> 
 <p>
-Send raw data as measured by the acquisition device to the recogniser.
+Send raw data as measured by the acquisition device to the decoder.
    </td>
   </tr>
   <tr>
@@ -1568,18 +1568,18 @@ Basically this is not something we can specify as it depends on the exact hardwa
 
 
 
-# Extension Messages {#extension-messages}
+## Extension Messages
 
 In this section are listed messages which may be useful in future, but will not be implemented in the V1.0 version of the system.
 
 
-## Config -> Recogniser {#config->-recogniser}
+### Config -> Recogniser
 
 
 <table>
   <tr>
    <td>Name:  
-<h6 id="configurecogniser">CONFIGURECOGNISER</h6>
+<h6 id="configudecoder">CONFIGURECOGNISER</h6>
 
 
    </td>
