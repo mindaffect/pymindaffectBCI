@@ -1,4 +1,4 @@
-## Utopia : Message Specification
+## mindaffectBCI : Message Specification
 
 
 ### Purpose
