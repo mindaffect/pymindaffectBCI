@@ -4,12 +4,12 @@ Going Further : Amplifiers, BCI-types, Decoder Config
 =============
 
 
-You can run the BCI in different modes by specifying different arguments on the command line.  Or by modifying the basic configuration file  `online_bci.json(https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/online_bci.json)`_.
+You can run the BCI in different modes by specifying different arguments on the command line.  Or by modifying the basic configuration file  `online_bci.json <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/online_bci.json>`_.
 
 Alternative Amplifiers
 ----------------------
 
-This online_bci uses `brainflow <http://brainflow.org>`_ by default for interfacing with the EEG amplifier.  Specificially the file in `examples\acquisition\utopia_brainflow.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_brainflow.py>`_ is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the `brainflow documentation <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_.
+This online_bci uses `brainflow <http://brainflow.org>`_ by default for interfacing with the EEG amplifier.  Specificially the file in `examples\ acquisition\ utopia_brainflow.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_brainflow.py>`_ is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the `brainflow documentation <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_.
 
 You can specify the configuration for your amplifer in the `acq_args` section of the configuration file `online_bci.json <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/online_bci.json>`_.  For example to specify to use the brainflow simulated board use
 
@@ -40,7 +40,7 @@ By default we use the mindaffect NoiseTagging style stimulus with a 25-symbol le
         "framesperbit":1
     }
 
- or a file from which to load the set of symbols as a *comma-separated* list of strings like the file `symbols.txt<https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/presentation/symbols.txt>`_.
+ or a file from which to load the set of symbols as a *comma-separated* list of strings like the file `symbols.txt <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/presentation/symbols.txt>`_.
 
 * _stimfile_ : is a file which contains the stimulus-code to display.  This can either be a text-file with a matrix specified with a white-space separated line per output or a png with the stimulus with outputs in 'x' and time in 'y' like.
 
