@@ -42,17 +42,17 @@ The board needs to be programmed with the MindAffect GPIO software.
 		to install the Raspbian OS and enable SSH on your Rpi. 
 	
 #. Now, connect to the raspberry pi via SSH and run the following command in the terminal
-	sudo apt-get install git default-jre default-jdk python3 build-essential cli-common xterm ant gradle::
-#. Clone the pymindAffectBCI repository by using the following command::
+	sudo apt-get install git default-jre default-jdk python3 build-essential cli-common xterm ant gradle
+#. Clone the pymindAffectBCI repository by using the following command
 	git clone https://github.com/mindaffect/pymindaffectBCI
 #. Install the necessary bits to your local python path:
 	#. change to the directory where you cloned the repository.
-	#. Add this module to the python path, and install dependencies::
+	#. Add this module to the python path, and install dependencies
 		pip3 install -e . 
 #. If you would like to configure the Rpi such that the MindAffect GPIO software automatically starts on boot, do the following:
 	#. Open the autostart script by running the following command
 		#. Sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
-		#. Add the following line to the autostart file::
+		#. Add the following line to the autostart file
 			Python3 rpigpio.py
 			* Press ctrl+x, then press Y and then Enter to save changes.
 			* The changes will take effect after a reboot.
