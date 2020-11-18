@@ -11,7 +11,7 @@ In the rest of this section we discuss how to implement your physical presentati
 
 You will need
 -----
-* Rpi zero
+* Rpi zero W
 * microSD card
 * Lipo battery  
 * Power Circuit (DC-DC boost convertor)
@@ -31,7 +31,7 @@ Code 1011010 is represented by ON-OFF-ON for twice as long-OFF-ON-OFF.
 A raspberry pi zero W is used for demonstration purposes.
 Below you can see a schematic diagram of how the electronic hardware looks like for a 2 button presentation module Where one LED plays the binary pattern from code A and the other one plays the pattern from code B.
 It is up to you to decide how many LEDs you would like to use.
-add image for schematic
+	.. image:: images/gpiopizero.PNG
 
 Software setup
 -----
