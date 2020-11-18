@@ -14,4 +14,6 @@ All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <h
    build_your_own_optical_sensor
    stimulus_time-lock_test_tutorial
    offline_analysis
+   adding_brain_controls_to_your_unity_game
+   controlling_a_phillips_hue_with_your_brain
 
