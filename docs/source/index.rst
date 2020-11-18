@@ -76,7 +76,6 @@ Project ideas for users
    :maxdepth: 2
    :caption: Setting up
    
-   overview
    installation
    supported_hardware
    amp_config
