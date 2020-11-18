@@ -31,6 +31,7 @@ This page contains the documentation of the open source Brain Computer Interface
 
    FAQ
    modules
+   MessageSpec.md
    
 .. toctree::
    :maxdepth: 2
