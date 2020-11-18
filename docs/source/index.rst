@@ -20,6 +20,7 @@ This page contains the documentation of the open source Brain Computer Interface
    :caption: First Steps
 
    quickstart
+   how_an_evoked_bci_works
    tutorials
    goingfurther
    project_ideas
@@ -28,7 +29,6 @@ This page contains the documentation of the open source Brain Computer Interface
    :maxdepth: 2
    :caption: Reference
 
-   how_an_evoked_bci_works
    FAQ
    modules
    
