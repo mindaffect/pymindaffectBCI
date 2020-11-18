@@ -78,6 +78,7 @@ Project ideas for users
    
    overview
    installation
+   supported_hardware
    amp_config
 
 .. toctree::
