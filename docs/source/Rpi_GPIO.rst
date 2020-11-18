@@ -15,14 +15,14 @@ You will need
 * Rpi zero W
 * microSD card
 * Lipo battery  
-* Power Circuit (DC-DC boost convertor)
-* LED lights
+* `Power Circuit (DC-DC boost convertor) <https://www.reichelt.nl/nl/nl/d1-shield-batterij-lipo-d1z-battery-p266068.html?PROVID=2809&gclid=Cj0KCQiAqdP9BRDVARIsAGSZ8AkwipiBfvFAgXhQrzU2gUUJbbBc-GbD1Emb6UzcVy0sq-IRPMo4fz0aAr94EALw_wcB>`_
+* `LED lights <https://led-lovers.nl/spots/puck_light_led_wireless_5_en_10_pack_afstandsbediening/>`_
 * Enclosure
-	* Case for the electronics
-	* Light cover
+	* `Case for the electronics <https://www.karwei.nl/assortiment/martens-pvc-eindkap-75-mm-grijs/p/B376208>`_
+	* `Light cover <https://www.kiwi-electronics.nl/grote-arcade-knop-met-led-100mm-wit?search=led&description=true>`_
 * Tools:
 	* Soldering equipment
-	* Hot glue
+	* Hot glue equipment
 
 Design concept	
 -----
