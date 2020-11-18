@@ -54,8 +54,8 @@ The board needs to be programmed with the MindAffect GPIO software. To do so, fo
 		#. Sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
 		#. Add the following line to the autostart file
 			Python3 rpigpio.py
-			* Press ctrl+x, then press Y and then Enter to save changes.
-			* The changes will take effect after a reboot.
+		#. Press ctrl+x, then press Y and then Enter to save changes.
+		#. The changes will take effect after a reboot.
 #. Make sure you are connected to the same WiFi network that is used by the machine running the MindAffectBCI software.
 #. The rpigpio python script uses GPIO pins 2,3,4 by default. You can customize it to your liking.
 #. Allright, the software is set up. Next, the hardware needs to be assembled.
