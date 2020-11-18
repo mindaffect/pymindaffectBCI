@@ -1,14 +1,14 @@
-# Utopia : Message Specification
+## Utopia : Message Specification
 
 [TOC]
 
 
-## Purpose {#purpose}
+### Purpose
 
 This document describes in simple terms the messages which are passed between the different components of the Utopia Noisetagging BCI system, and the structure used for the messages.  The message specification is *transport agnostic* in that the messages themselves may be sent over different ‘wire-protocols’, such as BTLE, UDP, TCP, etc.
 
 
-## Objectives {#objectives}
+### Objectives
 
 
 
@@ -19,7 +19,7 @@ This document describes in simple terms the messages which are passed between th
 *   Latency  tolerant : we cannot guarantee timely transmission of messages between components.  Thus, the spec will (where appropriate) include additional time-stamp information to allow a ‘true’ message time-line to be reconstructed.
 
 
-## Structure {#structure}
+### Structure
 
 The message specification is structured as follows:
 
@@ -36,20 +36,26 @@ The message specification is structured as follows:
     *   Comment: human readable description of the purpose of this slot
 
 
-# **Message Specifications** {#message-specifications}
+## **Message Specifications** 
 
 
-## Endianness {#endianness}
+### Endianness 
 
 To simplify things we *require* that all numbers be encoded in **LITTLE ENDIAN**.
 
 
-## Message Header {#message-header}
+### Message Header 
 
 All messages start with a standard header consisting of:
 
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
 
-<table>
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -58,6 +64,8 @@ All messages start with a standard header consisting of:
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
+
   <tr>
    <td>UID
    </td>
@@ -94,7 +102,7 @@ All messages start with a standard header consisting of:
 
 
 
-## General Utility Messages {#general-utility-messages}
+### General Utility Messages
 
 
 <table>
@@ -153,7 +161,14 @@ Notes:
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -162,6 +177,7 @@ Notes:
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -243,7 +259,14 @@ Notes:
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -252,6 +275,7 @@ Notes:
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -337,7 +361,14 @@ Note:
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -346,6 +377,7 @@ Note:
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -395,7 +427,7 @@ Note:
 
 
 
-## Presentation -> Recogniser {#presentation->-recogniser}
+### Presentation -> Recogniser 
 
 
 <table>
@@ -431,17 +463,26 @@ Note: If we are **really** pressed for message sizes then we can define a less g
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 5%;">
+       <col span="1" style="width: 60%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
    <td><strong>Type (= value)</strong>
    </td>
-   <td><strong>Size (total) in bytes</strong>
+   <td><strong>length</strong>
    </td>
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -510,17 +551,26 @@ Note: If we are **really** pressed for message sizes then we can define a less g
 **STIMULUSDICT **structure
 
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 5%;">
+       <col span="1" style="width: 60%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
-   <td><strong>Type (=value)</strong>
+   <td><strong>Type (= value)</strong>
    </td>
-   <td><strong>Size (total)</strong>
+   <td><strong>length</strong>
    </td>
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>objectUID
    </td>
@@ -563,7 +613,7 @@ NOTES:
 
 
 
-## Recogniser -> Selection or Output {#recogniser->-selection-or-output}
+### Recogniser -> Selection or Output 
 
 
 <table>
@@ -595,7 +645,14 @@ Inform the output component of the current predicted target and it’s probabili
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -604,6 +661,7 @@ Inform the output component of the current predicted target and it’s probabili
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -690,7 +748,14 @@ Inform the output component of the current distribution over all possible predic
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -699,6 +764,7 @@ Inform the output component of the current distribution over all possible predic
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -745,15 +811,23 @@ Inform the output component of the current distribution over all possible predic
 TARGETERRORDIST
 
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
-   <td>Slot
+   <td><strong>Slot</strong>
    </td>
-   <td>Type (=value)
+   <td><strong>Type (= value)</strong>
    </td>
-   <td>Comment
+   <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>objectUID
    </td>
@@ -826,7 +900,14 @@ Currently, we have the following operating modes for the recogniser:
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -835,6 +916,7 @@ Currently, we have the following operating modes for the recogniser:
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -921,7 +1003,14 @@ Tell the recogniser that the user has switched to attempt selection of a new tar
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -930,6 +1019,7 @@ Tell the recogniser that the user has switched to attempt selection of a new tar
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1004,7 +1094,14 @@ An OUTPUT module may use this message to decide if it should perform it’s task
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1013,6 +1110,7 @@ An OUTPUT module may use this message to decide if it should perform it’s task
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1091,7 +1189,14 @@ Reset the RECOGNISER to a ‘fresh-start’ state, i.e. as if it has just been s
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1100,6 +1205,7 @@ Reset the RECOGNISER to a ‘fresh-start’ state, i.e. as if it has just been s
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1141,7 +1247,7 @@ Reset the RECOGNISER to a ‘fresh-start’ state, i.e. as if it has just been s
 
 
 
-## Recogniser -> User Interface {#recogniser->-user-interface}
+### Recogniser -> User Interface 
 
 
 <table>
@@ -1173,7 +1279,14 @@ Inform user about the quality of the electrode fit, so they can adjust the elect
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1182,6 +1295,7 @@ Inform user about the quality of the electrode fit, so they can adjust the elect
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1235,7 +1349,7 @@ Inform user about the quality of the electrode fit, so they can adjust the elect
 
 
 
-## Acquisition -> Recogniser {#acquisition->-recogniser}
+### Acquisition -> Recogniser
 
 
 <table>
@@ -1269,7 +1383,14 @@ Send raw data as measured by the acquisition device to the recogniser.
 <p>
 Basically this is not something we can specify as it depends on the exact hardware device.  Minimum spec for us:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1278,6 +1399,7 @@ Basically this is not something we can specify as it depends on the exact hardwa
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1372,15 +1494,23 @@ Provide meta-information about the data provided by the acquisation device.  As 
 <p>
 Basically this is not something we can specify as it depends on the exact hardware device.  But suggestion is:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
-   <td>Slot
+   <td><strong>Slot</strong>
    </td>
-   <td>Type (= value)
+   <td><strong>Type (= value)</strong>
    </td>
-   <td>Comment
+   <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1483,7 +1613,14 @@ This message payload is a dictionary of name-value pairs encoded in JSON format 
 <p>
 Note: This message could potentially be *very large*, and need to extend over multiple packets.  It is assumed the underlying transport will deal with this effectively.
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1492,6 +1629,7 @@ Note: This message could potentially be *very large*, and need to extend over mu
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1541,7 +1679,7 @@ Note: This message could potentially be *very large*, and need to extend over mu
 
 
 
-## Other {#other}
+### Other 
 
 
 <table>
@@ -1580,7 +1718,14 @@ This message tells the receiver what the current time-stamp from the sender is. 
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1589,6 +1734,7 @@ This message tells the receiver what the current time-stamp from the sender is. 
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1667,7 +1813,14 @@ Inform user about the parameters of the current model.
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1676,6 +1829,7 @@ Inform user about the parameters of the current model.
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -1749,12 +1903,12 @@ Inform user about the parameters of the current model.
 
 
 
-# Bluetooth Low Energy
+### Bluetooth Low Energy
 
 When using BLE to communicate we need to define Services and Charactersitics.  Services represent groups of functionality which is exposed to other devices, with Characteristics the values to be communicated.  Within this message specification a unique characteristic maps directly onto a message type, with groups of messages together making a logically connected service. Specification. Based on this reasoning we have the following BLE specification:
 
 
-## Service: Presentation
+### Service: Presentation
 
 UUID: **<code>d3560000-b9ff-11ea-b3de-0242ac130004</code></strong>
 
@@ -1793,7 +1947,7 @@ Write: encode control messages for the presentation device.  Basically this incl
 Again, we encode the full message spec in the BLE characteristic write (including header, version, length).
 
 
-## Service: Decoder
+### Service: Decoder
 
 UUID: **<code>d3560100-b9ff-11ea-b3de-0242ac130004</code></strong>
 
@@ -1834,7 +1988,7 @@ Payload Format:
 **Read, Notify**:  encode the current predicted target prob as a PREDICTEDTARGETDIST message.  Note: this is a *full* message with type, version, length encoding (Later we may remove this technically unnecessary header information), thus it may take *more than* 1 message to communicate a full prediction state when we have > 8 objectIDs on a single device.  As all messages are both time-stamped and stateless, this will be achieved by simply cutting the messages into smaller pieces to be transmitted one after each other.
 
 
-## Service: Selection
+### Service: Selection
 
 UUID: **<code>d3560200-b9ff-11ea-b3de-0242ac130004</code></strong>
 
@@ -1855,7 +2009,7 @@ Properties:
 Write, Notify
 
 
-## Service: ScoreOutput
+### Service: ScoreOutput
 
 UUID: **<code>d3560300-b9ff-11ea-b3de-0242ac130004</code></strong>
 
@@ -1909,7 +2063,14 @@ This message sends the current stimulus score information from an acquisition de
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -1918,6 +2079,7 @@ This message sends the current stimulus score information from an acquisition de
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
@@ -2036,7 +2198,14 @@ Sends the IIR to use as an EEG pre-filter
   <tr>
    <td colspan="2" >Format:
 
-<table>
+<table style="width: 100%">
+    <colgroup>
+       <col span="1" style="width: 10%;">
+       <col span="1" style="width: 25%;">
+       <col span="1" style="width: 65%;">
+    </colgroup>
+
+  <thead>
   <tr>
    <td><strong>Slot</strong>
    </td>
@@ -2045,6 +2214,7 @@ Sends the IIR to use as an EEG pre-filter
    <td><strong>Comment</strong>
    </td>
   </tr>
+  </thead>
   <tr>
    <td>UID
    </td>
