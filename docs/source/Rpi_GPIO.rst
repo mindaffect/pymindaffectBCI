@@ -39,20 +39,20 @@ The board needs to be programmed with the MindAffect GPIO software.
 #. Follow the steps here to Install raspbian OS on a microSD card.If you already have a running raspberry pi skip to step 2.
 	#. Follow 'this guide <https://medium.com/@danidudas/install-raspbian-jessie-lite-and-setup-wi-fi-without-access-to-command-line-or-using-the-network-97f065af722e>'_ to install the Raspbian OS and enable SSH on your Rpi. 
 #. Now, connect to the raspberry pi via SSH and run the following command in the terminal
-	#. sudo apt-get install git default-jre default-jdk python3 build-essential cli-common xterm ant gradle
+	:: sudo apt-get install git default-jre default-jdk python3 build-essential cli-common xterm ant gradle
 #. Clone the pymindAffectBCI repository by using the following command:
-	#. git clone https://github.com/mindaffect/pymindaffectBCI
+	:: git clone https://github.com/mindaffect/pymindaffectBCI
 #. Install the necessary bits to your local python path:
 	#. change to the directory where you cloned the repository.
 	#. Add this module to the python path, and install dependencies:
-	#. pip3 install -e . 
+	:: pip3 install -e . 
 #. If you would like to configure the Rpi such that the MindAffect GPIO software automatically starts on boot, do the following:
 	#. Open the autostart script by running the following command
 		#. Sudo nano /etc/xdg/lxsession/LXDE-pi/autostart
 		#. Add the following line to the autostart file
-			#. Python3 rpigpio.py
-			#. Press ctrl+x, then press Y and then Enter to save changes.
-			#. The changes will take effect after a reboot.
+			:: Python3 rpigpio.py
+			* Press ctrl+x, then press Y and then Enter to save changes.
+			* The changes will take effect after a reboot.
 #. Make sure you are connected to the same WiFi network that is used by the machine running the MindAffectBCI software.
 #. The rpigpio python script uses GPIO pins 2,3,4 by default. You can customize it to your liking.
 #. Allright, the software is set up. Next, the hardware needs to be assembled.
