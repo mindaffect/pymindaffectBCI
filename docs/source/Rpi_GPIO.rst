@@ -93,6 +93,9 @@ To run the full demo
 	* Number of LEDs
 	* The LED to GPIO pin mapping
 	* Speed of stimulus in Hz
+	
+		.. image:: images/ledpresconfig.PNG
+
 
 RPI GPIO for control
 -----
