@@ -1,3 +1,5 @@
+.. _GPIORef:
+
 Raspberry pi GPIO
 ===============
 Raspberry pi GPIO for Presentation
