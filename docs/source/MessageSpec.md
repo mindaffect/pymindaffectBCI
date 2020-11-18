@@ -3,7 +3,7 @@
 
 ### Purpose
 
-This document describes in simple terms the messages which are passed between the different components of the Utopia Noisetagging BCI system, and the structure used for the messages.  The message specification is *transport agnostic* in that the messages themselves may be sent over different ‘wire-protocols’, such as BTLE, UDP, TCP, etc.
+This document describes in the messages which are passed between the different components of the [mindaffect BCI](https://github.com/mindaffect/pymindaffectBCI) system, and the low-level byte-struture used for the messages.  The message specification is *transport agnostic* in that the messages themselves may be sent over different ‘wire-protocols’, such as BTLE, UDP, TCP, etc.
 
 Note: This specification is intended for developing new low-level components to interface to the mindaffectBCI.  Most developers / users can directly use one of the provided higher-level APIs, such as [python](https://github.com/mindaffect/pymindaffectBCI), [java](https://github.com/mindaffect/javamindaffectBCI), [c#/unity](https://github.com/mindaffect/unitymindaffectBCI).
 
@@ -1568,7 +1568,7 @@ Basically this is not something we can specify as it depends on the exact hardwa
 
 
 
-## Extension Messages
+### Extension Messages
 
 In this section are listed messages which may be useful in future, but will not be implemented in the V1.0 version of the system.
 
