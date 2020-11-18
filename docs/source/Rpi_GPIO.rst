@@ -38,8 +38,8 @@ Software setup
 The board needs to be programmed with the MindAffect GPIO software.
 #. Follow the steps here to Install raspbian OS on a microSD card.If you already have a running raspberry pi skip to step 2.
 	#. Follow 'this guide 
-	<https://medium.com/@danidudas/install-raspbian-jessie-lite-and-setup-wi-fi-without-access-to-command-line-or-using-the-network-97f065af722e>'_ 
-	to install the Raspbian OS and enable SSH on your Rpi. 
+	   <https://medium.com/@danidudas/install-raspbian-jessie-lite-and-setup-wi-fi-without-access-to-command-line-or-using-the-network-97f065af722e>'_ 
+	   to install the Raspbian OS and enable SSH on your Rpi. 
 #. Now, connect to the raspberry pi via SSH and run the following command in the terminal
 	:: sudo apt-get install git default-jre default-jdk python3 build-essential cli-common xterm ant gradle
 #. Clone the pymindAffectBCI repository by using the following command:
