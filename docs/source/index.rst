@@ -96,6 +96,7 @@ Project ideas for users
 
    FAQ
    modules
+   MindaffectBCI_systemoverview.md
    MessageSpec.md
    
 .. toctree::
