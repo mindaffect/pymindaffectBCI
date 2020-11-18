@@ -36,7 +36,7 @@ The message specification is structured as follows:
     *   Comment: human readable description of the purpose of this slot
 
 
-## **Message Specifications** 
+### **Message Specifications** 
 
 
 ### Endianness 
