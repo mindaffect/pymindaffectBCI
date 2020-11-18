@@ -98,7 +98,7 @@ To run the full demo
 	
 		.. image:: images/ledpresconfig.PNG
 
-Here's how a one button LED presentation looks like (the LED button stays on for a while when it is selected by the user's brain response)
+Here's how a one button LED presentation looks like (the LED button stays ON for a while when it is selected by the user's brain response)
 
 	.. image:: images/LED_DEMO.gif
 
