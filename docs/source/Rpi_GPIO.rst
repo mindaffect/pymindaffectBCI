@@ -2,12 +2,8 @@ Raspberry pi GPIO
 ===============
 Raspberry pi GPIO for Presentation
 -----
-Mindaffect BCI is not limited to a screen based presentation. For example, the following can be used as means of stimulus 
-
-* physical lights 
-* Tactile vibrators
-
-But first, we need to connect our software to the desired hardware device (e.g. a lamp, LED, tactile vibrator). 
+Mindaffect BCI is not limited to a screen based presentation. For example, physical lights and tactile vibrators can be used as means of stimulus. 
+But first we need to connect our software to the desired hardware device (e.g. a lamp, LED, tactile vibrator). 
 The software/hardware interfacing is done using GPIO. GPIO is a standard interface used to connect microcontrollers to other electronic devices. It can be used with sensors, diodes, displays, and System-on-Chip modules.
 For demonstration purposes we use a raspberry pi(Rpi) board. Any Rpi board with wireless connectivity is compatible with our software.
 In the rest of this section we discuss how to implement your physical presentation system of choice using Rpi’s GPIO.
