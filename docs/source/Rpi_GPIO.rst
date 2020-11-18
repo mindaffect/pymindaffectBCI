@@ -71,10 +71,11 @@ Directions for setting up a minimum presentation hardware
 The final LED button looks like this: add pic below
 
 To run the full demo
-#. On your host computer, go to the directory of pymindaffectBCI/mindaffectBCI . Open the online_bci.json file and set the presentation argument to None
- "presentation":"None"
+-----
+#. On your host computer, go to the directory of pymindaffectBCI/mindaffectBCI . Open the online_bci.json file and set the presentation argument to None 
+	* "presentation":"None"
 #. Now plug in the battery to the power circuit of the LED button and close the enclosure.
-@. Make sure your host computer and the LED button are connected to the same network
+#. Make sure your host computer and the LED button are connected to the same network
 #. The LED button should connect to the host computer and the presentation starts automatically and runs using the default arguments (see the code snippet below). You can set the following arguments in the rpigpio.py script:
 	* Number of calibration and prediction trials
 	* Number of LEDs
