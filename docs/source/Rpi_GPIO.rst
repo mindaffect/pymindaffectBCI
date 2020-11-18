@@ -65,9 +65,10 @@ Directions for setting up a minimum presentation hardware
 #. Connect the power circuit to the Rpi board. We use this power circuit in our demo. add pic below
 #. As soon as the battery is connected to the power circuit the Rpi board will boot
 #. To shutdown the system, you can connect to the Rpi board via SSH and run the following command:
-		#. Sudo shutdown -h now
-		#. Then you can safely unplug the battery after the RPi’s green lights turn off
-#. Place all the assembled parts in the enclosure and insulator the electronics using hot glue. add pic
+	#. Sudo shutdown -h now
+	#. Then you can safely unplug the battery after the RPi’s green lights turn off
+#. Place all the assembled parts in the enclosure and insulator the electronics using hot glue. add pic 
+
 The final LED button looks like this: add pic below
 
 To run the full demo
