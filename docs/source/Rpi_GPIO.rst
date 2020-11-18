@@ -31,6 +31,7 @@ Code 1011010 is represented by ON-OFF-ON for twice as long-OFF-ON-OFF.
 A raspberry pi zero W is used for demonstration purposes.
 Below you can see a schematic diagram of how the electronic hardware looks like for a 2 button presentation module Where one LED plays the binary pattern from code A and the other one plays the pattern from code B.
 It is up to you to decide how many LEDs you would like to use.
+
 	.. image:: images/gpiopizero.PNG
 
 Software setup
@@ -62,14 +63,24 @@ Directions for setting up a minimum presentation hardware
 #. Connect the + pins of the LEDs to the GPIO  pins
 	#. By default pins 2,3,4 are used in the rpgpio.py script. You don’t have to use all the pins, but you need to inform the software about How many pins are going to be used by the LEDs
 #. Connect the - pins of the LEDS to the GND GPIO pin
-#. Connect the power circuit to the Rpi board. We use this power circuit in our demo. add pic below
+#. Connect the power circuit to the Rpi board. We use this power circuit in our demo.
+
+	.. image:: images/LEDpresassembly.PNG
+	
 #. As soon as the battery is connected to the power circuit the Rpi board will boot
 #. To shutdown the system, you can connect to the Rpi board via SSH and run the following command:
 	#. Sudo shutdown -h now
 	#. Then you can safely unplug the battery after the RPi’s green lights turn off
-#. Place all the assembled parts in the enclosure and insulator the electronics using hot glue. add pic 
+#. Place all the assembled parts in the enclosure and insulator the electronics using hot glue.
+ 
+	.. image:: images/LEDassembly.PNG
+	
+The final LED button looks like this:
 
-The final LED button looks like this: add pic below
+	.. image:: images/ledenclosure2.png
+	.. image:: images/lednclosure1.png
+
+
 
 To run the full demo
 -----
