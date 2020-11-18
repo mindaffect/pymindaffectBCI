@@ -1,5 +1,7 @@
-RPI GPIO for presentation
+Raspberry pi GPIO
 ===============
+Raspberry pi GPIO for Presentation
+-----
 Mindaffect BCI is not limited to a screen based presentation. For example, the following can be used as means of stimulus 
 * physical lights 
 * Tactile vibrators
