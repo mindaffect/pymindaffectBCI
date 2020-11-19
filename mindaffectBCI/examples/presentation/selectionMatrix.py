@@ -30,6 +30,9 @@ from mindaffectBCI.decoder.utils import search_directories_for_file
 
 # graphic library
 import pyglet
+window = None
+ss = None
+nframe = None
 isi = 1/60
 drawrate = 0  # rate at which draw is called
 
@@ -1376,7 +1379,7 @@ def draw(dt):
         pyglet.app.exit()
     #print('.', end='', flush=True)
 
-def run_screen(screen:Screen, win=None, drawrate=-1):
+def run_screen(screen:Screen, drawrate:float=-1, win:pyglet.window=None):
     global ss, window, nframe
     nframe = 0
     ss = screen
