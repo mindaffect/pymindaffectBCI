@@ -17,3 +17,4 @@ __pycache__
 *.pk
 description.xml
 calibration_data*
+*.egg-info
