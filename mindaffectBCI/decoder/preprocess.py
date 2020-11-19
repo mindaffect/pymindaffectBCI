@@ -57,7 +57,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         print("whiten:{}".format(reg))
         X, W = spatially_whiten(X,reg=reg)
 
-    if stopband is not None:
+    if stopband is not None and stopband is not False:
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
     if whiten_spectrum > 0:
@@ -75,7 +75,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         print("Standardize channel power:{}".format(reg))
         X, W = standardize_channel_power(X, axis=-2, reg=reg)
 
-    if filterbank is not None:
+    if filterbank is not None and filterbank is not False:
         if fs is None and coords is not None: 
             fs = coords[-2]['fs']
         #X, _, _ = butter_filterbank(X,filterbank,fs=fs)

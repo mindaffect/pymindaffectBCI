@@ -45,7 +45,7 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     pshape = np.ones(a.ndim+1, dtype=int); pshape[axis+1] = pat.size
     pat =  np.array(pat.ravel(),dtype=a.dtype).reshape(pshape) # [ ... x l x...]
     # window a into pat-len pieces
-    aw = window_axis(a, pat.size, axis=axis) # [ ... x t-l x l x ...]
+    aw = window_axis(a, pat.size, axis=axis, step=1) # [ ... x t-l x l x ...]
     # do the match
     F  = np.all(np.equal(aw, pat), axis=axis+1) # [... x t-l x ...]
     # pad to make the same shape as input
@@ -164,19 +164,22 @@ def search_directories_for_file(f,*args):
     """search a given set of directories for given filename, return 1st match
 
     Args:
-        f (str): filename to search for
+        f (str): filename to search for (or a pattern)
         *args (): set for directory names to look in
 
     Returns:
-        f (str): full path to where f is found, or f if not found.
+        f (str): the *first* full path to where f is found, or f if not found.
     """    
     import os
-    if os.path.exists(f):
+    import glob
+    f = os.path.expanduser(f)
+    if os.path.exists(f) or len(glob.glob(f))>0:
         return f
     for d in args:
         #print('Searching dir: {}'.format(d))
-        if os.path.exists(os.path.join(d,f)):
-            f = os.path.join(d,f)
+        df = os.path.join(d,f)
+        if os.path.exists(df) or len(glob.glob(df))>0:
+            f = df
             break
     return f
 

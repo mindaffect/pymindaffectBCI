@@ -108,6 +108,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_id
         train_ind = np.logical_not(test_ind)
         X_train = X[train_ind,...]
         Y_train = Y[train_ind,...]
+        retrain_on_all = True
 
     # fit the model
     if cv:
@@ -159,7 +160,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_id
     print("score={}".format(score))
 
     # compute decoding curve
-    (dc) = decodingCurveSupervised(rawFy, marginalizedecis=True, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
+    (dc) = decodingCurveSupervised(rawFy, marginalizedecis=True, minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate, priorsigma=(clsfr.sigma0_,clsfr.priorweight), softmaxscale=clsfr.softmaxscale_, nEpochCorrection=clsfr.startup_correction)
 
     return score, dc, Fy, clsfr, res
 
@@ -312,7 +313,7 @@ def flatten_decoding_curves(decoding_curves):
     return il,pe,pee,se,st
 
 
-def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), triggerPlot=False, normalizedFy=False, **kwargs):
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), plotnormFy=False, triggerPlot=False, **kwargs):
     """Debug a data set, by pre-processing, model-fitting and generating various visualizations
 
     Args:
@@ -411,7 +412,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     clsfr_args['fs']=fs
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
-    clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
+    #clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
     score, res, Fy, clsfr, cvres = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
     Fe = clsfr.transform(X)
 
@@ -490,7 +491,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # plt.suptitle("Fy")
     # plt.show()
 
-    if normalizedFy:
+    if plotnormFy:
         from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
         print("normalized Fy")
         plt.figure(20);plt.clf()
@@ -797,11 +798,8 @@ if __name__=="__main__":
     #              model='cca',tau_ms=750,evtlabs=('re','anyre'),rank=3,reg=.02)
 
     savefile = None
-    #savefile = '~/Desktop/UtopiaMessages_2007191_1558_brainproducts.log'
-    #savefile = '~/Desktop/mindaffectBCI_200720_2152_testing_python.txt'
-    #savefile = '~/Desktop/mindaffectBCI_200720_2147_testing_octave.txt'
-    #savefile = '~/Desktop/mindaffectBCI_200720_2128_master.txt'
-    #savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
+    savefile = '~/Desktop/mark/mindaffectBCI_*201020_1148.txt'
     #savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
     savefile = "~/Downloads/mindaffectBCI*.txt"
     if savefile is None:
@@ -818,8 +816,11 @@ if __name__=="__main__":
     test_idx = slice(10,None) # hold-out test set
 
     #analyse_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
-    analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
-                    model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=500)
+    #analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+    #                model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=1, priorweight=200)#, tuned_parameters=dict(startup_correction=(0,10,100), priorweight=(0,50,500)))
+
+    debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+                      model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=1, priorweight=200)#, prediction_offsets=(-1,0,1))
 
     quit()
 

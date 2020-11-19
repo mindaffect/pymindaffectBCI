@@ -731,6 +731,7 @@ class SelectionGridScreen(Screen):
         self.isRunning=False
         self.isDone=False
         self.nframe=0
+        self.last_target_idx=-1
         self.set_grid()
 
     def set_noisetag(self, noisetag):
@@ -920,7 +921,7 @@ class SelectionGridScreen(Screen):
             self.noisetag.updateStimulusState()
             stimulus_state, target_idx, objIDs, sendEvents=self.noisetag.getStimulusState()
             target_state = stimulus_state[target_idx] if target_idx>=0 else -1
-            if target_idx > 0 : self.last_target_idx = target_idx
+            if target_idx >= 0 : self.last_target_idx = target_idx
         except StopIteration:
             self.isDone=True
             return
