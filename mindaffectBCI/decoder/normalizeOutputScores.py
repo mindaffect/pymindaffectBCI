@@ -128,19 +128,11 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         sigma2 = np.mean(sigma2,0)
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
-    if normSum:
+    cf = 1
+    if normSum is not None and normSum > 0:
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
         # TODO: use N= number non-zero entries rather than just length..
-        sFy_scale = np.sqrt(sigma2*np.maximum(.01,N,dtype=sigma2.dtype)) #  (nM,nTrl,nDecis)
-    else:
-        sFy_scale = np.sqrt(sigma2)
-    #plt.clf();plt.subplot(221);plt.plot(Fy[:, :, 0].T);plt.title('Fy');plt.subplot(222);plt.plot(fFy[:, :, 0].T);plt.title('fFy');plt.subplot(223);plt.plot(sFy[:, :, 0].T);plt.title('sFy');plt.subplot(224);plt.plot(sfFy[:, :, 0].T);plt.title('sfFy');plt.show()
-    #sFy_scale_emp=np.std(sfFy[:, :, 0], 0)
-    #print(np.mean((sFy_scale_emp[:, np.newaxis]/sFy_scale).ravel()))
-    #plt.subplot(222);plt.plot(np.sqrt(sigma2), 'k');plt.plot(np.std(fFy[:, :, 0], 0), 'k.'); plt.subplot(224);plt.plot(sFy_scale, 'k');plt.plot(np.std(sfFy[:, :, 0], 0), 'k.');plt.show()
-    #plt.clf();plt.subplot(211);plt.plot(sFy[:, :, 0].T);plt.plot(sFy_scale[:, 0], 'k');plt.show()
-    #print('sigma2 = {}'.format(np.mean(sigma2.ravel())))
-
+        cf = cf + np.sqrt(N)*normSum #  (nM,nTrl,nDecis)
 
     # correction factor for sampling bias in the std
     # estimation of of the correction factors to
@@ -148,22 +140,24 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # E[sigma]=c4(n)*sigma -> sigma = E[sigma]/c4(n)
     # where cf is the correction for the sampling bias in the estimator
     if nEpochCorrection is not None and nEpochCorrection > 0 :
+        
         #cf = c4(1 + N/np.maximum(1, nEpochCorrection)) 
         #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
-        cf = 1 + np.sqrt(nEpochCorrection/np.maximum(N,1))
-        # include the multiple comparsiosn correction factors
-        sFy_scale = sFy_scale * cf.astype(sFy_scale.dtype)
+        #sFy_scale = sFy_scale / cf.astype(sFy_scale.dtype)
+        
+        #cf = 1 + np.sqrt(nEpochCorrection/np.maximum(N,1))
+        #sFy_scale = sFy_scale * cf.astype(sFy_scale.dtype)
+        
+        #cf = cf + 1/c4(1 + N/np.maximum(1, nEpochCorrection)) 
+        
+        cf = cf + np.sqrt(nEpochCorrection/(N+1))
+    
+    # get the score scaling - including the correction factors
+    sFy_scale = np.sqrt(sigma2) * cf.astype(sigma2.dtype)
 
     # apply the normalization to convert to z-score (i.e. unit-noise)
     sFy_scale[sFy_scale == 0] = 1
     ssFy = sFy/sFy_scale[:, :, np.newaxis].astype(sFy.dtype)
-
-    # reverse the time reversal for backward accumulation    
-    # if bwdAccumulate:
-    #     for ti in range(Fy.shape[-3]):
-    #         ssFy = ssFy[..., ::-1, :]
-    #         sFy_scale = sFy_scale[..., ::-1, :]
-    #         N = N[...,::-1]
 
     return ssFy, sFy_scale, decisIdx, nEp, nY
 
