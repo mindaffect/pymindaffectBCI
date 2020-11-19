@@ -73,6 +73,7 @@ Directions for setting up a minimum presentation hardware
 	.. image:: images/LEDpresassembly.PNG
 	
 #. As soon as the battery is connected to the power circuit the Rpi board will boot
+	* **Caution: If you are not familiar with safety cautions related to LiPo batteries use other safe batteries (such as AA battery packs) or learn how to safely use a LiPO battery beforehand. The power circuit & the battery can blow up if you plug in the battery the wrong way. Use at your own risk or choose a safe battery instead.** 
 #. To shutdown the system, you can connect to the Rpi board via SSH and run the following command:
 	#. Sudo shutdown -h now
 	#. Then you can safely unplug the battery after the RPi’s green lights turn off
