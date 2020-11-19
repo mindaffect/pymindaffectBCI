@@ -24,7 +24,7 @@ copyright = '2020, Mark van Kesteren'
 author = 'Mark van Kesteren'
 master_doc = 'index'
 html_logo = 'images/MindAffect_Logo.png' 
-html_favicon = 'images/MindAffect_Logo.png'
+html_favicon = 'images/favicon.png'
 
 # The full version, including alpha/beta/rc tags
 release = '-'
