@@ -95,7 +95,7 @@ def get_remote_ip():
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-    except socketerror:
+    except socket.error:
         ip = None
     return ip
 
@@ -163,7 +163,7 @@ class ssdpDiscover :
                 self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_HOPS, 5)
                 self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, 1)
                 self.sock.setsockopt(IPPROTO_IPV6, socket.IPV6_MULTICAST_IF, 0)
-            except:
+            except socket.error:
                 print("couldn't set socket options\n")
             
             # N.B. bind only needed for multicast listening servers!!
