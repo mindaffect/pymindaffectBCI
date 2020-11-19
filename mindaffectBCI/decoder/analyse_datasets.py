@@ -834,11 +834,11 @@ if __name__=="__main__":
     test_idx = slice(10,None) # hold-out test set
 
     #analyse_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
-    # analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
-    #                 model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=500)
+    #analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+    #                model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=10, priorweight=200)
 
     debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
-                      model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=500)
+                      model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=100)
 
     quit()
 

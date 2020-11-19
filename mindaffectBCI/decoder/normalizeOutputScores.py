@@ -18,7 +18,7 @@
 import numpy as np
 
 def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
-                          normSum=False, centFy=True, detrendFy=False, 
+                          normSum=True, centFy=True, detrendFy=False, 
                           nEpochCorrection=0,
                           minDecisLen=0, maxDecisLen=0,
                           bwdAccumulate=True,
@@ -128,11 +128,11 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         sigma2 = np.mean(sigma2,0)
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
-    cf = 1
+    cf = np.array(1)
     if normSum is not None and normSum > 0:
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
         # TODO: use N= number non-zero entries rather than just length..
-        cf = cf + np.sqrt(N)*normSum #  (nM,nTrl,nDecis)
+        cf = cf + np.sqrt(N) #  (nM,nTrl,nDecis)
 
     # correction factor for sampling bias in the std
     # estimation of of the correction factors to
@@ -150,7 +150,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         
         #cf = cf + 1/c4(1 + N/np.maximum(1, nEpochCorrection)) 
         
-        cf = cf + np.sqrt(nEpochCorrection/(N+1))
+        cf = cf + nEpochCorrection/(N+1)
     
     # get the score scaling - including the correction factors
     sFy_scale = np.sqrt(sigma2) * cf.astype(sigma2.dtype)
@@ -432,6 +432,8 @@ def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, of
 def testcase():
     detrendFy=False
     centFy=True
+    normSum=1
+    nEpochCorrection=50
 
     from normalizeOutputScores import mktestFy,  normalizeOutputScores
     import matplotlib.pyplot as plt
@@ -449,14 +451,14 @@ def testcase():
 
     # test all at once, vs. incremental computation.
     step=50
-    ssFy_all, scale_sFy_all, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=step, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
+    ssFy_all, scale_sFy_all, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=step, normSum=normSum, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy, priorsigma=(0,0))
     for i,len in enumerate(decisIdx):
-        ssFyL, scale_sFyl, _, _, _ = normalizeOutputScores(Fy[:,:,:len,...], minDecisLen=9999, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, bwdAccumulate=False, priorsigma=(0,0))
+        ssFyL, scale_sFyl, _, _, _ = normalizeOutputScores(Fy[:,:,:len,...], minDecisLen=9999, normSum=normSum, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy, bwdAccumulate=False, priorsigma=(0,0))
         print("{}) all={} once={}".format(len,scale_sFy_all[0,i],scale_sFyl[0,0]))
 
 
     priorsigma=(1,0)
-    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
+    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, normSum=normSum, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
     print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
     #%matplotlib
     plt.figure(1)
@@ -465,7 +467,7 @@ def testcase():
 
     # visualize all trials true-target normalized scores
     priorsigma=(1,1e6)
-    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy)
+    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, normSum=normSum, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy)
     print('ssFy={} scale_sFy={}'.format(ssFy.shape,scale_sFy.shape))
     #%matplotlib
     plt.figure(1)
@@ -473,7 +475,7 @@ def testcase():
 
     # introduce temporal correlations and visualize
     Fy = filter_Fy(Fy, filtLen=10)
-    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy)
+    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, normSum=normSum, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy)
     print('pre-filtered ssFy={}'.format(ssFy.shape))
     #%matplotlib
     plt.figure(1)
@@ -482,7 +484,7 @@ def testcase():
 
     # introduce temporal correlations and visualize
     Fy = filter_Fy(Fy, B=np.array([1,0,0,-1]))
-    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=0, centFy=centFy, detrendFy=detrendFy)
+    ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1, nEpochCorrection=nEpochCorrection, centFy=centFy, detrendFy=detrendFy)
     print('pre-filtered ssFy={}'.format(ssFy.shape))
     #%matplotlib
     plt.figure(1)
