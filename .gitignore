@@ -16,3 +16,4 @@ __pycache__
 *.png
 *.pk
 description.xml
+calibration_data*
