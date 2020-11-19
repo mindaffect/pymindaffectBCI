@@ -59,8 +59,6 @@ Note: For more information on how to run an on-line BCI, *including using other 
 Getting Support
 ---------------
 
-For a general overview of how to use the mindaffectBCI, hardware, software and how to use it, see the `system wiki <https://github.com/mindaffect/General/wiki>`_.
-
 If you run into and issue you can either directly raise an issue on the projects `github page <https://github.com/mindaffect/pymindaffectBCI>`_ 
 
 ..
