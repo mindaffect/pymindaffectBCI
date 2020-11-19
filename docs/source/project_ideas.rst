@@ -12,7 +12,7 @@ To inspire you with some things that you can build and brain control, checkout o
 - `Speller iPhone <https://youtu.be/1BB0kgKJ0_w>`_
 - `Tin Throwing <https://youtu.be/MsWDKX7Bqbs>`_
 - `Brain Controlled TV Remote <https://youtu.be/98E4-BglDp8>`_
-- `Speller in Python <https://youtu.be/6-GTUtbpvQk>`_
+- `Speller in Python <https://youtu.be/EeXUEkGqD98>`_
 
 Other media:
 - `National Geographic feature <https://youtu.be/sC5IY7FwTGQ>`_
