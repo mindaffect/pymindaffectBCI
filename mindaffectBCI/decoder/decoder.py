@@ -339,7 +339,10 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
 
         decoding_curve = decodingCurveSupervised(cvscores['estimator'], nInt=(10, 10),
                                       priorsigma=(clsfr.sigma0_, clsfr.priorweight),
-                                      softmaxscale=clsfr.softmaxscale_)
+                                      softmaxscale=clsfr.softmaxscale_, 
+                                      marginalizedecis=True, minDecisLen=clsfr.minDecisLen, 
+                                      bwdAccumulate=clsfr.bwdAccumulate, 
+                                      nEpochCorrection=clsfr.startup_correction)
         # extract the final estimated performance
         #print("decoding curve {}".format(decoding_curve[1]))
         #print("score {}".format(score))
@@ -610,9 +613,9 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # only process the used-subset
                 used_idx = np.any(Fy.reshape((-1, Fy.shape[-1])), 0)
                 used_idx[0] = True # force include 0
-                # map to probabilities, including the prior over sigma!
-                Ptgt = clsfr.decode_proba(Fy[...,used_idx])
-                #  _, _, Ptgt, _, _ = decodingSupervised(Fy[...,used_idx])
+                # map to probabilities, including the prior over sigma! as the clsfr is configured
+                Ptgt = clsfr.decode_proba(Fy[...,used_idx], marginalizedecis=True, marginalizemodels=True,
+                                          minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate)
                 # BODGE: only  use the last (most data?) prediction...
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
                 # send prediction with last recieved stimulus_event timestamp

@@ -19,17 +19,11 @@ import numpy as np
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
 #@function
-def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=2,
-                       centFy=True, detrendFy=False, 
-                       nEpochCorrection=100,
-                       minDecisLen=0, maxDecisLen=0,
-                       bwdAccumulate=False,
-                       marginalizemodels=True, 
+def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True, 
                        marginalizedecis=False,
                        prior=None,
                        nocontrolamplitude=None,
-                       priorsigma=(-1,120),
-                       tiebreaking_noise=1e-3):
+                       tiebreaking_noise=1e-3, **kwargs):
   """    true-target estimator and error-probility estimator for each trial
 
    Args:
@@ -68,16 +62,12 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=2,
   if Fy is None:
       return -1, 1, None, None, None
   
+  #print("decodingSup args={}".format(kwargs))
+
   # get the info on which outputs are zero in each trial
   validTgt = np.any(Fy != 0, axis=-2) # valid if non-zero for any epoch..# (nModel,nTrl,nY)  
   # normalize the raw scores for each model to have nice distribution
-  ssFy,varsFy,decisIdx,nEp,nY=normalizeOutputScores(Fy, validTgt=validTgt,
-                                              badFyThresh=badFyThresh, 
-                                              centFy=centFy, detrendFy=detrendFy,
-                                              nEpochCorrection=nEpochCorrection,
-                                              minDecisLen=minDecisLen, maxDecisLen=maxDecisLen,
-                                              bwdAccumulate=bwdAccumulate,
-                                              priorsigma=priorsigma)
+  ssFy,varsFy,decisIdx,nEp,nY=normalizeOutputScores(Fy, validTgt=validTgt, **kwargs)
 
   if nocontrolamplitude is not None:
     raise NotImplementedError('no-control signal not yet implemented correctly')
@@ -95,14 +85,14 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=2,
                               validTgt=validTgt,
                               marginalizemodels=marginalizemodels,
                               marginalizedecis=marginalizedecis,
-                              prior=prior) # (nM,nTrl,nDecis,nY) [ nY x nDecis x nTrl]
+                              prior=prior) # (nM,nTrl,nDecis,nY)
   # extract the predicted output and it's probability of being the target
   Ptgt2d = Ptgt.reshape((np.prod(Ptgt.shape[:-1]), Ptgt.shape[-1])) # make 2d-copy
   # add tie-breaking noise
   if tiebreaking_noise > 0:
       Ptgt2d = Ptgt2d + np.random.standard_normal(Ptgt2d.shape)*tiebreaking_noise
 
-  Yestidx = np.argmax(Ptgt2d, -1) # max over outputs
+  Yestidx = np.argmax(Ptgt2d, -1) # max over outputs, i.e. models, decisPts, etc..
   Ptgt_max = Ptgt2d[np.arange(Ptgt2d.shape[0]), Yestidx] # value at max, indexing trick to find..
   Yestidx = Yestidx.reshape(Ptgt.shape[:-1]) # -> (nM,nTrl,nY)
   Ptgt_max = Ptgt_max.reshape(Ptgt.shape[:-1])# -> (nM,nTrl,nY)
@@ -116,10 +106,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=2,
   return Yest, Perr, Ptgt, decisMdl, decisEp
 
 
-def decodingSupervised_streamed(Fy,softmaxscale=3,nocontrolamplitude=None,badFyThresh=6,
-                                centFy=True,nEpochCorrection=15,
-                                minDecisLen=0,maxDecisLen=0,
-                                bwdAccumulate=False, filtLen=15,
+def decodingSupervised_streamed(Fy,softmaxscale=3,nocontrolamplitude=None,
                                 marginalizemodels=False):
     '''
     true-target estimator and error-probility estimator for each trial

@@ -45,14 +45,13 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         nInt = (nInt,nInt)
     if Fy is None:
         return 1, 1, None, None, None, None, -1, 1
-    if Fy.ndim > 3:
-        Fyshape = Fy.shape
-        Fy = np.reshape(Fy, (np.prod(Fy.shape[:-2]),)+Fy.shape[-2:]) # ((nM*nTrl),nEp,nY)
+
+    #print("kwargs={}".format(kwargs))
 
     # remove trials with no-true-label info
-    keep = np.any(Fy[:, :, objIDs == 0], (-2, -1)) # [ nTrl ]
+    keep = np.any(Fy[..., objIDs == 0], (-2, -1) if Fy.ndim<=3 else (0,-2,-1)) # [ nTrl ]
     if not np.all(keep):
-        Fy = Fy[keep, :, :]
+        Fy = Fy[..., keep, :, :]
         print('Discarded %d trials without true-label info'%(sum(np.logical_not(keep))))
         if not any(keep):
             print('No trials with true label info!')
@@ -70,7 +69,9 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         integerationLengths = nInt
     #print("intlen={}".format(integerationLengths))
         
-    Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy,objIDs,integerationLengths, **kwargs)
+    Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy, objIDs, integerationLengths, **kwargs)
+
+
     # up-size Yerr, Perr to match input number of trials
     if not np.all(keep):
         tmp=Yerr; Yerr=np.ones((len(keep),)+Yerr.shape[1:],dtype=Yerr.dtype); Yerr[keep,...]=tmp
@@ -80,14 +81,14 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
     
     print(print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh))
 
-    return integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh, Yerr, Perr
+    return integerationLengths, aveProbErr, aveProbErrEst, stopYerr, stopPerrThresh, Yerr, Perr
 
 
 def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs):
     """compute the decoding curves from the given epoch+output scores in Fy
 
     Args:
-        Fy (float: (nTrl,nEp,nY)) : per-epoch output scores
+        Fy (float: ((nM,)nTrl,nEp,nY)) : per-epoch output scores
         objIDs (float: (nY,)) : the objectIDs for the outputs in Fy
         integerationLengths (float (nInt,)) : a list of integeration lengths to compute peformance at
 
@@ -97,18 +98,23 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
         aveProbErr (nInt: float) : average error probablility at this integeration length
         aveProbErrEst (nInt: float):  average estimated error probability for this integeration length
     """    
-    Yidx=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Yest=-np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
-    Perr= np.ones((Fy.shape[0], len(integerationLengths))) # (nTrl,nInt)
+    Yidx=-np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
+    Yest=-np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
+    Perr= np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
 
     print("Int Lens:", end='')
     for li,nep in enumerate(integerationLengths):
-        Yidxli,Perrli,_,_,_=decodingSupervised(Fy[:, :nep, :], **kwargs)
-        # BODGE: only use result from last decision point
-        Yidx[:,li]=Yidxli[:,-1]
-        Perr[:,li]=Perrli[:,-1]
+        Yidxli,Perrli,_,_,_=decodingSupervised(Fy[..., :nep, :], **kwargs)
+        # BODGE: only use result from first-model & last decision point!!!!
+        if Yidxli.ndim>1:
+            if  Yidxli.shape[-1]>1 or (Yidxli.ndim>2 and Yidxli.shape[0]>1):
+                print("Warning: multiple decision points or models, taking the last one!")
+            Yidxli=Yidxli[:,-1] if Yidxli.ndim==2 else Yidxli[-1,:,-1]
+            Perrli=Perrli[:,-1] if Perrli.ndim==2 else Perrli[-1,:,-1]
+        Yidx[:,li]=Yidxli
+        Perr[:,li]=Perrli
         # convert from Yidx to Yest, note may be invalid = -1
-        Yest[:,li]=[ objIDs[yi] if yi in objIDs else -1 for yi in Yidxli[:,-1] ]
+        Yest[:,li]=[ objIDs[yi] if yi in objIDs else -1 for yi in Yidxli ]
         print('.',end='',flush=True)
     print("\n")
 
@@ -148,7 +154,7 @@ def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
     aveThreshPerrIntYerr=np.mean(perrstopiYerr,0) # (nThresh,4) [4 x nThresh] average stopping time for each threshold
     # BODGE: map into integeration lengths to allow use the same ploting routines
 
-    # threshold with closes average stopping time
+    # threshold with closest average stopping time
     mi=np.argmin(np.abs(integerationLengths[:,np.newaxis]-aveThreshPerrIntYerr[:,2:3].T),1) # [ nInt ] 
 
     stopThresh=aveThreshPerrIntYerr[mi,0]
@@ -223,28 +229,35 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     if aveProbErr.ndim > 1:
         # multiple datasets
         plt.plot(integerationLengths.T,aveProbErr.T)
-        plt.plot(np.mean(integerationLengths,0), np.mean(aveProbErr,0), 'k', linewidth=5, label="mean")
+        plt.plot(np.nanmean(integerationLengths,0), np.nanmean(aveProbErr,0), 'k', linewidth=5, label="mean")
         plt.title('Decoding Curve\n(nDatasets={})'.format(aveProbErr.shape[0]))
     
     else:
         # single dataset
-        plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
+
         if len(args)>=7-2:
             # plot the trialwise estimates, when is single subject
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
-            Perr = args[6-2].copy() #(nTrl,nInt)
+            oPerr = args[6-2] #(nTrl,nInt)
+            keep = np.any(oPerr<1,axis=-1) #(nTrl)
+            Yerr=Yerr[keep,:]
+            oPerr=oPerr[keep,:]
+
+            Perr=oPerr.copy()
+            plt.plot(integerationLengths.T,Perr.T,color='.95') # line per trial
             Perr[Yerr<0]=np.NaN
             Perr[Yerr==True]=np.NaN # disable points where it was in error
             # est when was correct
             plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
             plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
             # est when incorrect..
-            Perr = args[6-2].copy() #(nTrl,nInt)
+            Perr = oPerr.copy() #(nTrl,nInt)
             Perr[Yerr<0]=np.NaN
             Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
             plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
             plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
             plt.title('Decoding Curve\n(nTrl={})'.format(Yerr.shape[0]))
+        plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
 
     plt.ylim((0,1))
     plt.xlabel('Integeration Length (samples)')
@@ -256,11 +269,13 @@ def testcase():
     """[summary]
     """    
     import numpy as np
-    Fy=np.random.standard_normal((10,100,50))
-    Fy[:,:,0]=Fy[:,:,0] + 0.3
+    import matplotlib.pyplot as plt
+    Fy=np.random.standard_normal((2,10,100,50))
+    Fy[0,:,:,0]=Fy[0,:,:,0] + 0.3
     from decodingCurveSupervised import decodingCurveSupervised
     (dc)=decodingCurveSupervised(Fy)
     plot_decoding_curve(*dc)
+    plt.show(block=False)
 
     sFy = np.cumsum(Fy,-2)
     Yi = np.argmax(sFy,-1)
@@ -271,7 +286,9 @@ def testcase():
     il=np.tile(dc[0][np.newaxis,:],(4,1))
     pe=np.tile(dc[1][np.newaxis,:],(4,1))
     pe= pe+np.random.standard_normal(pe.shape)*.1 # add some noise
+    plt.figure()
     plot_decoding_curve(il,pe)
+    plt.show()
     
 
 if __name__=="__main__":
