@@ -28,6 +28,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistic
 from mindaffectBCI.decoder.utils import search_directories_for_file
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
+import traceback
 
 PYDIR = os.path.dirname(os.path.abspath(__file__))
 LOGDIR = os.path.join(PYDIR,'../../logs/')
@@ -36,7 +37,19 @@ PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 
 def get_trial_start_end(msgs, start_ts=None):
-    '''get the start+end times of the trials in a utopia message stream'''
+    """
+    get the start+end times of the trials in a utopia message stream
+
+    Args:
+        msgs ([mindaffectBCI.UtopiaMessage]): list of messages recenty recieved
+        start_ts (float, optional): time-stamp for start of *current* trial. Defaults to None.
+
+    Returns:
+        (list (start_ts,end_ts)): list of completed trial (start_ts,end_ts) time-stamp tuples
+        (float): start_ts for trial started but not finished
+        (list UtopiaMessage): list of unprocessed messages
+    """    
+    
     trials = []
     keeplast = False
     for mi, m in enumerate(msgs):
@@ -78,8 +91,17 @@ def get_trial_start_end(msgs, start_ts=None):
     # N.B. start_ts is not None if trail start without end..
     return (trials, start_ts, msgs)
 
-def getCalibration_dataset(ui):
-    ''' extract a labelled dataset from the utopiaInterface, which are trials between modechange messages '''
+def getCalibration_dataset(ui:UtopiaDataInterface):
+    """
+    extract a labelled dataset from the utopiaInterface, which are trials between modechange messages
+
+    Args:
+        ui (UtopiaDataInterface): the data interface object
+
+    Returns:
+        (list (data,stimulus)): list of pairs of time-stamped data and stimulus information as 2d (time,ch) (or (time,output)) numpy arrays
+    """
+    
     # run until we get a mode change gathering training data in trials
     dataset = []
     start_ts = None  # assume we have just started the first trial?
@@ -170,7 +192,16 @@ def dataset_to_XY_ndarrays(dataset):
 
 
 def strip_unused(Y):
-    """ strip unused outputs from the stimulus info in Y """
+    """
+    strip unused outputs from the stimulus info in Y
+
+    Args:
+        Y (np.ndarray (time,outputs)): the full stimulus information, potentionally with many unused outputs
+
+    Returns:
+        (np.ndarray (time,used-outputs)): Y with unused outputs removed
+    """    
+    
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
     Y = Y[..., used_y]
@@ -178,7 +209,7 @@ def strip_unused(Y):
 
 def load_previous_dataset(f:str):
     """
-    load a previously saved (pickled) calibration dataset
+    search standard directory locations and load a previously saved (pickled) calibration dataset
 
     Args:
         f (str, file-like): buffered interface to the data and stimulus streams
@@ -226,7 +257,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
     dataset = getCalibration_dataset(ui)
 
     # fit the model to this data
-    perr, dataset, X, Y = doModelFitting(clsfr,dataset,**kwargs)
+    perr, dataset, X, Y = doModelFitting(clsfr,dataset, fs=ui.fs, **kwargs)
 
     # send message with calibration performance score, if we got one
     if perr is not None:
@@ -236,7 +267,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
 
 def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
-                   cv=2, prior_dataset=None, ranks=(1,2,3,5), **kwargs):
+                   cv=2, prior_dataset=None, ranks=(1,2,3,5), fs=None, **kwargs):
     """
     fit a model given a dataset 
 
@@ -269,7 +300,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             # validate the 2 datasets are compatiable -> same number channels in X
             d_nch = [ x.shape[0] for (x,_) in dataset ]
             p_nch = [ x.shape[0] for (x,_) in prior_dataset ]
-            if max(d_nch) == max(p_nch): # match the max channels info
+            if len(d_nch)>0 and len(p_nch)>0 and max(d_nch) == max(p_nch): # match the max channels info
                 dataset.extend(prior_dataset)
             else:
                 print("Warning: prior dataset not compatiable with current.  Ignored!")
@@ -279,8 +310,9 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
     if dataset:
         try:
             import pickle
-            pickle.dump(dict(dataset=dataset),
-                        open(os.path.join(LOGDIR,'calibration_dataset_{}.pk'.format(UNAME)),'wb'))
+            fn = os.path.join(LOGDIR,'calibration_dataset_{}.pk'.format(UNAME))
+            print('Saving calibration data to {}'.format(fn))
+            pickle.dump(dict(dataset=dataset), open(fn,'wb'))
         except:
             print('Error saving cal data')
 
@@ -299,7 +331,6 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             score = np.mean(cvscores['test_score'])
             print("clsfr={} => {}".format(clsfr, score))
         except:
-            import traceback
             traceback.print_exc()
             return None, None, None, None
 
@@ -318,26 +349,28 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             #if True:
                 import matplotlib.pyplot as plt
                 plt.figure(1)
-                clsfr.plot_model(ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
+                clsfr.plot_model(fs=fs, ncol=3) # use 3 cols, so have: spatial, temporal, decoding-curve
                 plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
                 plt.suptitle("Model + Decoding Performance")
                 #  from analyse_datasets import debug_test_dataset
-                #  debug_test_dataset(X,Y,None,fs=ui.fs)
+                #  debug_test_dataset(X,Y,None,fs=fs)
                 plt.figure(3) # plot the CCA info
                 Y_true = clsfr.stim2event(Y)
                 Y_true = Y_true[...,0:1,:]
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
-                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs)
+                plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=fs)
                 plt.suptitle("Summary Statistics")
                 try:
                     import pickle
-                    pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=ui.fs),
-                                open(os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME)),'wb'))
+                    fn = os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME))
+                    print('Saving SS to {}'.format(fn))
+                    pickle.dump(dict(Cxx=Cxx, Cxy=Cxy, Cyy=Cyy, evtlabs=clsfr.evtlabs, fs=fs),
+                                open(fn,'wb'))
                 except:
                     print('Error saving cal data')
                 plt.figure(4)
-                plot_erp(Cxy,evtlabs=clsfr.evtlabs)
+                plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=fs)
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
                 # save figures
@@ -350,13 +383,26 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.figure(4)
                 plt.savefig(os.path.join(LOGDIR,'erp_{}.png'.format(UNAME)))
             except:
+                traceback.print_exc()
                 pass
 
     return perr, dataset, X, Y
 
 
 def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=None):
-    ''' given the current trials data, apply the classifier and decoder to make target predictions '''
+    """
+    given the current trials data, apply the classifier and decoder to make target predictions
+
+    Args:
+        clsfr (BaseSequence2Sequence): the trained classifier to apply to the data
+        data (np.ndarray (time,channels)): the pre-processed EEG data
+        stimulus (np.ndarray (time,outputs)): the raw stimulus information
+        prev_stimulus (np.ndarray, optional): previous stimulus before stimulus -- poss needed for correct event coding. Defaults to None.
+
+    Returns:
+        (np.ndarray (time,outputs)): Fy scores for each output at each time-point
+    """    
+    
     X = data[:, :-1]
     X_ts = data[:, -1]
     Y = stimulus[:, :-1]
@@ -379,6 +425,15 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
 
 
 def combine_Ptgt(pvals_objIDs):
+    """combine target probabilities in a correct way
+
+    Args:
+        pvals_objIDs (list (pval,objId)): list of Ptgt,objID pairs for outputs at different time points.
+
+    Returns:
+        (np.ndarray (outputs,)) : target probabilities
+        (np.ndarray (outputs,)) : object IDs for the targets
+    """    
     pvals = [p[0] for p in pvals_objIDs] 
     objIDs = [p[1] for p in pvals_objIDs]
     if not all(np.isequal(objIDs[0], oi) for oi in objIDs):
@@ -390,13 +445,13 @@ def combine_Ptgt(pvals_objIDs):
     return Ptgt, objIDs
 
 
-def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
+def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp:int=-1):
     """Send the current prediction information to the utopia-hub
 
     Args:
         ui (UtopiaDataInterface): the interface to the data-hub
-        Ptgt ([type]): the current distribution of target probabilities over outputs
-        used_idx ([type], optional): a set of output indices currently used. Defaults to None.
+        Ptgt (np.ndarray (outputs,)): the current distribution of target probabilities over outputs
+        used_idx (np.ndarray, optional): a set of output indices currently used. Defaults to None.
         timestamp (int, optional): time stamp for which this prediction applies. Defaults to -1.
     """ 
     if Ptgt is None or len(Ptgt)==0 :
@@ -429,7 +484,7 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp=-1):
     ui.sendMessage(PredictedTargetDist(timestamp, used_idx, Ptgt))
     
 
-def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type='trial', timeout_ms=None, block_step_ms=100, maxDecisLen_ms=8000):
+def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, model_apply_type:str='trial', timeout_ms:float=None, block_step_ms:float=100, maxDecisLen_ms:float=8000):
     """ 
     do the prediction stage = basically extract data/msgs from trial start and generate a prediction from them '''
 
@@ -614,7 +669,9 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         UNAME = "{}_{}".format(label,UNAME)
     # setup saving location
     if logdir:
-        LOGDIR=logdir
+        LOGDIR=os.path.expanduser(logdir)
+
+    print("LOGDIR={}".format(LOGDIR))
 
     # create data interface with bandpass and downsampling pre-processor, running about 10hz updates
     if ui is None:
@@ -629,13 +686,18 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                                  stimulus_preprocessor=None,
                                  timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
+    ui.update()
+    
     # use a multi-cca for the model-fitting
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
             evtlabs = evtlabs.split(',')
         clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets)
         print('clsfr={}'.format(clsfr))
-    
+    # pre-train the model if the prior_dataset is given
+    if prior_dataset is not None:
+        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+
     current_mode = "idle"
     # clean shutdown when told shutdown
     while current_mode.lower != "shutdown".lower():
@@ -645,7 +707,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
-                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset)
+                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
 
             doPredictionStatic(ui, clsfr)
 
@@ -671,8 +733,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             for i in plt.get_fignums():
                 plt.figure(i).canvas.flush_events()
 
-def mainloop(*args,**kwargs):
-    run(*args,**kwargs)
+
 
 if  __name__ == "__main__":
     import argparse
@@ -688,6 +749,8 @@ if  __name__ == "__main__":
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
+    parser.add_argument('--logdir', type=str, help='directory to save log/data files', default='~/Desktop/logs')
+    parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
 

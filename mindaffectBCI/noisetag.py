@@ -37,7 +37,16 @@ class FSM:
         '''update the current state, return the new state, raise StopIteration exception when done'''
         return t
     def get(self):
-        '''get the current state, for this set of active objects'''
+        """get the current state, for this set of active objects
+
+        Returns:
+            tuple : The current display state information as a 4-tuple with structure:
+                (stimState, target_idx, objIDs, sendEvent)  
+                stimState (list-int): the stimulus state for each object as an integer
+                target_idx (int): the index into stimState of the cued target, or -1 if no target set
+                objIDs (list-int): the objectIDs for each of the outputs
+                sendEvent (bool): flag if we should send stimulus events in this state
+        """        
         return (None,-1,None,False)# BODGE: stimState,tgtState,objIDs,sendEvent
 
 class GSM(FSM):
@@ -47,7 +56,14 @@ class GSM(FSM):
     def push(self,s):   self.stack.append(s); return self.stack
     def pop(self):      return self.stack.pop()
     def next(self,t):
-        '''get the next stimulus state to shown'''
+        """get the next stimulus state to shown
+
+        Args:
+            t (int): the current time
+
+        Raises:
+            StopIteration: when this state machine has run out of states
+        """
         while self.stack :
             try : 
                 self.stack[-1].next(t)
@@ -59,18 +75,36 @@ class GSM(FSM):
                 print()
         raise StopIteration()
     def get(self):
+        """return the current stimulus state
+
+        Returns:
+            StimulusState: the current stimulus state tuple (stimState,target_idx,objIDs,sendEvent)
+        """        
         if self.stack :
             return self.stack[-1].get()
         else :
             return None
 
 class WaitFor(FSM):
-    '''wait for given number of frames to pass'''
+    ''' state machine which waits for given number of frames to pass'''
     def __init__(self,numframes):
+        """state machine which waits for given number of frames to pass
+
+        Args:
+            numframes (int): the number of frames to wait for
+        """        
         self.numframes=numframes
         self.nframe=0
         print("waitFor: %g"%(self.numframes))
     def next(self,t):
+        """stop after the desired number of frames has passed
+
+        Args:
+            t (int): current time stamp
+
+        Raises:
+            StopIteration: when desired number frames expired
+        """        
         self.nframe=self.nframe+1
         if self.nframe>self.numframes :
             raise StopIteration()

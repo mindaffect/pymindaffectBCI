@@ -71,13 +71,14 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         
     Yerr, Perr, aveProbErr, aveProbErrEst = compute_decoding_curve(Fy, objIDs, integerationLengths, **kwargs)
 
-    stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
-    
+
     # up-size Yerr, Perr to match input number of trials
     if not np.all(keep):
         tmp=Yerr; Yerr=np.ones((len(keep),)+Yerr.shape[1:],dtype=Yerr.dtype); Yerr[keep,...]=tmp
         tmp=Perr; Perr=np.ones((len(keep),)+Perr.shape[1:],dtype=Perr.dtype); Perr[keep,...]=tmp
 
+    stopPerrThresh,stopYerr = compute_stopping_curve(nInt,integerationLengths,Perr,Yerr)
+    
     print(print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst,stopYerr,stopPerrThresh))
 
     return integerationLengths, aveProbErr, aveProbErrEst, stopYerr, stopPerrThresh, Yerr, Perr
@@ -163,6 +164,18 @@ def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
 
     
 def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopYerr=None,stopPerrThresh=None):
+    """[summary]
+
+    Args:
+        integerationLengths ([type]): [description]
+        aveProbErr ([type]): [description]
+        aveProbErrEst ([type], optional): [description]. Defaults to None.
+        stopYerr ([type], optional): [description]. Defaults to None.
+        stopPerrThresh ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """    
     MINSCALEPERR=0.1
     
     s=''    
@@ -203,7 +216,14 @@ def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopY
 
 
 def plot_decoding_curve(integerationLengths, aveProbErr, *args):
-    ''' plot the decoding curve '''
+    """
+    plot the decoding curve
+
+    Args:
+        integerationLengths ([type]): [description]
+        aveProbErr ([type]): [description]
+    """    
+
     import matplotlib.pyplot as plt
 
     if aveProbErr.ndim > 1:
@@ -246,6 +266,8 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     plt.grid(True)
 
 def testcase():
+    """[summary]
+    """    
     import numpy as np
     import matplotlib.pyplot as plt
     Fy=np.random.standard_normal((2,10,100,50))
