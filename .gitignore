@@ -15,3 +15,5 @@ __pycache__
 *.ipynb_checkpoints*
 *.png
 *.pk
+description.xml
+calibration_data*
