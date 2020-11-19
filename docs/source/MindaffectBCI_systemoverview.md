@@ -6,7 +6,7 @@ The mindaffect BCI is a Brain Computer Interface (BCI) system which allows users
 
 In the BCI literature this type of BCI is called a visual evoked-response BCI, as the brain response (which we use) is generated (or evoked) by the visual flickering of the target object.  Below is an illustration of how a classic evoked response BCI works schematically:
 
-![VisualERPBCISchematic](images/VisualEvokedResponseBCI.png "visual evoked response BCI")
+![Visual Evoked Response BCI](images/VisualEvokedResponseBCI.png "visual evoked response BCI")
 
 To briefly describe this schematic:
 
@@ -26,7 +26,7 @@ The Utopia system uses a particular ‘flicker’ pattern based on pseudo-random
 
 The main physical components of the mindaffect BCI are illustrated below:
 
-![the main physical components of the BCI](images/PhysicalBCIComponents.png)
+![The main physical components of the BCI](images/PhysicalBCIComponents.png)
 
 
 The 4 main components and their purpose are:
@@ -41,7 +41,7 @@ The 4 main components and their purpose are:
 
 The physical components of the Utopia BCI map fairly straightforwardly onto the functional roles within the utopia system. The below diagram illustrates the main functional roles of the Utopia system and the communication messages used to communicate between them.  The arrows indicate the direction of information flow between components.
 
-![functional roles](images/SystemArchitecture.png)
+![The main functional roles in the mindaffectBCI](images/SystemArchitecture.png)
 
 
 The main functional roles in the utopia system are:
@@ -55,7 +55,7 @@ The main functional roles in the utopia system are:
     *   Java, with libGDX
     *   MATLAB/OCTAVE
 
-*   **EEG Acquisition: **The EEG acquisition system is responsible for getting digital EEG samples from the EEG hardware and transmitting them to the **Decoder**.
+*   **EEG Acquisition:** The EEG acquisition system is responsible for getting digital EEG samples from the EEG hardware and transmitting them to the **Decoder**.
 
     This information is transmitted to the decoder in a number of different formats, for example via. [Lab Streaming Layer](https://github.com/sccn/labstreaminglayer).  The mindaffect BCI primarly uses [brainflow](brainflow.org) to interact with the acquisation hardware, and then uses a network-transparent message-specification, see [](https://mindaffect-bci.readthedocs.io/en/latest/MessageSpec.html), to forward this data to the **Utopia-Hub**. 
 
@@ -66,26 +66,26 @@ The main functional roles in the utopia system are:
 
     The utopia-hub also includes additional functionality making it easier to use and debug the utopia-system including;
 
-*   Sending and monitoring **HEARTBEAT** messages from and to clients.  These messages are sent a regular intervals to check for liveness of the clients within the utopia-hub and to detect hub crashes within clients.
-*   Providing auto-discovery services, via Simple Service Discovery (SSDP) to allow automatic detection of the utopia-hub from clients.
+    *   Sending and monitoring **HEARTBEAT** messages from and to clients.  These messages are sent a regular intervals to check for liveness of the clients within the utopia-hub and to detect hub crashes within clients.
+    *   Providing auto-discovery services, via Simple Service Discovery (SSDP) to allow automatic detection of the utopia-hub from clients.
 
     As the Utopia-Hub is an internal component to the Decoder component, it’s actual operation is not discussed further here.  (Though FYI: it is a single-threaded network server implemented in JAVA).
 
     For ease of implementation in clients we provide a full implementation of utopia-hub **CLIENTS** including auto-discovery, heartbeat monitoring, and message sending and receiving for all message types in the following platforms/frameworks (see XXX for more information):
 
-    *   SWIFT / iOS
-    *   C# / Unity
-    *   Python
-    *   Java
-    *   MATLAB/OCTAVE
+        *   SWIFT / iOS
+        *   C# / Unity
+        *   Python
+        *   Java
+        *   MATLAB/OCTAVE
 
-*   **Decoder: **This component is responsible for using information on which flicker sequences have been presented to the user (received as **STIMULUSEVENT** messages from the presentation component(s)) and what EEG measurements have been made  (received from the EEG Acquisition component) to generate **target predictions** sent as **PREDICTEDTARGETPROB** messages to the selection component.  As the predictions of the decoder are uncertain, the target predictions consist of a:
+*   **Decoder:** This component is responsible for using information on which flicker sequences have been presented to the user (received as **STIMULUSEVENT** messages from the presentation component(s)) and what EEG measurements have been made  (received from the EEG Acquisition component) to generate **target predictions** sent as **PREDICTEDTARGETPROB** messages to the selection component.  As the predictions of the decoder are uncertain, the target predictions consist of a:
     *   Predicted target object - which is the object the decoder thinks is most likely to be the users intended target object.
     *   Predicted target error - which is the decoders estimate of the chance that it’s identification of the target object is **incorrect**.  
 
     Internally, it does this by using **machine learning** techniques to learn a mapping from EEG to a predicted flicker sequence.  This predicted flicker sequence is then compared with information on the actual flicker sequences shown to the user by the presentation component to identify the most likely target object.  As the actual techniques used to learn this mapping and compare the predicted and actual flicker sequences are internal to the Decoder component these will not be discussed further here.
 
-*   **Selection :** The selection component is responsible for taking **target predictions** as generated by the **Decoder** and turning these into **Selections** for which the output system should generate the desired output.  How the target prediction information from the decoder and any contextual information available to the selector is used to make these selections is up to the selection system, for example in a virtual keyboard application the context within a word may be used to make selection of the most likely next letter easier.  Note: in many cases, the selection system integrated with that of the output system as this has the contextual information available to improve selections  -- such as knowing the word typed so far in a virtual keyboard.  
+*   **Selection:** The selection component is responsible for taking **target predictions** as generated by the **Decoder** and turning these into **Selections** for which the output system should generate the desired output.  How the target prediction information from the decoder and any contextual information available to the selector is used to make these selections is up to the selection system, for example in a virtual keyboard application the context within a word may be used to make selection of the most likely next letter easier.  Note: in many cases, the selection system integrated with that of the output system as this has the contextual information available to improve selections  -- such as knowing the word typed so far in a virtual keyboard.  
 
     In most cases the selection system is simply one of thresholding on the Predicted target error of the target predictions given by the **Decoder**. 
 
@@ -100,7 +100,7 @@ The main functional roles in the utopia system are:
     Information on user selections is transmitted to the output component using **Utopia Message-spec SELECTION** messages (see the [Utopia Message-spec](https://mindaffect-bci.readthedocs.io/en/latest/MessageSpec.html) for details).   The particular transport used for the messages will depend on the hardware implementation, but currently we use TCP-IP sockets over WIFI.
 
 
-### System Mode Switching: Calibration and Prediction {#system-mode-switching-calibration-and-prediction}
+### System Mode Switching: Calibration and Prediction
 
 The core of the Utopia system is the machine learning system in the decoder which transforms EEG + StimulusEvents into target predictions.  For this transformation to work the decoder needs so-called **calibration** data from which the ML algorithms are **trained**.  To get this calibration data the system works in one of two main modes, Calibration and Prediction.
 
