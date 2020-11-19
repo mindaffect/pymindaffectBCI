@@ -155,7 +155,7 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False):
+def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, error_weight=2):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -183,7 +183,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
         if validTgt.shape[0] > 1 :
             validTgt = validTgt[..., keep, :]
  
-     # include the nout correction on a per-trial basis
+    # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
 
     # simply try a load of scales - as input are normalized shouldn't need more than this
@@ -193,7 +193,17 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
         Ptgt = zscore2Ptgt_softmax(f,softmaxscale=s,validTgt=validTgt,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
         # Compute the loss = cross-entropy.  
         # As Y==0 is *always* the true-class, this becomes simply sum log this class 
-        Ed[i] = np.sum(-np.log(np.maximum(Ptgt[...,0],MINP)))
+        # Compute the loss = cross-entropy, with soft targets
+        # identify trials where prediction is incorrect
+        Yerr = Ptgt[...,0:1] < np.max(Ptgt[...,1:],-1,keepdims=True)
+        wght = np.ones(Yerr.shape,dtype=Ptgt.dtype)
+        wght[Yerr] = error_weight # relative weighting for these errors
+        if False:
+            # As Y==0 is *always* the true-class, this becomes simply sum log this class 
+            Ed[i] = (1-eta)*np.sum(-wght*np.log(np.maximum(Ptgt[...,0:1],MINP))) + (eta/Ptgt.shape[-1])*np.sum(-wght*np.log(np.maximum(Ptgt[...,1:],MINP)))
+        else:
+            Ed[i] = -np.sum(np.log(np.maximum(Ptgt[...,0:1],1e-5)))
+
         #print("{}) scale={} Ed={}".format(i,s,Ed[i]))
     # use the max-entropy scale
     mini = np.argmin(Ed)

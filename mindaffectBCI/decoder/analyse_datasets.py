@@ -36,7 +36,7 @@ import re
 
 
 
-def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, retrain_on_all=True, **kwargs):
+def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_idx=None, cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, retrain_on_all=True, **kwargs):
     """ cross-validated training on a single datasets and decoing curve estimation
 
     Args:
@@ -46,6 +46,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         fs (float): the data sample rate (if coords is not given)
         model (str, optional): The type of model to fit, as in `model_fitting.py`. Defaults to 'cca'.
         cv (bool, optional): flag if we should train with cross-validation using the cv_fit method. Defaults to True.
+        test_idx (list-of-int, optional): indexs of test-set trials which are *not* passed to fit/cv_fit. Defaults to True.
         tau_ms (float, optional): length of the stimulus-response in milliseconds. Defaults to 300.
         rank (int, optional): rank of the decomposition in factored models such as cca. Defaults to 1.
         evtlabs ([type], optional): The types of events to used to model the brain response, as used in `stim2event.py`. Defaults to None.
@@ -97,6 +98,18 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
     else:
         raise NotImplementedError("don't  know this model: {}".format(model))
 
+    # do train/test split
+    if test_idx is None:
+        X_train = X
+        Y_train = Y
+    else:
+        test_ind = np.zeros((X.shape[0],),dtype=bool)
+        test_ind[test_idx] = True
+        train_ind = np.logical_not(test_ind)
+        X_train = X[train_ind,...]
+        Y_train = Y[train_ind,...]
+        retrain_on_all = True
+
     # fit the model
     if cv:
         # hyper-parameter optimization by cross-validation
@@ -104,7 +117,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
             # hyper-parameter optimization with cross-validation
             cv_clsfr = GridSearchCV(clsfr, tuned_parameters)
             print('HyperParameter search: {}'.format(tuned_parameters))
-            cv_clsfr.fit(X, Y)
+            cv_clsfr.fit(X_train, Y_train)
             means = cv_clsfr.cv_results_['mean_test_score']
             stds = cv_clsfr.cv_results_['std_test_score']
             for mean, std, params in zip(means, stds, cv_clsfr.cv_results_['params']):
@@ -115,24 +128,35 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', cv=True
         
         if ranks is not None and isinstance(clsfr,MultiCCA):
             # cross-validated rank optimization
-            res = clsfr.cv_fit(X, Y, cv=cv, ranks=ranks, retrain_on_all=retrain_on_all)
+            res = clsfr.cv_fit(X_train, Y_train, cv=cv, ranks=ranks, retrain_on_all=retrain_on_all)
         else:
             # cross-validated performance estimation
-            res = clsfr.cv_fit(X, Y, cv=cv, retrain_on_all=retrain_on_all)
+            res = clsfr.cv_fit(X_train, Y_train, cv=cv, retrain_on_all=retrain_on_all)
 
         Fy = res['estimator']
 
     else:
         print("Warning! overfitting...")
-        clsfr.fit(X,Y)
+        clsfr.fit(X_train,Y_train)
         Fy = clsfr.predict(X, Y, dedup0=True)
 
 
     # use the raw scores, i.e. inc model dim, in computing the decoding curve
     rawFy = res['rawestimator'] if 'rawestimator' in res else Fy
 
+    if test_idx is not None:
+        # predict on the hold-out test set
+        Fy_test = clsfr.predict(X[test_idx,...],Y[test_idx,...])
+        # insert into the full results set
+        tmp = list(rawFy.shape); tmp[-3]=X.shape[0]
+        allFy = np.zeros(tmp,dtype=Fy.dtype)
+        allFy[...,train_ind,:,:] = rawFy
+        allFy[...,test_ind,:,:] = Fy_test
+        rawFy = allFy
+        res['rawestimator']=rawFy
+
     # assess model performance
-    score=clsfr.audc_score(Fy)
+    score=clsfr.audc_score(rawFy)
     print(clsfr)
     print("score={}".format(score))
 
@@ -407,7 +431,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     clsfr_args['fs']=fs
     clsfr_args['offset_ms']=offset_ms
     clsfr_args['rank']=rank
-    clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
+    #clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
     score, res, Fy, clsfr, cvres = analyse_dataset(X, Y, coords, model, **clsfr_args, **kwargs)
     Fe = clsfr.transform(X)
 
@@ -416,12 +440,13 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
         rawFy = cvres['rawestimator'] 
         Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1)
     else:
+        rawFy = cvres['estimator']
         Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1)
 
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
 
-    plot_trial_summary(X, Y, Fy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
+    plot_trial_summary(X, Y, rawFy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
     plt.gcf().set_size_inches((15,9))
     plt.savefig("{}_trial_summary".format(label)+".pdf")
@@ -495,8 +520,9 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
 
         plt.figure(21)
         plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
-        plt.show()
-
+    
+    
+    plt.show()
     return score, res, Fy, clsfr, rawFy
 
 def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
@@ -538,10 +564,15 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
 
     if Py is not None:
         if Py.ndim>3 :
-            print("Multiple models? accumulated away")
+            print("Py: Multiple models? accumulated away")
             Py = np.sum(Py,0)
 
-    nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl*1.8))); h = int(np.ceil(nTrl/w))
+    if Fy is not None:
+        if Fy.ndim>3 :
+            print("Fy: Multiple models? accumulated away")
+            Fy = np.mean(Fy,0)
+
+    nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl)*1.8)); h = int(np.ceil(nTrl/w))
     fig = plt.figure(figsize=(20,10))
     trial_grid = fig.add_gridspec( nrows=h, ncols=w, figure=fig, hspace=.05, wspace=.05) # per-trial grid
     nrows= 5 + (0 if Fe is None else 1) + (0 if Py is None else 1)
@@ -788,7 +819,7 @@ if __name__=="__main__":
     savefile = '~/Desktop/mark/mindaffectBCI_*decoder_off.txt'
     savefile = '~/Desktop/mark/mindaffectBCI_*201020_1148.txt'
     #savefile = '~/Desktop/mark/mindaffectBCI_*201014*0940*.txt'
-    #savefile = "~/Downloads/mindaffectBCI*.txt"
+    savefile = "~/Downloads/mindaffectBCI*.txt"
     if savefile is None:
         savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
     
@@ -799,10 +830,17 @@ if __name__=="__main__":
     X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100)
     label = os.path.splitext(os.path.basename(savefile))[0]
 
-    cv=[(slice(0,10),slice(10,None))]
+    #cv=[(slice(0,10),slice(10,None))]
+    test_idx = slice(10,None) # hold-out test set
 
-    #debug_test_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
-    #debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5))
+    #analyse_dataset(X, Y, coords, tau_ms=400, evtlabs=('re','fe'), rank=1, model='cca', tuned_parameters=dict(rank=[1,2,3,5]))
+    # analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+    #                 model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=500)
+
+    debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+                      model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=500)
+
+    quit()
 
     # strip weird trials..
     # keep = np.ones((X.shape[0],),dtype=bool)
@@ -825,7 +863,7 @@ if __name__=="__main__":
         analyse_train_test(X,Y,coords, label='decoder-on. train-test split', splits=splits, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', ranks=(1,2,3,5) )
 
     else:
-        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', cv=cv, ranks=(1,2,3,5), priorweight=300, prediction_offsets=(0,1,2), startup_correction=100 )
+        debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=1e6)#, prediction_offsets=(-2,-1,0,1) )
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
     #run_analysis()
