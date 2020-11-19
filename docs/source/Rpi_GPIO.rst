@@ -107,6 +107,10 @@ Here's how a one button LED presentation looks like (the LED button stays ON for
 
 	.. image:: images/LED_DEMO.gif
 
+And a two button system looks like
+
+	.. image:: images/2_buttons.gif
+
 RPI GPIO for control
 -----
 You can control a physical device using MindAffect’s output module and a board with GPIO.
