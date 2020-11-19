@@ -24,7 +24,16 @@
 # Set up imports and paths
 import time
 from mindaffectBCI.noisetag import Noisetag
-from gpiozero import LED 
+try:
+    from gpiozero import LED 
+except:
+    print("Making a mock LED class for testing")
+    class led:
+        def __init__(self,id=-1): self.id=id
+        def on(self): print('{}*'.format(self.id),end='')
+        def off(self): print('{}.'.format(self.id),end='')
+    LEDS= [led(i) for i in range(20)]
+    def LED(i:int): return LEDS[i]
 
 nt=None
 leds=[]
@@ -98,7 +107,7 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
     nt.addSelectionHandler(selectionHandler)
 
 
-def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10):
+def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10, **kwargs):
     """run the pi GPIO based presentation 
 
     Args:
@@ -107,7 +116,9 @@ def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10):
         led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
         ncal (int, optional): number of calibration trials to use. Defaults to 10.
         npred (int, optional): number of prediction trials to use. Defaults to 10.
-    """    
+    """
+    if kwargs is not None:
+        print("Warning additional args ignored: {}".format(kwargs))    
     init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=ncal, nPred=npred)
     while True :
         draw()
