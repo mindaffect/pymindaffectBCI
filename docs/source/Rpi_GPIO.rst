@@ -65,6 +65,9 @@ Directions for setting up a minimum presentation hardware
 #. Connect the + pins of the LEDs to the GPIO  pins
 	#. By default pins 2,3,4 are used in the rpgpio.py script. You don’t have to use all the pins, but you need to inform the software about How many pins are going to be used by the LEDs
 #. Connect the - pins of the LEDS to the GND GPIO pin
+#. solder the micro USB cable to the power circuit pins
+	* red wire --> 5v pin
+	* black wire --> GND pin
 #. Connect the power circuit to the Rpi board. We use this power circuit in our demo.
 
 	.. image:: images/LEDpresassembly.PNG
