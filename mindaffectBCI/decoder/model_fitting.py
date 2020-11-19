@@ -69,7 +69,7 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip', priorweight=120, startup_correction=100, prediction_offsets=None, verb=0):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, priorweight=120, startup_correction=100, prediction_offsets=None, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -77,13 +77,12 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Args:
           evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
           tau (int, optional): the length in samples of the stimulus response. Defaults to 18.
-          offset ([ListInt], optional): a (list of) possible offsets from the even time for the response window.
-          outputscore (str, Optional): the type of output scoring function to use. Defaults to 'ip'.
+          offset (int, optional): offset from the event time for the response window.
           priorweight (float, Optional): the weighting in pseudo-samples for the prior estimate for the prediction noise variance.  Defaults to 120.
           startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
         """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau, self.offset, self.outputscore, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb = (tau, offset, outputscore, priorweight, startup_correction, prediction_offsets, verb)
+        self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb = (tau, offset, priorweight, startup_correction, prediction_offsets, verb)
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
@@ -143,7 +142,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         # get output scores.  Optionally, include time-shifts in output.
         if offsets is None and self.prediction_offsets is not None:
             offsets = self.prediction_offsets
-        Fy = scoreOutput(Fe, Y, outputscore=self.outputscore, dedup0=dedup0, R=self.R_, offset=offsets) #(nM, nTrl, nSamp, nY)
+        Fy = scoreOutput(Fe, Y, dedup0=dedup0, R=self.R_, offset=offsets) #(nM, nTrl, nSamp, nY)
         
         # BODGE: strip un-needed model dimension
         if Fy.ndim > 3 and Fy.shape[0] == 1:

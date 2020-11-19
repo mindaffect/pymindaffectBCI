@@ -19,8 +19,8 @@ import numpy as np
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
 #@function
-def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=4,
-                       centFy=True, detrendFy=True, 
+def decodingSupervised(Fy, softmaxscale=3.5, badFyThresh=2,
+                       centFy=True, detrendFy=False, 
                        nEpochCorrection=100,
                        minDecisLen=0, maxDecisLen=0,
                        bwdAccumulate=False,
