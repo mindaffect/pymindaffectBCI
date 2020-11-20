@@ -157,9 +157,10 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     # reverse the time reversal for backward accumulation    
     if bwdAccumulate:
-        ssFy = ssFy[:, ::-1, :]
-        sFy_scale = sFy_scale[:, ::-1, :]
-        N = N[::-1]
+        print("Warning: backward accumulation not supported yet!")
+        #ssFy = ssFy[..., ::-1, :]
+        #sFy_scale = sFy_scale[..., ::-1, :]
+        #N = N[...,::-1]
 
     if len(Fyshape)>3 : # convert back to have model dimension
         ssFy      = np.reshape(ssFy, (Fyshape[:-2]+ssFy.shape[-2:]))

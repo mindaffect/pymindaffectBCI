@@ -342,7 +342,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, priorweight=120, startup_correction=100, prediction_offsets=None, minDecisLen=100, bwdAccumulate=True, **kwargs):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, priorweight=200, startup_correction=100, prediction_offsets=None, minDecisLen=100, bwdAccumulate=False, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, priorweight=priorweight, startup_correction=startup_correction, prediction_offsets=prediction_offsets, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
