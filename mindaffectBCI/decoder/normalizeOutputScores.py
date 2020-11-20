@@ -151,7 +151,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         
         #cf = cf + 1/c4(1 + N/np.maximum(1, nEpochCorrection)) 
         
-        cf = cf + nEpochCorrection/(N+1)
+        cf = cf + nEpochCorrection/np.sqrt(N+1)
     
     # get the score scaling - including the correction factors
     sFy_scale = np.sqrt(sigma2) * cf.astype(sigma2.dtype)

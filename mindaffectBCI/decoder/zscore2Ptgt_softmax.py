@@ -155,7 +155,29 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, nocontrol_condn=True):
+def append_block_perm_f(f,n):
+    import random
+    if n < 0 : # neg is max number outputs, so pad with enough
+        n = max(0, -n - f.shape[-1])
+    tmp = f
+    if n > 0 :
+        # use block permutation to make virtual outputs
+        nblk = min( f.shape[-2]/3, 10 )
+        blkSz = int(f.shape[-2]/nblk)
+        # get slices for the blocks
+        blkIdx = [ slice(i,min(f.shape[-2],i+blkSz)) for i in range(0,f.shape[-2],blkSz) ]
+        tmp = np.zeros(f.shape[:-1]+(n+f.shape[-1],), dtype=f.dtype)
+        tmp[...,:f.shape[-1]] = f
+        perm = [ i%f.shape[-1] for i in range(n) ]
+        for idx in blkIdx:
+            random.shuffle(perm) 
+            tmp[...,idx,f.shape[-1]:] = f[...,idx,perm]
+    return tmp
+
+def calibrate_softmaxscale(f, validTgt=None, 
+                           scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), 
+                           MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, 
+                           nocontrol_condn=True, n_virt_outputs=-20):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -182,7 +204,15 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
         f = f[..., keep, :, :]
         if validTgt.shape[0] > 1 :
             validTgt = validTgt[..., keep, :]
- 
+
+    if nocontrol_condn:
+        f_nc = f[..., 1:]
+        vtgt_nc = validTgt[..., 1:]
+
+    if n_virt_outputs is not None:
+        f = append_block_perm_f(f,n_virt_outputs)
+
+
     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
 
@@ -198,7 +228,7 @@ def calibrate_softmaxscale(f, validTgt=None, scales=(.01,.02,.05,.1,.2,.3,.4,.5,
 
         if nocontrol_condn:
             # inlude a non-control class loss
-            Ptgt_nc = zscore2Ptgt_softmax(f[...,1:],softmaxscale=s,validTgt=validTgt[...,1:],marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
+            Ptgt_nc = zscore2Ptgt_softmax(f_nc,softmaxscale=s,validTgt=vtgt_nc,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
             Edi_nc = np.sum( -np.log(np.maximum(Ptgt_nc[...,0:1],1e-5)) ) / (f.shape[-1]-1)
             print("{}) scale={} Ed={} = {}+{}".format(i,s,Edi+Edi_nc, Edi, Edi_nc))
             Edi = Edi + Edi_nc
@@ -233,7 +263,7 @@ def mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag):
 
 def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
             marginalizemodels, marginalizedecis, 
-            nEpochCorrection, priorweight, minDecisLen=-1, nocontrol_condn=True):
+            nEpochCorrection, priorweight, minDecisLen=-1, nocontrol_condn=True, n_virt_outputs=None):
     import numpy as np
     #print("{}".format(locals()))
     
@@ -247,7 +277,7 @@ def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
     ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
                                 normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
                                 marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
-    softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels, nocontrol_condn=nocontrol_condn)
+    softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels, nocontrol_condn=nocontrol_condn, n_virt_outputs=n_virt_outputs)
 
     ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
                                 normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
@@ -341,7 +371,7 @@ def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
 
 if __name__=="__main__":
     if True:
-        Fy, noise, sigamp = mkTestFy(nY=10,nM=1,nEp=640,nTrl=200,sigstr=.15,startup_lag=.3)
+        Fy, noise, sigamp = mkTestFy(nY=10, nM=1, nEp=800, nTrl=100, sigstr=.25, startup_lag=.20)
     else:
         import pickle
         stopping=pickle.load(open('stopping.pk','rb'))
@@ -351,8 +381,10 @@ if __name__=="__main__":
         Fy=Fy[...,keep,:,:]
         Y=Y[...,keep,:,:]
 
-    visPtgt(Fy.copy(),normSum=False, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=50,priorweight=200,nocontrol_condn=True)
+    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=True, minDecisLen=100,
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
+            nocontrol_condn=True, n_virt_outputs=-20)
 
-    visPtgt(Fy.copy(),normSum=False, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=50,priorweight=200,nocontrol_condn=False)
+    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=True, minDecisLen=100,
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
+            nocontrol_condn=False, n_virt_outputs=-20)
