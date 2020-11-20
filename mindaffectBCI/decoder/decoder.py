@@ -26,6 +26,7 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.scoreOutput import dedupY0
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_erp
 from mindaffectBCI.decoder.utils import search_directories_for_file
+from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 import traceback
@@ -546,12 +547,6 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         # change in trial-start -> end-of-trial / start new trial detected
         if not trial_start_ts == otrial_start_ts:
             print("New trial! tr_start={}".format(trial_start_ts))
-            if PREDICTIONPLOTS and Fy is not None and guiplots:
-                #try:
-                Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
-                plot_trial_summary(Fy,Py)
-                #except:
-                #    pass
             Fy = None
             block_start_ts = trial_start_ts
 
@@ -628,7 +623,10 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 if PREDICTIONPLOTS and guiplots and len(Ptgt)>1:
                     # bar plot of current Ptgt info
                     #try:
-                    plot_ptgt(Ptgt)
+                    ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
+                                    nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+                    Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
+                    plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
                     #except:
                     #    pass
 
@@ -647,59 +645,57 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
 
-axFy, axPy = (None, None)
-def plot_trial_summary(Fy,Py, fs:float=None):
+axPtgt, axFy, axPy = (None, None, None)
+def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
     """Plot a summary of the trial decoding information
 
     Args:
+        Ptgt (np.ndarray): the current output probabilities
         Fy (np.ndarray): the raw output scores over time
         Py (np.ndarray): the raw probabilities for each target over time
         fs (float, optional): the data sample rate. Defaults to None.
     """    
-    global axFy, axPy
+    global axFy, axPy, axPtgt
+
     if axFy is None:
         # init the fig
         fig = plt.figure(10)
         plt.clf()
-        (axFy,axPy)=fig.subplots(2,1,sharex=True)
-    axFy.cla()
-    axFy.set_ylabel('Fy')
-    axFy.set_title("Trial Summary")
-    axFy.grid(True)
-    if Fy.ndim>3 : # sum out model dim 
-        Fy=np.mean(Fy,-4)
-    times = np.arange(Fy.shape[-2])
-    t_unit = 'samples'
-    if fs is not None:
-        times = times / fs
-        t_unit = 's'
-    axFy.plot(np.cumsum(Fy[0,:,:],-2))
-    axPy.cla()
-    axPy.set_ylabel('Py')
-    axPy.set_ylim((0,1))
-    axPy.set_xlabel("time ({})".format(t_unit))
-    axPy.grid(True)
-    axPy.plot(Py[0,:,:])
-    plt.show(block=False)
+        axPtgt = fig.add_axes((.45,.1,.50,.85))
+        axPy = fig.add_axes((.1,.1,.25,.35))
+        axFy = fig.add_axes((.1,.55,.25,.35),sharex=axPy)
+        axFy.tick_params(labelbottom=False)
+        plt.tight_layout()
 
-axPtgt=None
-def plot_ptgt(Ptgt):
-    """plot the instantaneous output target probabilities
+    if Fy is not None and axFy is not None:
+        axFy.cla()
+        axFy.set_ylabel('Fy')
+        axFy.set_title("Trial Summary")
+        axFy.grid(True)
+        if Fy.ndim>3 : # sum out model dim 
+            Fy=np.mean(Fy,-4)
+        times = np.arange(-Fy.shape[-2],0)
+        t_unit = 'samples'
+        if fs is not None:
+            times = times / fs
+            t_unit = 's'
+        axFy.plot(times,Fy[0,:,:])
+        axPy.cla()
+        axPy.set_ylabel('Py')
+        axPy.set_ylim((0,1))
+        axPy.set_xlabel("time ({})".format(t_unit))
+        axPy.grid(True)
+        axPy.plot(times,Py[0,:,:])
 
-    Args:
-        Ptgt (np.ndarray): the current probability of each output being a target
-    """    
-    global axPtgt
-    if axPtgt is None:
+    if Ptgt is not None and axPtgt is not None:
         # init the fig
-        fig = plt.figure(20)
-        plt.cla()
-        plt.title("Current: P_target")
-        plt.ylabel("P_target")
-        plt.xlabel('Output (objID)')
-        plt.ylim((0,1))
-        plt.grid(True)
-    plt.bar(range(len(Ptgt)),Ptgt)
+        axPtgt.cla()
+        axPtgt.set_title("Current: P_target")
+        axPtgt.set_ylabel("P_target")
+        axPtgt.set_xlabel('Output (objID)')
+        axPtgt.set_ylim((0,1))
+        axPtgt.grid(True)
+        axPtgt.bar(range(len(Ptgt)),Ptgt)
     #plt.xticklabel(np.flatnonzero(used_idx))
     plt.show(block=False)
     # fig.canvas.draw()

@@ -905,7 +905,7 @@ class SelectionGridScreen(Screen):
             self.noisetag.updateStimulusState()
             stimulus_state, target_idx, objIDs, sendEvents=self.noisetag.getStimulusState()
             target_state = stimulus_state[target_idx] if target_idx>=0 else -1
-            if target_idx > 0 : self.last_target_idx = target_idx
+            if target_idx >= 0 : self.last_target_idx = target_idx
         except StopIteration:
             self.isDone=True
             return
@@ -1198,9 +1198,10 @@ class ExptScreenManager(Screen):
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
             self.selectionGrid.target_only=False
+            self.selectionGrid.show_correct=True
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=30/isi, cuedprediction=True, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1218,11 +1219,12 @@ class ExptScreenManager(Screen):
             self.selectionGrid.reset()
             self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
+            self.selectionGrid.show_correct=False
             self.selectionGrid.target_only=False
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
 
-            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=10/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
+            self.selectionGrid.noisetag.startPrediction(nTrials=self.nPred, numframes=30/isi, cuedprediction=False, waitduration=1, framesperbit=self.framesperbit, selectionThreshold=self.selectionThreshold, permute=self.permute_codebook)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 

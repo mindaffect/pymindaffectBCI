@@ -438,10 +438,10 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # get the prob scores, per-sample
     if 'rawestimator' in cvres:   
         rawFy = cvres['rawestimator'] 
-        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1)
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
     else:
         rawFy = cvres['estimator']
-        Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1)
+        Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
 
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
