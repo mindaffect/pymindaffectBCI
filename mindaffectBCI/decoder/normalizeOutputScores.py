@@ -66,7 +66,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         Fy = Fy[np.newaxis, :, :]
 
     # get info on the number of valid Epochs or Outputs in each trial
-    nY, nEp, lastEp, validTgt, validEp = get_valid_epochs_outputs(Fy)
+    nY, nEp, lastEp, validTgt, validEp, validFy = get_valid_epochs_outputs(Fy)
 
     if np.max(nEp.ravel()) < 1: # guard no data to analyse
         ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
@@ -74,7 +74,9 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     # estimate the points at which we may make a decision
     maxnEp = np.max(lastEp.ravel())
-    decisIdx = np.array([maxnEp-1], dtype=int) # default to single decision at max-length
+    if maxDecisLen > 0:     # Limit the max window size to test
+        maxnEp = np.min(maxnEp,maxDecisLen)
+
     if minDecisLen > 0 and minDecisLen < maxnEp:
         # exp-distributed decision points
         nstep = int(np.ceil(np.log((maxnEp-1) / minDecisLen) / np.log(2)))
@@ -85,18 +87,13 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         decisIdx = np.arange(-minDecisLen-1, maxnEp-1, -minDecisLen)
         decisIdx = np.append(decisIdx, maxnEp-1)
     else :
-        # minDecisLen = 0 -> max-length
-        pass
+        # default to single decision at max-length
+        decisIdx = np.array([maxnEp-1], dtype=int) 
     #print("decisIdx={}".format(decisIdx))
 
-    # Limit the max window size to test
-    if maxDecisLen > 0 and maxDecisLen >= decisIdx[0]:
-        decisIdx = decisIdx[decisIdx <= maxDecisLen]
-
     # compute the summed scores
-    if abs(minDecisLen) > Fy.shape[-2]:
+    if min(decisIdx) >= Fy.shape[-2]:
         decisIdx = np.array([Fy.shape[-2]-1])
-        N = nEp[:, np.newaxis] # (nTrl, nDecis) number elements in the sum
         sFy = np.sum(Fy, -2, keepdims=True)
     else:            
         if (bwdAccumulate): # (nM, nTrl, nEp, nY)
@@ -116,16 +113,20 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         sFy = np.cumsum(Fy, -2)
         sFy = sFy[..., decisIdx, :]
 
-        # number points in each sum.
-        N = np.cumsum(validEp,-1)[:,decisIdx]
-        #N = np.minimum(decisIdx[np.newaxis,:], nEp[:,np.newaxis])
+    # (nTrl, nDecis) (average) number points in each sum at each decision point
+    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
+    N   = N[..., decisIdx]
+
+    #N = np.tile(decisIdx[np.newaxis, :], (Fy.shape[-3], 1)) # (nTrl, nDecis) number points in each sum [ nDecis x nTrl ]
+    #for ti, nti in enumerate(nEp): # and limit to trial length
+    #    N[ti, :] = np.minimum(nti, N[ti, :])
 
     # compute the noise scale to transform to standardized units
     sigma2, Nsigma = estimate_Fy_noise_variance(Fy, decisIdx=decisIdx, centFy=centFy, detrendFy=detrendFy, priorsigma=priorsigma)
 
     # same variance for all models
-    if marginalizemodels and Fy.ndim>3:
-        sigma2 = np.mean(sigma2,0)
+    if marginalizemodels and sigma2.ndim>2:
+        sigma2 = np.mean(sigma2,-3)
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
     cf = np.array(1)
@@ -157,7 +158,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     # apply the normalization to convert to z-score (i.e. unit-noise)
     sFy_scale[sFy_scale == 0] = 1
-    ssFy = sFy/sFy_scale[:, :, np.newaxis].astype(sFy.dtype)
+    ssFy = sFy/sFy_scale[..., np.newaxis].astype(sFy.dtype)
 
     return ssFy, sFy_scale, decisIdx, nEp, nY
 
@@ -173,18 +174,20 @@ def get_valid_epochs_outputs(Fy,validTgt=None):
         nEp ([np.ndarray]): (nTrl,) number valid epochs per trial
         lastEp (nTrl,): index of the last stimulus in each trial
         validTgt ([np.ndarray]): (nTrl,nY) flag if this output is used in this trial
-        validEp (nTrl,nEp): flag if this epoch is a stimulus epoch in this trial 
-    """    
-    validTgt =  np.any(Fy != 0, axis=(-2 if Fy.ndim<4 else (0,-2)) ) # (nTrl,nY)
+        validEp (nTrl,nEp): flag if this epoch is a stimulus epoch in this trial
+        validFy (np.ndarray): indicator which Fy have valid predictions 
+    """
+    validFy = Fy != 0    
+    validTgt =  np.any(validFy, axis=(-2 if Fy.ndim<4 else (0,-2)) ) # (nTrl,nY)
     nY  = np.sum(validTgt, -1) # number active outputs in this trial (nTrl)
 
-    validEp  =  np.any(Fy != 0, axis=(-1 if Fy.ndim<4 else (0,-1)) ) # (nTrl,nEp)
+    validEp  =  np.any(validFy, axis=(-1 if Fy.ndim<4 else (0,-1)) ) # (nTrl,nEp)
     nStim = np.sum(validEp, -1) # numer active time-points in this trial
     lastEp = np.zeros((validEp.shape[0],),dtype=int)
     for ti in range(validEp.shape[0]):
          tmp = np.flatnonzero(validEp[ti,:])
          lastEp[ti] = tmp[-1] if tmp.size>0 else 0 # num active epochs/samples
-    return nY, nStim, lastEp, validTgt, validEp
+    return nY, nStim, lastEp, validTgt, validEp, validFy
 
 def filter_Fy(Fy, filtLen=None, B=None):
     # apply the temporal smoothing filter to the raw scores
@@ -199,6 +202,10 @@ def filter_Fy(Fy, filtLen=None, B=None):
         B = np.ones((filtLen))  # simple moving average filter
     else:
         filtLen = len(B)
+
+    Fyshape = Fy.shape
+    if len(Fyshape)>3 :
+        Fy = Fy.reshape((-1,)+Fy.shape[-2:])
 
     #B = np.array((.5,-1.5,2,-1.5,.5))/2 # simple high-pass filter
     # TODO []: how to norm B to achive properties we want?
@@ -215,6 +222,10 @@ def filter_Fy(Fy, filtLen=None, B=None):
     #w=np.ones(Fy.shape[1])
     # compare raw and filtered sum
     #sfFy  = np.cumsum(fFy, -2)[:, decisIdx, :] # (nTrl, nDecis, nY) [ nY x nDecis x nTrl] sfFy(y, T) = \sum_t=0^T fFy(y, t)
+
+    if len(Fyshape)>3 :
+        fFy=fFy.reshape(Fyshape)
+
     return fFy
 
 def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, priorsigma=None,  verb=0):
@@ -231,7 +242,8 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
     """
     validFy = Fy != 0
     nY  = np.sum(np.any(validFy, -2 if Fy.ndim<4 else (0,-2)), -1) # number active outputs in this trial (nM*nTrl) 
-    N   = np.cumsum(np.any(validFy,-1 if Fy.ndim<4 else (0,-1)), -1) # (nTr, nEp) number valid epochs before time-point in trial
+    # (nTrl, nEp) (average) number points in each sum at each decision point
+    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
 
     if decisIdx is None:
         decisIdx = np.array([Fy.shape[-2]-1],dtype=int)
