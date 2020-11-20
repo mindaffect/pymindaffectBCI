@@ -177,7 +177,7 @@ def append_block_perm_f(f,n):
 def calibrate_softmaxscale(f, validTgt=None, 
                            scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), 
                            MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, 
-                           nocontrol_condn=True, n_virt_outputs=-20):
+                           nocontrol_condn=True, n_virt_outputs=-30):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -192,26 +192,20 @@ def calibrate_softmaxscale(f, validTgt=None,
     Returns:
      softmaxscale (float): slope for softmax to return calibrated probabilities
     '''
-    if validTgt is None: # get which outputs are used in which trials..
-        validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
-    elif validTgt.ndim == 1:
-        validTgt = validTgt[np.newaxis, :]
-
     # remove trials with no-true-label info
     axis = (-3,-1) if f.ndim>3 else (-1)
     keep = np.any(f[..., 0], axis) # [ nTrl ]
     if not np.all(keep):
         f = f[..., keep, :, :]
-        if validTgt.shape[0] > 1 :
-            validTgt = validTgt[..., keep, :]
 
     if nocontrol_condn:
         f_nc = f[..., 1:]
-        vtgt_nc = validTgt[..., 1:]
+        vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
     if n_virt_outputs is not None:
         f = append_block_perm_f(f,n_virt_outputs)
 
+    validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
@@ -381,10 +375,10 @@ if __name__=="__main__":
         Fy=Fy[...,keep,:,:]
         Y=Y[...,keep,:,:]
 
-    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=True, minDecisLen=100,
+    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
             marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
             nocontrol_condn=True, n_virt_outputs=-20)
 
-    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=True, minDecisLen=100,
+    visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
             marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
             nocontrol_condn=False, n_virt_outputs=-20)

@@ -69,7 +69,9 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, priorweight=120, startup_correction=100, prediction_offsets=None, minDecisLen=100, bwdAccumulate=True, verb=0):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, 
+                priorweight=200, startup_correction=100, prediction_offsets=None, 
+                minDecisLen=0, bwdAccumulate=False, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
