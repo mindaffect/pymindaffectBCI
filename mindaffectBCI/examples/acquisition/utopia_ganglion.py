@@ -1,4 +1,4 @@
-from .ganglion import OpenBCIGanglion
+from mindaffectBCI.examples.acquisition.ganglion import OpenBCIGanglion
 import asyncore # needed for the openBCI server
 import numpy as np
 from time import time,sleep
@@ -209,10 +209,10 @@ def readConfigFile(fname):
                 config[key.strip()]=val.strip()
     return config
 
-def run(host=None, obcimac=None):    
+def run(host=None, mac_address=''):    
     print("ftbuffer hostname:  %s"%(host))
-    print("Ganglion MACadress: %s"%(obcimac))
-    initConnections(host=host,obcimac=obcimac)
+    print("Ganglion MACadress: %s"%(mac_address))
+    initConnections(host=host,obcimac=mac_address)
     # record the stream start time
     global t0, nextLogTime
     t0=getTime()
@@ -229,17 +229,22 @@ def run(host=None, obcimac=None):
 
 def parse_arguments():
     import sys
+    import argparse
+    parser = argparse.ArgumentParser ()
+    parser.add_argument ('--mac-address', type = str, help  = 'mac address', required = False, default = '')
+    inputconfig = parser.parse_args ()
+    obcimac=inputconfig.mac_address
     argv = sys.argv
     print("Arguments:",*argv)
     # N.B. argv0 is the script name
     if len(argv)>2 :
         host=argv[1] if len(argv)>1 else None
-        obcimac=argv[2] if len(argv)>2 else None
+        #obcimac=argv[2] if len(argv)>2 else None
     elif len(argv)==2 : # single argument, read from config file
         try:
             print("Reading config from file : {}".format(argv[1]))
             config=readConfigFile(argv[1])
-            obcimac=config['ganglionmac'] if 'ganglionmac' in config else None
+   #         obcimac=config['ganglionmac'] if 'ganglionmac' in config else None
         except FileNotFoundError :
             host=argv[2]
     return dict(host=host, obcimac=obcimac)
