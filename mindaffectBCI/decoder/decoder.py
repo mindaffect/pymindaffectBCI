@@ -35,6 +35,20 @@ LOGDIR = os.path.join(PYDIR,'../../logs/')
 
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
+try :
+    import matplotlib.pyplot as plt
+    guiplots=True
+except:
+    guiplots=False
+
+def redraw_plots():
+    if guiplots:
+        for i in plt.get_fignums():
+            #plt.figure(i).canvas.draw()  # v.v.v. slow
+            if plt.figure(i).get_visible():
+                plt.gcf().canvas.flush_events()
+            #plt.show(block=False)
+
 
 def get_trial_start_end(msgs, start_ts=None):
     """
@@ -532,16 +546,12 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         # change in trial-start -> end-of-trial / start new trial detected
         if not trial_start_ts == otrial_start_ts:
             print("New trial! tr_start={}".format(trial_start_ts))
-            if PREDICTIONPLOTS and Fy is not None:
-                try:
-                    import matplotlib.pyplot as plt
-                    plt.figure(10)
-                    plt.cla()
-                    print("Fy={}".format(Fy.shape))
-                    plt.plot(np.cumsum(Fy[0,...],-2))
-                    plt.show(block=False)
-                except:
-                    pass
+            if PREDICTIONPLOTS and Fy is not None and guiplots:
+                #try:
+                Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
+                plot_trial_summary(Fy,Py)
+                #except:
+                #    pass
             Fy = None
             block_start_ts = trial_start_ts
 
@@ -615,10 +625,20 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                                           minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate)
                 # BODGE: only  use the last (most data?) prediction...
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
+                if PREDICTIONPLOTS and guiplots and len(Ptgt)>1:
+                    # bar plot of current Ptgt info
+                    #try:
+                    plot_ptgt(Ptgt)
+                    #except:
+                    #    pass
+
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
 
                 send_prediction(ui, Ptgt, used_idx=used_idx, timestamp=ui.stimulus_timestamp)
+
+            if PREDICTIONPLOTS:
+                redraw_plots()
             
         # check for end-prediction messages
         for i,m in enumerate(newmsgs):
@@ -626,6 +646,63 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 isPredicting = False
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
+
+axFy, axPy = (None, None)
+def plot_trial_summary(Fy,Py, fs:float=None):
+    """Plot a summary of the trial decoding information
+
+    Args:
+        Fy (np.ndarray): the raw output scores over time
+        Py (np.ndarray): the raw probabilities for each target over time
+        fs (float, optional): the data sample rate. Defaults to None.
+    """    
+    global axFy, axPy
+    if axFy is None:
+        # init the fig
+        fig = plt.figure(10)
+        plt.clf()
+        (axFy,axPy)=fig.subplots(2,1,sharex=True)
+    axFy.cla()
+    axFy.set_ylabel('Fy')
+    axFy.set_title("Trial Summary")
+    axFy.grid(True)
+    if Fy.ndim>3 : # sum out model dim 
+        Fy=np.mean(Fy,-4)
+    times = np.arange(Fy.shape[-2])
+    t_unit = 'samples'
+    if fs is not None:
+        times = times / fs
+        t_unit = 's'
+    axFy.plot(np.cumsum(Fy[0,:,:],-2))
+    axPy.cla()
+    axPy.set_ylabel('Py')
+    axPy.set_ylim((0,1))
+    axPy.set_xlabel("time ({})".format(t_unit))
+    axPy.grid(True)
+    axPy.plot(Py[0,:,:])
+    plt.show(block=False)
+
+axPtgt=None
+def plot_ptgt(Ptgt):
+    """plot the instantaneous output target probabilities
+
+    Args:
+        Ptgt (np.ndarray): the current probability of each output being a target
+    """    
+    global axPtgt
+    if axPtgt is None:
+        # init the fig
+        fig = plt.figure(20)
+        plt.cla()
+        plt.title("Current: P_target")
+        plt.ylabel("P_target")
+        plt.xlabel('Output (objID)')
+        plt.ylim((0,1))
+        plt.grid(True)
+    plt.bar(range(len(Ptgt)),Ptgt)
+    #plt.xticklabel(np.flatnonzero(used_idx))
+    plt.show(block=False)
+    # fig.canvas.draw()
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, prior_dataset:str=None,
@@ -656,11 +733,6 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     global CALIBRATIONPLOTS, PREDICTIONPLOTS, UNAME, LOGDIR
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
-    try :
-        import matplotlib.pyplot as plt
-        guiplots=True
-    except:
-        guiplots=False
 
     # setup the saving label
     from datetime import datetime 
@@ -729,11 +801,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 break
         
         # BODGE: re-draw plots so they are interactive.
-        if guiplots:
-            for i in plt.get_fignums():
-                plt.figure(i).canvas.flush_events()
-
-
+        redraw_plots()
 
 if  __name__ == "__main__":
     import argparse
@@ -753,13 +821,13 @@ if  __name__ == "__main__":
     parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
-
+    setattr(args,'predplots',True) 
     if args.savefile is not None or False:#
         #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
         #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
         #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
         savefile='~/Desktop/mark/mindaffectBCI*.txt'
-        savefile="../../logs/mindaffectBCI*.txt"
+        savefile=args.logdir + "/mindaffectBCI*.txt"
         setattr(args,'savefile',savefile)
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)

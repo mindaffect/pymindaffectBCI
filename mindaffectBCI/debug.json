@@ -1,4 +1,6 @@
 {
+    "logdir":"~/Desktop/logs",
+
     "acquisation":"fakedata",
 
     "acq_args":{
@@ -15,7 +17,7 @@
         "prediction_offsets" : [-1,0,1],
         "prior_dataset": "calibration_dataset_*.pk",
         "calplots" : true,
-        "predplots" : false
+        "predplots" : true
     },
 
     "presentation":"selectionMatrix",

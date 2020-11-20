@@ -165,7 +165,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fe = Fe[0,...]
         return Fe
 
-    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=True, marginalizemodels=True, marginalizedecis=False):
+    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=None, marginalizemodels=True, marginalizedecis=False):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
@@ -189,6 +189,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             kwargs['priorsigma']=(self.sigma0_,self.priorweight)
         if hasattr(self,'softmaxscale_') and self.softmaxscale_ is not None:
             kwargs['softmaxscale']=self.softmaxscale_
+        if bwdAccumulate is None and hasattr(self,'bwdAccumulate'):
+            bwdAccumulate=self.bwdAccumulate
 
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
                                      marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
