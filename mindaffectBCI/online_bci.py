@@ -260,6 +260,12 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
             colorwheel.run(**presentation_args)
         except:
             traceback.print_exc()
+    elif presentation == 'rpigpio':
+        try:
+            from mindaffectBCI.examples.presentation import rpigpio
+            rpigpio.run(**presentation_args)
+        except:
+            traceback.print_exc()
 
     elif isinstance(presentation,str) and not presentation == 'none':
         try:
