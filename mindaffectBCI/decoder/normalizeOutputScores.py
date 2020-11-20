@@ -455,8 +455,10 @@ def testcase():
     Fy = Fy * (np.random.standard_normal((1,Fy.shape[-2],Fy.shape[-1]))>0).astype(np.float)
     Fy[...,:20,:] = 0 # block zero at start
 
-    Fy[..., 0::3, :] = 0 # only 50% active
-    Fy[..., 1::3, :] = 0 # only 50% active
+    # different 50% active for different outputs
+    for i in range(Fy.shape[-1]):
+        Fy[..., (i%3)::3, i] = 0 # only 50% active
+        Fy[..., (i+1%3)::3, i] = 0 # only 50% active
     oFy=Fy.copy()
 
     print("Fy={}".format(Fy.shape))
