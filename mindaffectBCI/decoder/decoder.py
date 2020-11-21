@@ -521,13 +521,15 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         # TODO[]: Fix to not re-process the same data if no new stim to be processed..
         if len(newmsgs) == 0 and nstim == 0 and ndata == 0:
             continue
+        if ui.data_timestamp is None or ui.stimulus_timestamp is None:
+            continue
 
         # get the timestamp for the last data which it is valid to apply the model to,
         # that is where have enough data to include a complete response for this stimulus
         # Note: can't just use last data, incase stimuli are lagged w.r.t. data
         # also, prevents processing data for which are not stimulus events to compare with
         valid_end_ts = min(ui.stimulus_timestamp + overlap_ms, ui.data_timestamp)
-
+        
         # incremental extract trial limits
         otrial_start_ts = trial_start_ts
         trials, trial_start_ts, newmsgs = get_trial_start_end(newmsgs, trial_start_ts)

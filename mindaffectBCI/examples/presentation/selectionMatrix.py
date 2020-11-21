@@ -749,15 +749,17 @@ class SelectionGridScreen(Screen):
         ii=0 # linear index
         for i in range(len(self.symbols)):
             for j in range(len(self.symbols[i])):
+                if self.symbols[i][j] is None: continue
                 if idx==(i,j) or idx==ii :
                     return self.symbols[i][j]
                 ii = ii + 1
         return None
-    
+
     def setSymb(self,idx,val):
         ii=0
         for i in range(len(self.symbols)):
             for j in range(len(self.symbols[i])):
+                if self.symbols[i][j] is None: continue
                 if idx==ii or idx==(i,j):
                     self.symbols[i][j] = val
                     break
@@ -801,8 +803,7 @@ class SelectionGridScreen(Screen):
         else:
             symbols = self.symbols
         # Number of non-None symbols
-        nsymb      = sum([len(x) for x in symbols])
-        #nsymb      = sum([len(x) sum([(s is not None) for s in x ]) for x in symbols])
+        nsymb      = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
 
         if objIDs is not None:
             self.objIDs = objIDs
@@ -835,8 +836,8 @@ class SelectionGridScreen(Screen):
             y = (gridheight-1-i-1)/gridheight*winh # top-edge cell
             for j in range(len(symbols[i])): # cols
                 # skip unused positions
+                if symbols[i][j] is None or symbols[i][j]=="": continue
                 idx = idx+1
-                if symbols[i][j] is None: continue
                 x = j/gridwidth*winw # left-edge cell
                 # create a 1x1 white image for this grid cell
                 img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
@@ -1421,6 +1422,10 @@ def load_symbols(fn):
             line = line.split(',')
             # strip whitespace
             line = [ l.strip() for l in line if l is not None ]
+            # None for empty strings
+            line = [ l if not l == "" else None for l in line ]
+            # strip quotes
+            line = [ l.strip('\"') if l is not None else l for l in line ]
             # add
             symbols.append(line)
 
@@ -1468,6 +1473,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
                  ['k', 'l', 'm', 'n', 'o'],
                  ['p', 'q', 'r', 's', 't'],
                  ['u', 'v', 'w', 'x', 'y']]
+        symbols=load_symbols('keyboard.txt')
 
     elif isinstance(symbols,str):
         # load the layout from a file
