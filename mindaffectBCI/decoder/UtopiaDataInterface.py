@@ -786,7 +786,7 @@ class power_tracker(TransformerMixin):
         if self.car and X.shape[-1]>4:
             ch_power = self.power()
             # identify the active channels, i.e. are attached and have some signal
-            act_ch = ch_power > np.maximum(ch_power)*1e-3
+            act_ch = ch_power > np.max(ch_power)*1e-3
             X = X.copy() - np.mean(X[...,act_ch], -1, keepdims=True)
         # compute updated mean
         alpha_mu   = self.alpha_mu ** X.shape[0]
