@@ -185,8 +185,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     nout=[]
     for i, fi in enumerate(filenames):
         print("{}) {}".format(i, fi))
-        #try:
-        if 1:
+        try:
             X, Y, coords = loader(fi, **loader_args)
             if preprocess_args is not None:
                 X, Y, coords = preprocess(X, Y, coords, **preprocess_args)
@@ -196,8 +195,8 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
             decoding_curves.append(decoding_curve)
             del X, Y
             gc.collect()
-        #except Exception as ex:
-        #    print("Error: {}\nSKIPPED".format(ex))
+        except Exception as ex:
+            print("Error: {}\nSKIPPED".format(ex))
     avescore=sum(scores)/len(scores)
     avenout=sum(nout)/len(nout)
     print("\n--------\n\n Ave-score={}\n".format(avescore))
