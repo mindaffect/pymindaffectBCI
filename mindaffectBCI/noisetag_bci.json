@@ -1,9 +1,11 @@
 {
+    "logdir":"~/Desktop/logs",
+
 
     "acquisation":"brainflow",
     "acq_args":{
-        "board_id":1,
-        "serial_port":"com3"
+        "board_id":0,
+        "serial_port":"com4"
     },
 
 
@@ -16,9 +18,11 @@
         "order":6,
         "cv":5,
         "label":"decoder",
+        "prior_dataset": "calibration_dataset_*.pk",
         "tau_ms" : 450,
+        "prediction_offsets" : [-1,0,1],
         "calplots" : true,
-        "predplots" : false
+        "predplots" : true
     },
 
     
@@ -32,7 +36,7 @@
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
-        "fullscreen_stimulus":true,
+        "fullscreen_stimulus":false,
         "simple_calibration":true,
         "optosensor":false,
         "host":"-"
