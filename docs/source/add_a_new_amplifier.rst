@@ -1,4 +1,5 @@
-## Add a new amplifier to mindaffectBCI
+Add a new amplifier to mindaffectBCI
+====================================
 
 Out of the box mindaffectBCI supports a large range of amplifiers, either via. it's use of `brainflow <brainflow.org>`_ or with amplifier drivers developed by MindAffect.  But what if you have a new wizzy amplifier and it's not currently supported by brainflow? How can you easily add support for this cool new device to the mindaffectBCI -- ideally without introducing a lot of extra dependencies in your code?
 
@@ -7,7 +8,8 @@ In this tutorial you will learn:
  2. The importance of **device-level** time-stamps in ensuring the data you send it as good as possible for BCI applications
  3. How to write a simple 'fake-data' simulated amplifier stream in C, python, Java or C#
 
-###The mindaffectBCI DATAPACKET transmission format
+The mindaffectBCI DATAPACKET transmission format
+------------------------------------------------
 
 Data is sent from the amplifier to the mindaffectBCI in packets containing an array of channels by samples in 32-bit floats (were channels vary fastest).  At the lowest / simplest level, all an amplifier has to do is:
   1. Open a TCP network socket to connect to the hub on port 8400
