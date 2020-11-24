@@ -1,8 +1,8 @@
 {
-    
+
     "acquisition":"ganglion",
     "acq_args":{
-        "mac_address":"D6:9D:3C:57:42:C7"
+        "mac_address":"D9:5E:2A:DB:A4:0A"
     },
 
     "decoder":"mindaffectBCI.decoder.decoder",
@@ -11,7 +11,7 @@
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
-        "calplots" : true,
+        "calplots" : false,
         "predplots" : false
     },
 
