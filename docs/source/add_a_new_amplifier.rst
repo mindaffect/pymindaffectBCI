@@ -17,116 +17,115 @@ Note: At it's lowest level this is a **one-way** data stream -- so your amp driv
 
 The detailed format of the DATAPACKET messages (along with all the other message types used by the mindaffectBCI) are given in the system `message specification <https://mindaffect-bci.readthedocs.io/en/latest/MessageSpec.html>`_.  The core section for the DATAPACKET messages is repeated here for clarity. 
 
-.. raw::
+.. raw:: html
 
-<table>
-  <tr>
-   <td>Name: 
-<h6 id="datapacket">DATAPACKET</h6>
-
-
-   </td>
-   <td>UID: “D”
-   </td>
-  </tr>
-  <tr>
-   <td><strong>Sender:</strong> 
-<p>
-Acquisation Device  (e.g. EEG)
-   </td>
-   <td><strong>Receiver:</strong> 
-<p>
-Recogniser
-   </td>
-  </tr>
-  <tr>
-   <td colspan="2" ><strong>Purpose:</strong> 
-<p>
-Send raw data as measured by the acquisition device to the decoder.
-   </td>
-  </tr>
-  <tr>
-   <td colspan="2" ><strong>Format:</strong> 
-<p>
-Basically this is not something we can specify as it depends on the exact hardware device.  Minimum spec for us:
-
-<table style="width: 100%">
-    <colgroup>
-       <col span="1" style="width: 10%;">
-       <col span="1" style="width: 25%;">
-       <col span="1" style="width: 65%;">
-    </colgroup>
-
-  <thead>
-  <tr>
-   <td><strong>Slot</strong>
-   </td>
-   <td><strong>Type (= value)</strong>
-   </td>
-   <td><strong>Comment</strong>
-   </td>
-  </tr>
-  </thead>
-  <tr>
-   <td>UID
-   </td>
-   <td>1 of char = “D” 
-   </td>
-   <td>Message UID
-   </td>
-  </tr>
-  <tr>
-   <td>version
-   </td>
-   <td>1 of uint8
-   </td>
-   <td>Message version number (0)
-   </td>
-  </tr>
-  <tr>
-   <td>length
-   </td>
-   <td>[1] of uint16 (short)
-   </td>
-   <td>Total length of the remaining message in bytes.
-   </td>
-  </tr>
-  <tr>
-   <td>timestamp
-   </td>
-   <td>[1] of int32
-   </td>
-   <td>Time of the *first* sample of this data packet.  Time is measured <strong>in milliseconds</strong> relative to an arbitrary device dependent real-time clock.
-   </td>
-  </tr>
-  <tr>
-   <td>nsamples
-   </td>
-   <td>[1] of int 32
-   </td>
-   <td>The number of samples (i.e. time-points) in this datapacket (Note: the nchannels is infered to be (length-8)/nsamples/4)
-   </td>
-  </tr>
-  <tr>
-   <td>data
-   </td>
-   <td>[ nchannels x nSamp ] of single 
-   </td>
-   <td>The raw packed data
-   </td>
-  </tr>
-</table>
+  <table>
+    <tr>
+     <td>Name: 
+  <h6 id="datapacket">DATAPACKET</h6>
 
 
-Notes:
+     </td>
+     <td>UID: “D”
+     </td>
+    </tr>
+    <tr>
+     <td><strong>Sender:</strong> 
+  <p>
+  Acquisation Device  (e.g. EEG)
+     </td>
+     <td><strong>Receiver:</strong> 
+  <p>
+  Recogniser
+     </td>
+    </tr>
+    <tr>
+     <td colspan="2" ><strong>Purpose:</strong> 
+  <p>
+  Send raw data as measured by the acquisition device to the decoder.
+     </td>
+    </tr>
+    <tr>
+     <td colspan="2" ><strong>Format:</strong> 
+  <p>
+  Basically this is not something we can specify as it depends on the exact hardware device.  Minimum spec for us:
 
-32bit timestamps @1ms accuracy means the timestamps will wrap-around in 4294967296/1000/60/60/24  = 50 days.. Which is way more than we really need….  
+  <table style="width: 100%">
+      <colgroup>
+         <col span="1" style="width: 10%;">
+         <col span="1" style="width: 25%;">
+         <col span="1" style="width: 65%;">
+      </colgroup>
 
-With 24 bits this would be 4hr..  For implementation simplicity standard 32bit ints are prefered.
+    <thead>
+    <tr>
+     <td><strong>Slot</strong>
+     </td>
+     <td><strong>Type (= value)</strong>
+     </td>
+     <td><strong>Comment</strong>
+     </td>
+    </tr>
+    </thead>
+    <tr>
+     <td>UID
+     </td>
+     <td>1 of char = “D” 
+     </td>
+     <td>Message UID
+     </td>
+    </tr>
+    <tr>
+     <td>version
+     </td>
+     <td>1 of uint8
+     </td>
+     <td>Message version number (0)
+     </td>
+    </tr>
+    <tr>
+     <td>length
+     </td>
+     <td>[1] of uint16 (short)
+     </td>
+     <td>Total length of the remaining message in bytes.
+     </td>
+    </tr>
+    <tr>
+     <td>timestamp
+     </td>
+     <td>[1] of int32
+     </td>
+     <td>Time of the *first* sample of this data packet.  Time is measured <strong>in milliseconds</strong> relative to an arbitrary device dependent real-time clock.
+     </td>
+    </tr>
+    <tr>
+     <td>nsamples
+     </td>
+     <td>[1] of int 32
+     </td>
+     <td>The number of samples (i.e. time-points) in this datapacket (Note: the nchannels is infered to be (length-8)/nsamples/4)
+     </td>
+    </tr>
+    <tr>
+     <td>data
+     </td>
+     <td>[ nchannels x nSamp ] of single 
+     </td>
+     <td>The raw packed data
+     </td>
+    </tr>
+  </table>
 
-   </td>
-  </tr>
-</table>
+  Notes:
+
+  32bit timestamps @1ms accuracy means the timestamps will wrap-around in 4294967296/1000/60/60/24  = 50 days.. Which is way more than we really need….  
+
+  With 24 bits this would be 4hr..  For implementation simplicity standard 32bit ints are prefered.
+
+     </td>
+    </tr>
+  </table>
 
 Based on this format, in python given raw data in `samples` which is a (samples,channels) np.float32 numpy array and using the `struct` package you can make a valid datapacket with:
 
