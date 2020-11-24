@@ -9,7 +9,7 @@ Available at: `https://mindaffect-bci.readthedocs.io/ <https://mindaffect-bci.re
 Installation
 ------------
 
-To install the code:
+To install from **source** (currently the recommended method):
   1. Clone or download this repository::
 
        git clone https://github.com/mindaffect/pymindaffectBCI
@@ -22,6 +22,10 @@ To install the code:
    
          pip install -e .
 
+To install as a python library::
+
+    pip install --upgrade mindaffectBCI
+
 Installation Test
 -----------------
 
@@ -30,6 +34,17 @@ You can run a quick test if the installation without any additional hardware by 
   python3 -m mindaffectBCI.online_bci --acquisation fakedata
 
 Essentially, this run the SDK test code which simulates a *fake* EEG source and then runs the full BCI sequence, with decoder discovery, calibration and prediction.
+
+If all is successfully installed then you should see a window like this open up.
+
+<img src='docs/images/mainmenu.png' width=300>
+
+If you now press 2 you should see a flickering grid of "buttons" like below.  You should see a random one briefly flash green (it's the target) then rapidly flicker and eventually turn blue (to indicate it's selected.)
+
+<img src='docs/images/selectionMatrix.png' width=300>
+
+If all this works then you have successfully installed the mindaffectBCI python software. You should now ensure your hardware (display, amplifier) is correctly configured before jumping into BCI control.
+
 
 Important: FrameRate Check
 --------------------------
@@ -77,9 +92,6 @@ This repository is organized roughly as follows:
   - `utopiaController.py <minaffectBCI/utopiaController.py>`_ - This module contains the application level APIs for interacting with the MindAffect Decoder.
   - `utopiaclient.py <mindaffectBCI/utopiaclient.py>`_ - This module contains the low-level networking functions for communicating with the MindAffect Decoder - which is normally a separate computer running the eeg analysis software.
   - stimseq.py -- This module contains the low-level functions for loading and codebooks - which define how the presented stimuli will look.
-  - `online_bci.py <mindaffectBCI/online_bci.py>`_ - This module contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
-  - `online_bci.ipynb <mindaffectBCI/online_bci.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI, of either a noisetagging, SSVEP, or P300.
-  - `online_bci.json <mindaffectBCI/online_bci.json>`_ - This JSON file contains the configuration information to run a full noisetagging BCI.
 
 - `decoder <mindaffectBCI/decoder>`_ - contains our open source python based Brain Computer Interface decoder, for both on-line and off-line analysis of neuro-imaging data. Important modules within this package are:
   - `decoder.py <mindaffectBCI/decoder/decoder.py>`_ - This module contains the code for the on-line decoder.
@@ -93,3 +105,7 @@ This repository is organized roughly as follows:
 
    - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
    - `acquisation <mindaffectBCI/examples/acquisation/>`_ - Example data acquisation modules.  An acquisation module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
+
+- `docs <docs/>`_ -- contains the documentation.
+  - `source <docs/source>`_ -- contains the source for the documentation, in particular this directory contains the juypter notebooks for tutorials on how to use the mindaffectBCI.
+    - `online_bci.ipynb <docs/source/quickstart.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI
