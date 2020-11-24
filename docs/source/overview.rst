@@ -28,9 +28,9 @@ The main target users for the mindaffectBCI are Application Developers who would
 
  * Game Designers:  Do you want to add brain controls to an existing game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platform way, using our `unity <https://unity.com>`_ plugin available `here <https://github.com/mindaffect/unitymindaffectBCI>`_.
 
- * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for example for fewer or more letters, or control of novel output devices.  
+ * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves https://youtu.be/cCmHZb5vfso?t=47, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for example different alphabets, or control of novel output devices.  
  
- * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or LASERS(!!!) to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
+ * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or LASERS(!!!) https://youtu.be/brN0YOg1AvY to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
 
 Neuroscience Students and Researchers
 +++++++++++++++++++++++++++++++++++++
@@ -45,7 +45,7 @@ Modern BCIs (including our own) rely heavily on machine learning techniques to p
 
  * Firstly, by making it easier to rapidly gather relatively large EEG datasets by using consumer grade EEG devices and applications designed in your prefered application development framework.  For example, by using a raspberry Pi, headphones, and EEG headband and an openBCI ganglion to measure the brain's response to different music types.
 
- * Secondly, by providing a `sklearn <scikit-learn.org>`_ compatiable interface for machine learning developers to experiment with different learning algorithms, both in larger off-line dataset analysis and then directly in on-line applications.
+ * Secondly, by providing a `sklearn <scikit-learn.org>`_ compatiable interface for machine learning developers to experiment with different learning algorithms.  To help you get started quickly we provide `example data <https://www.kaggle.com/mindaffect/mindaffectbci>`_ and `analysis notebooks <https://www.kaggle.com/mindaffect/mindaffectbci/notebooks>`_ so you can experiment even without any EEG hardware. 
 
 Project ideas for users
 -----------------------
@@ -65,3 +65,13 @@ Project ideas for users
 7) Brain-Golf (or Croquet)-- play golf with your brain by controlling a `sphero <https://sphero.com/>`_ from a tablet.  See `Sphero control <https://youtu.be/0Bu0caBzeDw>`_ for some inspiration.
 
 8) Brain control of your phone?  Use our unity or iOS APIs to build a phone app controllable with your brain?Like `this <https://youtu.be/1BB0kgKJ0_w>`_
+
+9) Make physical 'though buttons' -  Use a cheap IoT computer, such as `micro:bit <https://microbit.org/>`_ or `EPS32 <https://en.wikipedia.org/wiki/ESP32>`_ to present the BCI stimuli and directly control a device.
+
+10) Brain Controlled Tele-presence - Use a simple Robot with a video-camera, such as this `pi-bot <https://www.instructables.com/Raspberry-Pi-Wifi-Video-Streaming-Robot/>`_, with an application on your laptop to drive the robot with brain signals.  
+
+11) Add a `MQTT <https://mqtt.org/>`_ output interface -- MQTT is a widely used protocol for controlling IoT devices, add an output module to map BCI selections into MQTT commands to easily control a huge range of IoT devices. 
+
+12) Bluetooth Low-Energy (BLE) output interface -- add an output module to map BCI selections into BLE characteristics, see the message-spec for the targeted UUIDs `here https://mindaffect-bci.readthedocs.io/en/latest/MessageSpec.html#service-selection>`_, and then make BLE controlled applications, for example on a `micro:bit <https://microbit.org/>`_.
+
+13) Continuous control -- the base mindaffectBCI is designed around 'trials' or 'selections' where a single discrete button is pressed after a certain amount of time.  Internally, it does this by computing a prediction roughly every .1s -- can these intermediate controls be used for finer grained control applications, e.g. cursor control?
