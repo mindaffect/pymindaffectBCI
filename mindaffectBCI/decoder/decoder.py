@@ -270,7 +270,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
 
 def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
-                   cv=2, prior_dataset=None, ranks=(1,2,3,5), fs=None, **kwargs):
+                   cv:int=2, prior_dataset=None, ranks=(1,2,3,5), fs:float=None, n_ch:int=None, **kwargs):
     """
     fit a model given a dataset 
 
@@ -299,16 +299,20 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
             prior_dataset = None
     if prior_dataset is not None: # combine with the old calibration data
+        p_n_ch = [ x.shape[-1] for (x,_) in prior_dataset ]
+        p_n_ch = max(p_n_ch) if len(p_n_ch)>0 else -1
         if dataset is not None:
             # validate the 2 datasets are compatiable -> same number channels in X
-            d_nch = [ x.shape[0] for (x,_) in dataset ]
-            p_nch = [ x.shape[0] for (x,_) in prior_dataset ]
-            if len(d_nch)>0 and len(p_nch)>0 and max(d_nch) == max(p_nch): # match the max channels info
+            d_n_ch = [ x.shape[-1] for (x,_) in dataset ]
+            if len(d_n_ch)>0 and max(d_nch) == max(p_n_ch): # match the max channels info
                 dataset.extend(prior_dataset)
             else:
                 print("Warning: prior dataset not compatiable with current.  Ignored!")
-        else: 
-            dataset = prior_dataset
+        else:
+            if n_ch is None or n_ch == p_n_ch:
+                dataset = prior_dataset
+            else:
+                print("Warning: prior dataset ({}ch) not compatiable with current {} channels.  Ignored!".format(p_n_ch,n_ch))
 
     if dataset:
         try:
@@ -702,7 +706,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
 
     # pre-train the model if the prior_dataset is given
     if prior_dataset is not None:
-        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs, n_ch=ui.data_ringbuffer.shape[-1])
 
     current_mode = "idle"
     # clean shutdown when told shutdown
@@ -713,7 +717,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
-                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs, n_ch=ui.data_ringbuffer.shape[-1])
 
             doPredictionStatic(ui, clsfr)
 
@@ -736,10 +740,13 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         
         # BODGE: re-draw plots so they are interactive.
         if guiplots:
-            for i in plt.get_fignums():
-                plt.figure(i).canvas.flush_events()
+            try:
+                for i in plt.get_fignums():
+                    plt.figure(i).canvas.flush_events()
+            except:
+                pass
 
-if  __name__ == "__main__":
+def parse_args():
     import argparse
     import json
     parser = argparse.ArgumentParser()
@@ -757,6 +764,10 @@ if  __name__ == "__main__":
     parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
+    return args
+
+if  __name__ == "__main__":
+    args = parse_args()
 
     if args.savefile is not None or False:#
         #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
