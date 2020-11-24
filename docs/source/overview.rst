@@ -28,9 +28,9 @@ The main target users for the mindaffectBCI are Application Developers who would
 
  * Game Designers:  Do you want to add brain controls to an existing game?  Or make a new game including Brain controls as a novel interaction modality?  You can easily do this, in a cross-platform way, using our `unity <https://unity.com>`_ plugin available `here <https://github.com/mindaffect/unitymindaffectBCI>`_.
 
- * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly ourselves https://youtu.be/cCmHZb5vfso?t=47, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for example different alphabets, or control of novel output devices.  
+ * Patient Technical Support Teams: One of the key motivators behind the MindAffect team is to make BCIs available to improve peoples lives.  We can help some patients directly `ourselves <https://youtu.be/cCmHZb5vfso?t=47>`_, but cannot support every possible patient and their environment.  Instead, we try to provide the tools so patient support teams can themselves fit the BCI to their patients needs.  For this, we provide a basic text communication application out-of-the-box, with guidance on how to customise this for their users needs, for example different alphabets, or control of novel output devices.  
  
- * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or LASERS(!!!) https://youtu.be/brN0YOg1AvY to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
+ * Hackers and Makers: Do you want to add brain control to your raspberry-pi robot, Lego robot, sphero or drone?  Now you can, either by using a simple control app on your laptop, or (more fun) by adding LEDs or `LASERS(!!!) <https://youtu.be/brN0YOg1AvY>`_ to your robot for direct control.  We provide examples for driving LEDs from a raspberry Pi, and are happy to help using other hacker boards (micro:bit) or even the LEDs on your drone. 
 
 Neuroscience Students and Researchers
 +++++++++++++++++++++++++++++++++++++
@@ -49,6 +49,8 @@ Modern BCIs (including our own) rely heavily on machine learning techniques to p
 
 Project ideas for users
 -----------------------
+
+There are lots of things you could do with the mindaffectBCI, see `here <https://mindaffect-bci.readthedocs.io/en/latest/project_ideas.html>`_ for some of our own projects.  Below is a list of ideas to get you inspired!
 
 1) Brain controlled robot arm - use a laser or projector to illuminate objects to move, e.g. chess pieces, or food to eat, and the BCI to select which piece to move and where too.  Lazy chess or snacking. See `here <https://youtu.be/brN0YOg1AvY>`_ for an example.
 
