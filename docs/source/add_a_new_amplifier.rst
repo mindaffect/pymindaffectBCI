@@ -134,6 +134,66 @@ Based on this format, in python given raw data in `samples` which is a (samples,
 .. code::
 
     DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
+    
+Minimal Acquisation Driver : Python
+-----------------------------------
+
+**Note:** this example designed for exposition purposes, implementators are better adviced to use the `utopiaclient.py` API, as it provides a more complete interface, with e.g. auto-discovery, error-recovery, two-way communication, and access to the full message vocabularly. 
+
+To make the absolute minimum `fake-data` streamer we need to do 5 things:
+ 1. Open a TCP socket to connect to the hub.::
+ 
+     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+     sock.open('localhost',8400)
+ 
+ 2. Get the fake-data packet::
+ 
+     n_ch = 4
+     n_samples = 10
+     samples = np.random.standard_normal((n_ch,n_samples))
+ 
+ 3. Get the current time-stamp::
+ 
+     timestamp = int(time.perf_counter()*1000) % (1<<31) # N.B. MUST fit in 32bit int
+     
+ 4. Make the DATAPACKET::
+ 
+     DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
+ 
+ 5. send the message::
+ 
+     sock.send(DP)
+
+ Or to wrap it all up into a single 10-line code block (without imports), with a loop to stream for-ever, and a sleep to rate-limit to a desired effective sample rate::
+
+     import numpy as np
+     import time
+     import socket
+     import struct
+
+     def fakedata_stream(host, sample_rate=100, n_ch=4, packet_samples=10):
+        inter_packet_interval = n_samples / sample_rate
+
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.open('localhost',8400)
+
+        while True:
+            samples = np.random.standard_normal((n_ch,n_samples))
+            timestamp = int(time.perf_counter()*1000) % (1<<31) # N.B. MUST fit in 32bit int
+            DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
+            sock.send(DP)
+            time.sleep(inter_packet_interval) # sleep to rate limit to sample_rate Hz
+
+Congratulations, you have just written your own custom datapacket streamer for the mindaffect BCI.   
+
+To adapt this to use data from an actual hardware device, then simply replace the `samples = np.random.standard_normal...` line with a call to the hardware function which gets the actual samples from the amplifier. 
+
+The Importance of **Amplifier** timestamps
+------------------------------------------
+
+At it's core any evoked-response BCI (like the mindaffect BCI) must align at least two data-streams, namely the EEG stream (from the amplifier) and the STIMULUS stream (from the presentation device).  Doing this alignment with high latency links (such as wireless network connections) can be a complex problem.  The solution used in the mindaffect BCI is to use a **local** clock on the device (i.e. amplifier, screen) to attach accurate **timestamps** to the data at source, and then use a jitter rejecting and step detection algorithm in the decoder to align the time-stamp streams (which due to electronic issues can have different offsets and may drift relative to each other) to the common decoder clock.  
+
+What this means for amplifier implementors is that **it is very important** to time-stamp your data as close to the source as possible.  We have found that using the poor quality clocks in a cheap devices is a better time-stamp source than an high quality clock in a PC -- basically because even a poor quality device clock has a sub-millisecond jitter and only drifts by approx 1 millisecond / second, whereas wireless transmission jitter can be 10 to 100 milliseconds / second with a similar 1ms/s drift.  When coupled to potential sample loss in transmission, this makes 'recieve-time' timestamps a poor subistute for 'measurment-time' device-level timestamps.     
 
 
 
