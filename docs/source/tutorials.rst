@@ -18,4 +18,5 @@ All of our tutorials are interactive Jupyter Notebooks. Clone our `repository <h
    adding_brain_controls_to_your_unity_game
    controlling_a_phillips_hue_with_your_brain
    Rpi_GPIO
+   add_a_new_amplifier
 
