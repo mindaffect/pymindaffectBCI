@@ -40,18 +40,18 @@ try :
     import matplotlib
     import matplotlib.pyplot as plt
     guiplots=True
-# for be in matplotlib.rcsetup.all_backends: 
-#     try:
-#         matplotlib.use(be)
-#         print(be)
-#     except: pass
+    for be in matplotlib.rcsetup.all_backends: 
+        try:
+            matplotlib.use(be)
+            print(be)
+        except: pass
     print("Initial backend: {}".format(matplotlib.get_backend()))
     try:
-        # backends to try: TkAgg" "WX" "WXagg"
-        matplotlib.use('TKagg')
+        # backends to try: "TkAgg" "WX" "WXagg"
+        matplotlib.use('WX')
     except:
         print("couldn't change backend")
-    #plt.ion()
+    plt.ion()
     print("Using backend: {}".format(matplotlib.get_backend()))
 except:
     guiplots=False
@@ -59,10 +59,10 @@ except:
 def redraw_plots():
     if guiplots and not matplotlib.is_interactive():
         for i in plt.get_fignums():
-            #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
             if plt.figure(i).get_visible():
+                #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
                 plt.gcf().canvas.flush_events()
-            #plt.show(block=False)
+            plt.show(block=False)
 
 
 def get_trial_start_end(msgs, start_ts=None):
