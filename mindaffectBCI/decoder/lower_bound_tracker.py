@@ -110,8 +110,10 @@ class lower_bound_tracker():
         # weighted LS  solve
         sqrt_w = np.ones((x.shape[0],),dtype=x.dtype) # square root of weight so can use linalg.lstsq
         # start from previous solution
-        a = self.a
-        b = self.b + self.a*mu_x - mu_y # shift bias to compensate for shift in x/y
+        a0 = self.a
+        b0 = self.b + self.a*mu_x - mu_y # shift bias to compensate for shift in x/y
+        a = a0
+        b = b0
         # TODO[]: convergence criteria, to stop early
         for i in range(3):
             y_est = x[:,0]*a + b
@@ -153,7 +155,13 @@ class lower_bound_tracker():
                     #y_fit[neg_outlier] = y_est[neg_outlier] - self.outlier_thresh[1]*scale
 
             # solve weighted least squares
-            ab, _, _, _ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y*sqrt_w, rcond=-1)
+            try:
+                ab, _, _, _ = np.linalg.lstsq(x*sqrt_w[:,np.newaxis], y*sqrt_w, rcond=-1)
+            except:
+                # LS didn't converge.... abort this update
+                a = a0
+                b = b0
+                break
             # extract parameters
             a = ab[0]
             b = ab[1]
