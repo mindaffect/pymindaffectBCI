@@ -303,7 +303,7 @@ def block_randomize(true_target, npermute, axis=-3, block_size=None):
     if true_target.ndim < 3:
         raise ValueError("true target info must be at least 3d")
     if not (axis == -3 or axis == true_target.ndim-2):
-        raise NotImplementedError("Only implementated for axis=-3 currently")
+        raise NotImplementedError("Only implementated for axis=-2 currently")
     
     # estimate the number of blocks to use
     if block_size is None:
@@ -605,7 +605,7 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
 
     if axis == X.ndim-2 and zi is None:
         zi = sosfilt_zi(sos) # (order,2)
-        zi = zi.astype(X.dtype)
+        zi.astype(X.dtype)
         zi = sosfilt_zi_warmup(zi, X, axis, sos)
 
     else:
