@@ -126,12 +126,12 @@ The detailed format of the DATAPACKET messages (along with all the other message
   </table>
 
 
-Based on this format, in python given raw data in `samples` which is a (samples,channels) np.float32 numpy array and using the `struct` package you can make a valid datapacket with:
+Based on this format, in python given an integer *timestamp*, raw data in *samples* which is a (samples,channels) `np.float32` numpy array and using the `struct` package, you can make a valid datapacket with::
 
-.. code::
+    DP = struct.pack("<BBHii%df"%(samples.size),ord('D'),0,4+4+samples.size*4,timestamp,samples.shape[-1],*(s for s in samples.ravel()))
 
-    DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
-    
+Note: This line uses some horrible python hacks; like: `ord('D')` to convert char->integer, `samples.ravel()` to convert the n-d samples to a 1-d matrix, `(s for s in samples.ravel())` to convert the nd-array to a python tuple, and the finally `*(...)` to expand the tuple into a set of arguments.
+
 Minimal Acquisation Driver : Python
 -----------------------------------
 
@@ -147,7 +147,7 @@ To make the absolute minimum `fake-data` streamer we need to do 5 things:
  
      n_ch = 4
      n_samples = 10
-     samples = np.random.standard_normal((n_ch,n_samples),dtype=np.float32)
+     samples = np.random.standard_normal((n_ch,n_samples)).astype(np.float32)
  
  3. Get the current time-stamp::
  
@@ -155,7 +155,7 @@ To make the absolute minimum `fake-data` streamer we need to do 5 things:
      
  4. Make the DATAPACKET::
  
-     DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
+     DP = struct.pack("<BBHii%df"%(samples.size),ord('D'),0,4+4+samples.size*4,timestamp,samples.shape[-1],*(s for s in samples.ravel()))
  
  5. send the message::
  
@@ -168,18 +168,18 @@ To make the absolute minimum `fake-data` streamer we need to do 5 things:
      import socket
      import struct
 
-     def fakedata_stream(host, sample_rate=100, n_ch=4, packet_samples=10):
-        inter_packet_interval = n_samples / sample_rate
+     def fakedata_stream(host='localhost', sample_rate=100, n_ch=4, packet_samples=10):
+         inter_packet_interval = packet_samples / sample_rate
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.open('localhost',8400)
+         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         sock.connect((host,8400))
 
-        while True:
-            samples = np.random.standard_normal((n_ch,n_samples),dtype=np.float32)
-            timestamp = int(time.perf_counter()*1000) % (1<<31) # N.B. MUST fit in 32bit int
-            DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
-            sock.send(DP)
-            time.sleep(inter_packet_interval) # sleep to rate limit to sample_rate Hz
+         while True:
+             samples = np.random.standard_normal((n_ch,packet_samples)).astype(np.float32)
+             timestamp = int(time.perf_counter()*1000) % (1<<31) # N.B. MUST fit in 32bit int
+             DP = struct.pack("<BBHii%df"%(samples.size),ord('D'),0,4+4+samples.size*4,timestamp,samples.shape[-1],*(s for s in samples.ravel()))
+             sock.send(DP)
+             time.sleep(inter_packet_interval) # sleep to rate limit to sample_rate Hz
 
 Congratulations, you have just written your own custom datapacket streamer for the mindaffect BCI.   
 
