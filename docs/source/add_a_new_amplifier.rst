@@ -6,7 +6,7 @@ Out of the box mindaffectBCI supports a large range of amplifiers, either via. i
 In this tutorial you will learn:
  1. The low-level format used to stream to the mindaffectBCI hub
  2. The importance of **device-level** time-stamps in ensuring the data you send it as good as possible for BCI applications
- 3. How to write a simple 'fake-data' simulated amplifier stream in C, python, Java or C#
+ 3. How to write a simple 'fake-data' simulated amplifier stream in Python.
 
 The mindaffectBCI DATAPACKET transmission format
 ------------------------------------------------
@@ -112,22 +112,19 @@ The detailed format of the DATAPACKET messages (along with all the other message
     <tr>
      <td>data
      </td>
-     <td>[ nchannels x nSamp ] of single 
+     <td>[ nchannels x nSamp ] of float32 
      </td>
      <td>The raw packed data
      </td>
     </tr>
   </table>
 
-  Notes:
-
-  32bit timestamps @1ms accuracy means the timestamps will wrap-around in 4294967296/1000/60/60/24  = 50 days.. Which is way more than we really need….  
-
-  With 24 bits this would be 4hr..  For implementation simplicity standard 32bit ints are prefered.
+  Notes: 32bit timestamps @1ms accuracy means the timestamps will wrap-around in 4294967296/1000/60/60/24  ~= 50 days.  
 
      </td>
     </tr>
   </table>
+
 
 Based on this format, in python given raw data in `samples` which is a (samples,channels) np.float32 numpy array and using the `struct` package you can make a valid datapacket with:
 
@@ -150,7 +147,7 @@ To make the absolute minimum `fake-data` streamer we need to do 5 things:
  
      n_ch = 4
      n_samples = 10
-     samples = np.random.standard_normal((n_ch,n_samples))
+     samples = np.random.standard_normal((n_ch,n_samples),dtype=np.float32)
  
  3. Get the current time-stamp::
  
@@ -178,7 +175,7 @@ To make the absolute minimum `fake-data` streamer we need to do 5 things:
         sock.open('localhost',8400)
 
         while True:
-            samples = np.random.standard_normal((n_ch,n_samples))
+            samples = np.random.standard_normal((n_ch,n_samples),dtype=np.float32)
             timestamp = int(time.perf_counter()*1000) % (1<<31) # N.B. MUST fit in 32bit int
             DP = struct.pack("<BBHii%df"%(samples.size),'D',0,2+4+samples.size*4,samples.shape[-1],samples.ravel())
             sock.send(DP)
@@ -193,7 +190,14 @@ The Importance of **Amplifier** timestamps
 
 At it's core any evoked-response BCI (like the mindaffect BCI) must align at least two data-streams, namely the EEG stream (from the amplifier) and the STIMULUS stream (from the presentation device).  Doing this alignment with high latency links (such as wireless network connections) can be a complex problem.  The solution used in the mindaffect BCI is to use a **local** clock on the device (i.e. amplifier, screen) to attach accurate **timestamps** to the data at source, and then use a jitter rejecting and step detection algorithm in the decoder to align the time-stamp streams (which due to electronic issues can have different offsets and may drift relative to each other) to the common decoder clock.  
 
-What this means for amplifier implementors is that **it is very important** to time-stamp your data as close to the source as possible.  We have found that using the poor quality clocks in a cheap devices is a better time-stamp source than an high quality clock in a PC -- basically because even a poor quality device clock has a sub-millisecond jitter and only drifts by approx 1 millisecond / second, whereas wireless transmission jitter can be 10 to 100 milliseconds / second with a similar 1ms/s drift.  When coupled to potential sample loss in transmission, this makes 'recieve-time' timestamps a poor subistute for 'measurment-time' device-level timestamps.     
+What this means for amplifier implementors is that **it is very important** to time-stamp your data as close to the source as possible.  We have found that using the poor quality clocks in a cheap devices is a better time-stamp source than an high quality clock in a PC -- basically because even a poor quality device clock has a sub-millisecond jitter and only drifts by approx 1 millisecond / second, whereas wireless transmission jitter can be 10 to 100 milliseconds / second with a similar 1ms/s drift.  When coupled to potential sample loss in transmission, this makes 'recieve-time' timestamps a poor subistute for 'measurment-time' device-level timestamps. 
+
+Summary
+-------
+
+Adding a new amplifier to the mindaffect BCI can be done by either:
+  1. Adding the new amplifier to brainflow
+  2. Streaming the data on a TCP socket in the timestamped DATAPACKET format
 
 
 
