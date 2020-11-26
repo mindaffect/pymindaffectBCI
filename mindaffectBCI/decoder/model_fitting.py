@@ -195,7 +195,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
                                      marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
                                      nEpochCorrection=self.startup_correction, **kwargs)
-        if marginalizemodels and Fy.ndim>3 and Ptgt.shape[0]>0: # hide our internal model dimension?
+        if marginalizemodels and Ptgt.ndim>3 and Ptgt.shape[-4]>0: # hide our internal model dimension?
             Yest=Yest[0,...]
             Perr=Perr[0,...]
             Ptgt=Ptgt[0,...]

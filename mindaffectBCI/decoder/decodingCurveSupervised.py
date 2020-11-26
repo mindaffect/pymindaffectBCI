@@ -98,9 +98,9 @@ def compute_decoding_curve(Fy:np.ndarray, objIDs, integerationLengths, **kwargs)
         aveProbErr (nInt: float) : average error probablility at this integeration length
         aveProbErrEst (nInt: float):  average estimated error probability for this integeration length
     """    
-    Yidx=-np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
-    Yest=-np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
-    Perr= np.ones((Fy.shape[-3], len(integerationLengths))) # (nTrl,nInt)
+    Yidx=-np.ones((Fy.shape[-3], len(integerationLengths)),dtype=int) # (nTrl,nInt)
+    Yest=-np.ones((Fy.shape[-3], len(integerationLengths)),dtype=int) # (nTrl,nInt)
+    Perr= np.ones((Fy.shape[-3], len(integerationLengths)),dtype=np.float32) # (nTrl,nInt)
 
     print("Int Lens:", end='')
     for li,nep in enumerate(integerationLengths):
@@ -239,22 +239,23 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
             Yerr = args[5-2] #(nTrl,nInt), flag if was right or not
             oPerr = args[6-2] #(nTrl,nInt)
             keep = np.any(oPerr<1,axis=-1) #(nTrl)
-            Yerr=Yerr[keep,:]
-            oPerr=oPerr[keep,:]
+            if np.any(keep.ravel()):
+                Yerr=Yerr[keep,:]
+                oPerr=oPerr[keep,:]
 
-            Perr=oPerr.copy()
-            plt.plot(integerationLengths.T,Perr.T,color='.95') # line per trial
-            Perr[Yerr<0]=np.NaN
-            Perr[Yerr==True]=np.NaN # disable points where it was in error
-            # est when was correct
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
-            plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
-            # est when incorrect..
-            Perr = oPerr.copy() #(nTrl,nInt)
-            Perr[Yerr<0]=np.NaN
-            Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
-            plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
-            plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
+                Perr=oPerr.copy()
+                plt.plot(integerationLengths.T,Perr.T,color='.95') # line per trial
+                Perr[Yerr<0]=np.NaN
+                Perr[Yerr==True]=np.NaN # disable points where it was in error
+                # est when was correct
+                plt.plot(integerationLengths.T,Perr[0,:].T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2),label='Perr(correct)')
+                plt.plot(integerationLengths.T,Perr.T,'.',markerfacecolor=(0,1,0,.2),markeredgecolor=(0,1,0,.2))
+                # est when incorrect..
+                Perr = oPerr.copy() #(nTrl,nInt)
+                Perr[Yerr<0]=np.NaN
+                Perr[Yerr==False]=np.NaN # disable points where it was in error, or not available
+                plt.plot(integerationLengths.T,Perr[0,:].T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2),label='Perr(incorrect)')
+                plt.plot(integerationLengths.T,Perr.T,'.', markerfacecolor=(1,.0,.0,.2), markeredgecolor=(1,.0,.0,.2))
             plt.title('Decoding Curve\n(nTrl={})'.format(Yerr.shape[0]))
 
         plt.plot(integerationLengths.T,aveProbErr.T,'.-',label='avePerr')
