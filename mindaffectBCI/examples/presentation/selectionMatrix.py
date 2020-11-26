@@ -89,14 +89,19 @@ class InstructionScreen(Screen):
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top')
         
+        self.logo = None
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,os.path.dirname(os.path.abspath(__file__)),
                                                os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..'))
-            logo = pyglet.image.load(logo)
-        logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-        self.logo = pyglet.sprite.Sprite(logo,self.window.width,self.window.height-16)
-        self.logo.update(scale_x=self.window.width*.1/logo.width, 
-                         scale_y=self.window.height*.1/logo.height)
+            try:
+                logo = pyglet.image.load(logo)
+            except:
+                logo = None
+        if logo:
+            logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+            self.logo = pyglet.sprite.Sprite(logo,self.window.width,self.window.height-16)
+            self.logo.update(scale_x=self.window.width*.1/logo.width, 
+                            scale_y=self.window.height*.1/logo.height)
 
     def reset(self):
         self.isRunning = False
@@ -397,7 +402,7 @@ class QueryDialogScreen(InstructionScreen):
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
-from math import log10
+from math import e, log10
 from collections import deque
 class ElectrodequalityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
