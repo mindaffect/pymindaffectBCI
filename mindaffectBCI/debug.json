@@ -25,7 +25,7 @@
         "ncal":4,
         "npred":10,
         "selectionThreshold":0.1,
-        "symbols":"symbols.txt",
+        "symbols":"keyboard.txt",
 	    "calibration_symbols":"3x3.txt",
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "bgFraction":0.1,
