@@ -37,15 +37,29 @@ LOGDIR = os.path.join(PYDIR,'../../logs/')
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 try :
+    import matplotlib
     import matplotlib.pyplot as plt
     guiplots=True
+# for be in matplotlib.rcsetup.all_backends: 
+#     try:
+#         matplotlib.use(be)
+#         print(be)
+#     except: pass
+    print("Initial backend: {}".format(matplotlib.get_backend()))
+    try:
+        # backends to try: TkAgg" "WX" "WXagg"
+        matplotlib.use('TKagg')
+    except:
+        print("couldn't change backend")
+    #plt.ion()
+    print("Using backend: {}".format(matplotlib.get_backend()))
 except:
     guiplots=False
 
 def redraw_plots():
-    if guiplots:
+    if guiplots and not matplotlib.is_interactive():
         for i in plt.get_fignums():
-            #plt.figure(i).canvas.draw()  # v.v.v. slow
+            #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
             if plt.figure(i).get_visible():
                 plt.gcf().canvas.flush_events()
             #plt.show(block=False)
@@ -512,6 +526,9 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
     if not clsfr.is_fitted():
         print("Warning: trying to predict without training classifier!")
         return
+
+    if PREDICTIONPLOTS and guiplots:
+        plt.close('all')
 
     # TODO []: Block based prediction is slightly slower?  Why?
     if timeout_ms is None:

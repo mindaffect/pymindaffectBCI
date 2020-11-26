@@ -24,6 +24,13 @@ import json
 import argparse
 import traceback
 
+class NoneProc:
+    """tempory class simulating a working null sub-process
+    """
+    def is_alive(self): return True
+    def terminate(self): pass
+    def join(self): pass
+
 def startHubProcess(label, logdir=None):
     """Start the process to manage the central utopia-hub
 
@@ -70,7 +77,7 @@ def startAcquisationProcess(label, acquisation, acq_args, logdir=None):
     #  so change the board_id and other args to use other boards
     if acquisation == 'none':
         # don't run acq driver here, user will start it manually
-        acquisation = None
+        acquisation = NoneProc()
     elif acquisation == 'fakedata':
         print('Starting fakedata')
         from mindaffectBCI.examples.acquisation import utopia_fakedata
@@ -149,7 +156,7 @@ def startDecoderProcess(label,decoder,decoder_args, logdir=None):
         # allow time for the decoder to startup
         sleep(4)
     elif decoder == 'none':
-        decoder = None
+        decoder = NoneProc()
     return decoder
 
 def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
