@@ -605,7 +605,7 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
 
     if axis == X.ndim-2 and zi is None:
         zi = sosfilt_zi(sos) # (order,2)
-        zi.astype(X.dtype)
+        zi = zi.astype(X.dtype)
         zi = sosfilt_zi_warmup(zi, X, axis, sos)
 
     else:
