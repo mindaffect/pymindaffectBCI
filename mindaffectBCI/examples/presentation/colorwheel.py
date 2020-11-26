@@ -26,23 +26,31 @@ import sys
 import time
 import math
 
-#import os
-#scriptpath=os.path.dirname(os.path.realpath(__file__))
-#import sys
-#sys.path.append(os.path.join(scriptpath,'../../'))
-
 from mindaffectBCI.noisetag import Noisetag, sumstats
 
 class Quad:
     '''object to hold a single graphics quad'''
-    def __init__(self,objID,vertices,color,theta):
+    def __init__(self, objID:int, vertices, color, theta:float):
+        """object to hold a GL-QUADS based BCI selectable object
+
+        Args:
+            objID (int): the objID for this object
+            vertices (list-of-tuples-of-float): list of 4 (x,y) vertices for this quad
+            color (list-of-float): rgb float base color for this quad
+            theta (float): angle of this segment on the colorwheel
+        """        
         self.objID=objID
         self.vertices=vertices
         self.color=color
         self.theta=theta
-    def draw(self,maskcolor=None,alpha=.5):
-        '''draw this quad, optionally with given color'''
-        ''' given color overrides'''
+
+    def draw(self, maskcolor=None, alpha=.5):
+        """ draw this quad -- optionally with given masking color
+
+        Args:
+            maskcolor (color, optional): (3,float) mask color blended with the quads base color. Defaults to None.
+            alpha (float, optional): strength of the blending. Defaults to .5.
+        """        
         if maskcolor :
             # use alpha to blend color and maskcolor
             color = tuple(maskcolor[i]*alpha + self.color[i]*(1-alpha) for i in range(len(self.color)))
@@ -62,11 +70,19 @@ class DrawWindow(pyglet.window.Window):
         self.objIDs=[]
         self.noisetag=None
         self.lastfliptime=0
-        self.flipstats=sumstats()
+        self.flipstats = sumstats()
         self.fliplogtime=self.lastfliptime
         self.noisetag=noisetag
         
-    def init_pie(self,nsegements=12,iradius=1/6,oradius=1/3,objIDs=None):
+    def init_pie(self,nsegements:int=12,iradius:float=1/6,oradius:float=1/3,objIDs=None):
+        """initialize the colorwheel given number of segements and inner/outer radii
+
+        Args:
+            nsegements (int, optional): number of colorwheel segements to use. Defaults to 12.
+            iradius (float, optional): wheel inner radius, as fraction of window size. Defaults to 1/6.
+            oradius (float, optional): wheel outer radius, as fraction of window size. Defaults to 1/3.
+            objIDs (list-of-int, optional): set of object IDs to use for these segments. Defaults to None.
+        """        
         self.objIDs = objIDs
         if self.objIDs is None :
             self.objIDs = list(range(1,nsegements+1))
@@ -113,16 +129,25 @@ class DrawWindow(pyglet.window.Window):
             self.segements.append(Quad(self.objIDs[i],it+ot+ob+ib,bg,theta))
 
     def setNoisetag(self,noisetag):
+        """set the noisetag object we use for BCI communication
+
+        Args:
+            noisetag (Noisetag): the noisetag object we use for BCI communication
+        """
         self.noisetag=noisetag
 
     # mapping between bci-stimulus-states and on-screen colors
     state2color={0:(.2,.2,.2), # off=grey
                  1:(1,1,1),    # on=white
                  2:(1,1,1)}    # cue=flash
+
     def draw_pie(self):
+        """draw the complete colorwheel with the flicker state as obtained from the noisetag object
+        """        
         self.frame=self.frame+1
         # get the bci-stimulus state
         stimulus_state=None
+        target_state = -1
         if self.noisetag :
             self.noisetag.sendStimulusState(timestamp=self.lastfliptime)
             self.noisetag.updateStimulusState()
@@ -131,9 +156,6 @@ class DrawWindow(pyglet.window.Window):
         # do nothing if no bci-stimulus
         if stimulus_state is None :
             stimulus_state = [0]*len(self.segements)
-
-        if target_state is not None and target_state>0:
-            print("*" if target_state>0 else '.',end='',flush=True)
 
         self.clear()        
         # modify the blend strength if in cue/feedback mode
@@ -153,12 +175,17 @@ class DrawWindow(pyglet.window.Window):
                 bg=None # normal color
             seg.draw(maskcolor=bg,alpha=alpha)            
 
+        if target_state is not None and target_state>0:
+            print("*" if target_state>0 else '.',end='',flush=True)
+
+
     def update(self,dt):
         self.draw_pie()
         
     def flip(self):
-        # override window's flip method to send stimulus state as close in
-        # time as possible to when the screen re-freshed
+        """ override window's flip method to send stimulus state as close in
+        time as possible to when the screen re-freshed
+        """        
         super().flip()
         olft=self.lastfliptime
         self.lastfliptime=self.noisetag.getTimeStamp()
@@ -169,7 +196,12 @@ class DrawWindow(pyglet.window.Window):
             print("Hist:\n"+self.flipstats.hist())
             
 def selectionHandler(objID):
-    '''function to map selection to action'''    
+    """function called back when a BCI selection is made which updates the light color
+
+    Args:
+        objID (int): the ID number of the selected object
+    """    
+    global window
     print('Sel: %d'%(objID))
     # if is obj we are responsible for
     if objID in window.objIDs :
@@ -186,8 +218,16 @@ def selectionHandler(objID):
             except :
                 print("couldnt talk to the hue!") 
 
+window=None
+hue_bridge=None
+def run(hue_bridgeip=None, hue_username=None, **kwargs):
+    """run the Phillips Hue lights control demo
 
-if __name__=='__main__':
+    Args:
+        hue_bridgeip (str, optional): the address of the hue bridge control device. Defaults to "192.168.253.100".
+        hue_username (str, optional): the username to use when communicating with the hue-bridge device. Note: for this script to work you **must** have pre-generated an authorized username for this particular philips HUE. Defaults to "AlGbD1GTQHxwDVK0j3tKkpdwBUv8Cijtvbkokzxk".
+    """    
+    global window, hue_bridge
     # N.B. init the noisetag first so asks for decoder IP
     noisetag=Noisetag()
     # auto connect to the decoder
@@ -206,9 +246,7 @@ if __name__=='__main__':
     # Initialize the connection to the hue light
     try :
         from qhue import Bridge
-        bridgeip="192.168.253.100"
-        username="AlGbD1GTQHxwDVK0j3tKkpdwBUv8Cijtvbkokzxk"
-        hue_bridge = Bridge(bridgeip, username)
+        hue_bridge = Bridge(hue_bridgeip, hue_username)
         # register selection handler
         noisetag.addSelectionHandler(selectionHandler)
     except ImportError :
@@ -218,3 +256,6 @@ if __name__=='__main__':
     # run the mainloop
     pyglet.clock.schedule(window.update)
     pyglet.app.run()
+
+if __name__=='__main__':
+    run(hue_bridgeip="192.168.253.100",hue_username="AlGbD1GTQHxwDVK0j3tKkpdwBUv8Cijtvbkokzxk")
