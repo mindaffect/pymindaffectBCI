@@ -48,10 +48,10 @@ try :
     print("Initial backend: {}".format(matplotlib.get_backend()))
     try:
         # backends to try: "TkAgg" "WX" "WXagg"
-        matplotlib.use('WX')
+        matplotlib.use('TkAgg')
     except:
         print("couldn't change backend")
-    plt.ion()
+    #plt.ion()
     print("Using backend: {}".format(matplotlib.get_backend()))
 except:
     guiplots=False
@@ -62,7 +62,7 @@ def redraw_plots():
             if plt.figure(i).get_visible():
                 #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
                 plt.gcf().canvas.flush_events()
-            plt.show(block=False)
+            #plt.show(block=False)
 
 
 def get_trial_start_end(msgs, start_ts=None):
@@ -441,12 +441,12 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
     # strip outputs that we don't use, to save compute time
     Y, used_idx = strip_unused(Y)
     # strip the true target info if it's a copy, so it doesn't mess up Py computation
-    Y = dedupY0(Y, zerodup=False, yfeatdim=False)
+    #Y = dedupY0(Y, zerodup=False, yfeatdim=False)
     # up-sample Y to the match the rate of X
     # TODO[]: should this happen in the data-interface?
     Y, _ = upsample_stimseq(X_ts, Y, Y_ts)
     # predict on X,Y without the time-stamp info
-    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus)
+    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus, dedup0=True)
     # map-back to 256
     Fy = np.zeros(Fy_1.shape[:-1]+(256,),dtype=Fy_1.dtype)
     Fy[..., used_idx] = Fy_1
