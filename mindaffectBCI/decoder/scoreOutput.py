@@ -30,7 +30,7 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
       R (nM,nfilt,nE,tau): FWD-model (impulse response) for each of the event types, used to correct the 
             scores for correlated responses.
       offset (int): A (set of) offsets to try when decoding.  Defaults to None.
-      dedup0 (bool): remove duplicate copies of output O (used when cross validating calibration data)
+      dedup0 (int): remove duplicate copies of output O, >0 remove the copy, <0 remove objID==0 (used when cross validating calibration data)
       outputscore (str): type of score to compute. one-of: 'ip', 'sse'.  Defaults to 'ip' 
 
     Returns
@@ -46,7 +46,7 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
     if Fe.ndim < 4: # ensure 4-d
         Fe = Fe.reshape((1,)*(4-Fe.ndim)+Fe.shape)    
     if dedup0 is not None: # remove duplicate copies output=0
-        Ye = dedupY0(Ye)
+        Ye = dedupY0(Ye,zerodup=dedup0>0)
     # ensure Ye has same type of Fe
     Ye = Ye.astype(Fe.dtype)
 

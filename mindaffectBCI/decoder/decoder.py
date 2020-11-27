@@ -446,7 +446,7 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
     # TODO[]: should this happen in the data-interface?
     Y, _ = upsample_stimseq(X_ts, Y, Y_ts)
     # predict on X,Y without the time-stamp info
-    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus, dedup0=True)
+    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus, dedup0=-1)  # predict, removing objID==0
     # map-back to 256
     Fy = np.zeros(Fy_1.shape[:-1]+(256,),dtype=Fy_1.dtype)
     Fy[..., used_idx] = Fy_1
@@ -674,7 +674,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
     """    
     global axFy, axPy, axPtgt
 
-    if axFy is None:
+    if axFy is None:# or not plt.fignum_exists(axFy.fig):
         # init the fig
         fig = plt.figure(10)
         plt.clf()
