@@ -674,7 +674,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
     """    
     global axFy, axPy, axPtgt
 
-    if axFy is None:# or not plt.fignum_exists(axFy.fig):
+    if axFy is None or not plt.fignum_exists(10):
         # init the fig
         fig = plt.figure(10)
         plt.clf()
