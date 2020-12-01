@@ -24,7 +24,7 @@
 
 # get the general noisetagging framework
 import os
-from mindaffectBCI.noisetag import Noisetag
+from mindaffectBCI.noisetag import Noisetag, PredictionPhase
 from mindaffectBCI.utopiaclient import DataPacket
 from mindaffectBCI.decoder.utils import search_directories_for_file
 
@@ -752,38 +752,56 @@ class SelectionGridScreen(Screen):
             self.noisetag.addSelectionHandler(self.doSelection)
         self.liveSelections = value
 
-    def getSymb(self,idx):
+    def get_idx(self,idx):
         ii=0 # linear index
         for i in range(len(self.symbols)):
             for j in range(len(self.symbols[i])):
                 if self.symbols[i][j] is None: continue
                 if idx==(i,j) or idx==ii :
-                    return self.symbols[i][j]
+                    return ii
                 ii = ii + 1
         return None
 
-    def setSymb(self,idx,val):
-        ii=0
-        for i in range(len(self.symbols)):
-            for j in range(len(self.symbols[i])):
-                if self.symbols[i][j] is None: continue
-                if idx==ii or idx==(i,j):
-                    self.symbols[i][j] = val
-                    break
-                ii = ii + 1
+    def getLabel(self,idx):
+        ii = self.get_idx(idx)
+        return self.labels[ii] if ii is not None else None
+
+    def setLabel(self,idx,val):
+        ii = self.get_idx(idx)
         # update the label object to the new value
-        if self.labels[ii]:
+        if ii is not None and self.labels[ii]:
             self.labels[ii].text=val
+
+    def setObj(self,idx,val):
+        ii = self.get_idx(idx)
+        if ii is not None and self.objects[ii]:
+            self.objects[ii]=val
 
     def doSelection(self, objID):
         if self.liveSelections == True:
             if objID in self.objIDs:
                 print("doSelection: {}".format(objID))
                 symbIdx = self.objIDs.index(objID)
-                sel = self.getSymb(symbIdx)
+                sel = self.getLabel(symbIdx)
+                sel = sel.text if sel is not None else ''
+                text = self.update_text(self.sentence.text, sel)
                 if self.show_correct and self.last_target_idx>=0:
-                    sel += "*" if symbIdx==self.last_target_idx else "_"
-                self.set_sentence( self.sentence.text + sel )
+                    text += "*" if symbIdx==self.last_target_idx else "_"
+                self.set_sentence( text )
+
+    def update_text(self,text:str,sel:str):
+        # process special codes
+        if sel in ('<-','<bkspc>','<backspace>'):
+            text = text[:-1]
+        elif sel in ('spc','<space>','<spc>'):
+            text = text + '😀'
+        elif sel in ('home','quit'):
+            pass
+        elif sel == ':)':
+            text = text + ""
+        else:
+            text = text + sel
+        return text
 
     def set_sentence(self, text):
         '''set/update the text to show in the instruction screen'''
@@ -805,10 +823,13 @@ class SelectionGridScreen(Screen):
         '''set/update the grid of symbols to be selected from'''
         winw, winh=self.window.get_size()
         # tell noisetag which objIDs we are using
-        if symbols is not None:
-            self.symbols = symbols
-        else:
+        if symbols is None:
             symbols = self.symbols
+
+        if isinstance(symbols, str):
+            symbols = load_symbols(symbols)
+
+        self.symbols=symbols
         # Number of non-None symbols
         nsymb      = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
 
@@ -845,21 +866,28 @@ class SelectionGridScreen(Screen):
                 # skip unused positions
                 if symbols[i][j] is None or symbols[i][j]=="": continue
                 idx = idx+1
+                symb = symbols[i][j]
                 x = j/gridwidth*winw # left-edge cell
-                # create a 1x1 white image for this grid cell
-                img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
+                try : # symb is image to use for this button
+                    img = search_directories_for_file(symb,os.path.dirname(__file__))
+                    img = pyglet.image.load(img)
+                    symb = '.' # symb is a fixation dot
+                except :
+                    # create a 1x1 white image for this grid cell
+                    img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
                 # convert to a sprite (for fast re-draw) and store in objects list
                 # and add to the drawing batch (as background)
                 self.objects[idx]=pyglet.sprite.Sprite(img, x=x+bgoffsetx, y=y+bgoffsety,
-                                                       batch=self.batch, group=self.background)
+                                                    batch=self.batch, group=self.background)
                 # re-scale (on GPU) to the size of this grid cell
                 self.objects[idx].update(scale_x=int(w-bgoffsetx*2)/img.width,
-                                         scale_y=int(h-bgoffsety*2)/img.height)
+                                        scale_y=int(h-bgoffsety*2)/img.height)
+
                 # add the foreground label for this cell, and add to drawing batch
-                self.labels[idx]=pyglet.text.Label(symbols[i][j], font_size=32, x=x+w/2, y=y+h/2,
-                                                   color=(255, 255, 255, 255),
-                                                   anchor_x='center', anchor_y='center',
-                                                   batch=self.batch, group=self.foreground)
+                self.labels[idx]=pyglet.text.Label(symb, font_size=32, x=x+w/2, y=y+h/2,
+                                                color=(255, 255, 255, 255),
+                                                anchor_x='center', anchor_y='center',
+                                                batch=self.batch, group=self.foreground)
 
         # add opto-sensor block
         img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
@@ -982,15 +1010,16 @@ class SelectionGridScreen(Screen):
                 predidx=objIDs.index(predMessage.Yest) # convert from objID -> objects index
                 prederr=predMessage.Perr
                 # BODGE: manually mix in the feedback color as blue tint on the label
-                fbcol=list(self.labels[predidx].color)
-                fbcol[0]=fbcol[0]*.4 
-                if fbcol[0]>1: fbcol[0]=int(fbcol[0])
-                fbcol[1]=fbcol[1]*.4; 
-                if fbcol[1]>1: fbcol[1]=int(fbcol[1])
-                fbcol[2]=fbcol[2]*.4+255*(1-prederr)*.6; 
-                if fbcol[2]>1: fbcol[2]=int(fbcol[2])
-                self.labels[predidx].color=fbcol
-
+                if self.labels[predidx]:
+                    fbcol=list(self.labels[predidx].color) 
+                    fbcol[0]=fbcol[0]*.4 
+                    if fbcol[0]>1: fbcol[0]=int(fbcol[0])
+                    fbcol[1]=fbcol[1]*.4; 
+                    if fbcol[1]>1: fbcol[1]=int(fbcol[1])
+                    fbcol[2]=fbcol[2]*.4+255*(1-prederr)*.6; 
+                    if fbcol[2]>1: fbcol[2]=int(fbcol[2])
+                    self.labels[predidx].color = fbcol
+                
         # disp opto-sensor if targetState is set
         if self.optosensor :
             if self.opto_sprite is not None:
@@ -1048,6 +1077,7 @@ class ExptScreenManager(Screen):
         Settings=105
         FrameRateCheck=200
         Reset=110
+        ExtraSymbols=300
 
     welcomeInstruct="Welcome to the mindaffectBCI\n\nkey to continue"
     calibrationInstruct="Calibration\n\nThe next stage is CALIBRATION\nlook at the indicated green target\n\nkey to continue"
@@ -1056,15 +1086,15 @@ class ExptScreenManager(Screen):
     closingInstruct="Closing\nThankyou\n\nPress to exit"
     resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
 
-    main_menu ="Welcome to the mindaffectBCI" +"\n"+ \
+    main_menu_header ="Welcome to the mindaffectBCI" +"\n"+ \
                "\n"+ \
                "Press the number of the option you want:" +"\n"+ \
-               "\n"+ \
-               "0) Electrode Quality" +"\n"+ \
+               "\n"
+    main_menu_numbered = "0) Electrode Quality" +"\n"+ \
                "1) Calibration" +"\n"+ \
                "2) Cued Prediction" +"\n"+ \
-               "3) Free Typing" +"\n"+ \
-               "Q) Quit" + "\n\n\n" + \
+               "3) Free Typing" +"\n"
+    main_menu_footer = "\n\n\n" + "Q) Quit" + "\n" + \
                "f) frame-rate-check" + "\n" + \
                "s) settings\n" + \
                "r) reset calibration model"
@@ -1082,14 +1112,23 @@ class ExptScreenManager(Screen):
                  calibration_trialduration=4.2, prediction_trialduration=10,  waitduration=1, feedbackduration=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 simple_calibration:bool=False, calibration_symbols=None, bgFraction=.1,
+                 simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
         self.calibration_symbols = calibration_symbols if calibration_symbols is not None else symbols
         self.bgFraction = bgFraction
-        self.menu = MenuScreen(window, self.main_menu, self.menu_keys.keys())
+        # auto-generate menu items for each prediction symbols set
+        self.extra_symbols = extra_symbols
+        if extra_symbols:
+            for i,ps in enumerate(extra_symbols):
+                keyi = i + 4
+                self.main_menu_numbered = self.main_menu_numbered + "\n" + \
+                        "{}) Free Typing: {}".format(keyi,ps)
+                self.menu_keys[getattr(pyglet.window.key,"_{:d}".format(keyi))] = self.ExptPhases.ExtraSymbols
+
+        self.menu = MenuScreen(window, self.main_menu_header+self.main_menu_numbered+self.main_menu_footer, self.menu_keys.keys())
         self.instruct = InstructionScreen(window, '', duration = 50000)
         self.connecting = ConnectingScreen(window, noisetag)
         self.query  =  QueryDialogScreen(window, 'Query Test:')
@@ -1229,10 +1268,11 @@ class ExptScreenManager(Screen):
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
             self.selectionGrid.reset()
-            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
+            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
             self.selectionGrid.target_only=False
+            self.selectionGrid.show_correct=True
             self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
 
             self.prediction_args['framesperbit'] = self.framesperbit
@@ -1258,6 +1298,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.target_only=False
+            self.selectionGrid.show_correct=False
             self.selectionGrid.set_sentence('')
             self.selectionGrid.setliveSelections(True)
 
@@ -1267,6 +1308,27 @@ class ExptScreenManager(Screen):
             
             self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
             self.screen = self.selectionGrid
+            self.next_stage = self.ExptPhases.MainMenu
+
+        elif self.stage==self.ExptPhases.ExtraSymbols: # pred
+            print("Extra Prediction")
+            key2i = {pyglet.window.key._4:0,pyglet.window.key._5:1, pyglet.window.key._6:2}
+            extrai = key2i.get(self.menu.key_press,None)
+            if extrai is not None:
+                self.selectionGrid.reset()
+                self.selectionGrid.set_grid(symbols=self.extra_symbols[extrai], bgFraction=.05)
+                self.selectionGrid.liveFeedback=True
+                self.selectionGrid.target_only=False
+                self.selectionGrid.show_correct=False
+                self.selectionGrid.set_sentence('')
+                self.selectionGrid.setliveSelections(True)
+
+                self.prediction_args['framesperbit'] = self.framesperbit
+                self.prediction_args['numframes'] = self.prediction_trialduration / isi
+                self.prediction_args['selectionThreshold']=self.selectionThreshold
+                
+                self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
+                self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.Closing: # closing instruct
@@ -1442,10 +1504,10 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, stimfile=None, selectionThreshold:float=.1,
+def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, feedbackduration:float=2, stimfile=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1,
-        calibration_args:dict=None, prediction_args:dict=None):
+        extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1483,26 +1545,19 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
                  ['f', 'g', 'h', 'i', 'j'],
                  ['k', 'l', 'm', 'n', 'o'],
                  ['p', 'q', 'r', 's', 't'],
-                 ['u', 'v', 'w', 'x', 'y']]
-        symbols=load_symbols('keyboard.txt')
-
-    elif isinstance(symbols,str):
-        # load the layout from a file
-        symbols = load_symbols(symbols)
+                 ['u', 'v', 'w', 'x', '<-']]
 
     # different calibration symbols if wanted
     if calibration_symbols is None:
         calibration_symbols = symbols
-    elif isinstance(calibration_symbols, str):
-        calibration_symbols = load_symbols(calibration_symbols)
-
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
+                        extra_symbols=extra_symbols,
                         bgFraction=bgFraction, 
                         calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
-                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
+                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration, feedbackduration=feedbackduration)
 
     run_screen(ss,drawrate)
 
@@ -1520,11 +1575,17 @@ def parse_args():
     parser.add_argument('--simple_calibration',action='store_true',help='flag to only show a single target during calibration')
     parser.add_argument('--symbols',type=str,help='file name for the symbols grid to display',default=None)
     parser.add_argument('--calibration_symbols',type=str,help='file name for the symbols grid to use for calibration',default=None)
+    parser.add_argument('--extra_symbols',type=str,help='comma separated list of extra symbol files to show',default=None)
     #parser.add_option('-m','--matrix',action='store',dest='symbols',help='file with the set of symbols to display',default=None)
     args = parser.parse_args()
+    if args.extra_symbols:
+        args.extra_symbols = args.extra_symbols.split(',')
+
     return args
 
 if __name__ == "__main__":
     args = parse_args()
+    setattr(args,'symbols',[['yes','no','<-']])
+    setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
     run(**vars(args))
 

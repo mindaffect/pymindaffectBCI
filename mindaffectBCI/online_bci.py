@@ -31,17 +31,17 @@ class NoneProc:
     def terminate(self): pass
     def join(self): pass
 
-def startHubProcess(label, logdir=None):
+def startHubProcess(label='online_bci', logdir=None):
     """Start the process to manage the central utopia-hub
 
     Args:
         label (str): a textual name for this process
 
     Raises:
-        ValueError: unrecognised arguments, e.g. acquisation type.
+        ValueError: unrecognised arguments, e.g. acquisition type.
 
     Returns:
-        hub (Process): sub-process for managing the started acquisation driver
+        hub (Process): sub-process for managing the started acquisition driver
     """    
     from mindaffectBCI.decoder import startUtopiaHub
     hub = startUtopiaHub.run(label=label, logdir=logdir)
@@ -51,96 +51,95 @@ def startHubProcess(label, logdir=None):
     return hub
 
 
-
-def startAcquisationProcess(label, acquisation, acq_args, logdir=None):
-    """Start the process to manage the acquisation of data from the amplifier
+def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=None):
+    """Start the process to manage the acquisition of data from the amplifier
 
     Args:
         label (str): a textual name for this process
-        acquisation (str): the name for the acquisation device to start.  One-of:
+        acquisition (str): the name for the acquisition device to start.  One-of:
                   'none' - do nothing,  
-                  'brainflow' - use the mindaffectBCI.examples.acquisation.utopia_brainflow driver
+                  'brainflow' - use the mindaffectBCI.examples.acquisition.utopia_brainflow driver
                   'fakedata'- start a fake-data streamer
                   'eego' - start the ANT-neuro eego driver
                   'lsl' - start the lsl EEG sync driver
-        acq_args (dict): dictionary of additional arguments to pass to the acquisation device
+        acq_args (dict): dictionary of additional arguments to pass to the acquisition device
 
     Raises:
-        ValueError: unrecognised arguments, e.g. acquisation type.
+        ValueError: unrecognised arguments, e.g. acquisition type.
 
     Returns:
-        Process: sub-process for managing the started acquisation driver
+        Process: sub-process for managing the started acquisition driver
     """    
-    # start the ganglion acquisation process
-    # Using brainflow for the acquisation driver.  
+    # start the ganglion acquisition process
+    # Using brainflow for the acquisition driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
     #  so change the board_id and other args to use other boards
-    if acquisation == 'none':
+    if acquisition == 'none':
         # don't run acq driver here, user will start it manually
-        acquisation = NoneProc()
-    elif acquisation == 'fakedata':
+        acquisition = None
+    elif acquisition == 'fakedata':
         print('Starting fakedata')
-        from mindaffectBCI.examples.acquisation import utopia_fakedata
+        from mindaffectBCI.examples.acquisition import utopia_fakedata
         acq_args=dict(host='localhost', nch=4, fs=200)
-        acquisation = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
-    elif acquisation == 'brainflow':
-        from mindaffectBCI.examples.acquisation import utopia_brainflow
+        acquisition = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
+    elif acquisition == 'brainflow':
+        from mindaffectBCI.examples.acquisition import utopia_brainflow
         if acq_args is None:
             acq_args = dict(board_id=1, serial_port='com3', log=1) # connect to the ganglion
-        acquisation = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+        acquisition = Process(target=utopia_brainflow.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
         # give it some time to startup successfully
         sleep(5)
-    elif acquisation == 'ganglion': # pyOpenBCI ganglion driver
-        from mindaffectBCI.examples.acquisation import utopia_ganglion
-        acquisation = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'ganglion': # pyOpenBCI ganglion driver
+        from mindaffectBCI.examples.acquisition import utopia_ganglion
+        acquisition = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
-    elif acquisation == 'cyton': # pyOpenBCI ganglion driver
-        from mindaffectBCI.examples.acquisation import utopia_cyton
-        acquisation = Process(target=utopia_cyton.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'cyton': # pyOpenBCI ganglion driver
+        from mindaffectBCI.examples.acquisition import utopia_cyton
+        acquisition = Process(target=utopia_cyton.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
-    elif acquisation == 'javacyton': # java cyton driver
-        from mindaffectBCI.examples.acquisation import startJavaCyton
-        acquisation = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'javacyton': # java cyton driver
+        from mindaffectBCI.examples.acquisition import startJavaCyton
+        acquisition = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
-    elif acquisation == 'eego': # ANT-neuro EEGO
-        from mindaffectBCI.examples.acquisation import utopia_eego
-        acquisation = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'eego': # ANT-neuro EEGO
+        from mindaffectBCI.examples.acquisition import utopia_eego
+        acquisition = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
-    elif acquisation == 'lsl': # lsl eeg input stream
-        from mindaffectBCI.examples.acquisation import utopia_lsl
-        acquisation = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'lsl': # lsl eeg input stream
+        from mindaffectBCI.examples.acquisition import utopia_lsl
+        acquisition = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
-    elif acquisation == 'brainproducts': # brainproducts eeg input stream
-        from mindaffectBCI.examples.acquisation import utopia_brainproducts
-        acquisation = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
-        acquisation.start()
+    elif acquisition == 'brainproducts': # brainproducts eeg input stream
+        from mindaffectBCI.examples.acquisition import utopia_brainproducts
+        acquisition = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
 
     else:
-        raise ValueError("Unrecognised acquisation driver! {}".format(acquisation))
+        raise ValueError("Unrecognised acquisition driver! {}".format(acquisition))
     
-    return acquisation
+    return acquisition
 
-def startDecoderProcess(label,decoder,decoder_args, logdir=None):
+def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
     """start the EEG decoder process
 
     Args:
         label (str): a textual name for this process
-        decoder (str): the name for the acquisation device to start.  One-of:
+        decoder (str): the name for the acquisition device to start.  One-of:
                   'decoder' - use the mindaffectBCI.decoder.decoder
                   'none' - don't start a decoder
         decoder_args (dict): dictionary of additional arguments to pass to the decoder
         logdir (str, optional): directory to save log/save files.
 
     Raises:
-        ValueError: unrecognised arguments, e.g. acquisation type.
+        ValueError: unrecognised arguments, e.g. acquisition type.
 
     Returns:
         Process: sub-process for managing the started decoder
@@ -151,6 +150,7 @@ def startDecoderProcess(label,decoder,decoder_args, logdir=None):
             decoder_args = dict(calplots=True)
         if not 'logdir' in decoder_args or decoder_args['logdir']==None: 
             decoder_args['logdir']=logdir
+        print('Starting: {}'.format('mindaffectBCI.decoder.decoder'))
         decoder = Process(target=decoder.run, kwargs=decoder_args, daemon=True)
         decoder.start()
         # allow time for the decoder to startup
@@ -159,14 +159,14 @@ def startDecoderProcess(label,decoder,decoder_args, logdir=None):
         decoder = NoneProc()
     return decoder
 
-def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
+def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
     """[summary]
 
     Args:
         label (str, optional): string label for the saved data file. Defaults to ''.
         logdir (str, optional): directory to save log files / data files.  Defaults to None = $installdir$/logs.
-        acquisation (str, optional): the name of the acquisation driver to use. Defaults to None.
-        acq_args (dict, optional): dictionary of optoins to pass to the acquisation driver. Defaults to None.
+        acquisition (str, optional): the name of the acquisition driver to use. Defaults to None.
+        acq_args (dict, optional): dictionary of optoins to pass to the acquisition driver. Defaults to None.
         decoder (str, optional): the name of the decoder function to use.  Defaults to 'decoder'.
         decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
         presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
@@ -175,49 +175,50 @@ def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
     """    
-    if acquisation is None: 
-        acquisation = 'brainflow'
+    global hub_process, acquisition_process, decoder_process
+    if acquisition is None: 
+        acquisition = 'brainflow'
 
-    hub_proc = None
-    acquisation_proc = None
-    decoder_proc = None
+    hub_process = None
+    acquisition_process = None
+    decoder_process = None
     for retries in range(10):
         #--------------------------- HUB ------------------------------
         # start the utopia-hub process
-        if hub_proc is None or not hub_proc.poll() is None:
+        if hub_process is None or not hub_process.poll() is None:
             try:
-                hub_proc = startHubProcess(label, logdir=logdir)
+                hub_process = startHubProcess(label=label, logdir=logdir)
             except:
-                hub_proc = None
+                hub_process = None
                 traceback.print_exc()
 
-        #---------------------------ACQUISATION ------------------------------
-        if acquisation_proc is None or not acquisation_proc.is_alive():
+        #---------------------------acquisition ------------------------------
+        if acquisition_process is None or not acquisition_process.is_alive():
             try:
-                acquisation_proc = startAcquisationProcess(label, acquisation, acq_args, logdir=logdir)
+                acquisition_process = startacquisitionProcess(acquisition, acq_args, label=label, logdir=logdir)
             except:
-                acquisation_proc = None
+                acquisition_process = None
                 traceback.print_exc()
 
         #---------------------------DECODER ------------------------------
         # start the decoder process - with default settings for a noise-tag
-        if decoder_proc is None or not decoder_proc.is_alive():
+        if decoder_process is None or not decoder_process.is_alive():
             try:
-                decoder_proc = startDecoderProcess(label, decoder, decoder_args, logdir=logdir)
+                decoder_process = startDecoderProcess(decoder, decoder_args, label=label, logdir=logdir)
             except:
-                decoder_proc = None
+                decoder_process = None
                 traceback.print_exc()
 
         # terminate if all started successfully
         # check all started up and running..
         component_failed=False
-        if hub_proc is None or hub_proc is not None and not hub_proc.poll() is None:
+        if hub_process is None or hub_process.poll() is not None:
             print("Hub didn't start correctly!")
             component_failed=True
-        if acquisation_proc is None or acquisation_proc is not None and not acquisation_proc.is_alive():
+        if acquisition_process is None or not acquisition_process.is_alive():
             print("Acq didn't start correctly!")
             component_failed=True
-        if decoder_proc is None or decoder_proc is not None and not decoder_proc.is_alive():
+        if decoder_process is None or not decoder_process.is_alive():
             print("Decoder didn't start correctly!")
             component_failed=True
 
@@ -227,16 +228,16 @@ def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder
         else:
             sleep(1)
 
-    if hub_proc is None or hub_proc is not None and not hub_proc.poll() is None:
+    if hub_process is None or not hub_process.poll() is None:
         print("Hub didn't start correctly!")
-        shutdown(hub_proc,acquisation_proc,decoder_proc)
+        shutdown(hub_process,acquisition_process,decoder_process)
         raise ValueError("Hub didn't start correctly!")
-    if acquisation_proc is None or acquisation_proc is not None and not acquisation_proc.is_alive():
+    if acquisition_process is None or not acquisition_process.is_alive():
         print("Acq didn't start correctly!")
-        shutdown(hub_proc,acquisation_proc,decoder_proc)
-        raise ValueError("Acquisation didn't start correctly!")
-    if decoder_proc is None or decoder_proc is not None and not decoder_proc.is_alive():
-        shutdown(hub_proc,acquisation_proc,decoder_proc)
+        shutdown(hub_process,acquisition_process,decoder_process)
+        raise ValueError("acquisition didn't start correctly!")
+    if decoder_process is None or not decoder_process.is_alive():
+        shutdown(hub_process,acquisition_process,decoder_process)
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
@@ -246,20 +247,33 @@ def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder
         if presentation_args is None:
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
-        from mindaffectBCI.examples.presentation import selectionMatrix
         try:
+            from mindaffectBCI.examples.presentation import selectionMatrix
             selectionMatrix.run(**presentation_args)
         except:
             traceback.print_exc()
 
-    elif presentation == 'none':
-        from mindaffectBCI.decoder.sigViewer import sigViewer
+    elif presentation == 'sigviewer' or presentation=='none':
         try:
+            from mindaffectBCI.decoder.sigViewer import sigViewer
             sigViewer()
         except:
             traceback.print_exc()
 
-    else:
+    elif presentation == 'hue' or presentation == "colorwheel":
+        try:
+            from mindaffectBCI.examples.presentation import colorwheel
+            colorwheel.run(**presentation_args)
+        except:
+            traceback.print_exc()
+    elif presentation == 'rpigpio':
+        try:
+            from mindaffectBCI.examples.presentation import rpigpio
+            rpigpio.run(**presentation_args)
+        except:
+            traceback.print_exc()
+
+    elif isinstance(presentation,str) and not presentation == 'none':
         try:
             import importlib
             pres = importlib.import_module(presentation)
@@ -267,32 +281,90 @@ def run(label='', logdir=None, acquisation=None, acq_args=None, decoder='decoder
         except:
             print("Error: could not run the presentation method")
             traceback.print_exc()
+    
+    elif presentation is None or presentation is False:
+        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
+        return
 
     # TODO []: pop-up a monitoring object / dashboard!
 
     #--------------------------- SHUTDOWN ------------------------------
     # shutdown the background processes
-    shutdown(hub_proc, acquisation_proc, decoder_proc)
+    shutdown(hub_process, acquisition_process, decoder_process)
 
 
-def shutdown(hub,acquisation,decoder):    
+def check_is_running(hub=None, acquisition=None, decoder=None):
+    """check if the background processes are still running
+
+    Args:
+        hub_process ([type], optional): the hub subprocess. Defaults to hub_process.
+        acquisition_process ([type], optional): the acquisation subprocess. Defaults to acquisition_process.
+        decoder_process ([type], optional): the decoder subprocess. Defaults to decoder_process.
+
+    Returns:
+        bool: true if all are running else false
+    """
+    # use module globals if not given?
+    if hub is None: 
+        global hub_process
+        hub = hub_process
+    if acquisition is None:
+        global acquisition_process
+        acquisition = acquisition_process
+    if decoder is None:
+        global decoder_process
+        decoder = decoder_process
+
+    isrunning=True
+    if hub is None or not hub.poll() is None:
+        isrunning=False
+        print("Hub is dead!")
+    if acquisition is None or not acquisition.is_alive():
+        print("Acq is dead!")
+        isrunning=False
+    if decoder is None or not decoder.is_alive():
+        print("Decoder is dead!")
+        isrunning=False
+    return isrunning
+
+def shutdown(hub=None, acquisition=None, decoder=None):    
+    """shutdown any background processes started for the BCI
+
+    Args:
+        hub (subprocess, optional): handle to the hub subprocess object. Defaults to hub_process.
+        acquisition (subprocess, optional): the acquisatin subprocess object. Defaults to acquisition_process.
+        decoder (subprocess, optional): the decoder subprocess object. Defaults to decoder_process.
+    """    
+    # use module globals if not given?
+    if hub is None: 
+        global hub_process
+        hub = hub_process
+    if acquisition is None:
+        global acquisition_process
+        acquisition = acquisition_process
+    if decoder is None:
+        global decoder_process
+        decoder = decoder_process
+
+    hub.terminate()
+
     try: 
         decoder.terminate()
         decoder.join()
     except:
         pass
     try:
-        acquisation.terminate()
-        acquisation.join()
+        acquisition.terminate()
+        acquisition.join()
     except:
         pass
     
-    hub.terminate()
+
     hub.wait()
 #    if os.name == 'nt': # hard kill
-#        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_proc.pid))
+#        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_process.pid))
 #    else: # hard kill
-#        os.kill(hub_proc.pid, signal.SIGTERM)
+#        os.kill(hub_process.pid, signal.SIGTERM)
     #print('exit online_bci')
 
 
@@ -308,9 +380,11 @@ def load_config(config_file):
         if not os.path.splitext(config_file)[1] == '.json':
             config_file = config_file + '.json'
         config_file = search_directories_for_file(config_file,os.path.dirname(os.path.abspath(__file__)))
+        print("Loading config from: {}".format(config_file))
         with open(config_file,'r') as f:
             config = json.load(f)
     else:
+        print("Loading config from: {}".format(f))
         config = json.load(f)
 
     # set the label from the config file
@@ -331,9 +405,9 @@ def parse_args():
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--label', type=str, help='user label for the data savefile', default=None)
-    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default='debug')#'online_bci.json')
-    parser.add_argument('--acquisation', type=str, help='set the acquisation driver type: one-of: "none","brainflow","fakedata","ganglion","eego"', default=None)
-    parser.add_argument('--acq_args', type=json.loads, help='a JSON dictionary of keyword arguments to pass to the acquisation system', default=None)
+    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default=None)#'debug')#'online_bci.json')
+    parser.add_argument('--acquisition', type=str, help='set the acquisition driver type: one-of: "none","brainflow","fakedata","ganglion","eego"', default=None)
+    parser.add_argument('--acq_args', type=json.loads, help='a JSON dictionary of keyword arguments to pass to the acquisition system', default=None)
     parser.add_argument('--decoder', type=str, help='set eeg decoder function to use. one-of: "none", "decoder"', default=None)
     parser.add_argument('--decoder_args', type=json.loads, help='set JSON dictionary of keyword arguments to pass to the decoder. Note: need to doublequote the keywords!', default=None)
     parser.add_argument('--presentation', type=str, help='set stimulus presentation function to use: one-of: "none","selectionMatrix"', default=None)
@@ -341,6 +415,20 @@ def parse_args():
     parser.add_argument('--logdir', type=str, help='directory where the BCI output files will be saved. Uses $installdir$/logs if None.', default=None)
 
     args = parser.parse_args()
+    if args.config_file is None:
+        try:
+            from tkinter import Tk
+            from tkinter.filedialog import askopenfilename
+            root = Tk()
+            root.withdraw()
+            filename = askopenfilename(initialdir='.',title='Chose mindaffectBCI Config File',
+                                        filetypes=(('JSON','*.json'),('All','*.*')))
+            setattr(args,'config_file',filename)
+        except:
+            print("Can't make file-chooser dialog, and no config file specified!  Aborting")
+            raise ValueError("No config file specified")
+
+
 
     # load config-file
     if args.config_file is not None:
@@ -364,6 +452,6 @@ def parse_args():
 # N.B. we need this guard for multiprocessing on Windows!
 if __name__ == '__main__':
     args = parse_args()
-    run(label=args.label, logdir=args.logdir, acquisation=args.acquisation, acq_args=args.acq_args, 
+    run(label=args.label, logdir=args.logdir, acquisition=args.acquisition, acq_args=args.acq_args, 
                           decoder=args.decoder, decoder_args=args.decoder_args, 
                           presentation=args.presentation, presentation_args=args.presentation_args)

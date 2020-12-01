@@ -175,6 +175,9 @@ def dataset_to_XY_ndarrays(dataset):
         X_ts (tr,samp): the time-stamps for the smaples in X
         Y_ts (tr,samp): the time-stamps for the stimuli in Y
     """ 
+    if dataset is None or not hasattr(dataset, '__iter__'):
+        print("Warning: empty dataset input!")
+        return None, None, None, None
     # get length of each trial
     trlen = [trl[0].shape[0] for trl in dataset]
     trstim = [trl[1].shape[0] for trl in dataset]
@@ -296,7 +299,7 @@ def doCalibrationSupervised(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequenc
 
 
 def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
-                   cv=2, prior_dataset=None, ranks=(1,2,3,5), fs=None, **kwargs):
+                   cv:int=2, prior_dataset=None, ranks=(1,2,3,5), fs:float=None, n_ch:int=None, **kwargs):
     """
     fit a model given a dataset 
 
@@ -325,16 +328,21 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             print("Warning: couldn't load / user prior_dataset: {}".format(prior_dataset))
             prior_dataset = None
     if prior_dataset is not None: # combine with the old calibration data
+        p_n_ch = [ x.shape[-1] for (x,_) in prior_dataset ]
+        p_n_ch = max(p_n_ch) if len(p_n_ch)>0 else -1
         if dataset is not None:
             # validate the 2 datasets are compatiable -> same number channels in X
-            d_nch = [ x.shape[0] for (x,_) in dataset ]
-            p_nch = [ x.shape[0] for (x,_) in prior_dataset ]
-            if len(d_nch)>0 and len(p_nch)>0 and max(d_nch) == max(p_nch): # match the max channels info
+            d_n_ch = [ x.shape[-1] for (x,_) in dataset ]
+            d_n_ch = max(d_n_ch) if len(d_n_ch)>0 else -1
+            if d_n_ch == p_n_ch and d_n_ch > 0: # match the max channels info
                 dataset.extend(prior_dataset)
             else:
-                print("Warning: prior dataset not compatiable with current.  Ignored!")
-        else: 
-            dataset = prior_dataset
+                print("Warning: prior dataset ({}ch) not compatiable with current {}ch.  Ignored!".format(p_n_ch,d_n_ch))
+        else:
+            if n_ch is None or n_ch == p_n_ch:
+                dataset = prior_dataset
+            else:
+                print("Warning: prior dataset ({}ch) not compatiable with current {} channels.  Ignored!".format(p_n_ch,n_ch))
 
     if dataset:
         try:
@@ -550,13 +558,15 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         # TODO[]: Fix to not re-process the same data if no new stim to be processed..
         if len(newmsgs) == 0 and nstim == 0 and ndata == 0:
             continue
+        if ui.data_timestamp is None or ui.stimulus_timestamp is None:
+            continue
 
         # get the timestamp for the last data which it is valid to apply the model to,
         # that is where have enough data to include a complete response for this stimulus
         # Note: can't just use last data, incase stimuli are lagged w.r.t. data
         # also, prevents processing data for which are not stimulus events to compare with
         valid_end_ts = min(ui.stimulus_timestamp + overlap_ms, ui.data_timestamp)
-
+        
         # incremental extract trial limits
         otrial_start_ts = trial_start_ts
         trials, trial_start_ts, newmsgs = get_trial_start_end(newmsgs, trial_start_ts)
@@ -650,7 +660,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
 
-                send_prediction(ui, Ptgt, used_idx=used_idx, timestamp=ui.stimulus_timestamp)
+                send_prediction(ui, Ptgt, used_idx=used_idx)
 
             if PREDICTIONPLOTS:
                 redraw_plots()
@@ -755,6 +765,11 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     # setup saving location
     if logdir:
         LOGDIR=os.path.expanduser(logdir)
+        if not os.path.exists(logdir):
+            try:
+                os.makedirs(logdir)
+            except:
+                print("Error making the log directory.... ignoring")
 
     print("LOGDIR={}".format(LOGDIR))
 
@@ -781,7 +796,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         print('clsfr={}'.format(clsfr))
     # pre-train the model if the prior_dataset is given
     if prior_dataset is not None:
-        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs, n_ch=ui.data_ringbuffer.shape[-1])
 
     current_mode = "idle"
     # clean shutdown when told shutdown
@@ -792,7 +807,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 
         elif current_mode.lower() in ("prediction.static","predict.static"):
             if not clsfr.is_fitted() and prior_dataset is not None:
-                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs)
+                doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs, n_ch=ui.data_ringbuffer.shape[-1])
 
             doPredictionStatic(ui, clsfr)
 
@@ -816,7 +831,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         # BODGE: re-draw plots so they are interactive.
         redraw_plots()
 
-if  __name__ == "__main__":
+def parse_args():
     import argparse
     import json
     parser = argparse.ArgumentParser()
@@ -834,7 +849,11 @@ if  __name__ == "__main__":
     parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
-    setattr(args,'predplots',True) 
+    return args
+
+if  __name__ == "__main__":
+    args = parse_args()
+
     if args.savefile is not None or False:#
         #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
         #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
@@ -846,6 +865,7 @@ if  __name__ == "__main__":
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
         setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
+        setattr(args,'prior_dataset',None)
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')

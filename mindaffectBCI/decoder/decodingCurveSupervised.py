@@ -17,7 +17,8 @@
 
 import numpy as np
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
-def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
+from mindaffectBCI.decoder.scoreOutput import dedupY0
+def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
     '''
     Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores
     
@@ -56,6 +57,10 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),**kwargs):
         if not any(keep):
             print('No trials with true label info!')
     
+    if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
+        Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
+
+
     # get the points at which we compute performances
     if len(nInt) < 3:
         if nInt[0] > 0 and nInt[0] < Fy.shape[-2]: #  number steps

@@ -40,15 +40,35 @@ class FileProxyHub:
         self.file = open(self.filename,'r')
     
     def getTimeStamp(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         return self.lasttimestamp
     
     def autoconnect(self, *args,**kwargs):
+        """[summary]
+        """        
         pass
 
     def sendMessage(self, msg):
+        """[summary]
+
+        Args:
+            msg ([type]): [description]
+        """        
         pass
 
     def getNewMessages(self, timeout_ms):
+        """[summary]
+
+        Args:
+            timeout_ms ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         msgs = []
         for line in self.file:
             msg = read_mindaffectBCI_message(line)
@@ -75,6 +95,15 @@ class FileProxyHub:
         return msgs
 
 def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
+    """[summary]
+
+    Args:
+        filename ([type]): [description]
+        fs (int, optional): [description]. Defaults to 200.
+        fs_out (int, optional): [description]. Defaults to 200.
+        stopband (tuple, optional): [description]. Defaults to ((45,65),(0,3),(25,-1)).
+        order (int, optional): [description]. Defaults to 4.
+    """    
     import numpy as np
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker, butterfilt_and_downsample
 

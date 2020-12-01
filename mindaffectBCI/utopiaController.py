@@ -23,9 +23,17 @@
 from mindaffectBCI.utopiaclient import *
 
 class UtopiaController:
-    '''controller class to manage the interaction with the Mindaffect decoder,
+    """controller class to manage the interaction with the Mindaffect decoder,
     setting up the connection, sending and recieving messages, and firing message
-    event handlers'''
+    event handlers
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
     def __init__(self, clientid=None):
         self.client = UtopiaClient(clientid)
         self.msgs = []
@@ -44,15 +52,43 @@ class UtopiaController:
         self.subscriptions = "PSNMEQ"
 
     def addMessageHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
         self.messageHandlers.append(cb)
     def addPredictionHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
         self.predictionHandlers.append(cb)
     def addSelectionHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
         self.selectionHandlers.append(cb)
     def addSignalQualityHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
         self.signalQualityHandlers.append(cb)
     
     def setTimeStampClock(self,tsclock):
+        """[summary]
+
+        Args:
+            tsclock ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
         return self.client.setTimeStampClock(tsclock)
     def getTimeStamp(self):
         '''get a (relative) wall-time stamp *in milliseconds*'''
@@ -60,6 +96,16 @@ class UtopiaController:
         
     def autoconnect(self, host=None, port=8400, timeout_ms=5000, 
                     localhostifhostnotfound=True, queryifhostnotfound=True, scanifhostnotfound=False):
+        """[summary]
+
+        Args:
+            host ([type], optional): [description]. Defaults to None.
+            port (int, optional): [description]. Defaults to 8400.
+            timeout_ms (int, optional): [description]. Defaults to 5000.
+            localhostifhostnotfound (bool, optional): [description]. Defaults to True.
+            queryifhostnotfound (bool, optional): [description]. Defaults to True.
+            scanifhostnotfound (bool, optional): [description]. Defaults to False.
+        """                    
         try:
             self.client.autoconnect(host, port, timeout_ms=timeout_ms, localhostifhostnotfound=localhostifhostnotfound, queryifhostnotfound=queryifhostnotfound, scanifhostnotfound=scanifhostnotfound)
         except socket.error as ex:
@@ -78,7 +124,19 @@ class UtopiaController:
                 
     def sendStimulusEvent(self, stimulusState, timestamp=None, 
                           targetState=None, objIDs=None):
-        """Send a message to the Utopia-HUB informing of the current stimulus state"""
+        """
+        Send a message to the Utopia-HUB informing of the current stimulus state
+
+        Args:
+            stimulusState ([type]): [description]
+            timestamp ([type], optional): [description]. Defaults to None.
+            targetState ([type], optional): [description]. Defaults to None.
+            objIDs ([type], optional): [description]. Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """                          
+        
         stimEvent = self.mkStimulusEvent(stimulusState, timestamp, targetState, objIDs)
         if self.client: self.client.sendMessage(stimEvent)
         # erp injection for debugging with fakedata
@@ -88,7 +146,22 @@ class UtopiaController:
         
     def mkStimulusEvent(self, stimulusState, timestamp=None, 
                         targetState=None, objIDs=None):
-        """make a valid stimulus event for the given stimulus state"""
+        """
+        make a valid stimulus event for the given stimulus state
+
+        Args:
+            stimulusState ([type]): [description]
+            timestamp ([type], optional): [description]. Defaults to None.
+            targetState ([type], optional): [description]. Defaults to None.
+            objIDs ([type], optional): [description]. Defaults to None.
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            [type]: [description]
+        """                        
+        
         if timestamp is None:
             timestamp = self.getTimeStamp()
         if objIDs is None:
@@ -105,11 +178,21 @@ class UtopiaController:
         return StimulusEvent(timestamp, objIDs, stimulusState)
 
     def modeChange(self, newmode):
+        """[summary]
+
+        Args:
+            newmode ([type]): [description]
+        """        
         if self.client:
             self.client.sendMessage(
                 ModeChange(self.getTimeStamp(), newmode))
 
     def subscribe(self, msgs=None):
+        """[summary]
+
+        Args:
+            msgs ([type], optional): [description]. Defaults to None.
+        """        
         # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET, SIGNALQUALITY messages only
         if msgs:
             self.subscriptions = msgs
@@ -118,12 +201,22 @@ class UtopiaController:
             self.client.sendMessage(
                 Subscribe(self.getTimeStamp(), self.subscriptions))
     def addSubscription(self, msgs):
+        """[summary]
+
+        Args:
+            msgs ([type]): [description]
+        """        
         # N.B. we allow multiple subscribe to same message type so can remove without worrying about breaking
         # for another user
         for m in msgs:
             self.subscriptions += m
         self.subscribe()
     def removeSubscription(self, msgs):
+        """[summary]
+
+        Args:
+            msgs ([type]): [description]
+        """        
         # remove msgs from the list of subscribed messages
         for m in msgs:
             self.subscriptions = self.subscriptions.replace(m, "", 1) # remove single subscription
@@ -131,21 +224,42 @@ class UtopiaController:
 
 
     def log(self, msg):
+        """[summary]
+
+        Args:
+            msg ([type]): [description]
+        """        
         if self.client:
             self.client.sendMessage(Log(self.getTimeStamp(), msg))
 
     def newTarget(self):
+        """[summary]
+        """        
         if self.client:
             self.client.sendMessage(NewTarget(self.getTimeStamp()))
 
     def selection(self, objID):
+        """[summary]
+
+        Args:
+            objID ([type]): [description]
+        """        
         if self.client:
             self.client.sendMessage(Selection(self.getTimeStamp(), objID))
         for h in self.selectionHandlers:
             h(objID)         # do selection callbacks
             
     def getNewMessages(self, timeout_ms=0):
-        '''get new messages from the utopia-hub, and store the list of new'''
+        """
+        get new messages from the utopia-hub, and store the list of new
+
+        Args:
+            timeout_ms (int, optional): [description]. Defaults to 0.
+
+        Returns:
+            [type]: [description]
+        """        
+        
         if not self.client: return None
         # get any messages with predictions
         self.msgs = self.client.getNewMessages(timeout_ms) if self.client else []
@@ -180,7 +294,13 @@ class UtopiaController:
         return self.msgs
 
     def getLastPrediction(self):
-        '''check for new predictions from the utopia-decoder'''
+        """
+        check for new predictions from the utopia-decoder
+
+        Returns:
+            [type]: [description]
+        """        
+        
         # Q: should we do this here? or just return the lastPrediction?
         self.getNewMessages()
         # always return the last prediction, even if no new ones
@@ -191,7 +311,13 @@ class UtopiaController:
         self.lastPrediction = None
             
     def getLastSelection(self):
-        """check if any object prediction is high enough for it to be selected"""
+        """      
+        check if any object prediction is high enough for it to be selected
+
+        Returns:
+            [type]: [description]
+        """        
+
         self.getNewMessages()
         if self.lastPrediction is not None:
             if self.lastPrediction.Perr < self.selectionThreshold: # good enough to select?
@@ -202,11 +328,24 @@ class UtopiaController:
         return (None, False)
 
     def getLastSignalQuality(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """        
         self.getNewMessages()
         return self.lastSignalQuality
 
 def injectERP(amp, host="localhost", port=8300):
-    """Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated"""
+    """
+    Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated
+
+    Args:
+        amp ([type]): [description]
+        host (str, optional): [description]. Defaults to "localhost".
+        port (int, optional): [description]. Defaults to 8300.
+    """    
+    
     import socket
     try:
         socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes([amp]), (host, port))
@@ -215,6 +354,11 @@ def injectERP(amp, host="localhost", port=8300):
 
 
 def newMessageHandler(msgs):
+    """[summary]
+
+    Args:
+        msgs ([type]): [description]
+    """    
     for m in msgs:
         print(m)
 

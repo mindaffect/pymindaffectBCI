@@ -49,7 +49,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     Copyright (c) MindAffect B.V. 2018    
     '''
     if Fy is None or Fy.size == 0:
-        ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
+        ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]),dtype=Fy.dtype)
         return ssFy, None, 0, None, None
 
     print('args={}'.format(dict(marginalizemodels=marginalizemodels,normSum=normSum,
@@ -69,7 +69,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     nY, nEp, lastEp, validTgt, validEp, validFy = get_valid_epochs_outputs(Fy)
 
     if np.max(nEp.ravel()) < 1: # guard no data to analyse
-        ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]))
+        ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]),dtype=Fy.dtype)
         return ssFy, None, 0, None, None
 
     # estimate the points at which we may make a decision
@@ -241,9 +241,9 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         sigma2 ([np.ndarray]): (nTr, nDecis) estimated variance per sample at each decision point
     """
     validFy = Fy != 0
-    nY  = np.sum(np.any(validFy, -2 if Fy.ndim<4 else (0,-2)), -1) # number active outputs in this trial (nM*nTrl) 
+    nY  = np.sum(np.any(validFy, -2 if Fy.ndim<4 else (0,-2)), -1).astype(Fy.dtype) # number active outputs in this trial (nM*nTrl) 
     # (nTrl, nEp) (average) number points in each sum at each decision point
-    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
+    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)).astype(Fy.dtype) # (nTrl,nEp)
 
     if decisIdx is None:
         decisIdx = np.array([Fy.shape[-2]-1],dtype=int)
@@ -287,7 +287,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         #  sigma'^2 = 1 / ( N_0/sigma_0^2 + N / sigma^2) 
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )
         osigma2= sigma2
-        sigma2 = (sigma2*decisIdx + priorsigma[0]*priorsigma[1]) / ( decisIdx + priorsigma[1] )
+        sigma2 = ((sigma2*decisIdx).astype(sigma2.dtype) + np.array(priorsigma[0]*priorsigma[1],dtype=sigma2.dtype)) / ( decisIdx + priorsigma[1] ).astype(sigma2.dtype)
         sigma2[osigma2==0] = 0
         sigma2 = np.maximum(osigma2,sigma2) # sigma2.astype(Fy.dtype)
         #print('sigma2 = {}  prior={} -> {}'.format(np.mean(osigma2),priorsigma,np.mean(sigma2)))

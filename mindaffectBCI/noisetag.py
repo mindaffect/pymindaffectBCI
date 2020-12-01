@@ -579,7 +579,7 @@ class Experiment(FSM):
     def __init__(self,objIDs,stimSeq=None,nCal=10,nPred=20,
                  selectionThreshold=.1,cuedprediction=False,
                  utopiaController=None,stimulusStateStack=None,
-                 numframes=4//isi,calframes=4//isi,predframes=10//isi,
+                 numframes=4//isi,calframes=None,predframes=None,
                  interphaseframes=15//isi,
                  *args,**kwargs):
         """do a complete experiment, with calibration -> prediction

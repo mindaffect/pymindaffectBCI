@@ -239,12 +239,13 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if marginalizemodels and sFy.ndim>3 and sFy.shape[0]>1 :
             # marginalize over models
             sFy = marginalize_scores(sFy,axis=0) # (nTrl,nSamp,nY)
-        validTrl = np.any(np.any(sFy>0,-1),-1) # (nM,nTrl) flag if this trial is valid, i.e. some non-zero
+        validTrl = np.any(np.any(sFy!=0,-1),-1) # (nM,nTrl) flag if this trial is valid, i.e. some non-zero
         Yi  = np.argmax(sFy[validTrl,:,:], axis=-1) # output for every model*trial*sample
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
-    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True):
+    def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, 
+               calibrate_softmax:bool=True, retrain_on_all:bool=True):
         """Cross-validated fit the model for generalization performance estimation
 
         N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.
@@ -289,7 +290,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             if X[valid_idx,...].size==0:
                 print("Warning: no-validation trials!!! using all data!")
                 valid_idx = slice(X.shape[0])
-            Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
+            Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
 
             if i==0 and Fyi.ndim > Fy.ndim: # reshape Fy to include the extra model dim
                 Fy = np.zeros(Fyi.shape[:-3]+Y.shape, dtype=X.dtype)       
@@ -346,8 +347,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, **kwargs):
-        super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, priorweight=200, startup_correction=100, prediction_offsets=None, minDecisLen=100, bwdAccumulate=False, **kwargs):
+        super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, priorweight=priorweight, startup_correction=startup_correction, prediction_offsets=prediction_offsets, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
     def fit(self, X, Y, stimTimes=None):
@@ -390,12 +391,12 @@ class MultiCCA(BaseSequence2Sequence):
 
 
     def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, 
-               return_estimator:bool=True, calibrate_softmax:bool=True, dedup0:bool=True, retrain_on_all:bool=True, ranks=None):
+               return_estimator:bool=True, calibrate_softmax:bool=True, retrain_on_all:bool=True, ranks=None):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
         if ranks is None :
             # call the base version
-            return BaseSequence2Sequence.cv_fit(self,X,Y,cv,fit_params,verbose,return_estimator,calibrate_softmaxscale,dedup0,retrain_on_all)
-
+            return BaseSequence2Sequence.cv_fit(self, X, Y, cv=cv_in, fit_params=fit_params, verbose=verbose, 
+                            return_estimator=return_estimator, calibrate_softmax=calibrate_softmax,  retrain_on_all=retrain_on_all)
         # fast path for cross validation over rank
         cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
         if cv == True:  cv = 5
@@ -431,7 +432,7 @@ class MultiCCA(BaseSequence2Sequence):
                 self.R_ = R[...,:r,:,:]
                 self.fit_b(X[train_idx,...])
                 # predict, forcing removal of copies of  tgt=0 so can score
-                Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=dedup0)
+                Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
                 if i==0 and ri==0: # reshape Fy to include the extra model dim
                     Fy = np.zeros((len(ranks),)+Fyi.shape[:-3]+Y.shape, dtype=np.float32)       
                 if Fyi.ndim > Y.ndim:
@@ -450,7 +451,8 @@ class MultiCCA(BaseSequence2Sequence):
 
         # final retrain with all the data
         # TODO[]: just use a normal fit, and get the Fy from the above CV loop 
-        res = BaseSequence2Sequence.cv_fit(self,X, Y, cv_in, fit_params, verbose, return_estimator, calibrate_softmaxscale, dedup0, retrain_on_all)
+        res = BaseSequence2Sequence.cv_fit(self, X, Y, cv=cv_in, fit_params=fit_params, verbose=verbose, 
+                            return_estimator=return_estimator, calibrate_softmax=calibrate_softmax,  retrain_on_all=retrain_on_all)
         res['Fy_rank']=Fy # store the pre-rank info
         return res
 

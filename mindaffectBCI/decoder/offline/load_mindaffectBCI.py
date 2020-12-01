@@ -1,4 +1,5 @@
 import os
+import glob
 import numpy as np
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_data_messages
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
@@ -9,7 +10,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
     """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
 
     Args:
-        source (str, stream): the source to load the data from
+        source (str, stream): the source to load the data from, use '-' to load the most recent file from the logs directory.
         fs_out (float, optional): [description]. Defaults to 100.
         stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
         order (int, optional): the order of the temporal filter. Defaults to 6.
@@ -26,11 +27,18 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
         coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
                           "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
     """    
+    if source is None or source == '-':
+        # default to last log file if not given
+        files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
+        source= max(files, key=os.path.getctime)
+
     if isinstance(source,str):
         if sessdir:
             source = os.path.join(sessdir, source)
         if datadir:
             source = os.path.join(datadir, source)
+        files = glob.glob(os.path.expanduser(source))
+        source = max(files, key=os.path.getctime)
 
     if verb >= 0 and isinstance(source,str): print("Loading {}".format(source))
     # TODO []: convert to use the on-line time-stamp code
@@ -93,7 +101,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
     Y, stim_samp = upsample_stimseq(data_ts, Me, stim_ts, objIDs)
     Y_ts = np.zeros((Y.shape[0],),dtype=int); 
     Y_ts[stim_samp]=stim_ts
-    if verb > 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
+    if verb >= 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
 
     # slice into trials
     # isi = interval *before* every stimulus --
@@ -105,6 +113,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
     trl_stim_idx = np.flatnonzero(isi > iti_ms)
     # get duration of stimulus in each trial, in milliseconds (rather than number of stimulus events)
     trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
+    print('{} trl_dur (ms) : {}'.format(len(trl_dur),np.diff(trl_dur)))
     # estimate the best trial-length to use
     if trlen_ms is None:
         trlen_ms = np.percentile(trl_dur,90)

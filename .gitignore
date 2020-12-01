@@ -1,7 +1,6 @@
 resources/logs/*
 *_info.txt
 *.pdf
-*.png
 *~
 *#
 octave-workspace
@@ -10,11 +9,12 @@ __pycache__
 *.log
 *.res
 .gradle*
-logs*
-build*
+*logs*
+*build*
+*dist*
+*.ipynb_checkpoints*
+*.png
 *.pk
-*.ipynb_check*
-dist*
-calibration_data*
-*.egg-info*
 description.xml
+calibration_data*
+*.egg-info

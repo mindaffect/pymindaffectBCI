@@ -39,14 +39,14 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
     Copyright (c) MindAffect B.V. 2018
     '''
     if Fe.size == 0:
-        Fy = np.zeros((Fe.shape[0], Fe.shape[1], Fe.shape[2], Ye.shape[-2]),dtype=np.float32)
+        Fy = np.zeros(Fe.shape[:-1] + (Ye.shape[-2],),dtype=np.float32)
         return Fy
     if Ye.ndim < 4: # ensure 4-d
         Ye = Ye.reshape((1,)*(4-Ye.ndim)+Ye.shape)    
     if Fe.ndim < 4: # ensure 4-d
         Fe = Fe.reshape((1,)*(4-Fe.ndim)+Fe.shape)    
-    if dedup0 is not None: # remove duplicate copies output=0
-        Ye = dedupY0(Ye,zerodup=dedup0>0)
+    if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
+        Ye = dedupY0(Ye, zerodup=dedup0>0)
     # ensure Ye has same type of Fe
     Ye = Ye.astype(Fe.dtype)
 
@@ -114,7 +114,7 @@ def dedupY0(Y, zerodup=True, yfeatdim=True):
     # make the shape we want
     if not yfeatdim: # hack in feature dim
         Y = Y[..., np.newaxis]
-    if Y.shape[-2] == 1:
+    if Y.shape[-2] == 1 or np.all(Y[...,0,:]==0):
         return Y.reshape(Yshape)
     if Y.ndim == 3: # add trial dim if not there
         Y = Y[np.newaxis, :, :, :]

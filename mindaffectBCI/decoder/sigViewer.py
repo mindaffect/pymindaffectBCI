@@ -18,16 +18,18 @@
 
 import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
-
-def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.inf, center=True, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, datastep:int=20, stimstep:int=1):
+   
+def run(ui: UtopiaDataInterface=None, host=None, timeout_ms:float=np.inf, 
+        center=True, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, 
+        datastep:int=20, stimstep:int=1, stopband=((0,3),(25,-1)), out_fs=60, ch_names=None):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
 
     if ui is None:
-        data_preprocessor = butterfilt_and_downsample(order=6, stopband=((0,3),(25,-1)), fs_out=60)#999)
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)#999)
         #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
         ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
-        ui.connect(hostname)
+        ui.connect(host)
 
     ui.update()
 
@@ -116,17 +118,25 @@ def sigViewer(ui: UtopiaDataInterface=None, hostname=None, timeout_ms:float=np.i
         fig.canvas.draw()
         fig.canvas.flush_events()
 
+def sigViewer(*args, **kwargs):
+    run(*args, **kwargs)
+
+def parse_args():
+    import argparse
+    import json
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
+    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
+    parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
+    args = parser.parse_args()
+
+    if args.ch_names:
+        args.ch_names = args.ch_names.split(',')
+
+    return args
+
+
 if __name__=='__main__':
-    import sys
-    print("Args: {}".format(sys.argv))
-    if len(sys.argv) > 1:
-        hostname=sys.argv[1]
-    else:
-        hostname=None
-
-    try:
-        matplotlib.use('Qt4Cairo')
-    except:
-        pass
-
-    sigViewer()
+    args = parse_args()
+    run(**vars(args))

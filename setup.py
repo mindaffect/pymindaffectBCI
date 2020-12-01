@@ -5,7 +5,7 @@ with open("README.rst", encoding='utf-8') as fh:
     long_description = fh.read()
 
 setup(name='mindaffectBCI',
-      version='0.9.18',
+      version='0.9.24',
       description='The MindAffect BCI python SDK',
       long_description_content_type='text/x-rst',      
       long_description=long_description,
@@ -13,10 +13,20 @@ setup(name='mindaffectBCI',
       author='Jason Farquhar',
       author_email='jason@mindaffect.nl',
       license='MIT',
-      packages=['mindaffectBCI','mindaffectBCI/decoder','mindaffectBCI/decoder/offline','mindaffectBCI/examples/presentation','mindaffectBCI/examples/output','mindaffectBCI/examples/utilities','mindaffectBCI/examples/acquisation'],#,find_packages(),#
+      packages=['mindaffectBCI','mindaffectBCI/decoder','mindaffectBCI/decoder/offline','mindaffectBCI/examples/presentation','mindaffectBCI/examples/output','mindaffectBCI/examples/utilities','mindaffectBCI/examples/acquisition'],#,find_packages(),#
       include_package_data=True,
-      package_data={'mindaffectBCI':glob.glob('mindaffectBCI/*.txt'), 'mindaffectBCI':glob.glob('mindaffectBCI/*.png'), 'mindaffectBCI.decoder':glob.glob('mindaffectBCI/decoder/*.pk')},
-      data_files=[('mindaffectBCI',glob.glob('mindaffectBCI/*.png')), ('mindaffectBCI',glob.glob('mindaffectBCI/*.txt')), ('mindaffectBCI/decoder',glob.glob('mindaffectBCI/decoder/*.pk'))],
+      package_data={'mindaffectBCI':glob.glob('mindaffectBCI/*.txt'), 
+                    'mindaffectBCI':glob.glob('mindaffectBCI/*.png'), 
+                    'mindaffectBCI':glob.glob('mindaffectBCI/*.json'), 
+                    'mindaffectBCI.hub':glob.glob('mindaffectBCI/hub/*'), 
+                    'mindaffectBCI.decoder':glob.glob('mindaffectBCI/decoder/*.pk'), 
+                    'mindaffectBCI.examples.presentation':glob.glob('mindaffectBCI/examples/presentation/*.txt')},
+      data_files=[('mindaffectBCI',glob.glob('mindaffectBCI/*.png')), 
+                  ('mindaffectBCI',glob.glob('mindaffectBCI/*.txt')), 
+                  ('mindaffectBCI',glob.glob('mindaffectBCI/*.json')), 
+                  ('mindaffectBCI/hub',glob.glob('mindaffectBCI/hub/*')), 
+                  ('mindaffectBCI/decoder',glob.glob('mindaffectBCI/decoder/*.pk')), 
+                  ('mindaffectBCI.examples.presentation',glob.glob('mindaffectBCI/examples/presentation/*.txt'))],
       classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
