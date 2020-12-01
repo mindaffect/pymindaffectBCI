@@ -421,7 +421,8 @@ def parse_args():
             from tkinter.filedialog import askopenfilename
             root = Tk()
             root.withdraw()
-            filename = askopenfilename(initialdir='.',title='Chose mindaffectBCI Config File',
+            filename = askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)),
+                                        title='Chose mindaffectBCI Config File',
                                         filetypes=(('JSON','*.json'),('All','*.*')))
             setattr(args,'config_file',filename)
         except:

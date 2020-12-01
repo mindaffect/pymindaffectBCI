@@ -32,7 +32,7 @@
         "selectionThreshold":0.1,
         "symbols":"keyboard.txt",
         "calibration_symbols": "3x3.txt",
-        "extra_symbols": ["3x3.txt","robot_contro.txt"],
+        "extra_symbols": ["3x3.txt","robot_control.txt"],
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
