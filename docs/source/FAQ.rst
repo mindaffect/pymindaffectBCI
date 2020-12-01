@@ -57,5 +57,15 @@ Alternatively, do run full decoder stack (i.e. hub, acquisation and decoder) *wi
 When using the fake data stream, calibration and cued prediction performance will be 100%. In Free Typing mode selections are made randomly. 
 
 
+I'm getting a `framework not found` error on Mac OS
+---------------------------------------------------
+
+On mac-os Big-Sur there is a known issue with older versions of pyglet see `here <https://github.com/pyglet/pyglet/issues/274>`_.  The solution is to ensure you are running pyglet 1.5.11 or higher.  You can directly update your pyglet install with: :code:`pip3 install --upgrade pyglet`
+
+I'm getting poor performance on linux
+-------------------------------------
+
+As we are a small team, we have decided to focus our development and testing effort mainly on Windows PCs.  We have tested the BCI on linux and mac-os, and it technically works.  However, as mentioned here :ref:`triggercheckRef` it is also important that the screen redraws be accuratly time-stamped.  In our testing on linux this time-locking was less robust than with an optimized windows installation.  We believe this is can be addressed by a correct graphics system configuration, but have not identified it as yet. We would welcome feedback from the community about how to setup linux better.
+
 
  
