@@ -297,7 +297,7 @@ if __name__=="__main__":
     else: # offline
 
         # trigger/opto-data
-        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,.5,), fs_out=250)
+        trigger_check(filename, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(0,5.5), fs_out=250)
 
         # brain data, 10-cal trials
         #trigger_check(filename, evtlabs=('fe','re'), tau_ms=450, offset_ms=0, stopband=((45,65),(5.5,25,'bandpass')), fs_out=100, trntrl=slice(10))

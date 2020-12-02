@@ -245,6 +245,8 @@ def load_previous_dataset(f:str):
 
     Args:
         f (str, file-like): buffered interface to the data and stimulus streams
+    Returns:
+        (list of (data,stimulus)): list of stimulus,data pairs for each trial
     """
     import pickle
     import glob

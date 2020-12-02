@@ -2,6 +2,16 @@ import subprocess
 import os
 
 def run(**kwargs):
+    """startup the acquisation driver for a BrainProducts based amplifiers. 
+
+    Note: This driver includes software developed by the eemagine Medical Imaging Solutions GmbH, 
+    and is based on the AntNeuro SDK -- and limited by the license 
+    limitations of that SDK as described here <https://github.com/mindaffect/pymindaffectBCI/examples/acquisation/UDO-SM-0124 rev7.1 eego amplifier software interface SDK user manual EN 2018-11-12.pdf>.
+    In summary, this driver is provided without WARRANTY, for non-commercial use.
+
+    Returns:
+        subprocess: subprocess object for communicating with the started amplifier driver.
+    """    
     pydir = os.path.dirname(os.path.abspath(__file__)) # mindaffectBCI/examples/acquisation/utopia_eego.py
     bindir = pydir #os.path.join(pydir,'..','..','..','bin') # ../../bin/
 

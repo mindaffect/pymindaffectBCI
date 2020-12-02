@@ -113,7 +113,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
     trl_stim_idx = np.flatnonzero(isi > iti_ms)
     # get duration of stimulus in each trial, in milliseconds (rather than number of stimulus events)
     trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
-    print('{} trl_dur (ms) : {}'.format(len(trl_dur),np.diff(trl_dur)))
+    print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
+    print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
     # estimate the best trial-length to use
     if trlen_ms is None:
         trlen_ms = np.percentile(trl_dur,90)

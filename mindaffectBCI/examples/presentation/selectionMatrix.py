@@ -88,8 +88,8 @@ class InstructionScreen(Screen):
         self.framerate=pyglet.text.Label("", font_size=12, x=self.window.width, y=self.window.height,
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top')
-
-        self.logo = None    
+        
+        self.logo = None
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,
                                                os.path.dirname(os.path.abspath(__file__)),

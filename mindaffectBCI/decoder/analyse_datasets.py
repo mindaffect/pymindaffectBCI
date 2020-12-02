@@ -314,7 +314,10 @@ def flatten_decoding_curves(decoding_curves):
     return il,pe,pee,se,st
 
 
-def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), plotnormFy=False, triggerPlot=False, **kwargs):
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, 
+                       evtlabs=None, rank=1, model='cca', 
+                       preprocess_args:dict=None, clsfr_args=dict(), 
+                       plotnormFy=False, triggerPlot=False, **kwargs):
     """Debug a data set, by pre-processing, model-fitting and generating various visualizations
 
     Args:
