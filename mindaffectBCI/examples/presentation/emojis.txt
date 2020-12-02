@@ -1,5 +1,4 @@
-# simple alphabet keyboard
-👍, 👎, 👏, 🧠
-😀, 😉, 😇, 😢
-😗, 😋, 😝, 😈
-😴, 🤢, 🥵, 🥶
+# simple emoji set keyboard
+images/Thumbs_Up.webp, images/Thumbs_Down.webp, images/Clapping_Hands.webp, 
+images/Smiling_Face.png, images/wink.png, images/angel.png, images/Crying.webp
+images/Sleeping.png, images/Face_with_Thermometer.png , images/OMG_Face.png, images/Smiling_Devil.png
