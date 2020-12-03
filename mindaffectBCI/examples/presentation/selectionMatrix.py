@@ -937,10 +937,26 @@ class SelectionGridScreen(Screen):
         return self.isDone
 
     # mapping from bci-stimulus-states to display color
-    state2color={0:(5, 5, 5),   # off=grey
+    state2color={0:(5, 5, 5),       # off=grey
                  1:(255, 255, 255), # on=white
-                 2:(0, 255, 0),    # cue=green
-                 3:(0, 0, 255)}    # feedback=blue
+                 2:(0, 255, 0),     # cue=green
+                 3:(0, 0, 255)}     # feedback=blue
+    def update_object_state(self, idx:int, state):
+        """update the idx'th object to stimulus state state
+
+            N.B. override this class to implement different state dependent stimulus changes, e.g. size changes, background images, rotations
+        Args:
+            idx (int): index of the object to update
+            ssi (int or float): the new desired object state
+        """        
+        if self.objects[idx]:
+            if isinstance(state,int): # integer state, map to color lookup table
+                self.objects[idx].color = self.state2color[state]
+            elif isinstance(state,float): # float state, map to intensity
+                self.objects[idx].color = tuple(int(c*state) for c in self.state2color[1])
+        if self.labels[idx]:
+            self.labels[idx].color=(255,255,255,255) # reset labels
+
     def draw(self, t):
         """draw the letter-grid with given stimulus state for each object.
         Note: To maximise timing accuracy we send the info on the grid-stimulus state
@@ -954,7 +970,7 @@ class SelectionGridScreen(Screen):
             print("Error: frameend={} winflip={} framestart={}".format(self.frameend,winflip,self.framestart))
         self.nframe = self.nframe+1
         if self.sendEvents:
-            self.noisetag.sendStimulusState(timestamp=winflip)#self.frameend)#window.lastfliptime)
+            self.noisetag.sendStimulusState(timestamp=winflip)
 
         # get the current stimulus state to show
         try:
@@ -994,10 +1010,7 @@ class SelectionGridScreen(Screen):
                 ssi = stimulus_state[idx]
                 if self.target_only and not target_idx == idx :
                     ssi = 0
-                if self.objects[idx]:
-                    self.objects[idx].color=self.state2color[ssi]
-                if self.labels[idx]:
-                    self.labels[idx].color=(255,255,255,255) # reset labels
+                self.update_object_state(idx,ssi)
             except KeyError:
                 pass
 
