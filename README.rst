@@ -25,6 +25,9 @@ To install from **source** (currently the recommended method):
 To install as a python library::
 
     pip install --upgrade mindaffectBCI
+    
+.. image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/mindaffect/pymindaffectBCI/pip_test
 
 Installation Test
 -----------------
