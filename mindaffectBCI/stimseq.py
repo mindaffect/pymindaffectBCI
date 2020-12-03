@@ -307,7 +307,9 @@ def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1
             s = s + np.random.uniform(-1e-3,1e-3,size=s.shape)
             array[:,i] = s > (l-1)/2
         else:
-            array[:,i] = np.sin( 2*np.pi* (times.astype(np.float32)+o+1e-6)/l )
+            s = np.sin( 2*np.pi* ( times.astype(np.float32)+o+1e-6)/l )
+            s = s / 2 + 1 # convert to 0-1 range
+            array[:,i] = s
     return StimSeq(None,array.tolist(),None)
 
 

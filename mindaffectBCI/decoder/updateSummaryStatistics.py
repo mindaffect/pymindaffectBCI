@@ -211,11 +211,11 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
         Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE) [nE x nY x nEpoch/nSamp x nTrl]
 
     if stimTime is None: # fast-path, already at sample rate
-        if not np.issubdtype(Y.dtype, np.floating): # all at once
-            #print("Y={}".format(Y.shape))
-            Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
-            #print("Ys={}".format(Ys.shape))
-            MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys, dtype=np.float32, casting='unsafe', optimize=True) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
+        #if not np.issubdtype(Y.dtype, np.floating): # all at once
+        #print("Y={}".format(Y.shape))
+        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
+        #print("Ys={}".format(Ys.shape))
+        MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys, dtype=np.float32, casting='unsafe', optimize=True) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
         #else: # trial at a time + convert to float
         #    MM = np.zeros(Cyy.shape)
         #    # different slice time for every trial, up-sample per-trial
