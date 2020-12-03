@@ -220,8 +220,9 @@ class StimSeq :
             import numpy as np
             import matplotlib
             array = np.array(self.stimSeq)
-            array = array * 255 / np.max(array.ravel())
-            array = array.astype(np.uint8)
+            array = array - np.min(array.ravel()) # start at 0
+            array = array * 255 / np.max(array.ravel()) # rescale to png range
+            array = array.astype(np.uint8) # convert to int
             array = np.tile(array[:,:,np.newaxis],(1,1,3)) # convert to rgb
             print("{}".format(array.shape))
             matplotlib.image.imsave(fname,array,dpi=1)
@@ -286,7 +287,7 @@ def mkRowCol(width=5,height=5, repeats=10):
     return StimSeq(None,array.tolist(),None)
 
 
-def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1),(7,1),(3,2),(4,2),(5,2),(6,2),(7,2),(4,3),(5,3),(6,3),(7,3),(5,4),(6,4),(7,4),(6,5),(7,5),(7,6)),nEvent=120, isbinary=True):
+def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(3,2),(4,2),(5,2),(6,2),(7,2),(8,2),(4,3),(5,3),(6,3),(7,3),(8,3),(5,4),(6,4),(7,4),(8,4),(6,5),(7,5),(8,5),(7,6),(8,6),(8,7)),nEvent=120, isbinary=True):
     """Generate a frequency tagging stimulus sequence
 
     Args:
@@ -295,15 +296,19 @@ def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1
         isbinary (bool, optional): flag if we generate a binary sequence or continuous
     """
     import numpy as np
-    array = np.zeros((nEvent,len(period_phase)))
+    array = np.zeros((nEvent,len(period_phase)),dtype=np.float)
+    times = np.arange(array.shape[0])
     for i,e in enumerate(period_phase):
         # extract desired length and phase
         l,o = e if hasattr(e,'__iter__') else (e,0)
         # generate the sequence
-        s = np.sin( (np.arange(array.shape[0])+o+1e-6)/l*2*np.pi )
         if isbinary:
-            array[s>0,i] = 1
+            s = (times + o) % l
+            s = s + np.random.uniform(-1e-3,1e-3,size=s.shape)
+            array[:,i] = s > (l-1)/2
         else:
+            s = np.sin( 2*np.pi* ( times.astype(np.float32)+o+1e-6)/l )
+            s = s / 2 + 1 # convert to 0-1 range
             array[:,i] = s
     return StimSeq(None,array.tolist(),None)
 
@@ -319,6 +324,10 @@ def mkCodes():
     ssvep=mkFreqTag()
     ssvep.toFile('ssvep.png')
     ssvep.toFile('ssvep.txt')
+
+    ssvep_cont = mkFreqTag(isbinary=False)
+    ssvep_cont.toFile('ssvep_cont.png')
+    ssvep_cont.toFile('ssvep_cont.txt')
 
 # testcase code
 if __name__ == "__main__":

@@ -393,12 +393,12 @@ class MultiCCA(BaseSequence2Sequence):
     def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, 
                return_estimator:bool=True, calibrate_softmax:bool=True, retrain_on_all:bool=True, ranks=None):
         ''' cross validated fit to the data.  N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.'''
+        # fast path for cross validation over rank
+        cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
         if ranks is None :
             # call the base version
             return BaseSequence2Sequence.cv_fit(self, X, Y, cv=cv_in, fit_params=fit_params, verbose=verbose, 
                             return_estimator=return_estimator, calibrate_softmax=calibrate_softmax,  retrain_on_all=retrain_on_all)
-        # fast path for cross validation over rank
-        cv_in = cv.copy() if hasattr(cv,'copy') else cv # save copy of cv info for later
         if cv == True:  cv = 5
         if isinstance(cv, int):
             if X.shape[0] > 1:

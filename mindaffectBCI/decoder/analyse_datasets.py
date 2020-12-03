@@ -427,6 +427,15 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.pause(.5)
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
+
+    # plot all Y-true
+    Ytrue=Y[...,0]
+    plt.figure(99);plt.clf()
+    plt.plot(Ytrue.T/2 + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.grid(True)
+    plt.xlabel('time (samples)')
+    plt.ylabel('Trial#')
+
     # fit the model
     # override with direct keyword arguments
     clsfr_args['evtlabs']=evtlabs
@@ -456,23 +465,23 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.pause(.5)
 
     plt.figure(14)
-    plot_decoding_curve(*res)
+    plot_decoding_curve(res[0]/fs, *res[1:])
     plt.show(block=False)
 
     plt.figure(19)
     plt.subplot(211)
-    plt.imshow(res[5], origin='lower', aspect='auto',cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.imshow(res[5], origin='lower', aspect='auto',cmap='gray', extent=[0,res[0][-1]/fs,0,res[5].shape[0]])
     plt.clim(0,1)
     plt.colorbar()
     plt.title('Yerr - correct-prediction (0=correct, 1=incorrect)?')
     plt.ylabel('Trial#')
     plt.grid()
     plt.subplot(212)
-    plt.imshow(res[6], origin='lower', aspect='auto', cmap='gray', extent=[0,res[0][-1],0,res[5].shape[0]])
+    plt.imshow(res[6], origin='lower', aspect='auto', cmap='gray', extent=[0,res[0][-1]/fs,0,res[5].shape[0]])
     plt.clim(0,1)
     plt.colorbar()
     plt.title('Perr - Prob of prediction error (0=correct, 1=incorrect)')
-    plt.xlabel('time (samples)')
+    plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
     plt.grid()
     plt.show(block=False)
@@ -840,7 +849,7 @@ if __name__=="__main__":
     #analyse_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
     #                model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=10, priorweight=200)
 
-    debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','fe'), 
+    debug_test_dataset(X, Y, coords, tau_ms=450, evtlabs=('re','ntre'), 
                       model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=100)
 
     quit()
