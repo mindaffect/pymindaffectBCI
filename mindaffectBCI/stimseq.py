@@ -306,7 +306,7 @@ def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1
             s = s + np.random.uniform(-1e-3,1e-3,size=s.shape)
             array[:,i] = s > (l-1)/2
         else:
-            array[:,i] = np.sin( 2*np.pi* (times+o+1e-6)/l )
+            array[:,i] = np.sin( 2*np.pi* (times.astype(np.float32)+o+1e-6)/l )
     return StimSeq(None,array.tolist(),None)
 
 
@@ -321,6 +321,10 @@ def mkCodes():
     ssvep=mkFreqTag()
     ssvep.toFile('ssvep.png')
     ssvep.toFile('ssvep.txt')
+
+    ssvep_cont = mkFreqTag(isbinary=False)
+    ssvep_cont.toFile('ssvep_cont.png')
+    ssvep_cont.toFile('ssvep_cont.txt')
 
 # testcase code
 if __name__ == "__main__":
