@@ -220,8 +220,9 @@ class StimSeq :
             import numpy as np
             import matplotlib
             array = np.array(self.stimSeq)
-            array = array * 255 / np.max(array.ravel())
-            array = array.astype(np.uint8)
+            array = array - np.min(array.ravel()) # start at 0
+            array = array * 255 / np.max(array.ravel()) # rescale to png range
+            array = array.astype(np.uint8) # convert to int
             array = np.tile(array[:,:,np.newaxis],(1,1,3)) # convert to rgb
             print("{}".format(array.shape))
             matplotlib.image.imsave(fname,array,dpi=1)
