@@ -4,6 +4,17 @@ Installation
 Requirements
 ************
 
+.. warning::
+
+   Numpy version 1.19.4 does currently not work under Windows 10-2004.
+   Installation gives the following error: 
+   ``RuntimeError: The current Numpy installation ('...\lib\\site-packages\\numpy\\__init__.py')`` 
+   ``fails to pass a sanity check due to a bug in the windows runtime``  
+   
+   If you are running into this issue, install numpy 1.19.3 manually::
+ 
+       pip install numpy==1.19.3
+	
 - Python (3.x) installation (Suggested: Anaconda_ )
 - JDK_ or openJDK_ 
 - EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion, see supported_hardware for the full list of supported hardware.)
