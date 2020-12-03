@@ -304,7 +304,8 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         if dataset is not None:
             # validate the 2 datasets are compatiable -> same number channels in X
             d_n_ch = [ x.shape[-1] for (x,_) in dataset ]
-            if len(d_n_ch)>0 and max(d_nch) == max(p_n_ch): # match the max channels info
+            d_n_ch = max(d_n_ch) if len(d_n_ch)>0 else -1
+            if d_n_ch>0 and d_n_ch == p_n_ch: # match the max channels info
                 dataset.extend(prior_dataset)
             else:
                 print("Warning: prior dataset not compatiable with current.  Ignored!")

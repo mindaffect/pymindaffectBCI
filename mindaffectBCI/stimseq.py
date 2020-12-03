@@ -295,16 +295,18 @@ def mkFreqTag(period_phase=((3,0),(4,0),(5,0),(6,0),(7,0),(3,1),(4,1),(5,1),(6,1
         isbinary (bool, optional): flag if we generate a binary sequence or continuous
     """
     import numpy as np
-    array = np.zeros((nEvent,len(period_phase)))
+    array = np.zeros((nEvent,len(period_phase)),dtype=np.float)
+    times = np.arange(array.shape[0])
     for i,e in enumerate(period_phase):
         # extract desired length and phase
         l,o = e if hasattr(e,'__iter__') else (e,0)
         # generate the sequence
-        s = np.sin( (np.arange(array.shape[0])+o+1e-6)/l*2*np.pi )
         if isbinary:
-            array[s>0,i] = 1
+            s = (times + o) % l
+            s = s + np.random.uniform(-1e-3,1e-3,size=s.shape)
+            array[:,i] = s > (l-1)/2
         else:
-            array[:,i] = s
+            array[:,i] = np.sin( 2*np.pi* (times+o+1e-6)/l )
     return StimSeq(None,array.tolist(),None)
 
 
