@@ -32,6 +32,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "rest" - not any of the other event types, N.B. must be *last* in event list
         "raw" - unchanged input intensity coding
         "grad" - 1st temporal derivative of the raw intensity
+        "inc" - when value is increasing
+        "dec" - when value is decreasing
+        "diff" - when value is different
+        "new" - new value when value has changed
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
      oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
 
@@ -116,6 +120,11 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         elif etype == "diff": # changing
             F = np.diff(M, axis=axis, append=pad) != 0
 
+        elif etype == "new" or etype=='step': # new value
+            tmp = np.diff(M, axis=axis, append=pad) == 0
+            F = M.copy()
+            F[tmp]=0
+
         elif etype == 'grad': # gradient of the stimulus
             F = np.diff(M,axis=axis, append=pad)
 
@@ -181,6 +190,7 @@ def testcase():
     e = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
     e = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
     e = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
+    e = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
     e = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
     e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
     e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))

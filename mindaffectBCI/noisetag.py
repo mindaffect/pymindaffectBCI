@@ -823,7 +823,7 @@ class Noisetag:
             mini (int, optional): min integer state. Defaults to 0.
             maxi (int, optional): max integer state. Defaults to 255.
         """        
-        state = [ mini + (s-mins)/maxs * maxi for s in state ]
+        state = [ int(mini + (s-mins)/maxs * maxi) for s in state ]
         return state
 
     def sendStimulusState(self,timestamp=None):

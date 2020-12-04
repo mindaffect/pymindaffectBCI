@@ -9,7 +9,7 @@
     "decoder_args":{
         "stopband" : [[45,65],[5,25,"bandpass"]],
         "out_fs" : 100,
-        "evtlabs" : ["re","fe"],
+        "evtlabs" : ["raw"],
         "tau_ms" : 450,
         "calplots" : true,
         "predplots" : false
@@ -29,7 +29,7 @@
         "feedbackduration":1,
         "bgFraction":0.1,
         "fullscreen":false,
-        "fullscreen_stimulus":true,
+        "fullscreen_stimulus":false,
         "simple_calibration":true,
         "optosensor":true, 
         "host":"-"

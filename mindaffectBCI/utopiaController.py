@@ -141,7 +141,9 @@ class UtopiaController:
         if self.client: self.client.sendMessage(stimEvent)
         # erp injection for debugging with fakedata
         if targetState >=0 and targetState <= 1: # TODO []: inject to the same host as the utopia connection
-            injectERP(targetState)# , self.gethostport())
+            injectERP(int(targetState*255))# , self.gethostport())
+        elif targetState > 3:
+            injectERP(int(targetState))
         return stimEvent
         
     def mkStimulusEvent(self, stimulusState, timestamp=None, 
