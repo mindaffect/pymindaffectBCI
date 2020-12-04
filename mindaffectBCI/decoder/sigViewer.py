@@ -21,14 +21,19 @@ from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2
    
 def run(ui: UtopiaDataInterface=None, host=None, timeout_ms:float=np.inf, 
         center=True, timerange:int=5, nstimulus_lines:int=1, ndata_lines:int=-1, 
-        datastep:int=20, stimstep:int=1, stopband=((0,3),(25,-1)), out_fs=60, ch_names=None):
+        datastep:int=20, stimstep:int=1, stopband=(3,25,'bandpass'), out_fs=60, ch_names=None, savefile:str=None):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
 
     if ui is None:
         data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)#999)
         #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
+        if savefile is not None:
+            from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
+            U = FileProxyHub(savefile,use_server_ts=True)
+        else: 
+            U = None
+        ui=UtopiaDataInterface(U=U, data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
         ui.connect(host)
 
     ui.update()
@@ -133,6 +138,7 @@ def parse_args():
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
+    parser.add_argument('--savefile',type=str, help='save file to play back throgh the viewer',default=None)
     args = parser.parse_args()
 
     if args.ch_names:

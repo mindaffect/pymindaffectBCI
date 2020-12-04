@@ -290,6 +290,8 @@ def read_mindaffectBCI_messages( source, regress:bool=False ):
     if hasattr(source, 'readline'):
         stream = source
     elif isinstance(source,str):
+        import glob
+        source = max(glob.glob(os.path.expanduser(source)), key=os.path.getctime)
         if os.path.exists(source): # read from file
             source = os.path.expanduser(source)
             stream = open(source,'r')
@@ -385,8 +387,6 @@ if __name__=="__main__":
     import os
     fileregexp = '../../../logs/mindaffectBCI*.txt'
     #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
-    files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),os.path.expanduser(fileregexp))) # * means all if need specific format then *.csv
-    fn = max(files, key=os.path.getctime)
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
     testcase(fn)

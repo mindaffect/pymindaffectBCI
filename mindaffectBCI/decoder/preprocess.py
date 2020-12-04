@@ -351,7 +351,7 @@ def plot_grand_average_spectrum(X, fs:float, axis:int=-2, ch_names=None, log=Fal
     freqs, FX = welch(X, axis=axis, fs=fs, nperseg=fs//2, return_onesided=True, detrend=False) # FX = (nFreq, nch)
     print('FX={}'.format(FX.shape))
     #plt.figure(18);plt.clf()
-    muFX = np.median(FX,axis=0,keepdims=True)
+    muFX = np.median(FX,axis=0,keepdims=True) if FX.ndim>2 else FX
     if log:
         muFX = 10*np.log10(muFX)
         unit='db (10*log10(uV^2))'

@@ -92,7 +92,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
 
     # extract the stimulus sequence
     Me, stim_ts, objIDs, _ = devent2stimSequence(messages)
-    stim_ts = unwrap(stim_ts.astype(np.float64))
+    stim_ts = unwrap(stim_ts.astype(np.float64)) if len(stim_ts)>0 else stim_ts
 
     import pickle
     pickle.dump(dict(data=np.append(X,data_ts[:,np.newaxis],-1),stim=np.append(Me,stim_ts[:,np.newaxis],-1)),open('pp_lmbci.pk','wb'))
