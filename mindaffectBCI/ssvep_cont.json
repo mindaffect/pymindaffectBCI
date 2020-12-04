@@ -12,15 +12,16 @@
         "evtlabs" : ["raw"],
         "tau_ms" : 450,
         "calplots" : true,
-        "predplots" : false
+        "predplots" : true
     },
 
     "presentation":"selectionMatrix",
     "presentation_args":{
         "ncal":10,
         "npred":20,
-        "selectionThreshold":0.01,
-        "symbols":["1","2","3","4","5"],
+        "selectionThreshold":0.1,
+        "calibration_symbols":["1","2","3","4","5"],
+        "symbols":"keyboard.txt",
         "stimfile":"ssvep_cont.png",
         "framesperbit":1,
         "calibration_trialduration":4.2,  
