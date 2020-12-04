@@ -7,10 +7,10 @@
 
     "decoder":"decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[0,1],[12,-1]],
-        "out_fs" : 100,
+        "stopband" : [[45,65],[1,12,"bandpass"]],
+        "out_fs" : 110,
         "evtlabs" : ["re","ntre"],
-        "tau_ms" : 750,
+        "tau_ms" : 650,
         "calplots" : true,
         "predplots" : false
     },
@@ -22,6 +22,7 @@
         "selectionThreshold":0.1,
         "symbols":"symbols.txt",
         "stimfile":"rc5x5.png",
+        "prediction_args":{"permute":false},
         "framesperbit":3,
         "fullscreen":false,
         "fullscreen_stimulus":true,

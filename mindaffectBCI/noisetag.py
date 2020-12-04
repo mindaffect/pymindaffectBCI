@@ -313,12 +313,12 @@ class SingleTrial(FSM):
     """do a complete single trial with: cue->wait->flicker->feedback
     """    
 
-    def __init__(self,stimSeq,tgtidx:int,
-                 utopiaController,stimulusStateStack,
-                 numframes:int=None,framesperbit:int=1,
+    def __init__(self, stimSeq, tgtidx:int,
+                 utopiaController, stimulusStateStack,
+                 numframes:int=None, framesperbit:int=1,
                  selectionThreshold:float=None,
-                 duration:float=4,cueduration:float=1,feedbackduration:float=1,waitduration:float=1,
-                 cueframes:int=None,feedbackframes:int=None,waitframes:int=None,permute:bool=False):
+                 duration:float=4, cueduration:float=1, feedbackduration:float=1, waitduration:float=1,
+                 cueframes:int=None, feedbackframes:int=None, waitframes:int=None, permute:bool=False):
         """do a complete single trial with: cue->wait->flicker->feedback
 
         Args:
