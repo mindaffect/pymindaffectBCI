@@ -207,24 +207,26 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
     '''
     if tau is None: # estimate the tau
         tau=Cyy.shape[-1]
+    if Cyy is None:
+        Cyy = np.zeros((Y.shape[-2], Y.shape[-1], tau, Y.shape[-1], tau))
     if Y.ndim == 3:  # ensure is 4-d
         Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE) [nE x nY x nEpoch/nSamp x nTrl]
 
     if stimTime is None: # fast-path, already at sample rate
-        #if not np.issubdtype(Y.dtype, np.floating): # all at once
-        #print("Y={}".format(Y.shape))
-        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
-        #print("Ys={}".format(Ys.shape))
-        MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys, dtype=np.float32, casting='unsafe', optimize=True) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
-        #else: # trial at a time + convert to float
-        #    MM = np.zeros(Cyy.shape)
-        #    # different slice time for every trial, up-sample per-trial
-        #    for trli in range(Y.shape[0]):  # loop over trials
-        #        Yi = Y[trli, :, :, :]
-        #        if not np.issubdtype(Y.dtype, np.floating):
-        #            Yi = np.array(Yi, np.float)
-        #        Yi = window_axis(Yi, winsz=tau, axis=-3)
-        #        MM = MM+np.einsum("Etye, Euyf->yetfu", Yi, Yi)
+        if np.issubdtype(Y.dtype, np.floating): # all at once
+            #print("Y={}".format(Y.shape))
+            Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
+            #print("Ys={}".format(Ys.shape))
+            MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
+        else: # trial at a time + convert to float
+            MM = np.zeros(Cyy.shape)
+            # different slice time for every trial, up-sample per-trial
+            for trli in range(Y.shape[0]):  # loop over trials
+                Yi = Y[trli, :, :, :]
+                if not np.issubdtype(Y.dtype, np.floating):
+                    Yi = np.array(Yi, np.float)
+                Yi = window_axis(Yi, winsz=tau, axis=-3)
+                MM = MM+np.einsum("Etye, Euyf->yetfu", Yi, Yi)
 
     else: # upsample and accumulate
         if stimTime.ndim == 1:  # ensure is 2d
@@ -250,7 +252,7 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
         MM = MM / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
 
     # accumulate into the running total
-    Cyy = wght*Cyy + MM if Cyy is not None else MM
+    Cyy = wght*Cyy + MM if Cyy is not None else Cyy
     return Cyy
 
 
@@ -694,8 +696,6 @@ def testCases():
     irf=(0,0,0,0,0,0,0,0,0,1)
     offset=0; # X->lag-by-10
     X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=1,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
-    X = X.astype(np.float32)
-    Y = Y.astype(np.float32)
     print("A={}\nB={}".format(A, B))
     print("X{}={}".format(X.shape, X[:30, np.argmax(np.abs(A))]))
     print("Y{}={}".format(Y.shape, Y[0, :30, 0]))

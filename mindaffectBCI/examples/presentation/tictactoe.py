@@ -39,16 +39,18 @@ class TictactoeScreen(selectionMatrix.SelectionGridScreen):
         super().__init__(symbols=symbols, **kwargs)
 
     def doMove(self, player_move_idx:int):
-        if player_move_idx:
-            self.setSymb(player_move_idx, "X")
+        if player_move_idx is not None:
+            self.setLabel(player_move_idx, "X")
+            self.setObj(player_move_idx, None)
         computer_move_idx = self.get_computer_move()
-        if computer_move_idx:
-            self.setSymb(computer_move_idx, "O")
+        if computer_move_idx is not None:
+            self.setLabel(computer_move_idx, "O")
+            self.setObj(computer_move_idx, None)
 
     def get_computer_move(self):
         """get the computer move from the current game state -- just a random free square
         """
-        freeidx = [ (i,j) for i in range(len(self.symbols)) for j in range(len(self.symbols[i])) if self.symbols[i][j]=="+"]
+        freeidx = [ i for i in range(len(self.labels)) if self.labels[i].text=="+" ]
         if len(freeidx)==0:
             return None
         random.shuffle(freeidx) # permute free list
@@ -59,7 +61,8 @@ class TictactoeScreen(selectionMatrix.SelectionGridScreen):
             if objID in self.objIDs:
                 print("doSelection: {}".format(objID))
                 idx = self.objIDs.index(objID)
-                sel = self.getSymb(idx)
+                sel = self.getLabel(idx)
+                sel = sel.text if sel is not None else ''
                 if self.show_correct and self.last_target_idx>=0:
                     sel += "*" if idx==self.last_target_idx else "_"
                 self.doMove(idx)

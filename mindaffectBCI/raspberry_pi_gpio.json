@@ -20,7 +20,9 @@
         "ncal":10,
         "npred":10,
         "numleds":2,
+        "opto":true,
         "led2gpiopin":[2,3,4],
-        "framerate_hz":15
+        "framerate_hz":15,
+        "cuedprediction":true
     }
 }

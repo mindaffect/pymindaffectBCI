@@ -26,6 +26,7 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.scoreOutput import dedupY0
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_erp
 from mindaffectBCI.decoder.utils import search_directories_for_file
+from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax
 import os
 import traceback
@@ -35,6 +36,34 @@ LOGDIR = os.path.join(PYDIR,'../../logs/')
 
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
+try :
+    import matplotlib
+    import matplotlib.pyplot as plt
+    guiplots=True
+    for be in matplotlib.rcsetup.all_backends: 
+        try:
+            matplotlib.use(be)
+            print(be)
+        except: pass
+    print("Initial backend: {}".format(matplotlib.get_backend()))
+    try:
+        # backends to try: "TkAgg" "WX" "WXagg"
+        matplotlib.use('TkAgg')
+    except:
+        print("couldn't change backend")
+    #plt.ion()
+    print("Using backend: {}".format(matplotlib.get_backend()))
+except:
+    guiplots=False
+
+def redraw_plots():
+    if guiplots and not matplotlib.is_interactive():
+        for i in plt.get_fignums():
+            if plt.figure(i).get_visible():
+                #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
+                plt.gcf().canvas.flush_events()
+            #plt.show(block=False)
+
 
 def get_trial_start_end(msgs, start_ts=None):
     """
@@ -146,6 +175,9 @@ def dataset_to_XY_ndarrays(dataset):
         X_ts (tr,samp): the time-stamps for the smaples in X
         Y_ts (tr,samp): the time-stamps for the stimuli in Y
     """ 
+    if dataset is None or not hasattr(dataset, '__iter__'):
+        print("Warning: empty dataset input!")
+        return None, None, None, None
     # get length of each trial
     trlen = [trl[0].shape[0] for trl in dataset]
     trstim = [trl[1].shape[0] for trl in dataset]
@@ -305,10 +337,10 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
             # validate the 2 datasets are compatiable -> same number channels in X
             d_n_ch = [ x.shape[-1] for (x,_) in dataset ]
             d_n_ch = max(d_n_ch) if len(d_n_ch)>0 else -1
-            if d_n_ch>0 and d_n_ch == p_n_ch: # match the max channels info
+            if d_n_ch == p_n_ch and d_n_ch > 0: # match the max channels info
                 dataset.extend(prior_dataset)
             else:
-                print("Warning: prior dataset not compatiable with current.  Ignored!")
+                print("Warning: prior dataset ({}ch) not compatiable with current {}ch.  Ignored!".format(p_n_ch,d_n_ch))
         else:
             if n_ch is None or n_ch == p_n_ch:
                 dataset = prior_dataset
@@ -420,12 +452,12 @@ def doPrediction(clsfr: BaseSequence2Sequence, data, stimulus, prev_stimulus=Non
     # strip outputs that we don't use, to save compute time
     Y, used_idx = strip_unused(Y)
     # strip the true target info if it's a copy, so it doesn't mess up Py computation
-    Y = dedupY0(Y, zerodup=False, yfeatdim=False)
+    #Y = dedupY0(Y, zerodup=False, yfeatdim=False)
     # up-sample Y to the match the rate of X
     # TODO[]: should this happen in the data-interface?
     Y, _ = upsample_stimseq(X_ts, Y, Y_ts)
     # predict on X,Y without the time-stamp info
-    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus)
+    Fy_1 = clsfr.predict(X, Y, prevY=prev_stimulus, dedup0=-1)  # predict, removing objID==0
     # map-back to 256
     Fy = np.zeros(Fy_1.shape[:-1]+(256,),dtype=Fy_1.dtype)
     Fy[..., used_idx] = Fy_1
@@ -506,6 +538,9 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         print("Warning: trying to predict without training classifier!")
         return
 
+    if PREDICTIONPLOTS and guiplots:
+        plt.close('all')
+
     # TODO []: Block based prediction is slightly slower?  Why?
     if timeout_ms is None:
         timeout_ms = block_step_ms
@@ -542,16 +577,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         # change in trial-start -> end-of-trial / start new trial detected
         if not trial_start_ts == otrial_start_ts:
             print("New trial! tr_start={}".format(trial_start_ts))
-            if PREDICTIONPLOTS and Fy is not None:
-                try:
-                    import matplotlib.pyplot as plt
-                    plt.figure(10)
-                    plt.cla()
-                    print("Fy={}".format(Fy.shape))
-                    plt.plot(np.cumsum(Fy[0,...],-2))
-                    plt.show(block=False)
-                except:
-                    pass
+
             Fy = None
             block_start_ts = trial_start_ts
 
@@ -625,10 +651,23 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                                           minDecisLen=clsfr.minDecisLen, bwdAccumulate=clsfr.bwdAccumulate)
                 # BODGE: only  use the last (most data?) prediction...
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
+                if PREDICTIONPLOTS and guiplots and len(Ptgt)>1:
+                    # bar plot of current Ptgt info
+                    #try:
+                    ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
+                                    nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+                    Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
+                    plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
+                    #except:
+                    #    pass
+
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
 
-                send_prediction(ui, Ptgt, used_idx=used_idx, timestamp=ui.stimulus_timestamp)
+                send_prediction(ui, Ptgt, used_idx=used_idx)
+
+            if PREDICTIONPLOTS:
+                redraw_plots()
             
         # check for end-prediction messages
         for i,m in enumerate(newmsgs):
@@ -636,6 +675,61 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 isPredicting = False
                 # return unprocessed messages to stack. Q: why i+1?
                 ui.push_back_newmsgs(newmsgs[i:])
+
+axPtgt, axFy, axPy = (None, None, None)
+def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
+    """Plot a summary of the trial decoding information
+
+    Args:
+        Ptgt (np.ndarray): the current output probabilities
+        Fy (np.ndarray): the raw output scores over time
+        Py (np.ndarray): the raw probabilities for each target over time
+        fs (float, optional): the data sample rate. Defaults to None.
+    """    
+    global axFy, axPy, axPtgt
+
+    if axFy is None or not plt.fignum_exists(10):
+        # init the fig
+        fig = plt.figure(10)
+        plt.clf()
+        axPtgt = fig.add_axes((.45,.1,.50,.85))
+        axPy = fig.add_axes((.1,.1,.25,.35))
+        axFy = fig.add_axes((.1,.55,.25,.35),sharex=axPy)
+        axFy.tick_params(labelbottom=False)
+        plt.tight_layout()
+
+    if Fy is not None and axFy is not None:
+        axFy.cla()
+        axFy.set_ylabel('Fy')
+        axFy.set_title("Trial Summary")
+        axFy.grid(True)
+        if Fy.ndim>3 : # sum out model dim 
+            Fy=np.mean(Fy,-4)
+        times = np.arange(-Fy.shape[-2],0)
+        t_unit = 'samples'
+        if fs is not None:
+            times = times / fs
+            t_unit = 's'
+        axFy.plot(times,Fy[0,:,:])
+        axPy.cla()
+        axPy.set_ylabel('Py')
+        axPy.set_ylim((0,1))
+        axPy.set_xlabel("time ({})".format(t_unit))
+        axPy.grid(True)
+        axPy.plot(times,Py[0,:,:])
+
+    if Ptgt is not None and axPtgt is not None:
+        # init the fig
+        axPtgt.cla()
+        axPtgt.set_title("Current: P_target")
+        axPtgt.set_ylabel("P_target")
+        axPtgt.set_xlabel('Output (objID)')
+        axPtgt.set_ylim((0,1))
+        axPtgt.grid(True)
+        axPtgt.bar(range(len(Ptgt)),Ptgt)
+    #plt.xticklabel(np.flatnonzero(used_idx))
+    plt.show(block=False)
+    # fig.canvas.draw()
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, prior_dataset:str=None,
@@ -666,11 +760,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     global CALIBRATIONPLOTS, PREDICTIONPLOTS, UNAME, LOGDIR
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
-    try :
-        import matplotlib.pyplot as plt
-        guiplots=True
-    except:
-        guiplots=False
+
 
     # setup the saving label
     from datetime import datetime 
@@ -680,6 +770,11 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     # setup saving location
     if logdir:
         LOGDIR=os.path.expanduser(logdir)
+        if not os.path.exists(logdir):
+            try:
+                os.makedirs(logdir)
+            except:
+                print("Error making the log directory.... ignoring")
 
     print("LOGDIR={}".format(LOGDIR))
 
@@ -740,12 +835,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                 break
         
         # BODGE: re-draw plots so they are interactive.
-        if guiplots:
-            try:
-                for i in plt.get_fignums():
-                    plt.figure(i).canvas.flush_events()
-            except:
-                pass
+        redraw_plots()
 
 def parse_args():
     import argparse
@@ -775,12 +865,13 @@ if  __name__ == "__main__":
         #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
         #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
         savefile='~/Desktop/mark/mindaffectBCI*.txt'
-        savefile="../../logs/mindaffectBCI*.txt"
+        savefile=args.logdir + "/mindaffectBCI*.txt"
         setattr(args,'savefile',savefile)
         #setattr(args,'out_fs',100)
         #setattr(args,'savefile_fs',200)
         #setattr(args,'cv',5)
         setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
+        setattr(args,'prior_dataset',None)
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')

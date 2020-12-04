@@ -1281,7 +1281,7 @@ class UtopiaClient:
         except socket.timeout:
             pass
         except socket.error as ex:
-            if not ( ex.errno == 11 or ex.errno == 10035 ): # 11 is raised when no-data to read
+            if not ( ex.errno == 11 or ex.errno == 10035 or ex.errno==35 ): # 11 is raised when no-data to read
                 print("Socket error" + str(ex) + "#" + str(ex.errno) ) 
         return bytes(data)
     

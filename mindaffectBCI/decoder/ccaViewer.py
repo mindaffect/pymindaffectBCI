@@ -26,15 +26,23 @@ from mindaffectBCI.decoder.devent2stimsequence import upsample_stimseq
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
-              offset_ms=(-15, 0), evtlabs=None, ch_names=None, nstimulus_events: int=600, rank=3, reg=.02, center=True):
-    ''' simple sig-viewer using the ring-buffer for testing '''
+def ccaViewer(*args, **kwargs):
+    run(*args, **kwargs)
 
+def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
+              offset_ms=(-15, 0), evtlabs=None, ch_names=None, nstimulus_events: int=600, 
+              rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100):
+    ''' view the live CCA decomposition.'''
+
+    if ui is None:
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)#999)
+        #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
+        ui.connect(host)
+    ui.update()
 
     if evtlabs is None:
         evtlabs = ('re', 'fe')
-
-    ui.update()
 
     # compute the size of the erp slice
     irf_range_ms = (offset_ms[0], tau_ms+offset_ms[1])
@@ -237,19 +245,27 @@ def ccaViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
             spatial_lines[ri][-1].set_ydata(W[ri,:]*sign)
             spatial_ax[ri].set_ylim(W_lim)
 
-if __name__=='__main__':
+
+def parse_args():
     import argparse
+    import json
     parser = argparse.ArgumentParser()
-    parser.add_argument('--host', type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
+    parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
+    parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
+    parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=3)
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
     args = parser.parse_args()
-    hostname = args.host
-    evtlabs = args.evtlabs.split(',')
-    rank = args.rank
-    print('evtlabs={}'.format(evtlabs))
-    ch_names = args.ch_names.split(',') if args.ch_names is not None else None
+    if args.evtlabs: 
+        args.evtlabs = args.evtlabs.split(',')
+    if args.ch_names:
+        args.ch_names = args.ch_names.split(',')
+    return args
+
+
+if __name__=='__main__':
+    args = parse_args()
 
     data_preprocessor = None
     data_preprocessor = butterfilt_and_downsample(order=4, stopband=((45,65), (0, 4), (25, -1)), fs_out=100)

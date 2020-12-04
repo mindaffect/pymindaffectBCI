@@ -24,6 +24,13 @@ import json
 import argparse
 import traceback
 
+class NoneProc:
+    """tempory class simulating a working null sub-process
+    """
+    def is_alive(self): return True
+    def terminate(self): pass
+    def join(self): pass
+
 def startHubProcess(label='online_bci', logdir=None):
     """Start the process to manage the central utopia-hub
 
@@ -120,8 +127,7 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
     
     return acquisition
 
-
-def startDecoderProcess(decoder, decoder_args, label='online_bci', logdir=None):
+def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
     """start the EEG decoder process
 
     Args:
@@ -150,7 +156,7 @@ def startDecoderProcess(decoder, decoder_args, label='online_bci', logdir=None):
         # allow time for the decoder to startup
         sleep(4)
     elif decoder == 'none':
-        decoder = None
+        decoder = NoneProc()
     return decoder
 
 def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
@@ -398,7 +404,7 @@ def parse_args():
     import json
     parser = argparse.ArgumentParser()
     parser.add_argument('--label', type=str, help='user label for the data savefile', default=None)
-    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default='debug')#'online_bci.json')
+    parser.add_argument('--config_file', type=str, help='JSON file with default configuration for the on-line BCI', default=None)#'debug')#'online_bci.json')
     parser.add_argument('--acquisition', type=str, help='set the acquisition driver type: one-of: "none","brainflow","fakedata","ganglion","eego"', default=None)
     parser.add_argument('--acq_args', type=json.loads, help='a JSON dictionary of keyword arguments to pass to the acquisition system', default=None)
     parser.add_argument('--decoder', type=str, help='set eeg decoder function to use. one-of: "none", "decoder"', default=None)
@@ -408,6 +414,20 @@ def parse_args():
     parser.add_argument('--logdir', type=str, help='directory where the BCI output files will be saved. Uses $installdir$/logs if None.', default=None)
 
     args = parser.parse_args()
+
+    if args.config_file is None:
+        try:
+            from tkinter import Tk
+            from tkinter.filedialog import askopenfilename
+            root = Tk()
+            root.withdraw()
+            filename = askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)),
+                                       title='Chose mindaffectBCI Config File',
+                                       filetypes=(('JSON','*.json'),('All','*.*')))
+            setattr(args,'config_file',filename)
+        except:
+            print("Can't make file-chooser dialog, and no config file specified!  Aborting")
+            raise ValueError("No config file specified")
 
     # load config-file
     if args.config_file is not None:

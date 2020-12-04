@@ -36,33 +36,33 @@ except:
     def LED(i:int): return LEDS[i]
 
 nt=None
+optoled=None
 leds=[]
 objIDs=[]
-frameduration_s = 1/60
+isi = 1/60
 
 #---------------------------------------------------------------------
 def draw():
     """draw the GPIO output with the flicker state as obtained from the noisetag object"""
     #print("Background state"+str(backgroundstate))
     # get the updated stimulus state info
-    global nt, leds, frameduration_s
+    global nt, leds, optoled, isi
     nt.updateStimulusState()
     stimulus_state,target_idx,objIDs,sendEvents=nt.getStimulusState()
     target_state = stimulus_state[target_idx] if target_idx>=0 else -1
 
     # BODGE: sleep to limit the stimulus update rate
-    time.sleep(frameduration_s)
+    time.sleep(isi)
     # update the state of each LED to match the stimulusstate
     for i,led in enumerate(leds): 
         # get the background state of this cell
         bs = stimulus_state[i] if stimulus_state else None
-        if not bs is None and bs>0 :
-            led.on()
-        else :
-            led.off()
+        led.on() if not bs is None and bs>0 else led.off()
 
     if target_state is not None and target_state>=0:
-        print("*" if target_state==1 else '.', end='', flush=True)
+        print("t*" if target_state>0 else 't.', end='', flush=True)
+        if optoled:
+            optoled.on() if target_state>0 else optoled.off()
     # send info on updated display state
     nt.sendStimulusState()
 
@@ -77,7 +77,8 @@ def selectionHandler(objID):
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
+def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cuedprediction=True, 
+         duration=4, cueduration=2, feedbackduration=4, opto:bool=True, **kwargs):
     """setup the pi for GPIO based presentation
 
     Args:
@@ -86,28 +87,51 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10):
         led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
         nCal (int, optional): number of calibration trials to use. Defaults to 10.
         nPred (int, optional): number of prediction trials to use. Defaults to 10.
-    """    
-    global nt, objIDs, leds, frameduration_s
+        cuedprediction (bool, optional): use cues in prediction phase. Defaults to True.
+        duration (int, optional): flicker duration. Defaults to 4.
+        cueduration (int, optional): target cue duration. Defaults to 2.
+        feedbackduration (int, optional): target feedback duration. Defaults to 4.
+        opto (bool,optional): flag if use the 1st led as 'opto' trigger, so it always shows the cued target. Defaults to True.
+    """
+    global nt, objIDs, leds, optoled, isi
+
+    if kwargs is not None:
+        print("Warning additional args ignored: {}".format(kwargs))     
     
-    frameduration_s = 1.0/framerate_hz
+    if framerate_hz is not None:
+        isi = 1/framerate_hz
+
     if led2gpiopin is None:
         led2gpiopin = list(range(numleds))
+
+    gpioi = 0
+    if opto: # 1st led is opto
+        optoled = LED(led2gpiopin[gpioi])
+        gpioi = gpioi+1
+
     leds=[]
-    objIDs=[]
     for i in range(numleds):
-        leds.append(LED(led2gpiopin[i]))
-        objIDs.append(i+1)
+        try:
+            leds.append(LED(led2gpiopin[gpioi]))
+            objIDs.append(i+1)
+            gpioi=gpioi+1
+        except:
+            print("Error adding extra leds -- did you specify enough in led2gpiopin")
+            raise
 
     nt=Noisetag()
     nt.connect()
     nt.setActiveObjIDs(objIDs)
-    nt.startExpt(nCal=nCal,nPred=nPred,
-                cueduration=4,duration=10,feedbackduration=4)
+    nt.set_isi(1/framerate_hz)  # N.B. set before start expt. etc, to get seconds->frames conversion
+    nt.startExpt(nCal=nCal,nPred=nPred, cuedprediction=cuedprediction,
+                cueframes=cueduration//isi,
+                numframes=duration//isi,
+                feedbackframes=feedbackduration//isi,
+                interphaseframes=40//isi)
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 
-
-def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10, **kwargs):
+def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4,5,6,7,8), ncal=10, npred=10, **kwargs):
     """run the pi GPIO based presentation 
 
     Args:
@@ -116,12 +140,26 @@ def run(framerate_hz=15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=10, **kw
         led2gpiopin (tuple, optional): the LED index to GPIO pin mapping to use. Defaults to (2,3,4).
         ncal (int, optional): number of calibration trials to use. Defaults to 10.
         npred (int, optional): number of prediction trials to use. Defaults to 10.
-    """
-    if kwargs is not None:
-        print("Warning additional args ignored: {}".format(kwargs))    
-    init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=ncal, nPred=npred)
+    """   
+    init(framerate_hz=framerate_hz, numleds=numleds, led2gpiopin=led2gpiopin, nCal=ncal, nPred=npred, **kwargs)
     while True :
         draw()
 
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ncal',type=int, help='number calibration trials', default=10)
+    parser.add_argument('--npred',type=int, help='number prediction trials', default=10)
+    parser.add_argument('--framerate_hz',type=float, help='flicker rate', default=15)
+    parser.add_argument('--numleds',type=int, help='number of flickering leds', default=2)
+    parser.add_argument('--duration',type=float, help='duration in seconds of trial flickering', default=5)
+    parser.add_argument('--cueduration',type=float, help='duration in seconds of trial cue', default=2)
+    parser.add_argument('--feedbackduration',type=float, help='duration in seconds of trial feedback', default=2)
+    parser.add_argument('--cuedprediction',type=bool, help='use cued or un-cued prediction', default=True)
+    parser.add_argument('--opto',type=bool, help='use the 1st led as an "opto" led, i.e. always tracks the cued target.', default=False)
+    args = parser.parse_args()
+    return args
+
 if __name__=="__main__":
-    run(framerate_hz = 15, numleds=1, led2gpiopin=(2,3,4), ncal=10, npred=100)
+    args = parse_args()
+    run(**vars(args))

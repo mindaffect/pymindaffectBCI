@@ -25,16 +25,20 @@ To install from **source** (currently the recommended method):
 To install as a python library::
 
     pip install --upgrade mindaffectBCI
-    
+
+Try the off-line analysis on-line on binder.
+
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/mindaffect/pymindaffectBCI/pip_test
+
+Try off-line multiple datasets analysis on `kaggle <https://www.kaggle.com/mindaffect/mindaffectbci>`_ 
 
 Installation Test
 -----------------
 
 You can run a quick test if the installation without any additional hardware by running::
 
-  python3 -m mindaffectBCI.online_bci --acquisation fakedata
+  python3 -m mindaffectBCI.online_bci --acquisition fakedata
 
 Essentially, this run the SDK test code which simulates a *fake* EEG source and then runs the full BCI sequence, with decoder discovery, calibration and prediction.
 
@@ -107,8 +111,10 @@ This repository is organized roughly as follows:
      - `selectionMatrix.py <mindaffectBCI/examples/presentation/selectionMatrix.py>`_ - Which you can run as a simple example of using the mindaffectBCI to select letters from an on-screen grid.
 
    - `utilities <mindaffectBCI/examples/utilities/>`_ - Useful utilities, such as a simple *raw* signal viewer
-   - `acquisation <mindaffectBCI/examples/acquisation/>`_ - Example data acquisation modules.  An acquisation module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
+   - `acquisition <mindaffectBCI/examples/acquisition/>`_ - Example data acquisition modules.  An acquisition module interfaces with the EEG measurment hardware and streams time-stamped data to the hub.
 
 - `docs <docs/>`_ -- contains the documentation.
+
   - `source <docs/source>`_ -- contains the source for the documentation, in particular this directory contains the juypter notebooks for tutorials on how to use the mindaffectBCI.
+  
     - `online_bci.ipynb <docs/source/quickstart.ipynb>`_ - This `juypter <https://jupyter.org/>`_ notebook contains the code to run a complete on-line noise-tagging BCI

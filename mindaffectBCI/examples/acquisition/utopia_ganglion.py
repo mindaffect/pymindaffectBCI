@@ -174,13 +174,34 @@ def printLog(nSamp,nBlock):
         elapsed = getTime()-t0
         print("%d %d %f %f (samp,blk,s,hz)"%(nSamp,nBlock,elapsed,nSamp/elapsed),flush=True)
         nextLogTime=getTime()+LOGINTERVAL_S
-    
+
+def init_bluetooth_settings(min_interval=6,max_interval=9,latency=0):
+    import os
+    pypath = os.path.dirname(os.path.abspath(__file__))
+    shname = 'initGanglionBluetoothSettings.sh'
+    resp = os.system("sudo bash {} {} {} {}".format(os.path.join(pypath,shname),min_interval,max_interval,latency))
+    if resp != 0:
+        print("Error setting the BLE parameters!  Perhaps you need to set the `initGanglionBluetoothSettings.sh` to run as root or as executable?")
+    # try:
+    #     with open("/sys/kernel/debug/bluetooth/hci0/conn_min_interval",'w') as f:
+    #         print("%d"%(min_interval),file=f)
+    #     with open("/sys/kernel/debug/bluetooth/hci0/conn_max_interval",'w') as f:
+    #         print("%d"%(max_interval),file=f)
+    #     with open("/sys/kernel/debug/bluetooth/hci0/latency",'w') as f:
+    #         print("%d"%(latency),file=f)
+    # except:
+    #     print("Error setting the BLE parameters!  perhaps you need to run as root?")
+    #     pass
+
 board=None
 client=None
 def initConnections(host=None,obcimac=None):
     global board
     global client
     global fSample
+    if sys.platform == "linux":
+        init_bluetooth_settings()
+
     print("Opening OpenBCI Ganglion")
     board = OpenBCIGanglion(mac=obcimac,sample_rate=200)
     nChans = 4
@@ -231,24 +252,11 @@ def parse_arguments():
     import sys
     import argparse
     parser = argparse.ArgumentParser ()
-    parser.add_argument ('--mac-address', type = str, help  = 'mac address', required = False, default = '')
-    inputconfig = parser.parse_args ()
-    obcimac=inputconfig.mac_address
-    argv = sys.argv
-    print("Arguments:",*argv)
-    # N.B. argv0 is the script name
-    if len(argv)>2 :
-        host=argv[1] if len(argv)>1 else None
-        #obcimac=argv[2] if len(argv)>2 else None
-    elif len(argv)==2 : # single argument, read from config file
-        try:
-            print("Reading config from file : {}".format(argv[1]))
-            config=readConfigFile(argv[1])
-   #         obcimac=config['ganglionmac'] if 'ganglionmac' in config else None
-        except FileNotFoundError :
-            host=argv[2]
-    return dict(host=host, obcimac=obcimac)
+    parser.add_argument ('--mac_address', type = str, help  = 'mac address', required = True)
+    parser.add_argument ('--host', type = str, help  = 'hub host address', default="localhost")
+    args = parser.parse_args ()
+    return args
 
 if __name__=="__main__":
     args = parse_arguments()
-    run(*args)
+    run(**vars(args))

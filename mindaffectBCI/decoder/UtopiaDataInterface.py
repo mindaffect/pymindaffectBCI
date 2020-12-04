@@ -928,7 +928,7 @@ class power_tracker(TransformerMixin):
             [type]: [description]
         """        
         self.sX_N = X.shape[0]
-        if self.car:
+        if self.car and X.shape[-1]>4:
             X = X.copy() - np.mean(X,-1,keepdims=True)
         self.sX = np.sum(X,axis=0)
         self.sXX_N = X.shape[0]
@@ -947,8 +947,11 @@ class power_tracker(TransformerMixin):
         
         if self.sX is None: # not fitted yet!
             return self.fit(X)
-        if self.car:
-            X = X.copy() - np.mean(X,-1,keepdims=True)
+        if self.car and X.shape[-1]>4:
+            ch_power = self.power()
+            # identify the active channels, i.e. are attached and have some signal
+            act_ch = ch_power > np.max(ch_power)*1e-3
+            X = X.copy() - np.mean(X[...,act_ch], -1, keepdims=True)
         # compute updated mean
         alpha_mu   = self.alpha_mu ** X.shape[0]
         self.sX_N  = self.sX_N*alpha_mu + X.shape[0]

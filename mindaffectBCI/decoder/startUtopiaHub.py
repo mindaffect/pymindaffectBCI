@@ -21,15 +21,16 @@ from time import sleep
 
 def run(label='', logdir=None):
     pydir = os.path.dirname(os.path.abspath(__file__)) # mindaffectBCI/decoder/startUtopiaHub.py
-    bindir = os.path.join(pydir,'..','..','bin') # ../../bin/
+    bindir = os.path.join(pydir,'..','hub') 
 
     # make the logs directory if not already there
     if logdir is None:
-        logdir=os.path.join(bindir,'../logs')
-        try: 
-            os.mkdir(os.path.join(bindir,'..','logs'))
+        logdir=os.path.join(bindir,'../../logs')
+    if not os.path.exists(logdir):
+        try:
+            os.makedirs(logdir)
         except:
-            pass
+            print("Error making the log directory {}.... ignoring".format(logdir))
 
     # command to run the java hub
     cmd = ("java","-jar","UtopiaServer.jar")

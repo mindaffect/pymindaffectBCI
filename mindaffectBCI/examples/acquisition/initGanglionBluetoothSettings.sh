@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 intervalmin=6
 intervalmax=9
 latency=0
@@ -8,7 +8,7 @@ if [ $# -gt 0 ] ; then
   if [ $# -gt 1 ] ; then
     intervalmax=$2
   fi
-fi  
+fi
 echo "$intervalmin" > /sys/kernel/debug/bluetooth/hci0/conn_min_interval
 echo conn_min_interval; cat /sys/kernel/debug/bluetooth/hci0/conn_min_interval
 

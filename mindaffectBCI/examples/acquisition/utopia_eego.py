@@ -10,7 +10,7 @@ def run(**kwargs):
     (Note: SDK users should *not* use this document as the SDK has since been updated, but refer to the documentation provided with their SDK.  This document is provided only for the license information on Page6)
     In summary, this driver is provided without WARRANTY, for non-commercial use.
 
-    Further, eegmagine Medical Imaging Solutions 
+
 
     Returns:
         subprocess: subprocess object for communicating with the started amplifier driver.
