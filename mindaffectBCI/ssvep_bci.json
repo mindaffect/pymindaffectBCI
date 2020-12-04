@@ -25,6 +25,7 @@
         "framesperbit":1,
         "calibration_trialduration":4.2,  
         "prediction_trialduration":10, 
+        "prediction_args":{"permute":false},
         "feedbackduration":1,
         "bgFraction":0.1,
         "fullscreen":false,
