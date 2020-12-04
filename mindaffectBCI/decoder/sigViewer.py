@@ -39,7 +39,7 @@ def run(ui: UtopiaDataInterface=None, host=None, timeout_ms:float=np.inf,
     
     # initialize the plot window
     plt.clf()
-    plt.axes((.05,.25,.9,.7))
+    dataAx=plt.axes((.05,.25,.9,.7))
     plt.title("EEG")
     idx=slice(-int(ui.fs*timerange),None)
     data = ui.data_ringbuffer[idx, :]
@@ -51,7 +51,7 @@ def run(ui: UtopiaDataInterface=None, host=None, timeout_ms:float=np.inf,
     plt.ylim([-datastep, data[:,:ndata_lines].shape[1] * datastep])
     plt.grid(True)
 
-    plt.axes((.05,.05,.9,.1))
+    stimAx=plt.axes((.05,.05,.9,.1))
     plt.title("Stimulus")
     stimulus = ui.stimulus_ringbuffer[idx, :]
     # vertical gap between stimulus lines
@@ -109,6 +109,10 @@ def run(ui: UtopiaDataInterface=None, host=None, timeout_ms:float=np.inf,
             pad[0,-1] = stimulus[-1,-1]+1 if stimulus.shape[0]>0 else data[-1,-1]-1000*timerange
             pad[1,-1] = data[-1,-1]
             stimulus = np.append(stimulus,pad,axis=0)
+        maxstim = np.max(stimulus[:,:-1])
+        if maxstim > max(stimAx.get_ylim()):
+            minstim = np.min(stimulus[:,:-1])
+            stimAx.set_ylim((minstim,maxstim))
         xdata = ( stimulus[idx,-1] - stimulus[-1,-1] ) / 1000
         for li, ln in enumerate(stimulus_lines):
             ln.set_xdata(xdata)

@@ -77,14 +77,17 @@ class StimSeq :
         res+="\n\n"
         return res
 
-    def convertstimSeq2int(self,scale=1):
+    def is_integer(self):
+        return all([ s.is_integer() for row in self.stimSeq for s in row ])
+
+    def convertstimSeq2int(self,scale=1,force=False):
         """[summary]
 
         Args:
             scale (int, optional): [description]. Defaults to 1.
         """        
-
-        self.stimSeq = self.float2int(self.stimSeq)
+        if force or self.is_integer():
+            self.stimSeq = self.float2int(self.stimSeq)
 
     @staticmethod
     def float2int(stimSeq,scale=1,minval=None,maxval=None):
@@ -142,7 +145,7 @@ class StimSeq :
                 if nEmpty>1 and len(array)>0 : break # double empty means end-of-array
                 else: continue 
             elif line[0]=="#" : continue # comment line
-            cols = line.split();
+            cols = line.split()
             if width<0 : width=len(line)
             elif width>0 and not len(cols) == width : 
                 raise Exception
@@ -308,7 +311,7 @@ def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1
             array[:,i] = s > (l-1)/2
         else:
             s = np.sin( 2*np.pi* ( times.astype(np.float32)+o+1e-6)/l )
-            s = s / 2 + 1 # convert to 0-1 range
+            s = (s + 1) / 2  # convert to 0-1 range
             array[:,i] = s
     return StimSeq(None,array.tolist(),None)
 

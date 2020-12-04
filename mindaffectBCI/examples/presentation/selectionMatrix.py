@@ -794,7 +794,7 @@ class SelectionGridScreen(Screen):
         if sel in ('<-','<bkspc>','<backspace>'):
             text = text[:-1]
         elif sel in ('spc','<space>','<spc>'):
-            text = text + '😀'
+            text = text + ' '
         elif sel in ('home','quit'):
             pass
         elif sel == ':)':
@@ -1037,11 +1037,11 @@ class SelectionGridScreen(Screen):
         if self.optosensor :
             if self.opto_sprite is not None:
                 self.opto_sprite.visible=False  # default to opto-off
-            if target_state is not None and target_state in (0, 1):
-                print("*" if target_state==1 else '.', end='', flush=True)
+            if target_state is not None and target_state >=0 and target_state <=1:
+                print("*" if target_state>.5 else '.', end='', flush=True)
                 if self.opto_sprite is not None:
                     self.opto_sprite.visible=True
-                    self.opto_sprite.color = (0, 0, 0) if target_state==0 else (255, 255, 255)
+                    self.opto_sprite.color = tuple(int(c*target_state) for c in (255, 255, 255))
 
         # do the draw
         self.batch.draw()
@@ -1600,5 +1600,6 @@ if __name__ == "__main__":
     args = parse_args()
     setattr(args,'symbols',[['yes','no','<-']])
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
+    setattr(args,'stimfile','ssvep_cont.txt')
     run(**vars(args))
 

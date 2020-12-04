@@ -813,17 +813,31 @@ class Noisetag:
         return self.setActiveObjIDs(objIDs)
     
     # decoder interaction methods via. utopia controller
+    def encodeFloatState(self, state, mins:float=0.0, maxs:float=1.0, mini:int=0, maxi:int=255):
+        """map from floating point stimulus state, to integer for sending to decoder
+
+        Args:
+            state (list-of-float): the floating point stimulus state
+            mins (float, optional): min float state value. Defaults to 0.
+            maxs (float, optional): max float state value. Defaults to 1.
+            mini (int, optional): min integer state. Defaults to 0.
+            maxi (int, optional): max integer state. Defaults to 255.
+        """        
+        state = [ mini + (s-mins)/maxs * maxi for s in state ]
+        return state
+
     def sendStimulusState(self,timestamp=None):
         """send the current stimulus state information to the decoder
 
         Args:
             timestamp (int, optional): timestamp to use when sending the stimulus state information. Defaults to None.
         """    
-
         stimState,target_idx,objIDs,sendEvent=self.laststate
-        targetState = stimState[target_idx] if target_idx is not None and target_idx>=0 else -1
         # send info about the stimulus displayed
         if sendEvent and stimState is not None :
+            if isinstance(stimState[0],float):
+                stimState = self.encodeFloatState(stimState)
+            targetState = stimState[target_idx] if target_idx is not None and target_idx>=0 else -1
             #print((stimState,targetState))
             # TODO[]: change to use the target_idx
             self.utopiaController.sendStimulusEvent(stimState,
