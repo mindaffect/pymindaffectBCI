@@ -60,6 +60,8 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
     #print("E.dtype={}".format(E.dtype))
     if len(M) == 0: # guard empty inputs
         return E
+    # single elment padding matrix    
+    padshape=list(M.shape); padshape[axis] = 1; pad = np.zeros(padshape, dtype=M.dtype)
     for ei, etype in enumerate(evtypes):
 
         # extract the stimulus modifier
@@ -78,9 +80,9 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         # 2-bit
         elif etype == "00":
             F = equals_subarray(M, [0, 0], axis)
-        elif etype == "re" or etype == "01":
+        elif etype == "01" or etype == 're':
             F = equals_subarray(M, [0, 1], axis)
-        elif etype == "fe" or etype == "10":
+        elif etype == "10" or etype == 'fe':
             F = equals_subarray(M, [1, 0], axis)
         elif etype == "11":
             F = equals_subarray(M, [1, 1], axis)
@@ -105,11 +107,17 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         elif etype == "0110" or etype == 'long':
             F = equals_subarray(M, [0, 1, 1, 0], axis)
         # diff
-        elif etype == "diff":
-            F = np.diff(M, axis=axis) != 0
-            # pad missing entry
-            padshape=list(F.shape); padshape[axis] = 1
-            F = np.append(np.zeros(padshape, dtype=F.dtype), F, axis)
+        elif etype == 'inc': # increasing
+            F = np.diff(M, axis=axis, append=pad) > 0
+
+        elif etype == 'dec': # decreasing
+            F = np.diff(M, axis=axis, append=pad) < 0
+
+        elif etype == "diff": # changing
+            F = np.diff(M, axis=axis, append=pad) != 0
+
+        elif etype == 'grad': # gradient of the stimulus
+            F = np.diff(M,axis=axis, append=pad)
 
         elif etype == "rest": # i.e. no stimuli anywhere
             if not axis == M.ndim-2:
@@ -118,8 +126,6 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 
         elif etype == 'raw':
             F = M
-        elif etype == 'grad': # i.e. gradient of the stimulus
-            F = np.diff(M,axis=axis)
 
         else:
             raise ValueError("Unrecognised evttype:{}".format(etype))
@@ -165,7 +171,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 def testcase():
     from stim2event import stim2event
     # M = (samp,Y)
-    M = np.array([[0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0],
+    M = np.array([[0, 0, 2, 1, 0, 0, 0, 0, 1, 2, 1, 1, 0],
                   [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]])
     
     print("Raw  :{}".format(M))
@@ -173,8 +179,11 @@ def testcase():
     e = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
     e = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
     e = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
+    e = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
+    e = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
+    e = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
     e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
-    e = stim2event(M, 'onset', axis=-1);     print("onset:{}".format(e[0, ...].T))
+    e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
     e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
     e = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
 
