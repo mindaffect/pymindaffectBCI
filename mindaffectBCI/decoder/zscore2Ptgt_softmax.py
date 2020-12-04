@@ -175,9 +175,9 @@ def append_block_perm_f(f,n):
     return tmp
 
 def calibrate_softmaxscale(f, validTgt=None, 
-                           scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30), 
+                           scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50), 
                            MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, 
-                           nocontrol_condn=True, n_virt_outputs=-30):
+                           nocontrol_condn=.5, n_virt_outputs=-30):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -224,8 +224,8 @@ def calibrate_softmaxscale(f, validTgt=None,
             # inlude a non-control class loss
             Ptgt_nc = zscore2Ptgt_softmax(f_nc,softmaxscale=s,validTgt=vtgt_nc,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
             Edi_nc = np.sum( -np.log(np.maximum(Ptgt_nc[...,0:1],1e-5)) ) / (f.shape[-1]-1)
-            print("{}) scale={} Ed={} = {}+{}".format(i,s,Edi+Edi_nc, Edi, Edi_nc))
-            Edi = Edi + Edi_nc
+            print("{}) scale={} Ed={} = {}+{}".format(i,s,Edi+Edi_nc, Edi, Edi_nc * nocontrol_condn))
+            Edi = Edi + Edi_nc * nocontrol_condn
         else:
             print("{}) scale={} Ed={}".format(i,s,Edi))
 
