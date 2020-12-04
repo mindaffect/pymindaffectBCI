@@ -305,7 +305,7 @@ class ConnectingScreen(InstructionScreen):
                         self.stage = 0 # back to try-connection stage
                     elif self.window.last_text:
                         # add to the host string
-                        self.usertext += last_text
+                        self.usertext += self.window.last_text
                     self.window.last_text = None
                 if self.stage == 1: # in same stage
                     # update display with user input
@@ -726,7 +726,8 @@ class SelectionGridScreen(Screen):
         self.logo = logo
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
-        self.set_grid(symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
+        if symbols is not None:
+            self.set_grid(symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
         self.liveSelections = None
         self.feedbackThreshold = .4
         self.waitKey=waitKey
@@ -841,9 +842,9 @@ class SelectionGridScreen(Screen):
         if logo is None:
             logo = self.logo
         # get size of the matrix
-        gridheight  = len(symbols) + 1 # extra row for sentence
-        gridwidth = max([len(s) for s in symbols])
-        self.ngrid      = gridwidth * gridheight
+        self.gridheight  = len(symbols) + 1 # extra row for sentence
+        self.gridwidth = max([len(s) for s in symbols])
+        self.ngrid      = self.gridwidth * self.gridheight
 
         self.noisetag.setActiveObjIDs(self.objIDs)
 
@@ -855,64 +856,80 @@ class SelectionGridScreen(Screen):
         self.foreground = pyglet.graphics.OrderedGroup(1)
 
         # now create the display objects
-        w=winw/gridwidth # cell-width
+        w=winw/self.gridwidth # cell-width
         bgoffsetx = w*bgFraction
-        h=winh/gridheight # cell-height
+        h=winh/self.gridheight # cell-height
         bgoffsety = h*bgFraction
         idx=-1
         for i in range(len(symbols)): # rows
-            y = (gridheight-1-i-1)/gridheight*winh # top-edge cell
+            y = (self.gridheight-1-i-1)/self.gridheight*winh # top-edge cell
             for j in range(len(symbols[i])): # cols
                 # skip unused positions
                 if symbols[i][j] is None or symbols[i][j]=="": continue
                 idx = idx+1
                 symb = symbols[i][j]
-                x = j/gridwidth*winw # left-edge cell
-                try : # symb is image to use for this button
-                    img = search_directories_for_file(symb,os.path.dirname(__file__))
-                    img = pyglet.image.load(img)
-                    symb = '.' # symb is a fixation dot
-                except :
-                    # create a 1x1 white image for this grid cell
-                    img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
-                # convert to a sprite (for fast re-draw) and store in objects list
-                # and add to the drawing batch (as background)
-                self.objects[idx]=pyglet.sprite.Sprite(img, x=x+bgoffsetx, y=y+bgoffsety,
-                                                    batch=self.batch, group=self.background)
-                # re-scale (on GPU) to the size of this grid cell
-                self.objects[idx].update(scale_x=int(w-bgoffsetx*2)/img.width,
-                                        scale_y=int(h-bgoffsety*2)/img.height)
+                x = j/self.gridwidth*winw # left-edge cell
+                self.objects[idx], self.labels[idx] = self.init_target(symb, x+bgoffsetx, y+bgoffsety, int(w-bgoffsetx*2), int(h-bgoffsety*2))
 
-                # add the foreground label for this cell, and add to drawing batch
-                self.labels[idx]=pyglet.text.Label(symb, font_size=32, x=x+w/2, y=y+h/2,
-                                                color=(255, 255, 255, 255),
-                                                anchor_x='center', anchor_y='center',
-                                                batch=self.batch, group=self.foreground)
+        # add the other bits
+        self.init_opto()
+        self.init_sentence(sentence)
+        self.init_framerate()
+        self.init_logo(logo)
 
-        # add opto-sensor block
-        img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
-        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9,
-                                              batch=self.batch, group=self.background)
-        self.opto_sprite.update(scale_x=int(winw*.1), scale_y=int(winh*.1))
-        self.opto_sprite.visible=False
+    def init_target(self, symb, x, y, w, h):
+        sprite = self.init_sprite(symb, x, y, w, h)
+        label = self.init_label(symb, x, y, w, h)
+        return sprite, label
 
-        # add the sentence box
-        y = winh # top-edge cell
-        x = winw*.15 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, 
-                                        x=x, y=y, 
-                                        width=winw-x-winw*.1, height=(gridheight-1)/gridheight*winh,
-                                        color=(255, 255, 255, 255),
-                                        anchor_x='left', anchor_y='top',
-                                        multiline=True,
-                                        batch=self.batch, group=self.foreground)
+    def init_label(self, symb, x, y, w, h):
+        # add the foreground label for this cell, and add to drawing batch
+        label=pyglet.text.Label(symb, font_size=32, x=x+w/2, y=y+h/2,
+                                color=(255, 255, 255, 255),
+                                anchor_x='center', anchor_y='center',
+                                batch=self.batch, group=self.foreground)
+        return label
 
+    def init_sprite(self, symb, x, y, w, h):
+        try : # symb is image to use for this button
+            img = search_directories_for_file(symb,os.path.dirname(__file__),os.path.join(os.path.dirname(__file__),'images'))
+            img = pyglet.image.load(img)
+            symb = '.' # symb is a fixation dot
+        except :
+            # create a 1x1 white image for this grid cell
+            img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
+        # convert to a sprite (for fast re-draw) and store in objects list
+        # and add to the drawing batch (as background)
+        sprite=pyglet.sprite.Sprite(img, x=x, y=y,
+                                    batch=self.batch, group=self.background)
+        # re-scale (on GPU) to the size of this grid cell
+        sprite.update(scale_x=int(w)/img.width, scale_y=int(h)/img.height)
+        return sprite
+
+
+    def init_framerate(self):
+        winw, winh=self.window.get_size()
         # add the framerate box
         self.framerate=pyglet.text.Label("", font_size=12, x=winw, y=winh,
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top',
                                         batch=self.batch, group=self.foreground)
-        
+
+    def init_sentence(self,sentence):
+        winw, winh=self.window.get_size()
+        # add the sentence box
+        y = winh # top-edge cell
+        x = winw*.15 # left-edge cell
+        self.sentence=pyglet.text.Label(sentence, font_size=32, 
+                                        x=x, y=y, 
+                                        width=winw-x-winw*.1, height=(self.gridheight-1)/self.gridheight*winh,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='left', anchor_y='top',
+                                        multiline=True,
+                                        batch=self.batch, group=self.foreground)
+
+    def init_logo(self,logo):
+        winw, winh=self.window.get_size()
         # add a logo box
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,os.path.dirname(__file__),
@@ -930,6 +947,14 @@ class SelectionGridScreen(Screen):
                             scale_x=self.window.width*.1/logo.width, 
                             scale_y=self.window.height*.1/logo.height)
 
+    def init_opto(self):
+        winw, winh=self.window.get_size()
+        # add opto-sensor block
+        img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(1, 1)
+        self.opto_sprite=pyglet.sprite.Sprite(img, x=0, y=winh*.9,
+                                              batch=self.batch, group=self.background)
+        self.opto_sprite.update(scale_x=int(winw*.1), scale_y=int(winh*.1))
+        self.opto_sprite.visible=False
 
     def is_done(self):
         if self.isDone:
