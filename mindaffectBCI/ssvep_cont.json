@@ -30,7 +30,7 @@
         "feedbackduration":1,
         "bgFraction":0.1,
         "fullscreen":false,
-        "fullscreen_stimulus":false,
+        "fullscreen_stimulus":true,
         "simple_calibration":true,
         "optosensor":true, 
         "host":"-"
