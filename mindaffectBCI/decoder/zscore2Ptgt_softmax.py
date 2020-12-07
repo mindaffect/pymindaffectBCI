@@ -175,7 +175,7 @@ def append_block_perm_f(f,n):
     return tmp
 
 def calibrate_softmaxscale(f, validTgt=None, 
-                           scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50), 
+                           scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50,100), 
                            MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, 
                            nocontrol_condn=.5, n_virt_outputs=-30):
     '''

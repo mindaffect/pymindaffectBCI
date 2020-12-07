@@ -36,6 +36,9 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "dec" - when value is decreasing
         "diff" - when value is different
         "new" - new value when value has changed
+        "incXXX" - increasing faster than threshold XXX
+        "decXXX" - decreasing faster than threshold XXX
+        "diffXXX" - difference larger than threshold XXX
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
      oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
 
@@ -110,20 +113,36 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         # 4-bit
         elif etype == "0110" or etype == 'long':
             F = equals_subarray(M, [0, 1, 1, 0], axis)
-        # diff
-        elif etype == 'inc': # increasing
-            F = np.diff(M, axis=axis, append=pad) > 0
 
-        elif etype == 'dec': # decreasing
-            F = np.diff(M, axis=axis, append=pad) < 0
+        # continuous values
+        elif etype.startswith('inc'): # increasing
+            thresh = float(etype[3:]) if len(etype)>3 else 0
+            F = np.diff(M, axis=axis, append=pad) > thresh
 
-        elif etype == "diff": # changing
-            F = np.diff(M, axis=axis, append=pad) != 0
+        elif etype.startswith('dec'): # decreasing
+            thresh = float(etype[3:]) if len(etype)>3 else 0
+            F = np.diff(M, axis=axis, append=pad) < -thresh
 
-        elif etype == "new" or etype=='step': # new value
-            tmp = np.diff(M, axis=axis, append=pad) == 0
+        elif etype.startswith("diff"): # changing
+            thresh = float(etype[4:]) if len(etype)>4 else 0
+            F = np.abs(np.diff(M, axis=axis, append=pad)) >= thresh
+
+        elif etype.startswith("new") or etype=='step': # new value
+            thresh = float(etype[3:]) if len(etype)>3 else 0
+            tmp = np.abs(np.diff(M, axis=axis, append=pad)) <= thresh
             F = M.copy()
             F[tmp]=0
+
+        elif etype.startswith('cross'):
+            thresh = float(etype[5:]) if len(etype)>5 else 0
+            if axis==M.ndim-2:
+                tmp = np.logical_and(M[...,:-1,:]<=thresh, thresh<M[...,1:,:]) 
+            elif axis==M.ndim-1:
+                tmp = np.logical_and(M[...,:-1]<=thresh, thresh<M[...,1:])
+            else:
+                raise ValueError("cross feature only for axis==-2 or axis==-1, not {}".format(axis))
+            # ensure is the right size
+            F =  np.append(tmp,np.zeros(pad.shape,dtype=tmp.dtype),axis=axis)
 
         elif etype == 'grad': # gradient of the stimulus
             F = np.diff(M,axis=axis, append=pad)
@@ -192,6 +211,9 @@ def testcase():
     e = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
     e = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
     e = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
+    e = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
+    e = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
+    e = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
     e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
     e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
     e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))

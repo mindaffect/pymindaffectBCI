@@ -52,9 +52,9 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         ssFy = np.zeros(Fy.shape[:-2]+(1,Fy.shape[-1]),dtype=Fy.dtype)
         return ssFy, None, 0, None, None
 
-    print('args={}'.format(dict(marginalizemodels=marginalizemodels,normSum=normSum,
-                            detrendFy=detrendFy,centFy=centFy,nEpochCorrection=nEpochCorrection,
-                            priorsigma=priorsigma)))
+    # print('args={}'.format(dict(marginalizemodels=marginalizemodels,normSum=normSum,
+    #                         detrendFy=detrendFy,centFy=centFy,nEpochCorrection=nEpochCorrection,
+    #                         priorsigma=priorsigma)))
 
     # compress out the model dimension
     # Fyshape = Fy.shape # (nM,nTrl,nEp,nY)

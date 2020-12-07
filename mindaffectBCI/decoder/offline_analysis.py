@@ -27,12 +27,9 @@ import matplotlib.pyplot as plt
 # last file saved to default save location
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-#savefile = '~/Desktop/mark/mindaffectBCI*1531_linux.txt'
-#savefile = '~/Desktop/khash/mindaffectBCI*1531_linux.txt'
-#savefile = '~/Desktop/mark/mindaffectBCI_brainflow_android_200916_1148.txt' # p-val bug
-#savefile = '~/Desktop/mark/mindaffectBCI_noisetag_bci_*1319_ganglion.txt' # score bug
+savefile = '~/Desktop/mark/mindaffectBCI_*ssvep_cont*1330.txt'
 
-savefile = '~/Downloads/mindaffectBCI*.txt'
+#savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
@@ -46,13 +43,13 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 
 # train *only* on 1st 10 trials
 #score, dc, Fy, clsfr = analyse_dataset(X, Y, coords,
-#                        cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca',
+#                        test_idx=slice(10,None), tau_ms=450, evtlabs=('fe','re'), rank=1, model='cca',
 #                        ranks=(1,2,3,5), prediction_offsets=(-1,0,1), priorweight=200, startup_correction=0, 
 #                        bwdAccumulate=True, minDecisLen=0)
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         cv=[(slice(10),slice(10,None))], tau_ms=450, evtlabs=('fe','re'), model='cca', 
-                         ranks=(1,2,3,5), prediction_offsets=(0), priorweight=200, startup_correction=50, 
+                         test_idx=slice(10,None), tau_ms=450, evtlabs=('cross100'), model='cca', 
+                         ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=0, 
                          bwdAccumulate=False, minDecisLen=0)
 plt.show()
 
@@ -62,7 +59,7 @@ try:
 except:
     print("problem saving the scores..")
 
-sys.exit(0)
+quit()
 
 
 # test the auto-offset compensation

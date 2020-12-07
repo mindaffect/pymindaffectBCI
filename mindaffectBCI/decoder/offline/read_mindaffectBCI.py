@@ -26,7 +26,7 @@ def read_StimulusEvent(line:str):
     stiminfo = res['stimstate'].replace('{','').replace('}',',')
     stiminfo = np.fromstring(stiminfo, sep=',', dtype=int)
     objIDs = stiminfo[0::2]
-    stimstate = stiminfo[1::2]
+    stimstate = [ s if s>=0 else s+256 for s in stiminfo[1::2] ]  # signed->unsigned conversion 
     #print("SE ts:{} objIDs:{} state:{}".format(ts,objIDs,stimstate))
     return StimulusEvent(ts,objIDs,stimstate)
     

@@ -106,9 +106,9 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_id
         test_ind = np.zeros((X.shape[0],),dtype=bool)
         test_ind[test_idx] = True
         train_ind = np.logical_not(test_ind)
+        print("Training Idx: {}\nTesting Idx :{}\n".format(np.flatnonzero(train_ind),np.flatnonzero(test_ind)))
         X_train = X[train_ind,...]
         Y_train = Y[train_ind,...]
-        retrain_on_all = True
 
     # fit the model
     if cv:
@@ -430,10 +430,11 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
 
     # plot all Y-true
     Ytrue=Y[...,0]
+    yscale = np.max(np.abs(Ytrue.ravel()))
     plt.figure(99);plt.clf()
-    plt.plot(Ytrue.T/2 + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/2/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
-    plt.xlabel('time (samples)')
+    plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
 
     # fit the model
@@ -638,7 +639,7 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
                 fig.add_subplot(gs[row,:], sharex=botax)
             plt.plot(times,Fy[ti,:,:], color='.5')
             plt.plot(times,Fy[ti,:,0],'k-')
-            if hi==h-1: # only bottom plots
+            if hi==h-1 and Py is None: # only bottom plots
                 plt.xlabel('time ({})'.format(xunit))
             else:
                 plt.gca().set_xticklabels(())
