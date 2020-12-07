@@ -9,7 +9,10 @@ You can run the BCI in different modes by specifying different arguments on the 
 Alternative Amplifiers
 ----------------------
 
-This online_bci uses `brainflow <http://brainflow.org>`_ by default for interfacing with the EEG amplifier.  Specificially the file in `examples\ acquisition\ utopia_brainflow.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_brainflow.py>`_ is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the `brainflow documentation <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_.
+Brainflow supported
++++++++++++++++++++
+
+This online_bci uses `brainflow <http://brainflow.org>`_ by default for interfacing with the EEG amplifier.  Specificially the file in `examples\\acquisition\\utopia_brainflow.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_brainflow.py>`_ is used to setup the brainflow connection.  You can check in this file to see what options are available to configure different amplifiers.   In particular you should setup the `board_id` and and additional parameters as discussed in the `brainflow documentation <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_.
 
 You can specify the configuration for your amplifer in the `acq_args` section of the configuration file `online_bci.json <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/online_bci.json>`_.  For example to specify to use the brainflow simulated board use
 
@@ -25,6 +28,22 @@ Or to use the openBCI Cyton on com-port 4
        "board_id":0,
        "serial_port":"COM4"
     }
+
+Non-Brainflow
++++++++++++++
+
+Alternatively, thanks to valuable support from their developers, we support some non-brainflow amplifiers 'out-of-the-box', specifically;
+ * BrainProducts `LiveAmp <https://www.brainproducts.com/products_by_type.php?tid=1>`_: using `--acquisition LiveAmp`, see `examples\\acquisition\\utopia_brainproducts.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCIexamples/acquisition/utopia_brainproducts.py>`_ for the configuration options.
+ * ANT-NEURO `EEGO <https://www.ant-neuro.com/products/eego_product_family>`_: using `--acquisition eego`, see `examples\\acquisition\\utopia_eego.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCIexamples/acquisition/utopia_eego.py>`_ for the configuration options.
+ * TMSi `Mobita <https://shop.tmsi.com/product-tag/mobita>`_: using `--acquisition mobita`, see `examples\\acquisition\\utopia_mobita.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_mobita.py>`_ for the configuration options.
+
+We are also happy to add support for additional amplifiers if EEG makers request it and are willing to provide open-source SDKs and test hardware.
+
+Add your own AMP support
+++++++++++++++++++++++++
+
+If you have an amp which is not currently supported, and you have a way of getting raw samples out of it, then you can easily (7 lines of Python!) add support for your device as described in the `Add a new Amplifier <https://mindaffect-bci.readthedocs.io/en/latest/add_a_new_amplifier.html>`_ tutorial.
+
 
 Alternative BCI types / Stimulus
 --------------------------------
