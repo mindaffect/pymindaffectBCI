@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 # last file saved to default save location
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-savefile = '~/Desktop/mark/mindaffectBCI_*ssvep_cont*1330.txt'
+savefile = '~/Desktop/mark/mindaffectBCI_*ssvep_bci*.txt'
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'
 
@@ -36,7 +36,7 @@ files = glob.glob(os.path.expanduser(savefile));
 savefile = max(files, key=os.path.getctime)
 
 # load
-X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5.5,25,'bandpass')), order=6, ftype='butter', fs_out=100)
+X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), order=6, ftype='butter', fs_out=100)
 # output is: X=eeg, Y=stimulus, coords=meta-info about dimensions of X and Y
 print("EEG: X({}){} @{}Hz".format([c['name'] for c in coords],X.shape,coords[1]['fs']))
 print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.shape))
@@ -48,8 +48,8 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 #                        bwdAccumulate=True, minDecisLen=0)
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         test_idx=slice(10,None), tau_ms=450, evtlabs=('cross100'), model='cca', 
-                         ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=0, 
+                         test_idx=slice(20,None), tau_ms=450, evtlabs=('re'), model='cca', 
+                         ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=50, 
                          bwdAccumulate=False, minDecisLen=0)
 plt.show()
 

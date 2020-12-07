@@ -9,7 +9,7 @@
     "decoder_args":{
         "stopband" : [[45,65],[5,25,"bandpass"]],
         "out_fs" : 100,
-        "evtlabs" : ["raw"],
+        "evtlabs" : ["cross100"],
         "tau_ms" : 450,
         "calplots" : true,
         "predplots" : true

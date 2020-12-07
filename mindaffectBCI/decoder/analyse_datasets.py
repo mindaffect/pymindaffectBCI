@@ -428,14 +428,27 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
 
-    # plot all Y-true
+    # plot all Y-true & encoded version
     Ytrue=Y[...,0]
     yscale = np.max(np.abs(Ytrue.ravel()))
     plt.figure(99);plt.clf()
+    plt.subplot(121)
     plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/2/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
+    plt.title('Y-raw')
     plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
+    plt.subplot(122)
+    Ytrueevt=Yevt[...,0,:] #(nTr,nSamp,nE)
+    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
+    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
+    yscale = np.max(np.abs(Ytrueevt.ravel()))
+    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+    plt.grid(True)
+    plt.title('Yevt {}'.format(evtlabs))
+    plt.xlabel('time (seconds)')
+    plt.ylabel('Trial#')
+
 
     # fit the model
     # override with direct keyword arguments
