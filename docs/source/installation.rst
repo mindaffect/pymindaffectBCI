@@ -58,7 +58,8 @@ To install from source:
     2. Add this module to the python path, and install dependencies::
   
          pip install -e .
-
+    Note: The "." after "-e" should be included in the command!
+	
 To install as a python library. (Note: installing from source is recommended as you can directly access the examples and configuration files.)::
 
 	pip install --upgrade mindaffectBCI
@@ -67,7 +68,12 @@ Installation Check
 ****************
 
 As a quick check if the software has installed correctly into your python environment you can run::
-               python3 -m mindaffectBCI.online_bci --acquisition fakedata
+
+     python3 -m mindaffectBCI.online_bci --acquisition fakedata
+
+Note: depending on the specifics of your python installation, you may have to ommit the 3 from the command::
+
+	 python -m mindaffectBCI.online_bci --acquisition fakedata	
 
 If all is successfully installed then you should see a window like this open up::
      .. image :: images/mainmenu.png
@@ -85,8 +91,12 @@ However, as the graphics performance of computers varies widely it is hard to kn
 To help with this we also provide a graphics performance checker, which will validate that your graphics system is correctly configured.
 You can run this with::
  
-           	python3 -m mindaffectBCI.examples.presentation.framerate_check
-           	
+     python3 -m mindaffectBCI.examples.presentation.framerate_check
+	 
+or::
+       
+	 python -m mindaffectBCI.examples.presentation.framerate_check   
+			
 As this runs it will show in a window your current graphics frame-rate and, more importantly, the variability in the frame times.
 For good BCI performance this jitter should be <1ms. If you see jitter greater than this you should probably adjust your graphics card settings.
 The most important setting to consider is to be sure that you have `vsync <https://en.wikipedia.org/wiki/Screen_tearing#Vertical_synchronization>`_ turned-on.
