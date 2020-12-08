@@ -35,6 +35,7 @@ ss = None
 nframe = None
 isi = 1/60
 drawrate = 0  # rate at which draw is called
+configmsg = None
 
 class Screen:
 
@@ -1146,8 +1147,8 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window, noisetag, symbols, nCal:int=1, nPred:int=1, 
-                 calibration_trialduration=4.2, prediction_trialduration=10,  waitduration=1, feedbackduration=2,
+    def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=1, nPred:int=1, 
+                 calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, bgFraction=.1,
@@ -1226,6 +1227,10 @@ class ExptScreenManager(Screen):
         if self.stage==self.ExptPhases.MainMenu: # main menu
             if self.fullscreen_stimulus==True :
                 self.window.set_fullscreen(fullscreen=False)
+            global configmsg
+            if configmsg is not None:
+                self.noisetag.log(configmsg)
+                configmsg = None
 
             print("main menu")
             self.menu.reset()
@@ -1562,6 +1567,10 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
         calibration_args (dict, optional): additional keyword arguments to pass to `noisetag.startCalibration`. Defaults to None.
         prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
     """
+    # log the config
+    global configmsg
+    configmsg = "{}".format(dict(component=__file__, args=locals()))
+
     global nt, ss, window
     # N.B. init the noise-tag first, so asks for the IP
     if stimfile is None:

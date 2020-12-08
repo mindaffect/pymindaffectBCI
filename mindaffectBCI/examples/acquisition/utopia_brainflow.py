@@ -49,6 +49,8 @@ client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
          serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0,samplingFrequency=0):
     global board, client
+    # log the config
+    configmsg = "{}".format(dict(component=__file__, args=locals()))
 
     # init the board params
     params = BrainFlowInputParams ()
@@ -92,6 +94,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
+    # log the config
+    client.sendMessage(utopiaclient.Log(None, configmsg))
     print("Putting header.")
     client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
 

@@ -18,7 +18,7 @@
 
 import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
-from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb
+from mindaffectBCI.utopiaclient import NewTarget, Selection, ModeChange, PredictedTargetDist, PredictedTargetProb, Log
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
 from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
@@ -758,6 +758,8 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
     global CALIBRATIONPLOTS, PREDICTIONPLOTS, UNAME, LOGDIR
     CALIBRATIONPLOTS = calplots
     PREDICTIONPLOTS = predplots
+    # log the decoder config
+    configmsg="{}".format(dict(component="decoder", args=locals()))
 
     # setup the saving label
     from datetime import datetime 
@@ -789,7 +791,9 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
                                  timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
     ui.update()
-    
+    # log the config
+    ui.sendMessage(Log(None,configmsg))
+
     # use a multi-cca for the model-fitting
     if clsfr is None:
         if isinstance(evtlabs,str): # decode string coded spec
