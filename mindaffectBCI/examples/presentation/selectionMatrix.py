@@ -703,7 +703,8 @@ class SelectionGridScreen(Screen):
 
     def __init__(self, window, symbols, noisetag, objIDs=None,
                  bgFraction:float=.2, instruct:str="", 
-                 clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, optosensor:bool=True, 
+                 clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, 
+                 optosensor:bool=True, 
                  target_only:bool=False, show_correct:bool=True,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
                  logo:str='MindAffect_Logo.png'):
@@ -856,36 +857,43 @@ class SelectionGridScreen(Screen):
         self.background = pyglet.graphics.OrderedGroup(0)
         self.foreground = pyglet.graphics.OrderedGroup(1)
 
+        cellh = winh/(self.gridheight+1)
+        # init the symbols list
+        self.init_symbols(symbols, 0, 0, winw, cellh*self.gridheight, bgFraction )
+        # add the other bits
+        self.init_opto()
+        self.init_sentence(sentence, winw*.15, winh - cellh, winw*.7, cellh )
+        self.init_framerate()
+        self.init_logo(logo)
+
+    def init_symbols(self, symbols, x, y, w, h, bgFraction=.1, font_size=32):
         # now create the display objects
-        w=winw/self.gridwidth # cell-width
-        bgoffsetx = w*bgFraction
-        h=winh/self.gridheight # cell-height
-        bgoffsety = h*bgFraction
+        sw = int(w/self.gridwidth) # cell-width
+        bgoffsetx = int(sw*bgFraction) # offset within cell for the button
+        sh = int(h/self.gridheight) # cell-height
+        bgoffsety = int(sh*bgFraction) # offset within cell for the button
         idx=-1
         for i in range(len(symbols)): # rows
-            y = (self.gridheight-1-i-1)/self.gridheight*winh # top-edge cell
+            sy = y + (self.gridheight-1-i-1)*sh # top-edge symbol
             for j in range(len(symbols[i])): # cols
                 # skip unused positions
                 if symbols[i][j] is None or symbols[i][j]=="": continue
                 idx = idx+1
                 symb = symbols[i][j]
-                x = j/self.gridwidth*winw # left-edge cell
-                self.objects[idx], self.labels[idx] = self.init_target(symb, x+bgoffsetx, y+bgoffsety, int(w-bgoffsetx*2), int(h-bgoffsety*2))
+                sx = x + j*sw # left-edge symbol
+                self.objects[idx], self.labels[idx] = self.init_target(symb, 
+                                                       sx+bgoffsetx, sy+bgoffsety, 
+                                                       int(sw-bgoffsetx*2), int(sh-bgoffsety*2),
+                                                       font_size=font_size)
 
-        # add the other bits
-        self.init_opto()
-        self.init_sentence(sentence)
-        self.init_framerate()
-        self.init_logo(logo)
-
-    def init_target(self, symb, x, y, w, h):
+    def init_target(self, symb, x, y, w, h, font_size):
         sprite = self.init_sprite(symb, x, y, w, h)
-        label = self.init_label(symb, x, y, w, h)
+        label = self.init_label(symb, x, y, w, h, font_size)
         return sprite, label
 
-    def init_label(self, symb, x, y, w, h):
+    def init_label(self, symb, x, y, w, h, font_size=32):
         # add the foreground label for this cell, and add to drawing batch
-        label=pyglet.text.Label(symb, font_size=32, x=x+w/2, y=y+h/2,
+        label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
                                 color=(255, 255, 255, 255),
                                 anchor_x='center', anchor_y='center',
                                 batch=self.batch, group=self.foreground)
@@ -916,14 +924,9 @@ class SelectionGridScreen(Screen):
                                         anchor_x='right', anchor_y='top',
                                         batch=self.batch, group=self.foreground)
 
-    def init_sentence(self,sentence):
-        winw, winh=self.window.get_size()
-        # add the sentence box
-        y = winh # top-edge cell
-        x = winw*.15 # left-edge cell
-        self.sentence=pyglet.text.Label(sentence, font_size=32, 
-                                        x=x, y=y, 
-                                        width=winw-x-winw*.1, height=(self.gridheight-1)/self.gridheight*winh,
+    def init_sentence(self,sentence, x, y, w, h, font_size=32):
+        self.sentence=pyglet.text.Label(sentence, font_size=font_size, 
+                                        x=x, y=y, width=w, height=h,
                                         color=(255, 255, 255, 255),
                                         anchor_x='left', anchor_y='top',
                                         multiline=True,
@@ -1124,6 +1127,8 @@ class ExptScreenManager(Screen):
     predictionInstruct="Prediction\n\nThe next stage is free PREDICTION\nLook at the letter you want to select\nLive BCI feedback in blue\n\nkey to continue"
     closingInstruct="Closing\nThankyou\n\nPress to exit"
     resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
+    calibrationSentence='Calibration: look at the green cue.'
+    predictionSentence='CuedPrediction: look at the green cue.\n'
 
     main_menu_header ="Welcome to the mindaffectBCI" +"\n"+ \
                "\n"+ \
@@ -1281,7 +1286,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=False
             self.selectionGrid.target_only=self.simple_calibration
-            self.selectionGrid.set_sentence('Calibration: look at the green cue.')
+            self.selectionGrid.set_sentence(self.calibrationSentence)
 
             self.calibration_args['framesperbit'] = self.framesperbit
             self.calibration_args['numframes'] = self.calibration_trialduration / isi
@@ -1316,7 +1321,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.setliveSelections(True)
             self.selectionGrid.target_only=False
             self.selectionGrid.show_correct=True
-            self.selectionGrid.set_sentence('CuedPrediction: look at the green cue.\n')
+            self.selectionGrid.set_sentence(self.predictionSentence)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi

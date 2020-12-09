@@ -2,7 +2,7 @@ from mindaffectBCI import utopiaclient
 from pylsl import StreamInlet, resolve_stream
 from mindaffectBCI.utopiaclient import UtopiaClient
 
-def run(client:UtopiaClient=None, host:str=None, inlet:StreamInlet=None, stream_type="Markers"):
+def run(client:UtopiaClient=None, host:str=None, inlet:StreamInlet=None, stream_type:str="Markers"):
     if client is None:
         client = UtopiaClient()
         # resolve and connect to the utopia hub
@@ -53,7 +53,6 @@ def lslsample2stimulusevent(sample,timestamp,markerdict):
         objIDs.append(si)
         stimState.append(ss)
     return utopiaclient.StimulusEvent(timestamp,objIDs,stimState)
-
 
 
 if __name__=="__main__":

@@ -1,0 +1,28 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"none",
+
+    "presentation":"mindaffectBCI.examples.presentation.visual_acuity",
+    "presentation_args":{
+        "ncal":50,
+        "npred":10,
+        "selectionThreshold":0.01,
+        "symbols":"visual_acuity.txt",
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "calibration_trialduration":10,
+        "calibration_args":{"permute":true},
+        "prediction_args":{"permute":true},
+        "bgFraction":0,
+        "gridfraction":0.1,
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "optosensor":false,
+        "host":"-"
+    }
+}
