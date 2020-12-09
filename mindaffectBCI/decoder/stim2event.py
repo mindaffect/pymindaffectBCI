@@ -36,6 +36,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "dec" - when value is decreasing
         "diff" - when value is different
         "new" - new value when value has changed
+        "ave" - average stim value over all outputs
         "incXXX" - increasing faster than threshold XXX
         "decXXX" - decreasing faster than threshold XXX
         "diffXXX" - difference larger than threshold XXX
@@ -130,6 +131,11 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
             F = M[...,np.newaxis] == vals.reshape((1,)*M.ndim+(vals.size,))
 
         # continuous values
+        elif etype == "ave":
+            if not axis == M.ndim-2:
+                raise ValueError("ave only for axis==-2")
+            F = np.mean(M, axis=axis+1, keepdims=True)[...,np.newaxis].astype(np.float32)
+
         elif etype.startswith('inc'): # increasing
             thresh = float(etype[3:]) if len(etype)>3 else 0
             F = np.diff(M, axis=axis, append=pad) > thresh
@@ -201,11 +207,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 
         if F.shape == M.shape:
             E[..., ei] = F
-        elif F.shape[:-1] == M.shape:
-            if len(evtypes)==1:
-                E = F.astype(M.dtype)
-            else:
-                raise ValueError("Cant (currently) mix direct and indirect encodings")
+        elif len(evtypes)==1:
+            E = F
+        else:
+            raise ValueError("Cant (currently) mix direct and indirect encodings")
 
     if oM is not None:
         # strip the prefix

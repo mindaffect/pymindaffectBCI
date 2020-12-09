@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 # last file saved to default save location
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-savefile = '~/Desktop/mark/mindaffectBCI_*ssvep_bci*.txt'
+savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'
 
@@ -48,7 +48,7 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 #                        bwdAccumulate=True, minDecisLen=0)
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         test_idx=slice(20,None), tau_ms=450, evtlabs=('re'), model='cca', 
+                         test_idx=slice(20,None), tau_ms=450, evtlabs=('ave'), model='cca', 
                          ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=50, 
                          bwdAccumulate=False, minDecisLen=0)
 plt.show()

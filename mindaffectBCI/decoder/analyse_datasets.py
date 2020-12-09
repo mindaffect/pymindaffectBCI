@@ -431,14 +431,14 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # plot all Y-true & encoded version
     Ytrue=Y[...,0]
     yscale = np.max(np.abs(Ytrue.ravel()))
-    plt.figure(99);plt.clf()
-    plt.subplot(121)
+    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
+    plt.sca(YrawAx)
     plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/2/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
     plt.title('Y-raw')
     plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
-    plt.subplot(122)
+    plt.sca(YevtAx)
     Ytrueevt=Yevt[...,0,:] #(nTr,nSamp,nE)
     Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
     Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
@@ -642,7 +642,10 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
                 if wi==0: # only left-most-plots
                     plt.ylabel('Fe')
                 plt.gca().set_yticklabels(())
-                plt.ylim((Felim[0],Felim[1]+Fe.shape[-1]-1))
+                try:
+                    plt.ylim((Felim[0],Felim[1]+Fe.shape[-1]-1))
+                except:
+                    pass
 
             # Fy
             if Py is None:
@@ -660,7 +663,10 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
                 plt.ylabel("Fy")
             plt.grid(True)
             plt.gca().set_yticklabels(())
-            plt.ylim(Fylim)
+            try:
+                plt.ylim(Fylim)
+            except:
+                pass
 
             # Py (if given)
             if Py is not None:
