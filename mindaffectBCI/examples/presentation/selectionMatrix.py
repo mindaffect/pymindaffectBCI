@@ -1600,7 +1600,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
+                        optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         extra_symbols=extra_symbols,
                         bgFraction=bgFraction, 
                         calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
