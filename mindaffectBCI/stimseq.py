@@ -139,7 +139,7 @@ class StimSeq :
         array=[]
         nEmpty=0
         for line in f:
-            line = line.strip();
+            line = line.strip()
             if len(line)==0 :
                 nEmpty += 1
                 if nEmpty>1 and len(array)>0 : break # double empty means end-of-array
@@ -148,7 +148,7 @@ class StimSeq :
             cols = line.split()
             if width<0 : width=len(line)
             elif width>0 and not len(cols) == width : 
-                raise Exception
+                raise ValueError("number of columns unequal {}!={}".format(width,len(cols)))
             cols = [ float(c) for c in cols ] # convert string to numeric
             array.append(cols) # add to the stimSeq
         return array
@@ -334,6 +334,7 @@ def mkCodes():
 
 # testcase code
 if __name__ == "__main__":
+    ss = StimSeq.fromFile("vep_threshold.txt")
     # loading text version
     print(("gold(txt): " + str(StimSeq.fromFile("mgold_65_6532_psk_60hz.txt"))))
 

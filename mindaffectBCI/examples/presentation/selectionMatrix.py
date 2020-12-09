@@ -1639,6 +1639,6 @@ if __name__ == "__main__":
     args = parse_args()
     setattr(args,'symbols',[['yes','no','<-']])
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
-    setattr(args,'stimfile','ssvep_cont.txt')
+    setattr(args,'stimfile','vep_threshold.txt')
     run(**vars(args))
 
