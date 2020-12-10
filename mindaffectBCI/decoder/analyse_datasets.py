@@ -433,7 +433,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     yscale = np.max(np.abs(Ytrue.ravel()))
     fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
     plt.sca(YrawAx)
-    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/2/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
     plt.title('Y-raw')
     plt.xlabel('time (seconds)')

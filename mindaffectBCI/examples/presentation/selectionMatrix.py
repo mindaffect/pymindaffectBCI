@@ -844,7 +844,7 @@ class SelectionGridScreen(Screen):
         if logo is None:
             logo = self.logo
         # get size of the matrix
-        self.gridheight  = len(symbols) + 1 # extra row for sentence
+        self.gridheight  = len(symbols) # extra row for sentence
         self.gridwidth = max([len(s) for s in symbols])
         self.ngrid      = self.gridwidth * self.gridheight
 
@@ -857,12 +857,12 @@ class SelectionGridScreen(Screen):
         self.background = pyglet.graphics.OrderedGroup(0)
         self.foreground = pyglet.graphics.OrderedGroup(1)
 
-        cellh = winh/(self.gridheight+1)
-        # init the symbols list
-        self.init_symbols(symbols, 0, 0, winw, cellh*self.gridheight, bgFraction )
+        # init the symbols list -- using the bottom 90% of the screen
+        self.init_symbols(symbols, 0, 0, winw, winh*.9, bgFraction )
         # add the other bits
         self.init_opto()
-        self.init_sentence(sentence, winw*.15, winh - cellh, winw*.7, cellh )
+        # sentence in top 10% of screen
+        self.init_sentence(sentence, winw*.15, winh, winw*.7, winh*.1 )
         self.init_framerate()
         self.init_logo(logo)
 
@@ -874,7 +874,7 @@ class SelectionGridScreen(Screen):
         bgoffsety = int(sh*bgFraction) # offset within cell for the button
         idx=-1
         for i in range(len(symbols)): # rows
-            sy = y + (self.gridheight-1-i-1)*sh # top-edge symbol
+            sy = y + (self.gridheight-i-1)*sh # top-edge symbol
             for j in range(len(symbols[i])): # cols
                 # skip unused positions
                 if symbols[i][j] is None or symbols[i][j]=="": continue
@@ -1128,7 +1128,8 @@ class ExptScreenManager(Screen):
     closingInstruct="Closing\nThankyou\n\nPress to exit"
     resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
     calibrationSentence='Calibration: look at the green cue.'
-    predictionSentence='CuedPrediction: look at the green cue.\n'
+    cuedpredictionSentence='CuedPrediction: look at the green cue.\n'
+    predictionSentence='Your Sentence:\n'
 
     main_menu_header ="Welcome to the mindaffectBCI" +"\n"+ \
                "\n"+ \
@@ -1301,6 +1302,7 @@ class ExptScreenManager(Screen):
             if self.fullscreen_stimulus==True :
                 self.window.set_fullscreen(fullscreen=True)
             self.results.reset()
+            self.results.waitKey=True
             self.screen=self.results
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1321,7 +1323,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.setliveSelections(True)
             self.selectionGrid.target_only=False
             self.selectionGrid.show_correct=True
-            self.selectionGrid.set_sentence(self.predictionSentence)
+            self.selectionGrid.set_sentence(self.cuedpredictionSentence)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
@@ -1347,7 +1349,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.target_only=False
             self.selectionGrid.show_correct=False
-            self.selectionGrid.set_sentence('')
+            self.selectionGrid.set_sentence(self.predictionSentence)
             self.selectionGrid.setliveSelections(True)
 
             self.prediction_args['framesperbit'] = self.framesperbit
