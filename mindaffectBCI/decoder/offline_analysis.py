@@ -27,8 +27,8 @@ import matplotlib.pyplot as plt
 # last file saved to default save location
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
-savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
-
+savefile = '~/Desktop/mark/mindaffectBCI_*vep_threshold_*.txt'
+savefile = '~/Desktop/logs/mindaffectBCI*.txt'
 #savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
@@ -47,8 +47,10 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 #                        ranks=(1,2,3,5), prediction_offsets=(-1,0,1), priorweight=200, startup_correction=0, 
 #                        bwdAccumulate=True, minDecisLen=0)
 
+test_idx = None # slice(10,None)
+cv= False # True
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         test_idx=slice(20,None), tau_ms=450, evtlabs=('ave'), model='cca', 
+                         test_idx=test_idx, cv=cv, tau_ms=650, evtlabs=('hot-on'), model='cca', 
                          ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=50, 
                          bwdAccumulate=False, minDecisLen=0)
 plt.show()

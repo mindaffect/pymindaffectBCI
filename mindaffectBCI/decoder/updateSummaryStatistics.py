@@ -416,7 +416,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
             plt.tick_params(labelbottom=False, labelleft=False)
         plt.imshow(Cxy[ei, :, :].T, aspect='auto', origin='lower', extent=(times[0], times[-1], 0, Cxy.shape[-1]))
         # TODO []: use the ch_names to add lables to the  axes
-        plt.title('{}'.format(evtlabs[ei]))
+        plt.title('{}'.format(evtlabs[min(len(evtlabs),ei)]))
     # only last one has colorbar
     plt.colorbar()
 
