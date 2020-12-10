@@ -14,7 +14,7 @@
         "selectionThreshold":0.0,
         "symbols":["+"],
         "calibration_stimfile":"rc5x5.txt",
-        "stimfile":"ssvep_cont.txt",
+        "stimfile":"level11_cont.txt",
         "calibration_trialduration":4,
         "prediction_trialduration":10,
         "calibration_args":{"permute":true},
