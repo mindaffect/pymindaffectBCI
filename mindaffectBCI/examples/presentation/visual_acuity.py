@@ -100,7 +100,7 @@ def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  pred
     ss.calibrationSentence = 'Look at the *RED* cross'
     ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
     ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
-    ss.cuedpredictionSentence = "Testing\n\nFocus on the *RED*"
+    ss.predictionSentence = "Testing\n\nFocus on the *RED* +"
 
     # run the app
     selectionMatrix.run_screen(ss)
