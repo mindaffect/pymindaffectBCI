@@ -53,10 +53,10 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
         self.fixation.color = (255,0,0,255)
 
 
-def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, stimfile=None, selectionThreshold:float=.1,
+def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration:float=20, stimfile:str=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=0,
-        calibration_args:dict=None, prediction_args:dict=None, extra_symbols=None, gridfraction=.1): 
+        calibration_args:dict=None, prediction_args:dict=None, extra_symbols=None, gridfraction=.1, calibration_stimfile:str=None): 
     """ run the selection Matrix with default settings
 
     Args:

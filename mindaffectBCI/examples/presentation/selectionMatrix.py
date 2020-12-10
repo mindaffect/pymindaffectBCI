@@ -1157,12 +1157,15 @@ class ExptScreenManager(Screen):
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
+                 stimseq:str=None, calibration_stimseq:str=None,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
         self.calibration_symbols = calibration_symbols if calibration_symbols is not None else symbols
+        self.stimseq = stimseq
+        self.calibration_stimseq = calibration_stimseq if calibration_stimseq is not None else stimseq
         self.bgFraction = bgFraction
         # auto-generate menu items for each prediction symbols set
         self.extra_symbols = extra_symbols
@@ -1293,6 +1296,8 @@ class ExptScreenManager(Screen):
             self.calibration_args['numframes'] = self.calibration_trialduration / isi
             self.calibration_args['selectionThreshold']=self.selectionThreshold
 
+            if self.calibration_stimseq:
+                self.selectionGrid.noisetag.set_stimSeq(self.calibration_stimseq)
             self.selectionGrid.noisetag.startCalibration(**self.calibration_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.CalResults
@@ -1329,6 +1334,8 @@ class ExptScreenManager(Screen):
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
 
+            if self.stimseq:
+                self.selectionGrid.noisetag.set_stimSeq(self.stimseq)
             self.selectionGrid.noisetag.startPrediction(cuedprediction=True, **self.prediction_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
@@ -1356,6 +1363,8 @@ class ExptScreenManager(Screen):
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
             
+            if self.stimseq:
+                self.selectionGrid.noisetag.set_stimSeq(self.stimseq)
             self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
             self.screen = self.selectionGrid
             self.next_stage = self.ExptPhases.MainMenu
@@ -1554,9 +1563,9 @@ def load_symbols(fn):
 
     return symbols
 
-def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, feedbackduration:float=2, stimfile=None, selectionThreshold:float=.1,
+def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1,
+        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
         extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
 
@@ -1564,7 +1573,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
         nCal (int, optional): number of calibration trials. Defaults to 10.
         nPred (int, optional): number of prediction trials at a time. Defaults to 10.
         simple_calibration (bool, optional): flag if we show only a single target during calibration, Defaults to False.
-        stimFile ([type], optional): the stimulus file to use for the codes. Defaults to None.
+        stimseq ([type], optional): the stimulus file to use for the codes. Defaults to None.
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
         fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
         fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
@@ -1582,11 +1591,15 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
     # N.B. init the noise-tag first, so asks for the IP
     if stimfile is None:
         stimfile = 'mgold_61_6521_psk_60hz.txt'
+    if stimseq is None:
+        stimseq = stimfile
+    if calibration_stimseq is None:
+        calibration_stimseq = stimseq
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
     if windowed == True or fullscreen == True:
         fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
+    nt=Noisetag(stimSeq=stimseq, clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 
@@ -1608,6 +1621,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2, 
     ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
+                        stimseq=stimseq, calibration_stimseq=calibration_stimseq,
                         extra_symbols=extra_symbols,
                         bgFraction=bgFraction, 
                         calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
@@ -1621,7 +1635,7 @@ def parse_args():
     parser.add_argument('ncal',type=int, help='number calibration trials', nargs='?', default=10)
     parser.add_argument('npred',type=int, help='number prediction trials', nargs='?', default=10)
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
-    parser.add_argument('--stimfile',type=str, help='stimulus file to use', default=None)
+    parser.add_argument('--stimseq',type=str, help='stimulus file to use', default=None)
     parser.add_argument('--framesperbit',type=int, help='number of video frames per stimulus bit', default=1)
     parser.add_argument('--fullscreen_stimulus',action='store_true',help='run with stimuli in fullscreen mode')
     parser.add_argument('--windowed',action='store_true',help='run in fullscreen mode')
@@ -1641,6 +1655,7 @@ if __name__ == "__main__":
     args = parse_args()
     setattr(args,'symbols',[['yes','no','<-']])
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
-    setattr(args,'stimfile','vep_threshold.txt')
+    setattr(args,'stimseq','level11_cont.txt')
+    setattr(args,'calibration_stimseq','rc5x5.txt')
     run(**vars(args))
 

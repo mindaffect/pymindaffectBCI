@@ -669,7 +669,7 @@ class Noisetag:
      2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
      3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
      '''
-    def __init__(self,stimFile=None,utopiaController=None,stimulusStateMachineStack:GSM=None,clientid:str=None):
+    def __init__(self,stimFile=None,stimSeq:StimSeq=None, utopiaController=None,stimulusStateMachineStack:GSM=None,clientid:str=None):
         """noisetag abstraction layer to handle *both* the sequencing of the stimulus flicker, *and* the communications with the Mindaffect decoder.
 
         Args:
@@ -680,11 +680,7 @@ class Noisetag:
         """        
 
         # global flicker stimulus sequence
-        if stimFile is None:  stimFile = default_stimFile
-        noisecode = StimSeq.fromFile(stimFile)
-        # binarize the result
-        noisecode.convertstimSeq2int()
-        self.noisecode=noisecode
+        self.set_stimSeq(stimFile if stimSeq is None else stimSeq)
 
         # utopiaController
         self.utopiaController = utopiaController
@@ -699,6 +695,21 @@ class Noisetag:
         self.laststate=(None,None,None,None)
         self.objIDs=None
         self.clientid=clientid
+
+    def set_stimSeq(self, stimseq:str=None):
+        if stimseq is None:  stimseq = default_stimFile
+        try:
+            stimseq = StimSeq.fromFile(stimseq)
+        except FileNotFoundError as er:
+            # is it a function to call?
+            import mindaffectBCI.stimseq
+            if hasattr(mindaffectBCI.stimseq,stimseq):
+                stimseq = getattr(mindaffectBCI.stimseq,stimseq)()
+            else:
+                raise er           
+        # binarize the result
+        stimseq.convertstimSeq2int()
+        self.noisecode=stimseq
 
     def connect(self,host:str=None,port:int=-1,queryifhostnotfound:bool=True,timeout_ms:int=5000):
         """connect to the utopia hub

@@ -290,6 +290,35 @@ def mkRowCol(width=5,height=5, repeats=10):
     return StimSeq(None,array.tolist(),None)
 
 
+def mkRandLevel(ncodes=25, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlevels=10):
+    """make a random levels stimulus -- where rand level every soa frames
+
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=float)
+
+    b = minval
+    a = (maxval-minval)/(nlevels-1)
+    nStim = len(range(0,nEvent,soa))
+    e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
+    if jitter is None or jitter==0:
+        array[::soa,:] = e
+    else: # jitter the soa
+        idx = list(range(0,nEvent,soa))
+        for ei in range(ncodes):
+            jit_idx = idx + np.random.randint(0,jitter+1,size=(nStim,)) - jitter//2
+            jit_idx = np.maximum(0,np.minimum(jit_idx,array.shape[0]-1))
+            array[jit_idx,ei] = e[:,ei]
+    return StimSeq(None,array.tolist(),None)
+
+
 def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(3,2),(4,2),(5,2),(6,2),(7,2),(8,2),(4,3),(5,3),(6,3),(7,3),(8,3),(5,4),(6,4),(7,4),(8,4),(6,5),(7,5),(8,5),(7,6),(8,6),(8,7)),nEvent=840, isbinary=True):
     """Generate a frequency tagging stimulus sequence
 
@@ -331,6 +360,16 @@ def mkCodes():
     ssvep_cont = mkFreqTag(isbinary=False)
     ssvep_cont.toFile('ssvep_cont.png')
     ssvep_cont.toFile('ssvep_cont.txt')
+
+    # random integers 0-9
+    level10 = mkRandLevel(maxval=9, nlevels=10)
+    level10.toFile('level10.png')
+    level10.toFile('level10.txt')
+
+    # random levels 0-1
+    level11_cont = mkRandLevel(nlevels=11)
+    level11_cont.toFile('level11_cont.png')
+    level11_cont.toFile('level11_cont.txt')
 
 # testcase code
 if __name__ == "__main__":
