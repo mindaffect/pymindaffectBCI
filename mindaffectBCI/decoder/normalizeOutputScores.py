@@ -282,7 +282,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
     N = N[...,decisIdx]
 
     # include the prior if needed
-    if priorsigma is not None and priorsigma[1]>0 :
+    if priorsigma is not None and priorsigma[0] is not None and priorsigma[1]>0 :
         # include the effect of the prior, sigma is weighted combo pior and data
         #  sigma'^2 = 1 / ( N_0/sigma_0^2 + N / sigma^2) 
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )

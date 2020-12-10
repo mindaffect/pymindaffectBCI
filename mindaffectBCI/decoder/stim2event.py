@@ -41,6 +41,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "decXXX" - decreasing faster than threshold XXX
         "diffXXX" - difference larger than threshold XXX
         "hot-one" - hot-one (i.e. a unique event for each stimulus level) encoding of the stimulus values
+        "hot-on" - hot-one for non-zero levels (i.e. a unique event for each stimulus level) encoding of the stimulus values
         "hotXXX" - a unique event for each level from 0-XXX
         XXX : int - stimlus level equals XXX
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
@@ -48,13 +49,14 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 
     Returns:
      evt (M.shape,nE): the computed event sequence
+     evtlabs (list-of-str) : labels for the output event types
 
     Examples:
       #For a P300 bci, with target vs. non-target response use:
         M = np.array([[1,0,0,0,0,0,1,0],[0,0,1,0,0,0,0,0],[0,0,0,0,1,0,0,0]]).T
-        E = stim2event(M,evtypes=['re','ntre'], axis=-2)
+        E,_ = stim2event(M,evtypes=['re','ntre'], axis=-2)
       #Or modeling as two responses, target-stim-response and any-stim-response
-        E = stim2event(M,evtypes=('re','anyre'), axis=-2)
+        E,_ = stim2event(M,evtypes=('re','anyre'), axis=-2)
     '''
     if axis < 0: # ensure axis is positive!
         axis=M.ndim+axis
@@ -73,8 +75,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         return E
     # single elment padding matrix    
     padshape=list(M.shape); padshape[axis] = 1; pad = np.zeros(padshape, dtype=M.dtype)
+    evtlabs=[]
     for ei, etype in enumerate(evtypes):
 
+        elab = etype
         # extract the stimulus modifier
         modifier = None
         for mod in ('nt','any','onset','offset','first','last'):
@@ -121,9 +125,12 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         elif etype == "0110" or etype == 'long':
             F = equals_subarray(M, [0, 1, 1, 0], axis)
 
-        elif etype == "hot-one":
+        elif etype == "hot-one" or etype == 'hot-on':
             vals = np.unique(M)
+            if etype=='hot-on' and vals[0]==0:
+                vals = vals[1:]
             F = M[...,np.newaxis] == vals.reshape((1,)*M.ndim+(vals.size,))
+            elab = vals  # labs are now the values used
 
         elif etype.startswith("hot"):
             n = int(etype[3:]) if len(etype)>3 else 0
@@ -205,12 +212,15 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
             F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
             F[F>1] = 0 # zero out if more than 1 stimulus since trial start
 
-        if F.shape == M.shape:
+        if F.shape == M.shape or F.shape[:-1] == M.shape[:-1]: # or can scale up to same size
             E[..., ei] = F
+            evtlabs.append(elab)
         elif len(evtypes)==1:
-            E = F
+            E = F.astype(E.dtype)
+            evtlabs.extend(elab)
         else:
             raise ValueError("Cant (currently) mix direct and indirect encodings")
+        
 
     if oM is not None:
         # strip the prefix
@@ -220,7 +230,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         # get  the postfix
         E = E[tuple(idx)]
     #print("E.dtype={}".format(E.dtype))
-    return E
+    return E, evtlabs
 
 def testcase():
     from stim2event import stim2event
@@ -229,31 +239,31 @@ def testcase():
                   [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]])
     
     print("Raw  :{}".format(M))
-    e = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
-    e = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))
-    e = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
-    e = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
-    e = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
-    e = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
-    e = stim2event(M, 'hot-one', axis=-1);      print("hot-one :{}".format(e[0, ...].T))
-    e = stim2event(M, 'hot2', axis=-1);      print("hot2 :{}".format(e[0, ...].T))
-    e = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
-    e = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
-    e = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
-    e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
-    e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
-    e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
-    e = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'hot-one', axis=-1);      print("hot-one :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'hot2', axis=-1);      print("hot2 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
+    e,_ = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
+    e,_ = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
 
     # test incremental calling, propogating prefix between calls
     oM= None
     e = []
     for bi,b in enumerate(range(0,M.shape[-1],2)):
         bM = M[:,b:b+2]
-        eb = stim2event(bM,('re','fe'),axis=-1,oM=oM)
+        eb,_ = stim2event(bM,('re','fe'),axis=-1,oM=oM)
         e.append(eb)
         oM=bM
     e = np.concatenate(e,-2)

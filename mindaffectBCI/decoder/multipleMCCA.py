@@ -241,7 +241,7 @@ def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     from sklearn.model_selection import StratifiedKFold
     print("Xe = {}\nMe = {}".format(Xe.shape, Me.shape))
     # convert from stimulus coding to brain response coding
-    Ye = stim2event(Me, evtlabs, axis=1) # (nTrl, nEp, nY, nE) [ nE x y x ep x trl ]
+    Ye, _ = stim2event(Me, evtlabs, axis=1) # (nTrl, nEp, nY, nE) [ nE x y x ep x trl ]
 
     # cross validate in folds over trials
     Ye_true = Ye[:, :, 0:1, :] # N.B. horrible slicing trick to keep the dim

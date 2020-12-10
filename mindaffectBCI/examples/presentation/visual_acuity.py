@@ -53,10 +53,7 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
         self.fixation.color = (255,0,0,255)
 
 
-def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration:float=20, stimfile:str=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=0,
-        calibration_args:dict=None, prediction_args:dict=None, extra_symbols=None, gridfraction=.1, calibration_stimfile:str=None): 
+def run(symbols, host:str='-', optosensor:bool=True, bgFraction=.1, gridfraction=.1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, **kwargs):
     """ run the selection Matrix with default settings
 
     Args:
@@ -88,13 +85,10 @@ def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  pred
     window = selectionMatrix.initPyglet(fullscreen=fullscreen)
 
     # make the screen manager object which manages the app state
-    ss = selectionMatrix.ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
-                        fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
-                        bgFraction=bgFraction, 
-                        calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
-                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
-
+    ss = selectionMatrix.ExptScreenManager(window, nt, symbols, 
+                        fullscreen_stimulus=fullscreen_stimulus, 
+                        optosensor=optosensor,  
+                        bgFraction=bgFraction, **kwargs)
     # override the selection grid with the tictactoe one
     ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction)
     ss.calibrationSentence = 'Look at the *RED* cross'

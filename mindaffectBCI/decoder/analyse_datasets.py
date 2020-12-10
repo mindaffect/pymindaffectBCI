@@ -139,7 +139,7 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_id
         print("Warning! overfitting...")
         clsfr.fit(X_train,Y_train)
         Fy = clsfr.predict(X, Y, dedup0=True)
-
+        res = dict(estimator=Fy)
 
     # use the raw scores, i.e. inc model dim, in computing the decoding curve
     rawFy = res['rawestimator'] if 'rawestimator' in res else Fy
@@ -409,7 +409,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     if Y.ndim == 4: # already transformed
         Yevt = Y
     else: # convert to event
-        Yevt = stim2event(Y, axis=-2, evtypes=evtlabs)
+        Yevt, evtlabs = stim2event(Y, axis=-2, evtypes=evtlabs)
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Yevt[..., 0:1, :], tau=tau, offset=offset)
     plt.figure(11); plt.clf()
     plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs, times, ch_names)
@@ -443,7 +443,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
     Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
     yscale = np.max(np.abs(Ytrueevt.ravel()))
-    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/len(evtlabs)/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/len(evtlabs),'.-')
     plt.grid(True)
     plt.title('Yevt {}'.format(evtlabs))
     plt.xlabel('time (seconds)')
@@ -472,17 +472,18 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
 
+    plt.figure(14)
     plot_trial_summary(X, Y, rawFy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
     plt.gcf().set_size_inches((15,9))
     plt.savefig("{}_trial_summary".format(label)+".pdf")
     plt.pause(.5)
 
-    plt.figure(14)
+    plt.figure(15)
     plot_decoding_curve(res[0]/fs, *res[1:])
     plt.show(block=False)
 
-    plt.figure(19)
+    plt.figure(16)
     plt.subplot(211)
     plt.imshow(res[5], origin='lower', aspect='auto',cmap='gray', extent=[0,res[0][-1]/fs,0,res[5].shape[0]])
     plt.clim(0,1)
@@ -502,17 +503,17 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
 
     if triggerPlot:
         plt.figure(20)
-        triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
+        triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs_, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
         plt.show(block=False)
         plt.savefig("{}_triggerplot".format(label)+".pdf",format='pdf')
 
     print("Plot Model")
-    plt.figure(15)
+    plt.figure(17)
     if hasattr(clsfr,'A_'):
-        plot_erp(factored2full(clsfr.A_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
+        plot_erp(factored2full(clsfr.A_, clsfr.R_), ch_names=ch_names, evtlabs=clsfr.evtlabs_, times=times)
         plt.suptitle("fwd-model")
     else:
-        plot_erp(factored2full(clsfr.W_, clsfr.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)
+        plot_erp(factored2full(clsfr.W_, clsfr.R_), ch_names=ch_names, evtlabs=clsfr.evtlabs_, times=times)
         plt.suptitle("bwd-model")
     plt.show(block=False)
 
@@ -538,13 +539,13 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     if plotnormFy:
         from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, plot_normalizedScores
         print("normalized Fy")
-        plt.figure(20);plt.clf()
+        plt.figure(21);plt.clf()
         # normalize every sample
         ssFy, scale_sFy, decisIdx, nEp, nY = normalizeOutputScores(Fy, minDecisLen=-1)
         plot_Fy(ssFy,label=label,cumsum=False)
         plt.show(block=False)
 
-        plt.figure(21)
+        plt.figure(22)
         plot_normalizedScores(Fy[4,:,:],ssFy[4,:,:],scale_sFy[4,:],decisIdx)
     
     

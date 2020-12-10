@@ -1153,7 +1153,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=1, nPred:int=1, 
+    def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=None, ncal:int=1, npred:int=1, nPred:int=None, 
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
@@ -1186,8 +1186,8 @@ class ExptScreenManager(Screen):
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
 
-        self.nCal = nCal
-        self.nPred = nPred
+        self.ncal = ncal if nCal is None else nCal
+        self.npred = npred if nPred is None else nPred
         self.framesperbit = framesperbit
         self.calibration_trialduration = calibration_trialduration
         self.prediction_trialduration = prediction_trialduration
@@ -1195,8 +1195,8 @@ class ExptScreenManager(Screen):
         self.feedbackduration = feedbackduration
         self.calibration_args = calibration_args if calibration_args else dict()
         self.prediction_args = prediction_args if prediction_args else dict()
-        self.calibration_args['nTrials']=self.nCal
-        self.prediction_args['nTrials']=self.nPred
+        self.calibration_args['nTrials']=self.ncal
+        self.prediction_args['nTrials']=self.npred
         self.calibration_args['framesperbit'] = self.framesperbit
         self.prediction_args['framesperbit'] = self.framesperbit
         self.calibration_args['numframes'] = self.calibration_trialduration / isi
@@ -1570,8 +1570,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
     """ run the selection Matrix with default settings
 
     Args:
-        nCal (int, optional): number of calibration trials. Defaults to 10.
-        nPred (int, optional): number of prediction trials at a time. Defaults to 10.
+        ncal (int, optional): number of calibration trials. Defaults to 10.
+        npred (int, optional): number of prediction trials at a time. Defaults to 10.
         simple_calibration (bool, optional): flag if we show only a single target during calibration, Defaults to False.
         stimseq ([type], optional): the stimulus file to use for the codes. Defaults to None.
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
@@ -1618,7 +1618,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
     if calibration_symbols is None:
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
+    ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,

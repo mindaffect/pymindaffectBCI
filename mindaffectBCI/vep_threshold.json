@@ -13,7 +13,7 @@
         "npred":50,
         "selectionThreshold":0.0,
         "symbols":["+"],
-        "calibration_stimfile":"rc5x5.txt",
+        "calibration_stimseq":"rc5x5.txt",
         "stimfile":"level11_cont.txt",
         "calibration_trialduration":4,
         "prediction_trialduration":10,

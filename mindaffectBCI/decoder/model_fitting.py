@@ -88,11 +88,14 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if self.offset>0 or self.offset<-tau:
             raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
-    def stim2event(self, Y, prevY=None):
+    def stim2event(self, Y, prevY=None, fit=False):
         '''transform Stimulus-encoded to brain-encoded, if needed'''
         # convert from stimulus coding to brain response coding
         if self.evtlabs is not None:
-            Y = stim2event(Y, self.evtlabs, axis=-2, oM=prevY) # (tr, samp, Y, e)
+            if fit or (hasattr(self,'evtlabs_') and self.evtlabs_ is None): # fit the event mapping
+                Y, self.evtlabs_ = stim2event(Y, self.evtlabs, axis=-2, oM=prevY) # (tr, samp, Y, e)
+            else:  # use fitted event mapping
+                Y, _ = stim2event(Y, self.evtlabs_, axis=-2, oM=prevY) # (tr, samp, Y, e)
         else:
             if Y.ndim == 3:
                 Y = Y[:,:,:,np.newaxis] # (tr,samp,Y,e)
@@ -354,7 +357,7 @@ class MultiCCA(BaseSequence2Sequence):
     def fit(self, X, Y, stimTimes=None):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, Y)'''
         # map to event sequence
-        Y = self.stim2event(Y) # (tr,samp,nY,e)
+        Y = self.stim2event(Y,fit=True) # (tr,samp,nY,e)
         # extract the true target to fit to, using horible slicing trick
         Y_true = Y[..., 0:1, :] #  (tr,samp,1,e)
         # get summary statistics
@@ -371,6 +374,10 @@ class MultiCCA(BaseSequence2Sequence):
         self.fit_b(X) #(nM,e)
         # store A_ for plotting later
         self.A_ = np.einsum("de,Mkd->Mke",Cxx,W)
+
+        # just in case
+        self.sigma0_ = None
+        self.softmaxscale_ = 1
 
         return self
 
@@ -471,7 +478,7 @@ class FwdLinearRegression(BaseSequence2Sequence):
     def fit(self, X, Y):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)'''
         # map to event sequence
-        Y = self.stim2event(Y) # (tr,samp,nY,e)
+        Y = self.stim2event(Y,fit=True) # (tr,samp,nY,e)
         # extract the true target to fit to
         Y_true = Y[..., 0, :] # (tr,samp, e)
         # get summary statistics
@@ -534,7 +541,7 @@ class BwdLinearRegression(BaseSequence2Sequence):
     def fit(self, X, Y):
         '''fit 2 multi-dim time series: X = (tr, samp, d), Y = (tr, samp, e)'''
         # map to event sequence
-        Y = self.stim2event(Y) # (tr,samp,nY,e)
+        Y = self.stim2event(Y,fit=True) # (tr,samp,nY,e)
         # extract the true target to fit to
         Y = Y[..., 0, :] # (tr,samp, e)
         # first clean up the data..
@@ -629,7 +636,7 @@ class LinearSklearn(BaseSequence2Sequence):
 
     def fit(self, X, Y):
         # map to event sequence
-        Y = self.stim2event(Y)
+        Y = self.stim2event(Y,fit=True)
         # extract the true target to fit to
         Y_true = Y[..., 0, :] #  (tr,samp,e)
         # fit the model

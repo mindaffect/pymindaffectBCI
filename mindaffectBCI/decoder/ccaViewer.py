@@ -198,7 +198,7 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
         # TODO[]: limit to active outputs
 
         # and transform to irf trigger events
-        Y = stim2event(M, evtypes=evtlabs, axis=-2, oM=oM)  # (nsamp,nstim,e)
+        Y, labs = stim2event(M, evtypes=evtlabs, axis=-2, oM=oM)  # (nsamp,nstim,e)
         # record the last bit before the processed M for next time, i.e. 
         oM = M[:-irflen_samp, :]
 
@@ -212,7 +212,7 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
 
         # debug plot summary statistics.
         erp_lim = (np.min(Cxy.ravel()),np.max(Cxy.ravel()))
-        for ei,lab in enumerate(evtlabs):
+        for ei,lab in enumerate(labs):
             erp_lines[ei].set_data(Cxy[0,ei,:,:].T)
             erp_lines[ei].set_clim(vmin=erp_lim[0],vmax=erp_lim[1])
             #erp_ax[ei].imshow(Cxy[0,ei,:,:].T/nY[ei],aspect='auto',extent=(irf_times[0],irf_times[-1],0,Cxy.shape[-1]))
