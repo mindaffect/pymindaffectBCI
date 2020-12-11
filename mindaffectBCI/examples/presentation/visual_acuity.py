@@ -23,37 +23,76 @@
 import pyglet
 import mindaffectBCI.examples.presentation.selectionMatrix as selectionMatrix
 from mindaffectBCI.noisetag import Noisetag
-from mindaffectBCI.decoder.utils import search_directories_for_file
 import os
 
 class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
     """variant of SelectionGridScreen which is optimized for visual acuity testing -- bascially it's **really** small
     """
     def __init__(self,*args, **kwargs):
-        if 'gridfraction' in kwargs:
-            self.gridfraction = kwargs['gridfraction']
-            kwargs.pop('gridfraction',None) # remove from args
+        self.gridfraction=1
+        self.transform = 'color'
+        self.fixation = False
+        # remove the args we set directly
+        for arg in ('gridfraction', 'transform', 'fixation'):
+            if arg in kwargs:
+                setattr(self,arg,kwargs[arg])
+                kwargs.pop(arg,None) # remove from args
+        # pass the rest on
         super().__init__(*args,**kwargs)
 
-    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction=0, font_size=32, gridfraction=.1):
+    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction:float=0, font_size:int=32):
         if w is None:
             w, h=self.window.get_size()
         # compute central bounding box
-        sw = w*gridfraction # bb-width
-        sh = h*gridfraction # bb-height
+        sw = w*self.gridfraction # bb-width
+        sh = h*self.gridfraction # bb-height
         sx = x + w/2 - sw/2 # left
         sy = y + h/2 - sh/2 # top
 
         # make the matrix
         selectionMatrix.SelectionGridScreen.init_symbols(self,symbols, x=sx, y=sy, w=sw, h=sh, 
-                                                         bgFraction=bgFraction, font_size=0)
+                                                         bgFraction=bgFraction, font_size=0 if self.fixation else font_size)
         
         # add a fixation point in the middle of the grid
-        self.fixation = self.init_label("+",x=sx,y=sy,w=sw,h=sh,font_size=30)
-        self.fixation.color = (255,0,0,255)
+        if self.fixation:
+            self.fixation = self.init_label("+",x=sx,y=sy,w=sw,h=sh,font_size=font_size)
+            self.fixation.color = (255,0,0,255)
+
+    # mappings for stimulus-state -> stimulus state
+    state2scale = { 0:1, 1:.7, 2:1.5, 3:1.5 } # bigger for cue, smaller for stim
+    state2rotation = { 0:0, 1:10, 2:45, 3:45 } # slant for cue, flip for stim
+
+    # override the object drawing code for different types of stimulus change
+    def update_object_state(self, idx:int, state):
+        """update the idx'th object to stimulus state state
+
+            N.B. override this class to implement different state dependent stimulus changes, e.g. size changes, background images, rotations
+        Args:
+            idx (int): index of the object to update
+            state (int or float): the new desired object state
+        """        
+        if self.objects[idx]:
+            if self.transform == 'color':
+                if isinstance(state,int): # integer state, map to color lookup table
+                    self.objects[idx].color = self.state2color[state]
+                elif isinstance(state,float): # float state, map to intensity
+                    self.objects[idx].color = tuple(int(c*state) for c in self.state2color[1])
+            elif self.transform == 'scale':
+                if isinstance(state,int): # integer state, map to color lookup table
+                    self.objects[idx].scale = self.state2scale[state]
+                elif isinstance(state,float): # float state, map to intensity
+                    self.objects[idx].scale = .5+state if state < 1.0 else state/128
+            elif self.transform == 'rotation':
+                if isinstance(state,int): # integer state, map to color lookup table
+                    self.objects[idx].rotation = self.state2rotation[state]
+                elif isinstance(state,float): # float state, map to intensity
+                    self.objects[idx].rotation = state*90
+
+        if self.labels[idx]:
+            self.labels[idx].color=(255,255,255,255) # reset labels
 
 
-def run(symbols, host:str='-', optosensor:bool=True, bgFraction=.1, gridfraction=.1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, **kwargs):
+def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, transform:str='color', fixation:bool=False, **kwargs):
     """ run the selection Matrix with default settings
 
     Args:
@@ -90,7 +129,7 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction=.1, gridfraction
                         optosensor=optosensor,  
                         bgFraction=bgFraction, **kwargs)
     # override the selection grid with the tictactoe one
-    ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction)
+    ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction, transform=transform, fixation=fixation)
     ss.calibrationSentence = 'Look at the *RED* cross'
     ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
     ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
@@ -102,10 +141,13 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction=.1, gridfraction
 
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
-    setattr(args,'calibration_symbols',[["."]])
-    setattr(args,'symbols','visual_acuity.txt')
-    #setattr(args,'stimfile','visual_acuity.txt')
+    #setattr(args,'calibration_symbols',[["."]])
+    setattr(args,'symbols',[["."]])
+    #setattr(args,'symbols','visual_acuity.txt')
+    setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'framesperbit',1)
     setattr(args,'bgFraction',0)
     setattr(args,'simple_calibration',False)
+    setattr(args,'transform','scale')
+    setattr(args,'fixation',True)
     run(**vars(args))

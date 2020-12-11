@@ -907,12 +907,16 @@ class SelectionGridScreen(Screen):
         except :
             # create a 1x1 white image for this grid cell
             img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
+        img.anchor_x = img.width//2
+        img.anchor_y = img.height//2
         # convert to a sprite (for fast re-draw) and store in objects list
         # and add to the drawing batch (as background)
-        sprite=pyglet.sprite.Sprite(img, x=x, y=y,
+        sprite=pyglet.sprite.Sprite(img, x=x+w/2, y=y+h/2,
                                     batch=self.batch, group=self.background)
+        sprite.w = w
+        sprite.h = h
         # re-scale (on GPU) to the size of this grid cell
-        sprite.update(scale_x=int(w)/img.width, scale_y=int(h)/img.height)
+        sprite.update(scale_x=int(sprite.w)/sprite.image.width, scale_y=int(sprite.h)/sprite.image.height)
         return sprite
 
 

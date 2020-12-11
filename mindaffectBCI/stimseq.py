@@ -290,7 +290,7 @@ def mkRowCol(width=5,height=5, repeats=10):
     return StimSeq(None,array.tolist(),None)
 
 
-def mkRandLevel(ncodes=25, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlevels=10):
+def mkRandLevel(ncodes=36, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlevels=10):
     """make a random levels stimulus -- where rand level every soa frames
 
     Args:

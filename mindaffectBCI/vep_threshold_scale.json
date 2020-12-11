@@ -21,7 +21,7 @@
         "prediction_args":{"permute":true},
         "bgFraction":0,
         "gridfraction":0.2,
-        "transform":"color",
+        "transform":"scale",
         "framesperbit":1,
         "fullscreen":false,
         "fullscreen_stimulus":true,

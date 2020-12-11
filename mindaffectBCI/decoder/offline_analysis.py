@@ -28,7 +28,8 @@ import matplotlib.pyplot as plt
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
 savefile = '~/Desktop/mark/mindaffectBCI_*vep_threshold_*.txt'
-savefile = '~/Desktop/logs/mindaffectBCI*.txt'
+savefile = '~/Desktop/khash/mindaffectBCI_*vep_threshold_*.txt'
+#savefile = '~/Desktop/logs/mindaffectBCI*.txt'
 #savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
