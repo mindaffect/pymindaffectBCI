@@ -22,6 +22,7 @@
         "bgFraction":0,
         "gridfraction":0.2,
         "transform":"scale",
+        "fixation":true,
         "framesperbit":1,
         "fullscreen":false,
         "fullscreen_stimulus":true,
