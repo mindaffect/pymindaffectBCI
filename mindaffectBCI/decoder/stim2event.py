@@ -43,7 +43,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "hot-one" - hot-one (i.e. a unique event for each stimulus level) encoding of the stimulus values
         "hot-on" - hot-one for non-zero levels (i.e. a unique event for each stimulus level) encoding of the stimulus values
         "hotXXX" - a unique event for each level from 0-XXX
-        "output2event" - convert each unique output to it's own event type - N.B. assumes outputs in dim -2
+        "output2event" - convert each unique output to it's own event type - N.B. assumes time in axis -2, outputs in axis -1
         XXX : int - stimlus level equals XXX
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
      oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
@@ -128,7 +128,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 
         elif etype == 'output2event':
             F = M.reshape(M.shape[:-1]+(1,M.shape[-1])) # (...,1,nY)
-            elab = np.arange(M.shape[-1])+1
+            elab = np.arange(F.shape[-1])+1
 
         elif etype == "hot-one" or etype == 'hot-on':
             vals = np.unique(M)

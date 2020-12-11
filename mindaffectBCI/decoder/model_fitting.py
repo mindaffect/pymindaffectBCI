@@ -336,16 +336,16 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
         return dict(estimator=Fy, rawestimator=Fy_raw, test_score=scores)
 
-
     def plot_model(self, **kwargs):
+        evtlabs = self.evtlabs_ if hasattr(self,'evtlabs_') else self.evtlabs
         if not self.R_ is None:
             print("Plot Factored Model")
             if hasattr(self, 'A_'):
-                plot_factoredmodel(self.A_, self.R_, evtlabs=self.evtlabs, spatial_filter_type='Pattern', **kwargs)
+                plot_factoredmodel(self.A_, self.R_, evtlabs=evtlabs, spatial_filter_type='Pattern', **kwargs)
             else:
-                plot_factoredmodel(self.W_, self.R_, evtlabs=self.evtlabs, **kwargs)
+                plot_factoredmodel(self.W_, self.R_, evtlabs=evtlabs, **kwargs)
         else:
-            plot_erp(self.W_, evtlabs=self.evtlabs, **kwargs)
+            plot_erp(self.W_, evtlabs=evtlabs, **kwargs)
 
     
 class MultiCCA(BaseSequence2Sequence):
