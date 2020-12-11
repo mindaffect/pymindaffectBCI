@@ -43,6 +43,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         "hot-one" - hot-one (i.e. a unique event for each stimulus level) encoding of the stimulus values
         "hot-on" - hot-one for non-zero levels (i.e. a unique event for each stimulus level) encoding of the stimulus values
         "hotXXX" - a unique event for each level from 0-XXX
+        "output2event" - convert each unique output to it's own event type - N.B. assumes outputs in dim -2
         XXX : int - stimlus level equals XXX
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
      oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
@@ -124,6 +125,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         # 4-bit
         elif etype == "0110" or etype == 'long':
             F = equals_subarray(M, [0, 1, 1, 0], axis)
+
+        elif etype == 'output2event':
+            F = M.reshape(M.shape[:-1]+(1,M.shape[-1])) # (...,1,nY)
+            elab = np.arange(M.shape[-1])+1
 
         elif etype == "hot-one" or etype == 'hot-on':
             vals = np.unique(M)
@@ -250,9 +255,10 @@ def testcase():
     e,_ = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
     e,_ = stim2event(M, 'hot-one', axis=-1);      print("hot-one :{}".format(e[0, ...].T))
     e,_ = stim2event(M, 'hot2', axis=-1);      print("hot2 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'output2event', axis=-1);   print("output2event :{}".format(e[0, ...].T))
     e,_ = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
     e,_ = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
-    e,_ = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
+    e,_ = stim2event(M-1, 'cross0', axis=-1);       print("cross0 :{}".format(e[0, ...].T))
     e,_ = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
     e,_ = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
     e,_ = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
