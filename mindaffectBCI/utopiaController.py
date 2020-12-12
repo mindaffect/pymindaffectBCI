@@ -48,6 +48,8 @@ class UtopiaController:
         # signal quality stuff
         self.lastSignalQuality = None
         self.signalQualityHandlers = []
+        # new target
+        self.newTargetHandlers = []
         # our set message subscriptions
         self.subscriptions = "PSNMEQ"
 
@@ -65,6 +67,13 @@ class UtopiaController:
             cb (function): [description]
         """        
         self.predictionHandlers.append(cb)
+    def addNewTargetHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
+        self.newTargetHandlers.append(cb)
     def addSelectionHandler(self, cb):
         """[summary]
 
@@ -286,6 +295,11 @@ class UtopiaController:
                     # process selection callbacks
                     for h in self.selectionHandlers:
                         h(m.objID)
+
+                elif m.msgID == NewTarget.msgID:
+                    # process selection callbacks
+                    for h in self.newTargetHandlers:
+                        h()
 
                 elif m.msgID == SignalQuality.msgID:
                     self.lastSignalQuality = m.signalQuality
