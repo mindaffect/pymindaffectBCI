@@ -705,7 +705,7 @@ class SelectionGridScreen(Screen):
                  bgFraction:float=.2, instruct:str="", 
                  clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, 
                  optosensor:bool=True, 
-                 target_only:bool=False, show_correct:bool=True,
+                 target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=True,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
                  logo:str='MindAffect_Logo.png'):
         '''Intialize the stimulus display with the grid of strings in the
@@ -736,6 +736,8 @@ class SelectionGridScreen(Screen):
         self.stimulus_callback = stimulus_callback
         self.last_target_idx = -1
         self.show_correct = show_correct
+        self.show_newtarget_count = show_newtarget_count
+        self.noisetag.setNewTargetHandler(doNewTarget)
 
     def reset(self):
         self.isRunning=False
@@ -791,6 +793,10 @@ class SelectionGridScreen(Screen):
                 if self.show_correct and self.last_target_idx>=0:
                     text += "*" if symbIdx==self.last_target_idx else "_"
                 self.set_sentence( text )
+
+    def doNewTarget(self):
+        if self.newtarget_count == True:
+            self.set_sentene( self.sentence.text + '+')
 
     def update_text(self,text:str,sel:str):
         # process special codes
