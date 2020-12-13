@@ -248,6 +248,8 @@ class UtopiaController:
         """        
         if self.client:
             self.client.sendMessage(NewTarget(self.getTimeStamp()))
+        for h in self.newTargetHandlers:
+            h()         # do selection callbacks
 
     def selection(self, objID):
         """[summary]

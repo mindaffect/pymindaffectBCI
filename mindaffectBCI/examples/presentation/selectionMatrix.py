@@ -705,7 +705,7 @@ class SelectionGridScreen(Screen):
                  bgFraction:float=.2, instruct:str="", 
                  clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, 
                  optosensor:bool=True, 
-                 target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=True,
+                 target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=None,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
                  logo:str='MindAffect_Logo.png'):
         '''Intialize the stimulus display with the grid of strings in the
@@ -737,7 +737,6 @@ class SelectionGridScreen(Screen):
         self.last_target_idx = -1
         self.show_correct = show_correct
         self.show_newtarget_count = show_newtarget_count
-        self.noisetag.setNewTargetHandler(doNewTarget)
 
     def reset(self):
         self.isRunning=False
@@ -756,6 +755,11 @@ class SelectionGridScreen(Screen):
         if self.liveSelections is None :
             self.noisetag.addSelectionHandler(self.doSelection)
         self.liveSelections = value
+
+    def setshowNewTarget(self, value):
+        if self.show_newtarget_count is None:
+            self.noisetag.addNewTargetHandler(self.doNewTarget)
+        self.show_newtarget_count=value
 
     def get_idx(self,idx):
         ii=0 # linear index
@@ -795,8 +799,8 @@ class SelectionGridScreen(Screen):
                 self.set_sentence( text )
 
     def doNewTarget(self):
-        if self.newtarget_count == True:
-            self.set_sentene( self.sentence.text + '+')
+        if self.show_newtarget_count == True:
+            self.set_sentence( self.sentence.text + '+')
 
     def update_text(self,text:str,sel:str):
         # process special codes
@@ -1137,7 +1141,7 @@ class ExptScreenManager(Screen):
     predictionInstruct="Prediction\n\nThe next stage is free PREDICTION\nLook at the letter you want to select\nLive BCI feedback in blue\n\nkey to continue"
     closingInstruct="Closing\nThankyou\n\nPress to exit"
     resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
-    calibrationSentence='Calibration: look at the green cue.'
+    calibrationSentence='Calibration: look at the green cue.\n'
     cuedpredictionSentence='CuedPrediction: look at the green cue.\n'
     predictionSentence='Your Sentence:\n'
 
@@ -1298,7 +1302,8 @@ class ExptScreenManager(Screen):
             print("calibration")
             self.selectionGrid.reset()
             self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
-            self.selectionGrid.liveFeedback=False
+            self.selectionGrid.setliveFeedback(False)
+            self.selectionGrid.setshowNewTarget(True)
             self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence(self.calibrationSentence)
 
@@ -1336,6 +1341,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.setshowNewTarget(False)
             self.selectionGrid.target_only=False
             self.selectionGrid.show_correct=True
             self.selectionGrid.set_sentence(self.cuedpredictionSentence)
@@ -1368,6 +1374,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.show_correct=False
             self.selectionGrid.set_sentence(self.predictionSentence)
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.setshowNewTarget(False)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi

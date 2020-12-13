@@ -1,4 +1,6 @@
 {
+    "logdir":"~/Desktop/logs",
+
     "acquisation":"brainflow",
     "acq_args":{
         "board_id":1,
