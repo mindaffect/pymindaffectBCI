@@ -475,7 +475,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
 
-    plt.figure()
+    plt.figure(); plt.clf()
     plot_trial_summary(X, Y, rawFy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
     plt.gcf().set_size_inches((15,9))
@@ -603,7 +603,8 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
             Fy = np.mean(Fy,0)
 
     nTrl = X.shape[0]; w = int(np.ceil(np.sqrt(nTrl)*1.8)); h = int(np.ceil(nTrl/w))
-    fig = plt.figure(figsize=(20,10))
+    fig=plt.gcf()
+    fig.set_size_inches(20,10,forward=True)
     trial_grid = fig.add_gridspec( nrows=h, ncols=w, figure=fig, hspace=.05, wspace=.05) # per-trial grid
     nrows= 5 + (0 if Fe is None else 1) + (0 if Py is None else 1)
     ti=0
