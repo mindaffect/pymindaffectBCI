@@ -16,7 +16,7 @@
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
 import numpy as np
-from mindaffectBCI.decoder.datasets import get_dataset
+from mindaffectBCI.decoder.offline.datasets import get_dataset
 from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
 try:
     from sklearn.linear_model import Ridge, LogisticRegression
@@ -30,13 +30,18 @@ from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervise
 from mindaffectBCI.decoder.scoreOutput import plot_Fy
 from mindaffectBCI.decoder.preprocess import preprocess, plot_grand_average_spectrum
 from mindaffectBCI.decoder.trigger_check import triggerPlot
+from mindaffectBCI.decoder.utils import block_permute
 import matplotlib.pyplot as plt
 import gc
 import re
 
 
 
-def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_idx=None, cv=True, tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, offset_ms=0, center=True, tuned_parameters=None, ranks=None, retrain_on_all=True, **kwargs):
+def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, 
+                    model:str='cca', test_idx=None, cv=True, n_virt_out:int=None, 
+                    tau_ms:float=300, fs:float=None,  rank:int=1, 
+                    evtlabs=None, offset_ms=0, center=True, 
+                    tuned_parameters=None, ranks=None, retrain_on_all=True, **kwargs):
     """ cross-validated training on a single datasets and decoing curve estimation
 
     Args:
@@ -97,6 +102,12 @@ def analyse_dataset(X:np.ndarray, Y:np.ndarray, coords, model:str='cca', test_id
         clsfr = LinearSklearn(tau=tau, offset=offset, evtlabs=evtlabs, **kwargs)
     else:
         raise NotImplementedError("don't  know this model: {}".format(model))
+
+    # add virtual outputs if wanted
+    if n_virt_out is not None:
+        oY = Y.copy()
+        Y_virt = block_permute(Y, n_virt_out, axis=-1)
+        Y = np.concatenate((Y, Y_virt), -1) # (..., nY)
 
     # do train/test split
     if test_idx is None:
