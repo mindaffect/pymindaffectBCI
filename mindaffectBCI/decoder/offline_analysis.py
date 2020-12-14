@@ -51,12 +51,7 @@ if 'visual_acuity' in savefile:
     evtlabs=('output2event')
 elif 'threshold' in savefile:
     evtlabs=mindaffectBCI.decoder.stim2event.hot_greaterthan
-    # include fake outputs...
-    nvirt_out = 30
-    oY = Y.copy()
-    Y_test = block_permute(Y, nvirt_out, axis=-1)
-    Y = np.concatenate((Y, Y_test), -1) # (nSamp, nY)
-
+    
 elif 'rc'in savefile:
     evtlabs=('re','ntre')
 else:
@@ -77,7 +72,7 @@ gofs=[]
 for ti,thresh in enumerate(thresholds):
     evtlabs = thresh
     print("\n\n---------------\n evtlabs={}\n".format(evtlabs))
-    res = analyse_dataset(X, Y, coords, model='cca', cv=True, tau_ms=450, rank=3, 
+    res = analyse_dataset(X, Y, coords, model='cca', cv=True, tau_ms=450, rank=3, n_virt_out=-30,
                     evtlabs=evtlabs)
     clsfr_res = res[4]
     gofs.append(np.mean(clsfr_res['test_gof']))
