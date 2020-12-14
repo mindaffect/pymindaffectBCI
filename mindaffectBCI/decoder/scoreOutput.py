@@ -91,7 +91,10 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
     elif outputscore == 'corr': # correlation based scoring...
         raise NotImplementedError()
     
-    elif not outputscore == 'ip':
+    elif outputscore == 'ip':
+        pass
+    
+    else:
         raise NotImplementedError("output scoring with {} isn't supported".format(outputscore))
     
     return Fy
@@ -135,14 +138,13 @@ def dedupY0(Y, zerodup=True, yfeatdim=True):
     Y = np.reshape(Y, Yshape)
     return Y
 
-
 def convWX(X,W):
     ''' apply spatial filter W  to X '''
     if W.ndim < 3:
         W=W.reshape((1,)*(3-W.ndim)+W.shape)
     if X.ndim < 3:
         X=X.reshape((1,)*(3-X.ndim)+X.shape)
-    WX = np.einsum("TSd,mfd->mTSf",X,W)
+    WX = np.einsum("TSd,mfd->mTSf",X, W, dtype=W.dtype)
     return WX #(nM,nTrl,nSamp,nfilt)
 
 def convYR(Y,R,offset=None):
@@ -164,24 +166,36 @@ def convYR(Y,R,offset=None):
     #print("R={} (mfet)".format(R[...,::-1].shape))
     # TODO []: check treating filters correctly
     # TODO []: check if need to time-reverse IRF - A: YES!
-    YtR = np.einsum("TStYe,mfet->mTSYf", Yt, R[...,::-1]) # (nM,nTr,nSamp,nY,nE)
+    YtR = np.einsum("TStYe,mfet->mTSYf", Yt, R[...,::-1], casting='unsafe', dtype=R.dtype) # (nM,nTr,nSamp,nY,nE)
     #print("YtR={} (mTSYf)".format(YtR.shape))
     # TODO []: correct edge effect correction, rather than zero-padding....
     # zero pad to keep the output size
     # TODO[]: pad with the *actual* values...
-    tmp = np.zeros(YtR.shape[:-3]+(Y.shape[-3],)+YtR.shape[-2:])
+    tmp = np.zeros(YtR.shape[:-3]+(Y.shape[-3],)+YtR.shape[-2:], dtype=R.dtype)
     #print("tmp={}".format(tmp.shape))
     tmp[..., R.shape[-1]-1-offset:YtR.shape[-3]+R.shape[-1]-1-offset, :, :] = YtR
     YtR = tmp
     #print("YtR={}".format(YtR.shape))
     return YtR #(nM,nTrl,nSamp,nY,nfilt)
 
-def convXYR(X,Y,W,R,offset):
+def convXYR(X,Y,W,R,offset=0):
     WX=convWX(X,W) # (nTr,nSamp,nfilt)
     YR=convYR(Y,R,offset) # (nTr,nSamp,nY,nfilt)
     # Sum out  filt dimesion
     WXYR = np.sum(WX[...,np.newaxis,:]*YR,-1) #(nTr,nSamp,nY)
     return WXYR,WX,YR
+
+def sse(X,Y,W,R,offset=0):
+    WX = convWX(X,W)
+    YR = convYR(Y,R,offset)
+    sse = np.sum((WX[...,np.newaxis,:]-YR)**2)
+    return sse
+
+def corr(X,Y,W,R,offset=0):
+    WX = convWX(X,W)
+    YR = convYR(Y,R,offset)
+    corr = np.sum((WX[...,np.newaxis,:]-YR)**2) / np.sum(WX**2)
+    return corr
 
 #@function
 def testcases():

@@ -26,7 +26,7 @@ except:
     pass
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, plot_factoredmodel
 from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
-from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve
+from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve, flatten_decoding_curves
 from mindaffectBCI.decoder.scoreOutput import plot_Fy
 from mindaffectBCI.decoder.preprocess import preprocess, plot_grand_average_spectrum
 from mindaffectBCI.decoder.trigger_check import triggerPlot
@@ -293,26 +293,6 @@ def analyse_train_test(X:np.ndarray, Y:np.ndarray, coords, splits=1, label:str='
     except:
         pass
     plt.show()
-
-
-def flatten_decoding_curves(decoding_curves):
-    ''' take list of (potentially variable length) decoding curves and make into a single array '''
-    il = np.zeros((len(decoding_curves),decoding_curves[0][0].size))
-    pe = np.zeros(il.shape)
-    pee = np.zeros(il.shape)
-    se = np.zeros(il.shape)
-    st = np.zeros(il.shape)
-    # TODO [] : insert according to the actual int-len
-    for di,dc in enumerate(decoding_curves):
-        il_di = dc[0]
-        ll = min(il.shape[1],il_di.size)
-        il[di,:ll] = dc[0][:ll]
-        pe[di,:ll] = dc[1][:ll]
-        pee[di,:ll] = dc[2][:ll]
-        se[di,:ll] = dc[3][:ll]
-        st[di,:ll] = dc[4][:ll] 
-    return il,pe,pee,se,st
-
 
 def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, 
                        evtlabs=None, rank=1, model='cca', 
