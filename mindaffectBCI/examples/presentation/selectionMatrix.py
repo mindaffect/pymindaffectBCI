@@ -799,12 +799,11 @@ class SelectionGridScreen(Screen):
                 self.set_sentence( text )
 
     def doNewTarget(self):
-        if not self.show_newtarget_count is None and not self.show_newtarget_count == False:
-            text = self.sentence.text
-            if self.show_newtarget_count>0:
-                text=text[:-1]
+        if not self.show_newtarget_count is None and self.show_newtarget_count:
             self.show_newtarget_count = self.show_newtarget_count+1
-            self.set_sentence( "{}{}".format(text,self.show_newtarget_count) )
+            bits = self.sentence.text.split("\n")
+            text = "\n".join(bits[:-1]) if len(bits)>1 else bits[0]
+            self.set_sentence( "{}\n{}".format(text,self.show_newtarget_count-1) )
 
     def update_text(self,text:str,sel:str):
         # process special codes
