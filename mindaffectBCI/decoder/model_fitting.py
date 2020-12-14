@@ -247,6 +247,19 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         score = np.sum((Yi == 0).ravel())/Yi.size # total amount time was right, higher=better
         return score
 
+    def gof_score(self,X,Y, featdim=False):
+        ''' compute goodness of fit score for the current model for X,Y'''
+        from mindaffectBCI.decoder.scoreOutput import convWX, convYR
+        Ye = self.stim2event(Y) # (nTr,nSamp,1,nE)
+        WX = convWX(X,self.W_) # (nM,nTr,nSamp,nFilt)
+        # BODGE: unit norm wX over time/filters -- shouldn't be necessary!
+        nWX = WX / np.sqrt(np.sum(WX**2, axis=(-2,-1), keepdims=True))
+        YR = convYR(Ye,self.R_) # (nM,nTr,nSamp,nY,nFilt)
+        # BODGE: unit norm Yr over time/filters -- shouldn't be necessary!
+        nYR = YR / np.sqrt(np.sum(YR**2, axis=(-3,-1), keepdims=True))
+        nsse = np.sum((nWX[...,np.newaxis,:] - nYR)**2) * nWX.shape[-2] / nWX.size
+        return nsse
+
     def cv_fit(self, X, Y, cv=5, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, 
                calibrate_softmax:bool=True, retrain_on_all:bool=True):
         """Cross-validated fit the model for generalization performance estimation
@@ -278,7 +291,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             else: # single trial, train/test on all...
                 cv = [(slice(1), slice(1))] # N.B. use slice to preserve dims..
 
-        scores = []
+        scores = [] # decoding scores
+        gofs=[] # goodness-of-fit scores
         Fy = np.zeros(Y.shape, dtype=X.dtype)
         if verbose > 0:
             print("CV:", end='')
@@ -303,6 +317,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
                 Fy[valid_idx,...]=Fyi
             
             scores.append(self.audc_score(Fyi))
+            gofs.append(self.gof_score(X[valid_idx,...], Y[valid_idx,...,:1]))
 
         # final retrain with all the data
         if retrain_on_all:
@@ -334,7 +349,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             print("model wght= {}".format(np.mean(p.reshape((p.shape[0],-1)),axis=1)))
             Fy = np.sum( Fy * p, axis=0)
 
-        return dict(estimator=Fy, rawestimator=Fy_raw, test_score=scores)
+        return dict(estimator=Fy, rawestimator=Fy_raw, test_score=scores, test_gof=gofs)
 
     def plot_model(self, **kwargs):
         evtlabs = self.evtlabs_ if hasattr(self,'evtlabs_') else self.evtlabs

@@ -23,7 +23,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
 
     Args:
      M  (...samp) or (...,samp,nY): for and/non-target features
-     evnames (tuple (nE), optional): str list of strings.  Defaults to ('re','fe')
+     evnames (tuple (nE), optional): str list of strings, or list of values, or list of functions.  Defaults to ('re','fe')
         "0", "1", "00", "11", "01" (aka. 're'), "10" (aka, fe), "010" (aka. short), "0110" (aka long)
         "nt"+evtname : non-target event, i.e. evtname occured for any other target
         "any"+evtname: any event, i.e. evtname occured for *any* target
@@ -47,6 +47,13 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         XXX : int - stimlus level equals XXX
      axis (int,optional) : the axis of M which runs along 'time'.  Defaults to -1
      oM (...osamp) or (...,osamp,nY): prefix stimulus values of M, used to incrementally compute the  stimulus features
+
+    Note: you can write your own stim2event mappings with this function call signature:
+       s2e(M:ndarray, axis:int=-1, oM:ndarray=None) -> (F:ndarray, elab:str)
+    where M - (...samp) or (...,samp,nY),  axis='time-axis', F-(M.shape +(nevt,1)), elab=list of nevt-str
+    For example:
+        def s2equal(M,val,axis=-1,oM=None): return M==val
+        F = stim2event(M,etypes=(lambda M,axis,oM: s2equal(M,10,axis,oM)))
 
     Returns:
      evt (M.shape,nE): the computed event sequence
@@ -88,7 +95,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
                 etype = etype[len(mod):]
                 break
         
-        if not isinstance(etype,str): # assume it's a value to match:
+        if callable(etype): # function to call, matches our signature
+            F, elab = etype(M, axis, oM)
+
+        elif not isinstance(etype,str): # not-function not str -> assume it's a value to match:
             F = (M == etype)
 
         # 1-bit
@@ -141,6 +151,14 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
             n = int(etype[3:]) if len(etype)>3 else 0
             vals = np.arange(n,dtype=M.dtype)
             F = M[...,np.newaxis] == vals.reshape((1,)*M.ndim+(vals.size,))
+
+        elif etype.startswith("<"):
+            n = float(etype[1:]) if len(etype)>1 else 0
+            F = M < n
+
+        elif etype.startswith(">"):
+            n = float(etype[1:]) if len(etype)>1 else 0
+            F = M > n
 
         # continuous values
         elif etype == "ave":
@@ -237,8 +255,25 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
     #print("E.dtype={}".format(E.dtype))
     return E, evtlabs
 
+
+def lessthan(M,val,axis,oM): return M<val, "<{}".format(val)
+def greaterthan(M,val,axis,oM): return M>val, ">{}".format(val)
+def hot_greaterthan(M,axis,oM): 
+    vals = np.unique(M)
+    if len(vals)>1: vals = vals[:-1] # strip max val with nothing >
+    F = M[...,np.newaxis] > vals.reshape((1,)*M.ndim+(vals.size,))
+    elab = tuple(">{}".format(v) for v in vals)  # labs are now the values used
+    return F,elab
+
+def hoton_lessthan(M,axis,oM): 
+    vals = np.unique(M)
+    if len(vals)>1: vals=vals[2:] # strip min as nothing is <min
+    F = M[...,np.newaxis] < vals.reshape((1,)*M.ndim+(vals.size,))
+    elab = tuple("<{}".format(v) for v in vals)  # labs are now the values used
+    return F,elab
+
 def testcase():
-    from stim2event import stim2event
+    from mindaffectBCI.decoder.stim2event import stim2event
     # M = (samp,Y)
     M = np.array([[0, 0, 2, 1, 0, 0, 0, 0, 1, 2, 1, 1, 0],
                   [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]])
@@ -263,6 +298,8 @@ def testcase():
     e,_ = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
     e,_ = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
     e,_ = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
+
+    e,_ = stim2event(M, hot_greaterthan, axis=-1);  print("hot > :{}".format(e[0, ...].T))
 
     # test incremental calling, propogating prefix between calls
     oM= None

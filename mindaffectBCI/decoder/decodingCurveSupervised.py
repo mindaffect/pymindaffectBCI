@@ -271,6 +271,26 @@ def plot_decoding_curve(integerationLengths, aveProbErr, *args):
     plt.legend()
     plt.grid(True)
 
+
+def flatten_decoding_curves(decoding_curves):
+    ''' take list of (potentially variable length) decoding curves and make into a single array '''
+    il = np.zeros((len(decoding_curves),decoding_curves[0][0].size))
+    pe = np.zeros(il.shape)
+    pee = np.zeros(il.shape)
+    se = np.zeros(il.shape)
+    st = np.zeros(il.shape)
+    # TODO [] : insert according to the actual int-len
+    for di,dc in enumerate(decoding_curves):
+        il_di = dc[0]
+        ll = min(il.shape[1],il_di.size)
+        il[di,:ll] = dc[0][:ll]
+        pe[di,:ll] = dc[1][:ll]
+        pee[di,:ll] = dc[2][:ll]
+        se[di,:ll] = dc[3][:ll]
+        st[di,:ll] = dc[4][:ll] 
+    return il,pe,pee,se,st
+
+
 def testcase():
     """[summary]
     """    
