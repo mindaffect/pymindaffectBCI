@@ -799,8 +799,12 @@ class SelectionGridScreen(Screen):
                 self.set_sentence( text )
 
     def doNewTarget(self):
-        if self.show_newtarget_count == True:
-            self.set_sentence( self.sentence.text + '+')
+        if not self.show_newtarget_count is None and not self.show_newtarget_count == False:
+            text = self.sentence.text
+            if self.show_newtarget_count>0:
+                text=text[:-1]
+            self.show_newtarget_count = self.show_newtarget_count+1
+            self.set_sentence( "{}{}".format(text,self.show_newtarget_count) )
 
     def update_text(self,text:str,sel:str):
         # process special codes
