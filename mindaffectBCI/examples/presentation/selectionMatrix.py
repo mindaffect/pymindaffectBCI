@@ -1566,7 +1566,7 @@ def load_symbols(fn):
     fn = search_directories_for_file(fn,os.path.dirname(os.path.abspath(__file__)),
                                         os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
 
-    with open(fn,'r') as f:
+    with open(fn,'r', encoding='utf8') as f:
         for line in f:
             # skip comment lines
             if line.startswith('#'): continue
