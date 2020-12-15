@@ -705,7 +705,7 @@ class SelectionGridScreen(Screen):
                  bgFraction:float=.2, instruct:str="", 
                  clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, 
                  optosensor:bool=True, 
-                 target_only:bool=False, show_correct:bool=True,
+                 target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=None,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
                  logo:str='MindAffect_Logo.png'):
         '''Intialize the stimulus display with the grid of strings in the
@@ -736,6 +736,7 @@ class SelectionGridScreen(Screen):
         self.stimulus_callback = stimulus_callback
         self.last_target_idx = -1
         self.show_correct = show_correct
+        self.show_newtarget_count = show_newtarget_count
 
     def reset(self):
         self.isRunning=False
@@ -754,6 +755,11 @@ class SelectionGridScreen(Screen):
         if self.liveSelections is None :
             self.noisetag.addSelectionHandler(self.doSelection)
         self.liveSelections = value
+
+    def setshowNewTarget(self, value):
+        if self.show_newtarget_count is None:
+            self.noisetag.addNewTargetHandler(self.doNewTarget)
+        self.show_newtarget_count=value
 
     def get_idx(self,idx):
         ii=0 # linear index
@@ -791,6 +797,13 @@ class SelectionGridScreen(Screen):
                 if self.show_correct and self.last_target_idx>=0:
                     text += "*" if symbIdx==self.last_target_idx else "_"
                 self.set_sentence( text )
+
+    def doNewTarget(self):
+        if not self.show_newtarget_count is None and self.show_newtarget_count:
+            self.show_newtarget_count = self.show_newtarget_count+1
+            bits = self.sentence.text.split("\n")
+            text = "\n".join(bits[:-1]) if len(bits)>1 else bits[0]
+            self.set_sentence( "{}\n{}".format(text,self.show_newtarget_count-1) )
 
     def update_text(self,text:str,sel:str):
         # process special codes
@@ -866,7 +879,7 @@ class SelectionGridScreen(Screen):
         self.init_framerate()
         self.init_logo(logo)
 
-    def init_symbols(self, symbols, x, y, w, h, bgFraction=.1, font_size=32):
+    def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
         # now create the display objects
         sw = int(w/self.gridwidth) # cell-width
         bgoffsetx = int(sw*bgFraction) # offset within cell for the button
@@ -886,12 +899,15 @@ class SelectionGridScreen(Screen):
                                                        int(sw-bgoffsetx*2), int(sh-bgoffsety*2),
                                                        font_size=font_size)
 
-    def init_target(self, symb, x, y, w, h, font_size):
-        sprite = self.init_sprite(symb, x, y, w, h)
+    def init_target(self, symb:str, x, y, w, h, font_size:int=None):
+        sprite, symb = self.init_sprite(symb, x, y, w, h)
         label = self.init_label(symb, x, y, w, h, font_size)
         return sprite, label
 
-    def init_label(self, symb, x, y, w, h, font_size=32):
+    def init_label(self, symb, x, y, w, h, font_size=None):
+        # add the foreground label for this cell, and add to drawing batch
+        if font_size is None or font_size == 'auto':
+            font_size = int(min(w,h)*.75*72/96)
         # add the foreground label for this cell, and add to drawing batch
         label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
                                 color=(255, 255, 255, 255),
@@ -907,13 +923,17 @@ class SelectionGridScreen(Screen):
         except :
             # create a 1x1 white image for this grid cell
             img = pyglet.image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(2, 2)
+        img.anchor_x = img.width//2
+        img.anchor_y = img.height//2
         # convert to a sprite (for fast re-draw) and store in objects list
         # and add to the drawing batch (as background)
-        sprite=pyglet.sprite.Sprite(img, x=x, y=y,
+        sprite=pyglet.sprite.Sprite(img, x=x+w/2, y=y+h/2,
                                     batch=self.batch, group=self.background)
+        sprite.w = w
+        sprite.h = h
         # re-scale (on GPU) to the size of this grid cell
-        sprite.update(scale_x=int(w)/img.width, scale_y=int(h)/img.height)
-        return sprite
+        sprite.update(scale_x=int(sprite.w)/sprite.image.width, scale_y=int(sprite.h)/sprite.image.height)
+        return sprite, symb
 
 
     def init_framerate(self):
@@ -1127,7 +1147,7 @@ class ExptScreenManager(Screen):
     predictionInstruct="Prediction\n\nThe next stage is free PREDICTION\nLook at the letter you want to select\nLive BCI feedback in blue\n\nkey to continue"
     closingInstruct="Closing\nThankyou\n\nPress to exit"
     resetInstruct="Reset\n\nThe decoder model has been reset.\nYou will need to run calibration again to use the BCI\n\nkey to continue"
-    calibrationSentence='Calibration: look at the green cue.'
+    calibrationSentence='Calibration: look at the green cue.\n'
     cuedpredictionSentence='CuedPrediction: look at the green cue.\n'
     predictionSentence='Your Sentence:\n'
 
@@ -1153,7 +1173,7 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.R:ExptPhases.Reset,
                  pyglet.window.key.Q:ExptPhases.Quit}
 
-    def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=1, nPred:int=1, 
+    def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=None, ncal:int=1, npred:int=1, nPred:int=None, 
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
@@ -1186,8 +1206,8 @@ class ExptScreenManager(Screen):
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
 
-        self.nCal = nCal
-        self.nPred = nPred
+        self.ncal = ncal if nCal is None else nCal
+        self.npred = npred if nPred is None else nPred
         self.framesperbit = framesperbit
         self.calibration_trialduration = calibration_trialduration
         self.prediction_trialduration = prediction_trialduration
@@ -1195,8 +1215,8 @@ class ExptScreenManager(Screen):
         self.feedbackduration = feedbackduration
         self.calibration_args = calibration_args if calibration_args else dict()
         self.prediction_args = prediction_args if prediction_args else dict()
-        self.calibration_args['nTrials']=self.nCal
-        self.prediction_args['nTrials']=self.nPred
+        self.calibration_args['nTrials']=self.ncal
+        self.prediction_args['nTrials']=self.npred
         self.calibration_args['framesperbit'] = self.framesperbit
         self.prediction_args['framesperbit'] = self.framesperbit
         self.calibration_args['numframes'] = self.calibration_trialduration / isi
@@ -1288,7 +1308,8 @@ class ExptScreenManager(Screen):
             print("calibration")
             self.selectionGrid.reset()
             self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
-            self.selectionGrid.liveFeedback=False
+            self.selectionGrid.setliveFeedback(False)
+            self.selectionGrid.setshowNewTarget(True)
             self.selectionGrid.target_only=self.simple_calibration
             self.selectionGrid.set_sentence(self.calibrationSentence)
 
@@ -1326,6 +1347,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             self.selectionGrid.liveFeedback=True
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.setshowNewTarget(False)
             self.selectionGrid.target_only=False
             self.selectionGrid.show_correct=True
             self.selectionGrid.set_sentence(self.cuedpredictionSentence)
@@ -1358,6 +1380,7 @@ class ExptScreenManager(Screen):
             self.selectionGrid.show_correct=False
             self.selectionGrid.set_sentence(self.predictionSentence)
             self.selectionGrid.setliveSelections(True)
+            self.selectionGrid.setshowNewTarget(False)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
@@ -1546,7 +1569,7 @@ def load_symbols(fn):
     fn = search_directories_for_file(fn,os.path.dirname(os.path.abspath(__file__)),
                                         os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
 
-    with open(fn,'r') as f:
+    with open(fn,'r', encoding='utf8') as f:
         for line in f:
             # skip comment lines
             if line.startswith('#'): continue
@@ -1570,8 +1593,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
     """ run the selection Matrix with default settings
 
     Args:
-        nCal (int, optional): number of calibration trials. Defaults to 10.
-        nPred (int, optional): number of prediction trials at a time. Defaults to 10.
+        ncal (int, optional): number of calibration trials. Defaults to 10.
+        npred (int, optional): number of prediction trials at a time. Defaults to 10.
         simple_calibration (bool, optional): flag if we show only a single target during calibration, Defaults to False.
         stimseq ([type], optional): the stimulus file to use for the codes. Defaults to None.
         framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
@@ -1618,7 +1641,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
     if calibration_symbols is None:
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
-    ss = ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
+    ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,

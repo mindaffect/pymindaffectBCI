@@ -945,6 +945,15 @@ class Noisetag:
         if self.utopiaController :
             self.utopiaController.addSelectionHandler(cb)
     
+    def addNewTargetHandler(self,cb):
+        """add a handler which is called back when a newtarget is recieved from the decoder/hub
+
+        Args:
+            cb (function): the function to be called for every newly recieved NewTarget
+        """   
+        if self.utopiaController :
+            self.utopiaController.addNewTargetHandler(cb)
+    
     def setTimeStampClock(self, tsclock):
         """set the clock used by default to timestamp messages sent to the hub/decoder
 

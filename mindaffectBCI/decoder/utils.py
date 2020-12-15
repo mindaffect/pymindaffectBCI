@@ -293,16 +293,57 @@ def sliceY(Y, stimTimes_samp, featdim=True):
     else:
         return Y[:, si, :] if Y.ndim > 2 else Y[si, :]
 
-    
+
+def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
+    import random
+    if perm_axis==None:
+        perm_axis = axis-1
+    if n < 0 : # neg is max number outputs, so pad with enough
+        n = max(0, -n - f.shape[axis])
+
+    out_shape = list(f.shape); out_shape[axis]=n
+    out = np.zeros(out_shape, dtype=f.dtype)
+
+    if n == 0 :
+        return out
+
+    # use block permutation to make virtual outputs
+    nblk = min( f.shape[perm_axis]/3, nblk )
+    blkSz = int(f.shape[perm_axis]/nblk)
+    # get begin/end of each block
+    blkIdx = [ (i,min(f.shape[perm_axis],i+blkSz)) for i in range(0,f.shape[perm_axis],blkSz) ]
+    src_idx = [ slice(0,None) for i in range(f.ndim) ] # index expr for the src data
+    dst_idx = [ slice(0,None) for i in range(out.ndim) ] # index expr for the dest data
+    for ni in range(n): # gen for rand for each output
+        blk_perm = [i for i in range(len(blkIdx))]
+        random.shuffle(blk_perm) # block shuffle  **in-place**
+        ei = 0 # output epoch count
+        for bd,bs in enumerate(blk_perm):
+
+            (src_bgn,src_end) = blkIdx[bs]
+            src_idx[perm_axis] = slice(src_bgn, src_end)
+            src_idx[axis] = random.randint(0,f.shape[axis]-1) # pick rand source output
+
+            (dst_bgn,dst_end) = (ei, ei + src_end - src_bgn)
+            dst_idx[perm_axis] = slice(dst_bgn,dst_end)
+            dst_idx[axis] = ni
+
+            out[tuple(dst_idx)] = f[tuple(src_idx)]
+
+            ei = dst_end # update epoch counter for insertion
+    return out
+
+
 def block_randomize(true_target, npermute, axis=-3, block_size=None):
     ''' make a block random permutaton of the input array
     Inputs:
        npermute: int - number permutations to make
-       true_target: (..., nEp, nY, e): true target value for nTrl trials of length nEp flashes
-       axis : int the axis along which to permute true_target'''
+       true_target: (..., nEp, nY, e) or (...,nEp,nY): true target value for nTrl trials of length nEp flashes
+       axis : int the axis along which to permute true_target, i.e. time'''
+    axis = true_target.ndim+axis if axis<0 else axis  # positive axis
     if true_target.ndim < 3:
         raise ValueError("true target info must be at least 3d")
-    if not (axis == -3 or axis == true_target.ndim-2):
+    if not axis in (true_target.ndim-2, true_target.ndim-1):
         raise NotImplementedError("Only implementated for axis=-2 currently")
     
     # estimate the number of blocks to use
@@ -336,7 +377,10 @@ def block_randomize(true_target, npermute, axis=-3, block_size=None):
             elif dest_len < src_blk[1]-src_blk[0]:
                 src_blk = (src_blk[0], src_blk[0]+dest_len)
             
-            cb[..., dest_blk[0]:dest_blk[1], ti, :] = true_target[..., src_blk[0]:src_blk[1], yi, :]
+            if axis==true_target.ndim-3:
+                cb[..., dest_blk[0]:dest_blk[1], ti, :] = true_target[..., src_blk[0]:src_blk[1], yi, :]
+            elif axis==true_target.ndim-2:
+                cb[..., dest_blk[0]:dest_blk[1], ti] = true_target[..., src_blk[0]:src_blk[1], yi]
 
     return cb
 
