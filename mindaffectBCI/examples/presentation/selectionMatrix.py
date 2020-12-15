@@ -879,7 +879,7 @@ class SelectionGridScreen(Screen):
         self.init_framerate()
         self.init_logo(logo)
 
-    def init_symbols(self, symbols, x, y, w, h, bgFraction=.1, font_size=32):
+    def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
         # now create the display objects
         sw = int(w/self.gridwidth) # cell-width
         bgoffsetx = int(sw*bgFraction) # offset within cell for the button
@@ -904,8 +904,10 @@ class SelectionGridScreen(Screen):
         label = self.init_label(symb, x, y, w, h, font_size)
         return sprite, label
 
-    def init_label(self, symb, x, y, w, h, font_size=32):
+    def init_label(self, symb, x, y, w, h, font_size=None):
         # add the foreground label for this cell, and add to drawing batch
+        if font_size is None or font_size == 'auto':
+            font_size = int(min(w,h)*.75*72/96)
         label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
                                 color=(255, 255, 255, 255),
                                 anchor_x='center', anchor_y='center',
