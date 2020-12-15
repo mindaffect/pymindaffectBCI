@@ -515,10 +515,10 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp:int=
     # most likely target and the chance that it is wrong
     if Ptgt[y_est_idx] == 1.0 :
         print("P==1?") 
-    else:
-        ptp = PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
-        print(" Pred= {}".format(ptp))
-        ui.sendMessage(ptp)
+    #else:
+    ptp = PredictedTargetProb(timestamp, used_idx[y_est_idx], 1-Ptgt[y_est_idx])
+    print(" Pred= {}".format(ptp))
+    ui.sendMessage(ptp)
     # distribution over all *non-zero* targets
     ui.sendMessage(PredictedTargetDist(timestamp, used_idx, Ptgt))
     

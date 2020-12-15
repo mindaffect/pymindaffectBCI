@@ -40,7 +40,7 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
         # pass the rest on
         super().__init__(*args,**kwargs)
 
-    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction:float=0, font_size:int=32):
+    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction:float=0, font_size:int=None):
         if w is None:
             w, h=self.window.get_size()
         # compute central bounding box
