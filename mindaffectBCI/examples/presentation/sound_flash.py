@@ -68,7 +68,11 @@ class SoundFlashScreen(selectionMatrix.SelectionGridScreen):
         # play the sound
         if self.sounds[idx] and state>0 and self.stimulus_state[idx]==0:
             print('s{}'.format(idx),end='')
-            self.sounds[idx].play()
+            #plyr = pyglet.media.Player()
+            #plyr.queue(self.sounds[idx])
+            plyr = self.sounds[idx].play()
+            #plyr.position = (idx-len(self.sounds)/2,0,0)
+            #plyr.play()
 
 def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, **kwargs):
     """
