@@ -71,7 +71,7 @@ class SoundFlashScreen(selectionMatrix.SelectionGridScreen):
             #plyr = pyglet.media.Player()
             #plyr.queue(self.sounds[idx])
             plyr = self.sounds[idx].play()
-            #plyr.position = (idx-len(self.sounds)/2,0,0)
+            plyr.position = ((idx-(len(self.sounds)-1)/2)*2,0,0)
             #plyr.play()
 
 def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, **kwargs):
@@ -118,7 +118,7 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
 
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
-    setattr(args,'symbols',[['yes|yesno\\yes.wav','no|yesno\\no.wav']])
+    setattr(args,'symbols',[['yes|yesno\\yes_f.wav','no|yesno\\no_m.wav']])
     setattr(args,'stimfile','rc5x5.txt')
     setattr(args,'framesperbit',4)
     run(**vars(args))
