@@ -37,6 +37,9 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
             if arg in kwargs:
                 setattr(self,arg,kwargs[arg])
                 kwargs.pop(arg,None) # remove from args
+        if not self.transform == 'color':
+            # BODGE: tweak the background color so white font shows....
+            self.state2color[0]=(128,128,128)
         # pass the rest on
         super().__init__(*args,**kwargs)
 
@@ -60,7 +63,7 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
 
     # mappings for stimulus-state -> stimulus state
     state2scale = { 0:1, 1:.7, 2:1.5, 3:1.5 } # bigger for cue, smaller for stim
-    state2rotation = { 0:0, 1:10, 2:45, 3:45 } # slant for cue, flip for stim
+    state2rotation = { 0:0, 1:90, 2:45, 3:45 } # slant for cue, flip for stim
 
     # override the object drawing code for different types of stimulus change
     def update_object_state(self, idx:int, state):
@@ -78,11 +81,13 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
                 elif isinstance(state,float): # float state, map to intensity
                     self.objects[idx].color = tuple(int(c*state) for c in self.state2color[1])
             elif self.transform == 'scale':
+                self.objects[idx].color = self.state2color[0]
                 if isinstance(state,int): # integer state, map to color lookup table
                     self.objects[idx].scale = self.state2scale[state]
                 elif isinstance(state,float): # float state, map to intensity
                     self.objects[idx].scale = .5+state if state < 1.0 else state/128
             elif self.transform == 'rotation':
+                self.objects[idx].color = self.state2color[0]
                 if isinstance(state,int): # integer state, map to color lookup table
                     self.objects[idx].rotation = self.state2rotation[state]
                 elif isinstance(state,float): # float state, map to intensity
@@ -130,10 +135,11 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
                         bgFraction=bgFraction, **kwargs)
     # override the selection grid with the tictactoe one
     ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction, transform=transform, fixation=fixation)
-    ss.calibrationSentence = 'Look at the *RED* cross'
-    ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
-    ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
-    ss.predictionSentence = "Testing\n\nFocus on the *RED* +"
+    if fixation:
+        ss.calibrationSentence = 'Look at the *RED* cross'
+        ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
+        ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
+        ss.predictionSentence = "Testing\n\nFocus on the *RED* +"
 
     # run the app
     selectionMatrix.run_screen(ss)
@@ -142,12 +148,13 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
     #setattr(args,'calibration_symbols',[["."]])
-    setattr(args,'symbols',[["."]])
+    #setattr(args,'symbols',[["."]])
     #setattr(args,'symbols','visual_acuity.txt')
-    setattr(args,'stimfile','level11_cont.txt')
+    setattr(args,'symbols','symbols.txt')
+    setattr(args,'stimfile','rc5x5.txt')#'level11_cont.txt')
     setattr(args,'framesperbit',1)
-    setattr(args,'bgFraction',0)
+    setattr(args,'bgFraction',.2)
     setattr(args,'simple_calibration',False)
-    setattr(args,'transform','scale')
-    setattr(args,'fixation',True)
+    setattr(args,'transform','rotation')
+    setattr(args,'fixation',False)
     run(**vars(args))
