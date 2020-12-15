@@ -721,6 +721,8 @@ class SelectionGridScreen(Screen):
         self.liveFeedback=liveFeedback
         self.framestart = getTimeStamp()
         self.frameend = getTimeStamp()
+        self.stimulus_state = None
+        self.target_idx = None
         self.symbols = symbols
         self.objIDs = objIDs
         self.optosensor = optosensor
@@ -847,12 +849,12 @@ class SelectionGridScreen(Screen):
 
         self.symbols=symbols
         # Number of non-None symbols
-        nsymb      = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
+        self.nsymb  = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
 
         if objIDs is not None:
             self.objIDs = objIDs
         else:
-            self.objIDs = list(range(1,nsymb+1))
+            self.objIDs = list(range(1,self.nsymb+1))
             objIDs = self.objIDs
         if logo is None:
             logo = self.logo
@@ -864,8 +866,8 @@ class SelectionGridScreen(Screen):
         self.noisetag.setActiveObjIDs(self.objIDs)
 
         # add a background sprite with the right color
-        self.objects=[None]*nsymb
-        self.labels=[None]*nsymb
+        self.objects=[None]*self.nsymb
+        self.labels=[None]*self.nsymb
         self.batch = pyglet.graphics.Batch()
         self.background = pyglet.graphics.OrderedGroup(0)
         self.foreground = pyglet.graphics.OrderedGroup(1)
@@ -907,7 +909,7 @@ class SelectionGridScreen(Screen):
     def init_label(self, symb, x, y, w, h, font_size=None):
         # add the foreground label for this cell, and add to drawing batch
         if font_size is None or font_size == 'auto':
-            font_size = int(min(w,h)*.75*72/96)
+            font_size = int(min(w,h)*.75*72/96/len(symb))
         # add the foreground label for this cell, and add to drawing batch
         label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
                                 color=(255, 255, 255, 255),
@@ -1091,6 +1093,10 @@ class SelectionGridScreen(Screen):
                 if self.opto_sprite is not None:
                     self.opto_sprite.visible=True
                     self.opto_sprite.color = tuple(int(c*target_state) for c in (255, 255, 255))
+
+        # record the current stimulus state
+        self.stimulus_state = stimulus_state
+        self.target_idx = target_idx
 
         # do the draw
         self.batch.draw()
