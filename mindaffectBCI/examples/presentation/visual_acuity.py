@@ -133,7 +133,7 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
                         fullscreen_stimulus=fullscreen_stimulus, 
                         optosensor=optosensor,  
                         bgFraction=bgFraction, **kwargs)
-    # override the selection grid with the tictactoe one
+    # override the selection grid with the visual acuity screen one
     ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction, transform=transform, fixation=fixation)
     if fixation:
         ss.calibrationSentence = 'Look at the *RED* cross'

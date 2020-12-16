@@ -51,52 +51,10 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
         if self.labels[idx]:
             self.labels[idx].color=(255,255,255,255) # reset labels
 
-
-def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, transform:str='color', fixation:bool=False, **kwargs):
-    """
-    Args:
-        nCal (int, optional): number of calibration trials. Defaults to 10.
-        nPred (int, optional): number of prediction trials at a time. Defaults to 10.
-        simple_calibration (bool, optional): flag if we show only a single target during calibration, Defaults to False.
-        stimFile ([type], optional): the stimulus file to use for the codes. Defaults to None.
-        framesperbit (int, optional): number of video frames per stimulus codebit. Defaults to 1.
-        fullscreen (bool, optional): flag if should runn full-screen. Defaults to False.
-        fullscreen_stimulus (bool, optional): flag if should run the stimulus (i.e. flicker) in fullscreen mode. Defaults to True.
-        simple_calibration (bool, optional): flag if we only show the *target* during calibration.  Defaults to False
-        calibration_trialduration (float, optional): flicker duration for the calibration trials. Defaults to 4.2.
-        prediction_trialduration (float, optional): flicker duration for the prediction trials.  Defaults to 10.
-        calibration_args (dict, optional): additional keyword arguments to pass to `noisetag.startCalibration`. Defaults to None.
-        prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
-        gridfraction (float,optional): fraction of the symbols area of the screen to use for the stimuli, you should set this such that the stimuli span about 7-deg of visual angle for your participant.  Defaults to .1
-    """
-    if stimfile is None:
-        stimfile = 'mgold_61_6521_psk_60hz.txt'
-    if fullscreen is None and windowed is not None:
-        fullscreen = not windowed
-    if windowed == True or fullscreen == True:
-        fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
-    if host is not None and not host in ('','-'):
-        nt.connect(host, queryifhostnotfound=False)
-
-    # init the graphics system
-    window = selectionMatrix.initPyglet(fullscreen=fullscreen)
-
-    # make the screen manager object which manages the app state
-    ss = selectionMatrix.ExptScreenManager(window, nt, symbols, 
-                        fullscreen_stimulus=fullscreen_stimulus, 
-                        optosensor=optosensor,  
-                        bgFraction=bgFraction, **kwargs)
-    # override the selection grid with the image_flash one
-    ss.selectionGrid = ImageFlashScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor)
-
-    # run the app
-    selectionMatrix.run_screen(ss)
-
-
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
     setattr(args,'symbols','rc5x5_faces.txt')
     setattr(args,'stimfile','rc5x5.txt')
     setattr(args,'framesperbit',4)
-    run(**vars(args))
+    setattr(args,'selectionGrid','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
+    selectionMatrix.run(**vars(args))

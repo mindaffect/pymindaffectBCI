@@ -37,6 +37,23 @@ isi = 1/60
 drawrate = 0  # rate at which draw is called
 configmsg = None
 
+def import_and_make_class(s:str,**kwargs):
+    """utility function to make a class instance from a string module.class name
+
+    Args:
+        s (str): module.class name
+
+    Returns:
+        s: created class instance
+    """    
+    import importlib
+    module = ".".join(s.split(".")[:-1])
+    cls = s.split(".")[-1]
+    if not module is None or module == '':
+        module = importlib.import_module(module)
+    cls = getattr(module, cls)
+    return cls(**kwargs) # make instance
+
 class Screen:
 
     '''Screen abstract-class which draws stuff on the screen until finished'''
@@ -730,8 +747,8 @@ class SelectionGridScreen(Screen):
         self.logo = logo
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
-        if symbols is not None:
-            self.set_grid(symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
+        if self.symbols is not None:
+            self.set_grid(self.symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
         self.liveSelections = None
         self.feedbackThreshold = .4
         self.waitKey=waitKey
@@ -1183,8 +1200,8 @@ class ExptScreenManager(Screen):
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
-                 simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, bgFraction=.1,
+                 selectionGrid:Screen=None, grid_args:dict=None, stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
+                 simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, extra_screens=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
@@ -1196,10 +1213,30 @@ class ExptScreenManager(Screen):
         # auto-generate menu items for each prediction symbols set
         self.extra_symbols = extra_symbols
         if extra_symbols:
-            for i,ps in enumerate(extra_symbols):
+            if not extra_screens is None:
+                raise ValueError("Cant have extra symbols and extra screens")
+            # convert to a set of screens
+            extra_screens = []
+            for symbols in extra_symbols:
+                scr = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
+                scr.label = symbols
+                extra_screens.append(scr)
+
+        self.extra_screens = extra_screens
+        # Make menu items for the extra screens
+        if extra_screens is not None:
+            for i,s in enumerate(extra_screens):
+                if isinstance(s,str):
+                    try:
+                        extra_screens[i] = import_and_make_class(s)
+                    except:
+                        print('Couldnt make the screen {}'.format(s))
+
+            for i,ps in enumerate(extra_screens):
                 keyi = i + 4
+                label = getattr(ps,'label',type(ps).__name__) # use label slot, fallback on class name
                 self.main_menu_numbered = self.main_menu_numbered + "\n" + \
-                        "{}) Free Typing: {}".format(keyi,ps)
+                        "{}) Free Typing: {}".format(keyi,label)
                 self.menu_keys[getattr(pyglet.window.key,"_{:d}".format(keyi))] = self.ExptPhases.ExtraSymbols
 
         self.menu = MenuScreen(window, self.main_menu_header+self.main_menu_numbered+self.main_menu_footer, self.menu_keys.keys())
@@ -1208,7 +1245,14 @@ class ExptScreenManager(Screen):
         self.query  =  QueryDialogScreen(window, 'Query Test:')
         self.electquality = ElectrodequalityScreen(window, noisetag)
         self.results = ResultsScreen(window, noisetag)
-        self.selectionGrid = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
+
+        if selectionGrid is not None:
+            if isinstance(selectionGrid,str):
+                selectionGrid = import_and_make_class(selectionGrid,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**grid_args)
+        else:
+            selectionGrid = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
+        self.selectionGrid = selectionGrid
+
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
 
@@ -1312,21 +1356,22 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            self.selectionGrid.reset()
-            self.selectionGrid.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
-            self.selectionGrid.setliveFeedback(False)
-            self.selectionGrid.setshowNewTarget(True)
-            self.selectionGrid.target_only=self.simple_calibration
-            self.selectionGrid.set_sentence(self.calibrationSentence)
+            screen = self.selectionGrid
+            screen.reset()
+            screen.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
+            screen.setliveFeedback(False)
+            screen.setshowNewTarget(True)
+            screen.target_only=self.simple_calibration
+            screen.set_sentence(self.calibrationSentence)
 
             self.calibration_args['framesperbit'] = self.framesperbit
             self.calibration_args['numframes'] = self.calibration_trialduration / isi
             self.calibration_args['selectionThreshold']=self.selectionThreshold
 
             if self.calibration_stimseq:
-                self.selectionGrid.noisetag.set_stimSeq(self.calibration_stimseq)
-            self.selectionGrid.noisetag.startCalibration(**self.calibration_args)
-            self.screen = self.selectionGrid
+                screen.noisetag.set_stimSeq(self.calibration_stimseq)
+            screen.noisetag.startCalibration(**self.calibration_args)
+            self.screen = screen
             self.next_stage = self.ExptPhases.CalResults
 
         elif self.stage==self.ExptPhases.CalResults: # Calibration Results
@@ -1349,23 +1394,24 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            self.selectionGrid.reset()
-            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
-            self.selectionGrid.liveFeedback=True
-            self.selectionGrid.setliveSelections(True)
-            self.selectionGrid.setshowNewTarget(False)
-            self.selectionGrid.target_only=False
-            self.selectionGrid.show_correct=True
-            self.selectionGrid.set_sentence(self.cuedpredictionSentence)
+            screen = self.selectionGrid
+            screen.reset()
+            screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
+            screen.liveFeedback=True
+            screen.setliveSelections(True)
+            screen.setshowNewTarget(False)
+            screen.target_only=False
+            screen.show_correct=True
+            screen.set_sentence(self.cuedpredictionSentence)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
 
             if self.stimseq:
-                self.selectionGrid.noisetag.set_stimSeq(self.stimseq)
-            self.selectionGrid.noisetag.startPrediction(cuedprediction=True, **self.prediction_args)
-            self.screen = self.selectionGrid
+                screen.noisetag.set_stimSeq(self.stimseq)
+            screen.noisetag.startPrediction(cuedprediction=True, **self.prediction_args)
+            self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.PredInstruct: # pred instruct
@@ -1379,23 +1425,24 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            self.selectionGrid.reset()
-            self.selectionGrid.set_grid(symbols=self.symbols, bgFraction=.05)
-            self.selectionGrid.liveFeedback=True
-            self.selectionGrid.target_only=False
-            self.selectionGrid.show_correct=False
-            self.selectionGrid.set_sentence(self.predictionSentence)
-            self.selectionGrid.setliveSelections(True)
-            self.selectionGrid.setshowNewTarget(False)
+            screen = self.selectionGrid
+            screen.reset()
+            screen.set_grid(symbols=self.symbols, bgFraction=.05)
+            screen.liveFeedback=True
+            screen.target_only=False
+            screen.show_correct=False
+            screen.set_sentence(self.predictionSentence)
+            screen.setliveSelections(True)
+            screen.setshowNewTarget(False)
 
             self.prediction_args['framesperbit'] = self.framesperbit
             self.prediction_args['numframes'] = self.prediction_trialduration / isi
             self.prediction_args['selectionThreshold']=self.selectionThreshold
             
             if self.stimseq:
-                self.selectionGrid.noisetag.set_stimSeq(self.stimseq)
-            self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
-            self.screen = self.selectionGrid
+                screen.noisetag.set_stimSeq(self.stimseq)
+            screen.noisetag.startPrediction(**self.prediction_args)
+            self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.ExtraSymbols: # pred
@@ -1403,20 +1450,21 @@ class ExptScreenManager(Screen):
             key2i = {pyglet.window.key._4:0,pyglet.window.key._5:1, pyglet.window.key._6:2}
             extrai = key2i.get(self.menu.key_press,None)
             if extrai is not None:
-                self.selectionGrid.reset()
-                self.selectionGrid.set_grid(symbols=self.extra_symbols[extrai], bgFraction=.05)
-                self.selectionGrid.liveFeedback=True
-                self.selectionGrid.target_only=False
-                self.selectionGrid.show_correct=False
-                self.selectionGrid.set_sentence('')
-                self.selectionGrid.setliveSelections(True)
+                screen = self.extra_screens[extrai]
+                screen.reset()
+                
+                screen.liveFeedback=True
+                screen.target_only=False
+                screen.show_correct=False
+                screen.set_sentence('')
+                screen.setliveSelections(True)
 
                 self.prediction_args['framesperbit'] = self.framesperbit
                 self.prediction_args['numframes'] = self.prediction_trialduration / isi
                 self.prediction_args['selectionThreshold']=self.selectionThreshold
                 
                 self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
-                self.screen = self.selectionGrid
+                self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
 
         elif self.stage==self.ExptPhases.Closing: # closing instruct
@@ -1435,13 +1483,14 @@ class ExptScreenManager(Screen):
             #print("flicker with selection")
             #self.selectionGrid.noisetag.startFlickerWithSelection(numframes=10/isi)
             print("single trial")
-            self.selectionGrid.set_grid([[None, 'up', None],
+            screen = self.selectionGrid
+            screen.set_grid([[None, 'up', None],
                                          ['left', 'fire', 'right']])
-            self.selectionGrid.noisetag.startSingleTrial(numframes=10/isi)
+            screen.noisetag.startSingleTrial(numframes=10/isi)
             # N.B. ensure decoder is in prediction mode!
-            self.selectionGrid.noisetag.modeChange('Prediction.static')
-            self.selectionGrid.reset()
-            self.screen = self.selectionGrid
+            screen.noisetag.modeChange('Prediction.static')
+            screen.reset()
+            self.screen = screen
 
         elif self.stage==self.ExptPhases.FrameRateCheck: # frame-rate-check
             print("frame-rate-check")
@@ -1593,7 +1642,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, selectionGrid:Screen=None,
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
         extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
@@ -1648,6 +1697,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
+                        selectionGrid=selectionGrid,
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,
