@@ -21,7 +21,7 @@
         "npred":20,
         "selectionThreshold":0.1,
         "calibration_symbols":["1","2","3","4","5"],
-        "symbols":"keyboard.txt",
+        "symbols":"symbols.txt",
         "stimfile":"ssvep_cont.png",
         "framesperbit":1,
         "calibration_trialduration":4.2,  

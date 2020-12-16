@@ -1183,14 +1183,14 @@ class ExptScreenManager(Screen):
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 stimseq:str=None, calibration_stimseq:str=None,
+                 stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
         self.symbols = symbols
         self.calibration_symbols = calibration_symbols if calibration_symbols is not None else symbols
-        self.stimseq = stimseq
+        self.stimseq = stimseq if not stimseq is None else stimfile
         self.calibration_stimseq = calibration_stimseq if calibration_stimseq is not None else stimseq
         self.bgFraction = bgFraction
         # auto-generate menu items for each prediction symbols set
@@ -1684,7 +1684,7 @@ if __name__ == "__main__":
     args = parse_args()
     setattr(args,'symbols',[['yes','no','<-']])
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
-    setattr(args,'stimseq','level11_cont.txt')
+    setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'calibration_stimseq','rc5x5.txt')
     run(**vars(args))
 

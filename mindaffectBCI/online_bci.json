@@ -8,7 +8,7 @@
 
     "decoder":"mindaffectBCI.decoder.decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[0,3],[25,-1]],
+        "stopband" : [[45,65],[3,25,"bandpass"]],
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,

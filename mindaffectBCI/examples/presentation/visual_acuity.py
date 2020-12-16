@@ -97,7 +97,9 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
             self.labels[idx].color=(255,255,255,255) # reset labels
 
 
-def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, transform:str='color', fixation:bool=False, **kwargs):
+def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, 
+        fullscreen=False, windowed=False, fullscreen_stimulus=True, 
+        transform:str='color', fixation:bool=False, **kwargs):
     """ run the selection Matrix with default settings
 
     Args:
@@ -115,13 +117,11 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
         prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
         gridfraction (float,optional): fraction of the symbols area of the screen to use for the stimuli, you should set this such that the stimuli span about 7-deg of visual angle for your participant.  Defaults to .1
     """
-    if stimfile is None:
-        stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
     if windowed == True or fullscreen == True:
         fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
+    nt=Noisetag(clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 
@@ -151,7 +151,8 @@ if __name__ == "__main__":
     #setattr(args,'symbols',[["."]])
     #setattr(args,'symbols','visual_acuity.txt')
     setattr(args,'symbols','symbols.txt')
-    setattr(args,'stimfile','rc5x5.txt')#'level11_cont.txt')
+    setattr(args,'calibration_stimseq','rc5x5.txt')
+    setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'framesperbit',1)
     setattr(args,'bgFraction',.2)
     setattr(args,'simple_calibration',False)

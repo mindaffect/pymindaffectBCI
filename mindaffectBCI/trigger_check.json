@@ -29,7 +29,7 @@
         "npred":10,
         "selectionThreshold":0.1,
         "symbols":"symbols.txt",
-        "calibration_symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
+        "calibration_symbols":"3x3.txt",
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
         "fullscreen":false,
