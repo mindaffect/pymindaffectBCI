@@ -15,14 +15,15 @@
         "predplots" : false
     },
 
-    "presentation":"mindaffectBCI.examples.presentation.visual_acuity",
+    "presentation":"selectionMatrix",
     "presentation_args":{
         "ncal":20,
         "npred":10,
         "selectionThreshold":0.01,
         "symbols":"symbols.txt",
         "stimfile":"rc5x5.png",
-        "transform":"scale",
+        "selectionGrid":"mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen",
+        "grid_args":{"transform":"scale"},
         "bgFraction":0.3,
         "prediction_args":{"permute":true},
         "framesperbit":3,

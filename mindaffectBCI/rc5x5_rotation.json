@@ -15,11 +15,11 @@
         "predplots" : false
     },
 
-    "presentation":"mindaffectBCI.examples.presentation.visual_acuity",
+    "presentation":"selectionMatrix",
     "presentation_args":{
         "ncal":20,
-        "npred":10,
-        "selectionThreshold":0.01,
+        "npred":30,
+        "selectionThreshold":0.1,
         "symbols":"symbols.txt",
         "stimfile":"rc5x5.png",
         "selectionGrid":"mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen",
