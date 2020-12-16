@@ -20,7 +20,7 @@
         "ncal":20,
         "npred":10,
         "selectionThreshold":0.1,
-        "selectionGrid":"mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+        "calibrationScreen":"mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
         "symbols":"rc5x5_faces.txt",
         "stimfile":"rc5x5.png",
         "prediction_args":{"permute":false},

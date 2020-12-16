@@ -68,5 +68,5 @@ class TictactoeScreen(selectionMatrix.SelectionGridScreen):
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
     setattr(args,'symbols',tictactoe_symbols)
-    setattr(args,'selectionGrid','mindaffectBCI.examples.presentation.tictactoe.TictactoeScreen')
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.tictactoe.TictactoeScreen')
     selectionMatrix.run(**vars(args))

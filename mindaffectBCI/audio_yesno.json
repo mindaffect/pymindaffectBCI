@@ -19,7 +19,7 @@
     "presentation_args":{
         "ncal":20,
         "npred":10,
-        "selectionGrid":"mindaffectBCI.examples.presentation.sound_flash.SoundFlashScreen",
+        "calibrationScreen":"mindaffectBCI.examples.presentation.sound_flash.SoundFlashScreen",
         "selectionThreshold":0.01,
         "symbols":[["yes|yesno\\yes_f.wav","no|yesno\\no_m.wav"]],
         "stimfile":"rc5x5.png",

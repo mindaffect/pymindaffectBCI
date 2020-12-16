@@ -156,6 +156,6 @@ if __name__ == "__main__":
     setattr(args,'framesperbit',1)
     setattr(args,'bgFraction',.2)
     setattr(args,'simple_calibration',False)
-    setattr(args,'selectionGrid','mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen')
-    setattr(args,'grid_args',dict(transform='rotation',fixation=False))
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen')
+    setattr(args,'calscreen_args',dict(transform='rotation',fixation=False))
     selectionMatrix.run(**vars(args))

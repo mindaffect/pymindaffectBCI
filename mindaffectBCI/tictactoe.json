@@ -19,7 +19,7 @@
     "presentation_args":{
         "ncal":10,
         "npred":5,
-        "selectionGrid":"mindaffectBCI.examples.presentation.tictactoe.TictactoeScreen",
+        "calibrationScreen":"mindaffectBCI.examples.presentation.tictactoe.TictactoeScreen",
         "selectionThreshold":0.1,
         "symbols":[["+","+","+"],["+","+","+"],["+","+","+"]],
         "prediction_args":{"permute":false},

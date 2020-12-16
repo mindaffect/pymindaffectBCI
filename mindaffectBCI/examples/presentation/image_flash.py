@@ -56,5 +56,5 @@ if __name__ == "__main__":
     setattr(args,'symbols','rc5x5_faces.txt')
     setattr(args,'stimfile','rc5x5.txt')
     setattr(args,'framesperbit',4)
-    setattr(args,'selectionGrid','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
     selectionMatrix.run(**vars(args))

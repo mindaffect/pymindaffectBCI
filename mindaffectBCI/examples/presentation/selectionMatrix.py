@@ -76,12 +76,89 @@ class Screen:
 
 
 
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+class WaitScreen(Screen):
+    '''Screen which shows a textual instruction for duration or until key-pressed'''
+    def __init__(self, window, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
+        super().__init__(window)
+        self.t0 = None # timer for the duration
+        self.duration = duration
+        self.waitKey = waitKey
+        self.isRunning = False
+        self.isDone = False
+        self.clearScreen = True
+
+        # add the framerate box
+        self.framerate=pyglet.text.Label("", font_size=12, x=self.window.width, y=self.window.height,
+                                        color=(255, 255, 255, 255),
+                                        anchor_x='right', anchor_y='top')
+        
+        self.logo = None
+        if isinstance(logo,str): # filename to load
+            logo = search_directories_for_file(logo,
+                                               os.path.dirname(os.path.abspath(__file__)),
+                                               os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
+            try:
+                logo = pyglet.image.load(logo)
+            except:
+                logo = None
+        if logo:
+            logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
+            self.logo = pyglet.sprite.Sprite(logo,self.window.width,self.window.height-16)
+            self.logo.update(scale_x=self.window.width*.1/logo.width, 
+                            scale_y=self.window.height*.1/logo.height)
+
+
+    def reset(self):
+        self.isRunning = False
+        self.isDone = False
+
+    def is_done(self):
+        # check termination conditions
+        if not self.isRunning:
+            self.isDone = False
+            return self.isDone
+        if self.waitKey:
+            #global last_key_press
+            if self.window.last_key_press:
+                self.key_press = self.window.last_key_press
+                self.isDone = True
+                self.window.last_key_press = None
+        if not self.duration is None and self.elapsed_ms() > self.duration:
+            self.isDone = True
+
+        return self.isDone
+
+    def elapsed_ms(self):
+        return getTimeStamp()-self.t0 if self.t0 else -1
+
+    def draw(self, t):
+        '''Show a block of text to the user for a given duration on a blank screen'''
+        if not self.isRunning:
+            self.isRunning = True  # mark that we're running
+            self.t0 = getTimeStamp()
+        if self.clearScreen:
+            self.window.clear()
+
+        # check if should update display
+        # TODO[]: only update screen 1x / second
+        global flipstats
+        flipstats.update_statistics()
+        self.framerate.begin_update()
+        self.framerate.text = "{:4.1f} +/-{:4.1f}ms".format(flipstats.median,flipstats.sigma)
+        self.framerate.end_update()
+        self.framerate.draw()
+
+        if self.logo: self.logo.draw()
 
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
-class InstructionScreen(Screen):
+class InstructionScreen(WaitScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
         super().__init__(window)
@@ -1199,8 +1276,10 @@ class ExptScreenManager(Screen):
     def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=None, ncal:int=1, npred:int=1, nPred:int=None, 
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
-                 selectionThreshold:float=.1, optosensor:bool=True,
-                 selectionGrid:Screen=None, grid_args:dict=dict(), stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
+                 selectionThreshold:float=.1, optosensor:bool=True,  
+                 calibrationScreen:Screen=None, calscreen_args:dict=dict(), 
+                 predictionScreen:Screen=None, predscreen_args:dict=dict(),
+                 stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, extra_screens=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
@@ -1246,12 +1325,19 @@ class ExptScreenManager(Screen):
         self.electquality = ElectrodequalityScreen(window, noisetag)
         self.results = ResultsScreen(window, noisetag)
 
-        if selectionGrid is not None:
-            if isinstance(selectionGrid,str):
-                selectionGrid = import_and_make_class(selectionGrid,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**grid_args)
+        if calibrationScreen is not None:
+            if isinstance(calibrationScreen,str):
+                calibrationScreen = import_and_make_class(calibrationScreen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**calscreen_args)
         else:
-            selectionGrid = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
-        self.selectionGrid = selectionGrid
+            calibrationScreen = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
+        self.calibrationScreen = calibrationScreen
+        
+        if predictionScreen is not None:
+            if isinstance(predictionScreen,str):
+                predictionScreen = import_and_make_class(predictionScreen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**predscreen_args)
+        else:
+            predictionScreen = calibrationScreen
+        self.predictionScreen = predictionScreen
 
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
@@ -1356,7 +1442,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            screen = self.selectionGrid
+            screen = self.calibrationScreen
             screen.reset()
             screen.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             screen.setliveFeedback(False)
@@ -1394,7 +1480,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            screen = self.selectionGrid
+            screen = self.predictionScreen
             screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
@@ -1425,7 +1511,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            screen = self.selectionGrid
+            screen = self.predictionScreen
             screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=.05)
             screen.liveFeedback=True
@@ -1483,7 +1569,7 @@ class ExptScreenManager(Screen):
             #print("flicker with selection")
             #self.selectionGrid.noisetag.startFlickerWithSelection(numframes=10/isi)
             print("single trial")
-            screen = self.selectionGrid
+            screen = self.predictionScreen
             screen.set_grid([[None, 'up', None],
                                          ['left', 'fire', 'right']])
             screen.noisetag.startSingleTrial(numframes=10/isi)
@@ -1642,7 +1728,9 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, selectionGrid:Screen=None, grid_args:dict=dict(),
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
+        calibrationScreen:Screen=None, calscreen_args:dict=dict(), 
+        predictionScreen:Screen=None, predscreen_args:dict=dict(),        
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
         extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
@@ -1697,7 +1785,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
-                        selectionGrid=selectionGrid, grid_args=grid_args,
+                        calibrationScreen=calibrationScreen, calscreen_args=calscreen_args,
+                        predictionScreen=predictionScreen, predscreen_args=predscreen_args,
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,
