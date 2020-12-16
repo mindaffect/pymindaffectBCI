@@ -20,9 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from mindaffectBCI.examples.presentation.selectionMatrix import initPyglet
 import mindaffectBCI.examples.presentation.selectionMatrix as selectionMatrix
-from mindaffectBCI.noisetag import Noisetag
 import random
 import copy
 
