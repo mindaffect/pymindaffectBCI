@@ -1200,7 +1200,7 @@ class ExptScreenManager(Screen):
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,
-                 selectionGrid:Screen=None, grid_args:dict=None, stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
+                 selectionGrid:Screen=None, grid_args:dict=dict(), stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, extra_screens=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
@@ -1642,7 +1642,7 @@ def load_symbols(fn):
     return symbols
 
 def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, selectionGrid:Screen=None,
+        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, selectionGrid:Screen=None, grid_args:dict=dict(),
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
         extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
@@ -1697,7 +1697,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
-                        selectionGrid=selectionGrid,
+                        selectionGrid=selectionGrid, grid_args=grid_args,
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,
