@@ -8,8 +8,8 @@ class SnakeGame:
         self.grid_width = grid_width
         self.grid_height = grid_height
         self.cells = []
-        self.direction = random.randint(1,3)
-        self.startx, self.starty = random.randint(max(1,self.grid_width//4), self.grid_width*3//4), random.randint(self.grid_height//4, self.grid_height*3//4)
+        self.direction = 1
+        self.startx, self.starty = max(1,self.grid_width//4), self.grid_height//2
         self.body = [(self.startx, self.starty),(self.startx, self.starty)]
         self.apple = (None, None)
         self.score = -1
@@ -33,8 +33,6 @@ class SnakeGame:
         return temp
 
     def draw_score(self):
-        cell_width = self.window.width // self.grid_width
-        cell_height = self.window.height // self.grid_height
         if self.point == True:
             self.score += 1
             self.point = False
@@ -42,8 +40,8 @@ class SnakeGame:
         score = pyglet.text.Label(str(self.score),
                                   font_name = 'Times New Roman',
                                   font_size = 30,
-                                  x = (self.grid_width - 1) * cell_width, y = (self.grid_height - 1) * cell_height,
-                                  anchor_x = 'center', anchor_y = 'center')
+                                  x = 0, y = self.window.height,
+                                  anchor_x = 'left', anchor_y = 'top')
         score.draw()
 
     def fill_cells(self):

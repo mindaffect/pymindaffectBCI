@@ -2,7 +2,7 @@ import mindaffectBCI.examples.presentation.selectionMatrix as selectionMatrix
 from mindaffectBCI.examples.presentation.snakegame import SnakeGame
 
 class SnakeGameScreen(selectionMatrix.WaitScreen):
-    def __init__(self, window, symbols, noisetag, grid_width:int=25, grid_height:int=25, duration:float=None, waitKey:bool=False, logo:str=None, framespermove:int=60*4, target_only:bool=False, clearScreen:bool=True, sendEvents:bool=True, **kwargs):
+    def __init__(self, window, symbols, noisetag, grid_width:int=20, grid_height:int=20, duration:float=None, waitKey:bool=False, logo:str="Mindaffect_Logo.png", framespermove:int=60*4, target_only:bool=False, clearScreen:bool=True, sendEvents:bool=True, **kwargs):
         super().__init__(window, duration, waitKey, logo)
         self.window=window
         self.noisetag = noisetag
@@ -104,6 +104,7 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
             self.snakegame.move()
 
         # call the game draw functions
+        selectionMatrix.WaitScreen.draw(self,t)
         self.snakegame.draw()
         self.snakegame.draw_score()
 
