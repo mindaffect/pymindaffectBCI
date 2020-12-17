@@ -14,13 +14,15 @@ To install from **source** (currently the recommended method):
 
        git clone https://github.com/mindaffect/pymindaffectBCI
 
-  #. Install the necessary bits to your local python path:
+  2. Install the necessary bits to your local python path:
 
     1. change to the directory where you cloned the repository.
 
     #. Add this module to the python path, and install dependencies::
    
          pip install -e .
+  
+  3. Install a JAVA JVM, such as `this one <https://adoptopenjdk.net/index.html?variant=openjdk15&jvm>`_
 
 To install as a python library::
 
@@ -32,6 +34,8 @@ Try the off-line analysis on-line on binder.
  :target: https://mybinder.org/v2/gh/mindaffect/pymindaffectBCI/pip_test
 
 Try off-line multiple datasets analysis on `kaggle <https://www.kaggle.com/mindaffect/mindaffectbci>`_ 
+
+
 
 Installation Test
 -----------------
