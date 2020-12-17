@@ -1513,7 +1513,7 @@ class ExptScreenManager(Screen):
             print("prediction")
             screen = self.predictionScreen
             screen.reset()
-            screen.set_grid(symbols=self.symbols, bgFraction=.05)
+            screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
             screen.target_only=False
             screen.show_correct=False
