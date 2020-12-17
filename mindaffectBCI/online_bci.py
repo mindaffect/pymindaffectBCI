@@ -380,7 +380,7 @@ def load_config(config_file):
             config_file = config_file + '.json'
         config_file = search_directories_for_file(config_file,os.path.dirname(os.path.abspath(__file__)))
         print("Loading config from: {}".format(config_file))
-        with open(config_file,'r') as f:
+        with open(config_file,'r',encoding='utf8') as f:
             config = json.load(f)
     else:
         print("Loading config from: {}".format(f))
