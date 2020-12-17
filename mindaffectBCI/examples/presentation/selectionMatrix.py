@@ -1049,7 +1049,6 @@ class SelectionGridScreen(Screen):
                                         batch=self.batch, group=self.foreground)
 
     def init_logo(self,logo):
-        winw, winh=self.window.get_size()
         # add a logo box
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,os.path.dirname(__file__),
@@ -1064,8 +1063,8 @@ class SelectionGridScreen(Screen):
             self.logo.batch = self.batch
             self.logo.group = self.foreground
             self.logo.update(x=self.window.width,  y=self.window.height-16,
-                            scale_x=self.window.width*.1/logo.width, 
-                            scale_y=self.window.height*.1/logo.height)
+                            scale_x=self.window.width*.1/self.logo.image.width, 
+                            scale_y=self.window.height*.1/self.logo.image.height)
 
     def init_opto(self):
         winw, winh=self.window.get_size()
@@ -1318,6 +1317,7 @@ class ExptScreenManager(Screen):
                         "{}) Free Typing: {}".format(keyi,label)
                 self.menu_keys[getattr(pyglet.window.key,"_{:d}".format(keyi))] = self.ExptPhases.ExtraSymbols
 
+
         self.menu = MenuScreen(window, self.main_menu_header+self.main_menu_numbered+self.main_menu_footer, self.menu_keys.keys())
         self.instruct = InstructionScreen(window, '', duration = 50000)
         self.connecting = ConnectingScreen(window, noisetag)
@@ -1549,7 +1549,7 @@ class ExptScreenManager(Screen):
                 self.prediction_args['numframes'] = self.prediction_trialduration / isi
                 self.prediction_args['selectionThreshold']=self.selectionThreshold
                 
-                self.screen.noisetag.startPrediction(**self.prediction_args)
+                screen.noisetag.startPrediction(**self.prediction_args)
                 self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
 
@@ -1825,5 +1825,6 @@ if __name__ == "__main__":
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
     setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'calibration_stimseq','rc5x5.txt')
+    setattr(args,'extra_symbols',['iconic.txt'])
     run(**vars(args))
 
