@@ -22,7 +22,7 @@
         "calibration_symbols":"3x3.txt",
         "symbols":null,
         "predictionScreen":"mindaffectBCI.examples.presentation.snake_game.SnakeGameScreen",
-        "predscreen_args":{"grid_height":10, "grid_width":10},
+        "predscreen_args":{"grid_height":10, "grid_width":10, "framespermove":240},
         "selectionThreshold":0.1,
         "framesperbit":1,
         "fullscreen":false,
