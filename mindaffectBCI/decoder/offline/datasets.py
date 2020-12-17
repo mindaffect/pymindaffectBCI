@@ -30,7 +30,7 @@ from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
 from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
-def plos_one():
+def plos_one(regexp:str=None):
     '''generate the directory+filename info for the plos_one noisetagging dataset'''
     loader = load_brainstream # function to call to load the dataset
     if os.path.isdir(os.path.expanduser('~/data/bci')):
@@ -41,9 +41,11 @@ def plos_one():
     #sessdir = ['s{:d}'.format(i) for i in range(1, 12)]
     sessfn = 'traindata.mat'
     filenames = [os.path.join(dataroot, d, sessfn) for d in sessdir]
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def lowlands():
+def lowlands(regexp:str=None):
     '''generate the directory+filename info for the lowlands noisetagging dataset'''
     loader = load_brainstream
     if os.path.isdir(os.path.expanduser('~/data/bci')):
@@ -51,6 +53,8 @@ def lowlands():
     else:
         dataroot = 'D:/own_experiments/lowlands/'
     filenames = glob(os.path.join(dataroot, '*_tr_train_1.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
 def p300_prn(label:str=None):
@@ -67,7 +71,7 @@ def p300_prn(label:str=None):
         filenames = [f for f in filenames if re.search(label,f)]
     return (loader, filenames, dataroot)
 
-def tactileP3():
+def tactileP3(regexp:str=None):
     '''generate dataset+filename for tactile P3'''
     loader = load_p300_prn # function to call to load the dataset
     if os.path.isdir(os.path.expanduser('~/data/bci')):
@@ -76,9 +80,11 @@ def tactileP3():
         dataroot = 'D:/'
     expt = 'own_experiments/tactile/P3speller'
     filenames = glob(os.path.join(dataroot, expt, '*/*/jf_prep/*offline.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def tactile_PatientStudy():
+def tactile_PatientStudy(regexp:str=None):
     '''generate dataset+filename for p300-prn2'''
     loader = load_p300_prn # function to call to load the dataset
     if os.path.isdir(os.path.expanduser('~/data/bci')):
@@ -87,9 +93,11 @@ def tactile_PatientStudy():
         dataroot = 'D:/'
     expt = 'own_experiments/tactile/PatientStudy'
     filenames = glob(os.path.join(dataroot, expt, '*/*/jf_prep/*offline.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def openBMI(dstype="SSVEP"):
+def openBMI(dstype="SSVEP",regexp:str=None):
     loader = load_openBMI
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot = os.path.expanduser('~/data/bci/external_data/gigadb/openBMI')
@@ -97,9 +105,11 @@ def openBMI(dstype="SSVEP"):
         dataroot= os.path.expanduser('D:/external_data/gigadb/openBMI')
     filenames = glob(os.path.join(dataroot, 'sess*/s*/sml_*'+ dstype + '.mat')) + \
                 glob(os.path.join(dataroot, 'sml_*'+ dstype + '.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def twofinger():
+def twofinger(regexp:str=None):
     loader = load_twofinger
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot = os.path.expanduser('~/data/bci/')
@@ -107,9 +117,11 @@ def twofinger():
         dataroot= os.path.expanduser('D:/')
     exptdir = 'external_data/twente/twofinger'
     filenames =  glob(os.path.join(dataroot, exptdir, 'S??.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def brains_on_fire_online():
+def brains_on_fire_online(regexp:str=None):
     loader = load_brainsonfire
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot = os.path.expanduser('~/data/bci/')
@@ -117,19 +129,23 @@ def brains_on_fire_online():
         dataroot= os.path.expanduser('D:/')
     exptdir = 'own_experiments/motor_imagery/brainsonfire/brains_on_fire_online'
     filenames =  glob(os.path.join(dataroot, exptdir, 'subject*/raw_buffer/0001'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
 
-def mTRF_audio():
+def mTRF_audio(regexp:str=None):
     loader = load_mTRF_audio
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot= os.path.expanduser('~/data/bci/external_data/mTRF')
     else:
         dataroot= os.path.expanduser('D:/external_data/mTRF')
     filenames = [os.path.join(dataroot, 'speech_data.mat')]
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def ninapro_db2():
+def ninapro_db2(regexp:str=None):
     loader = load_ninapro_db2
     if os.path.isdir(os.path.expanduser("~/data")):
         dataroot = os.path.expanduser('~/data/bci/')
@@ -137,9 +153,11 @@ def ninapro_db2():
         dataroot = "D:/"
     exptdir="external_data/ninapro"
     filenames = glob(os.path.join(dataroot, exptdir, 's*', '*E1*.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader, filenames, dataroot)
 
-def cocktail():
+def cocktail(regexp:str=None):
     loader = load_cocktail
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot= os.path.expanduser('~/data/bci/')
@@ -147,9 +165,11 @@ def cocktail():
         dataroot= os.path.expanduser('D:/')
     exptdir="external_data/dryad/Cocktail Party"
     filenames = glob(os.path.join(dataroot, exptdir, 'EEG', 'Subject*'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader,filenames,dataroot)
 
-def mark_EMG():
+def mark_EMG(regexp:str=None):
     loader = load_mark_EMG
     if os.path.isdir(os.path.expanduser('~/data/bci')):
         dataroot= os.path.expanduser('~/data/bci/')
@@ -157,6 +177,8 @@ def mark_EMG():
         dataroot= os.path.expanduser('D:/')
     exptdir="own_experiments/emg/facial"
     filenames = glob(os.path.join(dataroot, exptdir, 'training_data_SV_*.mat'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader,filenames,dataroot)    
 
 def testdataset(fn, **args):
@@ -172,9 +194,11 @@ def testdataset(fn, **args):
     coords[2] = {'name':'channel','coords':None}
     return (X, Y, coords)
 
-def mindaffectBCI(exptdir, **args):
+def mindaffectBCI(exptdir, regexp:str=None, **args):
     loader = load_mindaffectBCI
     filenames = glob(os.path.join(os.path.expanduser(exptdir), 'mindaffectBCI*.txt'))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]    
     return (loader,filenames,exptdir)
 
 def toy():
@@ -209,7 +233,8 @@ def get_dataset(dsname,*args, **kwargs):
     else:
         try:
             return eval(dsname)(*args,**kwargs)
-        except:
+        except Exception as ex:
+            print("Loader error : {}".format(ex))
             raise NotImplementedError("don't know dataset {}".format(dsname))
 
 def testcase():

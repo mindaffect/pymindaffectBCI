@@ -16,7 +16,7 @@
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
 import numpy as np
-from mindaffectBCI.decoder.datasets import get_dataset
+from mindaffectBCI.decoder.offline.datasets import get_dataset
 from mindaffectBCI.decoder.model_fitting import BaseSequence2Sequence, MultiCCA, FwdLinearRegression, BwdLinearRegression, LinearSklearn
 try:
     from sklearn.linear_model import Ridge, LogisticRegression
