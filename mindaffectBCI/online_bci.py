@@ -117,7 +117,7 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
         acquisition = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'brainproducts': # brainproducts eeg input stream
+    elif acquisition == 'brainproducts' or acquisition == 'liveamp': # brainproducts eeg input stream
         from mindaffectBCI.examples.acquisition import utopia_brainproducts
         acquisition = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
         acquisition.start()
