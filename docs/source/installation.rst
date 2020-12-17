@@ -16,12 +16,12 @@ Requirements
        pip install numpy==1.19.3
 	
 - Python (3.x) installation (Suggested: Anaconda_ )
-- JDK_ or openJDK_ 
+- JDK_ such as openJDK_ 
 - EEG amplifier (e.g. OpenBCI Cyton, OpenBCI Ganglion, see supported_hardware for the full list of supported hardware.)
  
 .. _Anaconda: https://docs.anaconda.com/anaconda/install/
 .. _JDK: https://www.java.com/download/help/download_options.html
-.. _openJDK: https://openjdk.java.net/ 
+.. _openJDK: https://adoptopenjdk.net/index.html?variant=openjdk15&jvm 
  
 Recommended Setup
 *****************
