@@ -126,7 +126,8 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
             y = y-1
         # set the cell state, occupied and given color
         if 0<=x and x<self.snakegame.grid_width and 0<=y and y<self.snakegame.grid_height:
-            self.snakegame.cells[x][y] = (1, self.state2color[state])
+            if self.snakegame.cells[x][y][0]==0 or not self.snakegame.cells[x][y][1]==self.snakegame.snake_clr: # only if not occupied
+                self.snakegame.cells[x][y] = (1, self.state2color[state])
 
 
 if __name__=="__main__":
