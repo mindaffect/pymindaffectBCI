@@ -1,0 +1,3 @@
+# simple image keyboard
+            ,   images/up_arrow.png,   
+images/turn_left.png, images/robot_head.png,  images/turn_right.png
