@@ -15,8 +15,8 @@ On Windows
  
     .. image:: images/comport.jpg
  
-Then, in the online_bci file your configuration file (mindaffectBCI/online_bci.json) you should have: :code:`"serial_port":"COM_X_"`
- 
+Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should have: :code:`"serial_port":"COM_X_"`.
+Also make sure to set :code:`"board_id":0` to the value that corresponds with your amplifier as specified in the `BrainFlow Docs <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_. 
  
 On Mac
 *******
@@ -28,7 +28,8 @@ On Mac
     /dev/cu.Bluetooth-PDA-Sync   /dev/cu.usbserial
     /dev/cu.usbmodem1
            	
-Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`
+Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`.
+Also make sure to set :code:`"board_id":0` to the value that corresponds with your amplifier as specified in the `BrainFlow Docs <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_. 
  
  
 On Linux
@@ -44,7 +45,8 @@ On Linux
            	[43.364215] usb 2-1: SerialNumber: 1
            	[43.394168] cdc_acm 2-1:1.0: ttyACM0: USB ACM device
            	
-Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/ttyXXXX"`	
+Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/ttyXXXX"`.	
+Also make sure to set :code:`"board_id":0` to the value that corresponds with your amplifier as specified in the `BrainFlow Docs <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_. 
  
 Linux Serial Port Permissions
 ******************************
