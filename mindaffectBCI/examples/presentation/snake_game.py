@@ -2,7 +2,7 @@ import mindaffectBCI.examples.presentation.selectionMatrix as selectionMatrix
 from mindaffectBCI.examples.presentation.snakegame import SnakeGame
 
 class SnakeGameScreen(selectionMatrix.WaitScreen):
-    def __init__(self, window, symbols, noisetag, grid_width:int=20, grid_height:int=20, duration:float=None, waitKey:bool=False, logo:str="Mindaffect_Logo.png", framespermove:int=60*4, target_only:bool=False, clearScreen:bool=True, sendEvents:bool=True, **kwargs):
+    def __init__(self, window, symbols, noisetag, grid_width:int=20, grid_height:int=20, duration:float=None, waitKey:bool=False, logo:str="Mindaffect_Logo.png", framespermove:int=60*40, target_only:bool=False, clearScreen:bool=True, sendEvents:bool=True, **kwargs):
         super().__init__(window, duration, waitKey, logo)
         self.window=window
         self.noisetag = noisetag
@@ -34,6 +34,7 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
                 symbIdx = self.objIDs.index(objID)
                 # move the snake in the desired direction
                 self.snakegame.turn(symbIdx)
+                #self.doGameTick()
 
     def is_done(self):
         if self.snakegame.death : # extra end-of-game check
@@ -46,7 +47,11 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
         self.show_newtarget=value
 
     def doNewTarget(self):
-        print("Got new target")
+        self.doGameTick()
+
+    def doGameTick(self):
+        self.snakegame.run_rules()
+        self.snakegame.move()
 
     def reset(self):
         selectionMatrix.WaitScreen.reset(self)
@@ -99,9 +104,7 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
         # update the game state
         self.nframe = self.nframe + 1
         if self.nframe % self.framespermove == 0 :
-            # game state tick!
-            self.snakegame.run_rules()
-            self.snakegame.move()
+            self.doGameTick()
 
         # call the game draw functions
         selectionMatrix.WaitScreen.draw(self,t)
