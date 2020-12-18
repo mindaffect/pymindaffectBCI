@@ -151,15 +151,25 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
         tau = Cxy.shape[-2]
     if Y.ndim == 3:
         Y = Y[np.newaxis, :, :, :] # add missing trial dim
-    if offset<-tau+1:
-        raise NotImplementedError("Cant offset backwards by more than window size")
-    if offset>0:
-        raise NotImplementedError("Cant offset by positive amounts")
+    #if offset<-tau+1:
+    #    raise NotImplementedError("Cant offset backwards by more than window size")
+    #if offset>0:
+    #    raise NotImplementedError("Cant offset by positive amounts")
     if verb > 1: print("tau={}".format(tau))
     if stimTimes is None:
         # X, Y are at sample rate, slice X every sample
         Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp, tau, d)
-        Ye = Y[:, -offset:Xe.shape[-3]-offset, :, :] # shrink Y to fit w.r.t. window
+        # shrink Y w.r.t. the window and shift to align with the offset
+        if offset <=0 : # shift Y forwards
+            Ye = Y[:, -offset:Xe.shape[-3]-offset, :, :] # shift fowards and shrink
+            if offset < -tau: # zero pad to size
+                pad = np.zeros(Y.shape[:1]+(Xe.shape[-3]-Ye.shape[1],)+Y.shape[2:],dtype=Y.dtype)
+                Ye = np.append(Ye,pad,1)        
+        elif offset>0: # shift and pad
+            Ye = Y[:,:Xe.shape[-3]-offset,:,:] # shrink
+            pad = np.zeros(Y.shape[:1]+(Xe.shape[-3]-Ye.shape[1],)+Y.shape[2:],dtype=Y.dtype)
+            Ye = np.append(pad,Ye,1) # pad to shift forwards
+
     else:
         Xe = X
         Ye = Y
@@ -394,7 +404,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
 
     plt.clf()
     # Cxx
-    plt.subplot(311);
+    plt.subplot(311)
     plt.imshow(Cxx, origin='lower', extent=[0, Cxx.shape[0], 0, Cxx.shape[1]])
     plt.colorbar()
     # TODO []: use the ch_names to add lables to the  axes
@@ -430,6 +440,20 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
     plt.colorbar()
     plt.title('Cyy')
+
+def plotCxy(Cxy,evtlabs=None,fs=None):
+    import matplotlib.pyplot as plt
+    times = np.arange(Cxy.shape[-2])
+    if fs is not None: times = times/fs
+    ncols = Cxy.shape[1] if Cxy.shape[1]<10 else Cxy.shape[1]//10
+    nrows = Cxy.shape[1]//ncols + (1 if Cxy.shape[1]%ncols>0 else 0)
+    clim = (np.min(Cxy), np.max(Cxy))
+    fit,ax = plt.subplots(nrows=nrows,ncols=ncols,sharey='row',sharex='col')
+    for ei in range(Cxy.shape[1]):
+        plt.sca(ax.flat[ei])
+        plt.imshow(Cxy[0,ei,:,:].T,aspect='auto',extent=[times[0],times[-1],0,Cxy.shape[-1]])
+        plt.clim(clim)
+        if evtlabs is not None: plt.title(evtlabs[ei])
 
 def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plottype='plot', offset=0, ylim=None):
     '''
@@ -505,7 +529,7 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, spatial_filter_type="Filter", ncol=2):
+def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, offset_ms=None, offset=None, spatial_filter_type="Filter", ncol=2):
     '''
     Make a multi-plot of a factored model
     A = (k,d)
@@ -528,8 +552,12 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
 
     if times is None:
         times = np.arange(R.shape[-1])
+        if offset is not None:
+            times = times + offset
         if fs is not None:
             times = times / fs
+        if offset_ms is not None:
+            times = times + offset_ms/1000
     if ch_names is None:
         ch_names = np.arange(A.shape[-1])
     elif ch_pos is None and len(ch_names) > 0:
@@ -624,7 +652,7 @@ def testSlicedvsContinuous():
 
     plot_summary_statistics(Cxx, Cxy, Cyy)
 
-    plot_Cxy(Cxy)
+    plotCxy(Cxy)
     
     dCxx = np.max((np.abs(Cxx/np.trace(Cxx)-Cxx1/np.trace(Cxx1))/(np.abs(Cxx/np.trace(Cxx))+1e-5)).ravel())
     dCxy = np.max((np.abs(Cxy-Cxy1)/(np.abs(Cxy)+1e-5)).ravel())
@@ -650,7 +678,7 @@ def testSlicedvsContinuous():
 def testComputationMethods():
     import numpy as np
     from utils import testSignal, sliceData, sliceY
-    irf=(0,0,0,0,0,1,0,0,0,0)
+    irf=(1,0,0,0,0,0,0,0,0,0)
     offset=0; # o->lag-by-5, -5=>no-lag, -9->lead-by-4
     X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=1,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
     #plt.subplot(311);plt.plot(X[0,:,0],label='X');plt.plot(Y[0,:,0,0],label='Y');plt.title("offset={}, irf={}".format(offset,irf));plt.legend()
@@ -693,7 +721,7 @@ def testCases():
     from updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics
     import matplotlib.pyplot as plt
 
-    irf=(0,0,0,0,0,0,0,0,0,1)
+    irf=(.5,0,0,0,0,0,0,0,0,1)
     offset=0; # X->lag-by-10
     X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=1,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
     print("A={}\nB={}".format(A, B))
@@ -704,7 +732,17 @@ def testCases():
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y, None, tau=tau, offset=uss_offset)
     print("Cxx={} Cxy={} Cyy={}".format(Cxx.shape, Cxy.shape, Cyy.shape))
     plt.figure(1);plot_summary_statistics(Cxx,Cxy,Cyy); plt.show()
-    
+
+    Cxys=[]
+    offsets = list(range(-15,15))
+    for i,offset in enumerate(offsets):
+        Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y, None, tau=20, offset=offset)
+        Cxys.append(Cxy)
+    Cxys = np.concatenate(Cxys,1)
+    plotCxy(Cxys,offsets)
+    plt.show()
+
+
     # leading X
     irf=(1,0,0,0,0,0,0,0,0,0)
     offset=-9; # X leads by 9

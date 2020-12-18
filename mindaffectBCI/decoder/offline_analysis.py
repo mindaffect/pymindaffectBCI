@@ -28,12 +28,27 @@ import matplotlib.pyplot as plt
 savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
 savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
+savefile = '~/Desktop/khash/mindaffectBCI*faces*.txt'
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
 savefile = max(files, key=os.path.getctime)
+
+evtlabs=('re','fe')
+tau_ms = 450
+if 'rc' in savefile:
+    evtlabs=('re','ntre')
+    tau_ms = 450
+    stopband = ((45,65),(5,25,'bandpass'))
+    offset_ms = 300
+elif 'threshold' in savefile:
+    evtlabs='hot-on'
+elif 'actuity' in savefile:
+    evtlabs='output2event'
+else:
+    evtlabs=('re','fe')
 
 # load
 X, Y, coords = load_mindaffectBCI(savefile, stopband=((45,65),(5,25,'bandpass')), order=6, ftype='butter', fs_out=100)
@@ -48,7 +63,7 @@ print("STIMULUS: Y({}){}".format([c['name'] for c in coords[:1]]+['output'],Y.sh
 #                        bwdAccumulate=True, minDecisLen=0)
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         test_idx=slice(20,None), tau_ms=450, evtlabs=('ave'), model='cca', 
+                         test_idx=slice(20,None), tau_ms=tau_ms, offset_ms=offset_ms, evtlabs=evtlabs, model='cca', 
                          ranks=(1,2,3,5,10), prediction_offsets=(0), priorweight=200, startup_correction=50, 
                          bwdAccumulate=False, minDecisLen=0)
 plt.show()
