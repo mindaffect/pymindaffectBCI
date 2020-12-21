@@ -25,12 +25,23 @@ from mindaffectBCI.decoder.timestamp_check import timestampPlot
 import matplotlib.pyplot as plt
 
 # last file saved to default save location
-savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
-
-savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
-savefile = '~/Desktop/khash/mindaffectBCI*faces*.txt'
+savefile = None
+#savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
+#savefile = '~/Desktop/khash/mindaffectBCI*faces*.txt'
 
 #savefile = '~/Downloads/mindaffectBCI*.txt'
+
+if savefile is None:
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    root = Tk()
+    root.withdraw()
+    savefile = askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)),
+                                title='Chose mindaffectBCI save File',
+                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
+
+if savefile is None:
+    savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 
 # get the most recent file matching the savefile expression
 files = glob.glob(os.path.expanduser(savefile)); 
@@ -38,11 +49,12 @@ savefile = max(files, key=os.path.getctime)
 
 evtlabs=('re','fe')
 tau_ms = 450
-if 'rc' in savefile:
+offset_ms = 0
+if 'rc' in savefile or 'audio' in savefile:
     evtlabs=('re','ntre')
-    tau_ms = 450
+    tau_ms = 550
     stopband = ((45,65),(5,25,'bandpass'))
-    offset_ms = 300
+    offset_ms = 100
 elif 'threshold' in savefile:
     evtlabs='hot-on'
 elif 'actuity' in savefile:
