@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
+from mindaffectBCI.decoder.utils import block_permute
 import numpy as np
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.scoreOutput import dedupY0
-def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
+def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0:bool=True,nvirt_out:int=-20,**kwargs):
     '''
     Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores
     
@@ -28,7 +29,7 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
         objIDs (nY,) : mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
                 N.B. if objIDs > size(Fy,2), then additional virtual outputs are added
         nInt (2,) : the number of integeration lengths to use, numThresholds. Defaults to ([30,25])
-
+        nvirt_out (int): number of virtual outputs to add to the true outputs
     Returns:
         integerationLengths (int (nInt,)) : the actual integeration lengths in samples
         ProbErr (float (nInt,)) : empherical error probablility at this integeration length
@@ -60,6 +61,10 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
     if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
         Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
 
+    if nvirt_out is not None:
+        # generate virtual outputs for testing -- not from the 'true' target though
+        virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2) 
+        Fy = np.append(Fy,virt_Fy,axis=-1)
 
     # get the points at which we compute performances
     if len(nInt) < 3:

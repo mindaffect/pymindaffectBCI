@@ -295,6 +295,19 @@ def sliceY(Y, stimTimes_samp, featdim=True):
 
 
 def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
+    """block permute f to generate n new entries
+
+    Args:
+        f ([type]): the input nd-array to permute
+        n ([type]): the number of new outputs to generate. 
+                    if n<0 then total number of outputs in f+perm = -n
+        axis (int, optional): the axis along which the new permutations will be appended, i.e. the output axis. Defaults to -1.
+        perm_axis ([type], optional): the axis along which to permute, i.e. the time axis. Defaults to axis-1.
+        nblk (int, optional): number of block to cut the permuted axis into for block permutation. Defaults to 10.
+
+    Returns:
+        ndarray: the block permuted version of f
+    """    
     import random
     if perm_axis==None:
         perm_axis = axis-1
