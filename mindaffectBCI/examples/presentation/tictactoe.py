@@ -20,9 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from build.lib.mindaffectBCI.examples.presentation.selectionMatrix import initPyglet
 import mindaffectBCI.examples.presentation.selectionMatrix as selectionMatrix
-from mindaffectBCI.noisetag import Noisetag
 import random
 import copy
 
@@ -67,38 +65,8 @@ class TictactoeScreen(selectionMatrix.SelectionGridScreen):
                     sel += "*" if idx==self.last_target_idx else "_"
                 self.doMove(idx)
 
-def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, stimfile=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1,
-        calibration_args:dict=None, prediction_args:dict=None): 
-    if stimfile is None:
-        stimfile = 'mgold_61_6521_psk_60hz.txt'
-    if fullscreen is None and windowed is not None:
-        fullscreen = not windowed
-    if windowed == True or fullscreen == True:
-        fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
-    if host is not None and not host in ('','-'):
-        nt.connect(host, queryifhostnotfound=False)
-
-    # init the graphics system
-    window = initPyglet(fullscreen=fullscreen)
-
-    # make the screen manager object which manages the app state
-    ss = selectionMatrix.ExptScreenManager(window, nt, tictactoe_symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
-                        fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
-                        bgFraction=bgFraction, 
-                        calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
-                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
-
-    # override the selection grid with the tictactoe one
-    ss.selectionGrid = TictactoeScreen(window=window, symbols=tictactoe_symbols, noisetag=nt, optosensor=optosensor)
-
-    # run the app
-    selectionMatrix.run_screen(ss)
-
-
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
-    run(**vars(args))
+    setattr(args,'symbols',tictactoe_symbols)
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.tictactoe.TictactoeScreen')
+    selectionMatrix.run(**vars(args))

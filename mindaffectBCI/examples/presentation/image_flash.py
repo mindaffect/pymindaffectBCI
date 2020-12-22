@@ -29,14 +29,14 @@ import os
 class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
     """variant of SelectionGridScreen which changes the background image on 'flash' rather than luminosity
     """    
-    def init_target(self, symb, x, y, w, h):
+    def init_target(self, symb, x, y, w, h, font_size:int=None):
         # make list of sprites for the different state-dependent images
         symbs = symb.split("|")
-        sprite = [self.init_sprite(symb,x,y,w,h) for symb in symbs]
+        sprite = [self.init_sprite(symb,x,y,w,h)[0] for symb in symbs]
 
         # get the label
         symb = symbs[0] if len(symbs)>1 else symb
-        label= self.init_label(symb,x,y,w,h)
+        label= self.init_label(symb,x,y,w,h,font_size)
 
         return sprite, label
 
@@ -51,42 +51,10 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
         if self.labels[idx]:
             self.labels[idx].color=(255,255,255,255) # reset labels
 
-
-def run(symbols, ncal:int=10, npred:int=10, calibration_trialduration=4.2,  prediction_trialduration=20, stimfile=None, selectionThreshold:float=.1,
-        framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, bgFraction=.1,
-        calibration_args:dict=None, prediction_args:dict=None, extra_symbols=None): 
-    if stimfile is None:
-        stimfile = 'mgold_61_6521_psk_60hz.txt'
-    if fullscreen is None and windowed is not None:
-        fullscreen = not windowed
-    if windowed == True or fullscreen == True:
-        fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
-    if host is not None and not host in ('','-'):
-        nt.connect(host, queryifhostnotfound=False)
-
-    # init the graphics system
-    window = selectionMatrix.initPyglet(fullscreen=fullscreen)
-
-    # make the screen manager object which manages the app state
-    ss = selectionMatrix.ExptScreenManager(window, nt, symbols, nCal=ncal, nPred=npred, framesperbit=framesperbit, 
-                        fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
-                        optosensor=optosensor, simple_calibration=True, calibration_symbols=calibration_symbols, 
-                        bgFraction=bgFraction, 
-                        calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
-                        prediction_args=prediction_args, prediction_trialduration=prediction_trialduration)
-
-    # override the selection grid with the tictactoe one
-    ss.selectionGrid = ImageFlashScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor)
-
-    # run the app
-    selectionMatrix.run_screen(ss)
-
-
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
     setattr(args,'symbols','rc5x5_faces.txt')
     setattr(args,'stimfile','rc5x5.txt')
     setattr(args,'framesperbit',4)
-    run(**vars(args))
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
+    selectionMatrix.run(**vars(args))

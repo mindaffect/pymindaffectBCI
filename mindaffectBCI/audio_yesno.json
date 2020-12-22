@@ -19,12 +19,12 @@
     "presentation_args":{
         "ncal":20,
         "npred":10,
-        "selectionThreshold":0.1,
-        "calibrationScreen":"mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
-        "symbols":"rc5x5_faces.txt",
+        "calibrationScreen":"mindaffectBCI.examples.presentation.sound_flash.SoundFlashScreen",
+        "selectionThreshold":0.01,
+        "symbols":[["yes|yesno\\yes_f.wav","no|yesno\\no_m.wav"]],
         "stimfile":"rc5x5.png",
         "prediction_args":{"permute":false},
-        "framesperbit":3,
+        "framesperbit":4,
         "fullscreen":false,
         "fullscreen_stimulus":true,
         "host":"-"

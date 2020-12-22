@@ -37,10 +37,13 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
             if arg in kwargs:
                 setattr(self,arg,kwargs[arg])
                 kwargs.pop(arg,None) # remove from args
+        if not self.transform == 'color':
+            # BODGE: tweak the background color so white font shows....
+            self.state2color[0]=(128,128,128)
         # pass the rest on
         super().__init__(*args,**kwargs)
 
-    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction:float=0, font_size:int=32):
+    def init_symbols(self, symbols, x=0, y=0, w=None, h=None, bgFraction:float=0, font_size:int=None):
         if w is None:
             w, h=self.window.get_size()
         # compute central bounding box
@@ -60,7 +63,7 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
 
     # mappings for stimulus-state -> stimulus state
     state2scale = { 0:1, 1:.7, 2:1.5, 3:1.5 } # bigger for cue, smaller for stim
-    state2rotation = { 0:0, 1:10, 2:45, 3:45 } # slant for cue, flip for stim
+    state2rotation = { 0:0, 1:90, 2:45, 3:45 } # slant for cue, flip for stim
 
     # override the object drawing code for different types of stimulus change
     def update_object_state(self, idx:int, state):
@@ -78,11 +81,13 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
                 elif isinstance(state,float): # float state, map to intensity
                     self.objects[idx].color = tuple(int(c*state) for c in self.state2color[1])
             elif self.transform == 'scale':
+                self.objects[idx].color = self.state2color[0]
                 if isinstance(state,int): # integer state, map to color lookup table
                     self.objects[idx].scale = self.state2scale[state]
                 elif isinstance(state,float): # float state, map to intensity
                     self.objects[idx].scale = .5+state if state < 1.0 else state/128
             elif self.transform == 'rotation':
+                self.objects[idx].color = self.state2color[0]
                 if isinstance(state,int): # integer state, map to color lookup table
                     self.objects[idx].rotation = self.state2rotation[state]
                 elif isinstance(state,float): # float state, map to intensity
@@ -92,7 +97,9 @@ class VisualAcuityScreen(selectionMatrix.SelectionGridScreen):
             self.labels[idx].color=(255,255,255,255) # reset labels
 
 
-def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, stimfile:str=None, fullscreen=False, windowed=False, fullscreen_stimulus=True, transform:str='color', fixation:bool=False, **kwargs):
+def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfraction:float=1, 
+        fullscreen=False, windowed=False, fullscreen_stimulus=True, 
+        transform:str='color', fixation:bool=False, **kwargs):
     """ run the selection Matrix with default settings
 
     Args:
@@ -110,13 +117,11 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
         prediction_args (dict, optional): additional keyword arguments to pass to `noisetag.startPrediction`. Defaults to None.
         gridfraction (float,optional): fraction of the symbols area of the screen to use for the stimuli, you should set this such that the stimuli span about 7-deg of visual angle for your participant.  Defaults to .1
     """
-    if stimfile is None:
-        stimfile = 'mgold_61_6521_psk_60hz.txt'
     if fullscreen is None and windowed is not None:
         fullscreen = not windowed
     if windowed == True or fullscreen == True:
         fullscreen_stimulus = False
-    nt=Noisetag(stimFile=stimfile,clientid='Presentation:selectionMatrix')
+    nt=Noisetag(clientid='Presentation:selectionMatrix')
     if host is not None and not host in ('','-'):
         nt.connect(host, queryifhostnotfound=False)
 
@@ -128,12 +133,13 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
                         fullscreen_stimulus=fullscreen_stimulus, 
                         optosensor=optosensor,  
                         bgFraction=bgFraction, **kwargs)
-    # override the selection grid with the tictactoe one
+    # override the selection grid with the visual acuity screen one
     ss.selectionGrid = VisualAcuityScreen(window=window, symbols=symbols, noisetag=nt, optosensor=optosensor, bgFraction=bgFraction, gridfraction=gridfraction, transform=transform, fixation=fixation)
-    ss.calibrationSentence = 'Look at the *RED* cross'
-    ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
-    ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
-    ss.predictionSentence = "Testing\n\nFocus on the *RED* +"
+    if fixation:
+        ss.calibrationSentence = 'Look at the *RED* cross'
+        ss.calibrationInstruct = "Calibration\n\nThe next stage is CALIBRATION\nlook at the *RED* +\n try not to move your eyes\n ignore the flashing green cue\n\nkey to continue"
+        ss.cuedpredictionInstruct = "Testing\n\nFocus on the *RED* +\n try not to move your eyes.\nignore the flashing green\n\nkey to continue"
+        ss.predictionSentence = "Testing\n\nFocus on the *RED* +"
 
     # run the app
     selectionMatrix.run_screen(ss)
@@ -142,12 +148,14 @@ def run(symbols, host:str='-', optosensor:bool=True, bgFraction:float=.1, gridfr
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
     #setattr(args,'calibration_symbols',[["."]])
-    setattr(args,'symbols',[["."]])
+    #setattr(args,'symbols',[["."]])
     #setattr(args,'symbols','visual_acuity.txt')
+    setattr(args,'symbols','symbols.txt')
+    setattr(args,'calibration_stimseq','rc5x5.txt')
     setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'framesperbit',1)
-    setattr(args,'bgFraction',0)
+    setattr(args,'bgFraction',.2)
     setattr(args,'simple_calibration',False)
-    setattr(args,'transform','scale')
-    setattr(args,'fixation',True)
-    run(**vars(args))
+    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen')
+    setattr(args,'calscreen_args',dict(transform='rotation',fixation=False))
+    selectionMatrix.run(**vars(args))
