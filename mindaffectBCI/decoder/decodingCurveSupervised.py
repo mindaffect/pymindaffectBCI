@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
-from mindaffectBCI.decoder.utils import block_permute
 import numpy as np
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.scoreOutput import dedupY0
+from mindaffectBCI.decoder.utils import block_permute
+
 def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0:bool=True,nvirt_out:int=-20,**kwargs):
     '''
     Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores

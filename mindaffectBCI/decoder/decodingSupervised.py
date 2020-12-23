@@ -18,12 +18,14 @@
 import numpy as np
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import zscore2Ptgt_softmax
+from mindaffectBCI.decoder.utils import block_permute
+
 #@function
 def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True, 
                        marginalizedecis=False,
                        prior=None,
                        nocontrolamplitude=None,
-                       tiebreaking_noise=1e-3, **kwargs):
+                       tiebreaking_noise=1e-3, nvirt_out=-10, **kwargs):
   """    true-target estimator and error-probility estimator for each trial
 
    Args:
@@ -62,6 +64,12 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   if Fy is None:
       return -1, 1, None, None, None
   
+  if nvirt_out is not None:
+    # generate virtual outputs for testing -- not from the 'true' target though
+    virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2)
+    nvirt_out = virt_Fy.shape[-1]
+    Fy = np.append(Fy,virt_Fy,axis=-1)
+
   #print("decodingSup args={}".format(kwargs))
 
   # get the info on which outputs are zero in each trial
@@ -101,6 +109,13 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   decisMdl = Yestidx if ssFy.ndim>3 else 1
   decisEp = 1   
   Yest = Yestidx
+
+  # remove the virtual outputs and replace the idx with -1
+  if nvirt_out>0:
+    nreal_out = Ptgt.shape[-1]-nvirt_out
+    Ptgt = Ptgt[...,:-nvirt_out]
+    Yest[Yest>=nreal_out] = -1
+
   # p(maxz != tgt ) = 1 - p(maxz==tgt)
   Perr = 1 - Ptgt_max
   return Yest, Perr, Ptgt, decisMdl, decisEp
