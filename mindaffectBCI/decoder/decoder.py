@@ -58,10 +58,14 @@ except:
 
 def redraw_plots():
     if guiplots and not matplotlib.is_interactive():
-        for i in plt.get_fignums():
+        figs = plt.get_fignums()
+        for i in figs:
             if plt.figure(i).get_visible():
                 #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
                 plt.gcf().canvas.flush_events()
+                #plt.gcf().canvas.draw_idle()
+                plt.gcf().canvas.start_event_loop(0.1)
+        #if len(figs)>0 :
             #plt.show(block=False)
 
 
@@ -695,6 +699,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axFy = fig.add_axes((.1,.55,.25,.35),sharex=axPy)
         axFy.tick_params(labelbottom=False)
         plt.tight_layout()
+        plt.show(block=False)
 
     if Fy is not None and axFy is not None:
         axFy.cla()
@@ -726,8 +731,8 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axPtgt.grid(True)
         axPtgt.bar(range(len(Ptgt)),Ptgt)
     #plt.xticklabel(np.flatnonzero(used_idx))
-    plt.show(block=False)
-    # fig.canvas.draw()
+    #
+    plt.gcf().canvas.draw_idle()
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, prior_dataset:str=None,
