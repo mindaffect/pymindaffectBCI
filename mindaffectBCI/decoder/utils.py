@@ -317,7 +317,7 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     out_shape = list(f.shape); out_shape[axis]=n
     out = np.zeros(out_shape, dtype=f.dtype)
 
-    if n == 0 :
+    if n == 0 or f.shape[axis]==0:
         return out
 
     # use block permutation to make virtual outputs

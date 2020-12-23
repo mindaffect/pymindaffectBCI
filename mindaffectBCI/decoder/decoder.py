@@ -655,13 +655,13 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
                 if PREDICTIONPLOTS and guiplots and len(Ptgt)>1:
                     # bar plot of current Ptgt info
-                    #try:
-                    ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
-                                    nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
-                    Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
-                    plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
-                    #except:
-                    #    pass
+                    try:
+                        ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
+                                        nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+                        Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
+                        plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
+                    except:
+                        pass
 
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
@@ -719,7 +719,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axPy.set_ylim((0,1))
         axPy.set_xlabel("time ({})".format(t_unit))
         axPy.grid(True)
-        axPy.plot(times,Py[0,:,:])
+        axPy.plot(times,Py[0,-len(times):,:])
 
     if Ptgt is not None and axPtgt is not None:
         # init the fig
