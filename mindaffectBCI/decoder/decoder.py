@@ -384,9 +384,10 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                                       bwdAccumulate=clsfr.bwdAccumulate, 
                                       nEpochCorrection=clsfr.startup_correction)
         # extract the final estimated performance
-        #print("decoding curve {}".format(decoding_curve[1]))
-        #print("score {}".format(score))
+        print("decoding curve {}".format(decoding_curve[1]))
+        print("score {}".format(score))
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
+        
         if CALIBRATIONPLOTS:
             try:
             #if True:

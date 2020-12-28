@@ -27,6 +27,8 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
       Cxx  = (d,d) current data covariance
       Cxy  = (nM,nE,tau,d) current per output ERPs
       Cyy  = (nM,nE,tau,nE,tau) current response covariance for each output
+           OR
+             (nM,tau,nE,nE) compressed cov for each output at different time-lags
       reg  = (1,) :float or (2,):float linear weighting reg strength or separate values for Cxx and Cyy 
             OR (d,) regularisation ridge coefficients for Cxx  (0)
       rank= [1x1] number of top cca components to return (1)

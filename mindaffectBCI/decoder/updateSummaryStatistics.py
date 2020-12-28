@@ -198,6 +198,47 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
     return Cxy
 
 # @function
+def updateCyy2(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
+    '''
+    Compute the Cyy tensors given new data
+    Inputs:
+      Cyy -- (nY, nE, tau, nE, tau) old Cyy info
+      Y -- (nTrl, nEp/nSamp, nY, nE) the new stim info to be added
+               Indicator for which events occured for which outputs
+               nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
+      tau  -- number of samples in the stimulus response
+      stimTime -- [] the times (in samples) of the epochs in Y
+                  None : if Y is already at sample rate
+      zeropadded - bool - flag variable length Y are padded with 0s
+      wght -- weighting for the new vs. old data
+      unitnorm(bool) : flag if we normalize the Cyy with number epochs
+    Outputs:
+      Cyy -- (nY, tau, nE, nE)
+    '''
+    if tau is None: # estimate the tau
+        tau=Cyy.shape[-1]
+    if Cyy is None:
+        Cyy = np.zeros((Y.shape[-2], tau, Y.shape[-1], Y.shape[-1]))
+    if Y.ndim == 3:  # ensure is 4-d
+        Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE) [nE x nY x nEpoch/nSamp x nTrl]
+
+    if stimTime is None: # fast-path, already at sample rate
+        if not np.issubdtype(Y.dtype, np.floating): # all at once
+            Y = Y.astype(np.float32)
+        #print("Y={}".format(Y.shape))
+        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
+        #print("Ys={}".format(Ys.shape))
+        MM = np.einsum("TStye, TSyf->ytef", Ys, Y) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
+
+    else: # upsample and accumulate
+        raise ValueError("Only non-sliced data!")
+
+    # accumulate into the running total
+    Cyy = wght*Cyy + MM if Cyy is not None else Cyy
+    return Cyy
+
+
+# @function
 def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
     '''
     Compute the Cyy tensors given new data
