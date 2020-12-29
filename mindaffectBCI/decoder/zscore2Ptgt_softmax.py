@@ -16,6 +16,7 @@
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
 from mindaffectBCI.decoder.normalizeOutputScores import mktestFy
+from mindaffectBCI.decoder.utils import block_permute
 import numpy as np
 
 def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=False):
@@ -155,29 +156,10 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
     return f
 
-def append_block_perm_f(f,n):
-    import random
-    if n < 0 : # neg is max number outputs, so pad with enough
-        n = max(0, -n - f.shape[-1])
-    tmp = f
-    if n > 0 :
-        # use block permutation to make virtual outputs
-        nblk = min( f.shape[-2]/3, 10 )
-        blkSz = int(f.shape[-2]/nblk)
-        # get slices for the blocks
-        blkIdx = [ slice(i,min(f.shape[-2],i+blkSz)) for i in range(0,f.shape[-2],blkSz) ]
-        tmp = np.zeros(f.shape[:-1]+(n+f.shape[-1],), dtype=f.dtype)
-        tmp[...,:f.shape[-1]] = f
-        perm = [ i%f.shape[-1] for i in range(n) ]
-        for idx in blkIdx:
-            random.shuffle(perm) 
-            tmp[...,idx,f.shape[-1]:] = f[...,idx,perm]
-    return tmp
-
 def calibrate_softmaxscale(f, validTgt=None, 
                            scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50,100), 
-                           MINP=.01, marginalizemodels=True, marginalizedecis=False, eta=.05, 
-                           nocontrol_condn=.5, n_virt_outputs=-30):
+                           MINP=.01, marginalizemodels=True, marginalizedecis=False, 
+                           nocontrol_condn=0, n_virt_outputs=-15):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -203,7 +185,10 @@ def calibrate_softmaxscale(f, validTgt=None,
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
     if n_virt_outputs is not None:
-        f = append_block_perm_f(f,n_virt_outputs)
+        # generate virtual outputs for testing -- not from the 'true' target though
+        virt_f = block_permute(f[...,1:], n_virt_outputs, axis=-1, perm_axis=-2)
+        print("Added {} virt outputs\n".format(virt_f.shape[-1]))
+        f = np.append(f,virt_f,axis=-1)
 
     validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 

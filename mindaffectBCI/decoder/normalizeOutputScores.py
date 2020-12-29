@@ -409,35 +409,35 @@ def plot_normalizedScores(Fy, ssFy, scale_sFy, decisIdx):
 
 
 #@function
-def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, offsetstr=10, trlenfrac=.25):
+def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, offsetstr=0, trlenfrac=.25):
     import numpy as np
     noise = np.random.standard_normal((nM, nTrl, nEp, nY))
-    noise = noise - np.mean(noise.ravel())
-    noise = noise / np.std(noise.ravel())
+    noise = noise - np.mean(noise,axis=(-1,-2),keepdims=True)
+    noise = noise / np.std(noise,axis=(-1,-2),keepdims=True)
     # add an offset to the scores...
     offset = offsetstr*np.random.standard_normal((noise.shape[-2])) # (nEp)
     noise = noise+offset[:, np.newaxis] # (nM, nTrl, nEp, nY) [ nYxnEpxnTrlxnM ]
 
     sigamp = sigstr*np.ones((noise.shape[-2])) # (nEp)
 
+    # make variable length trials,  and per-trial offset
+    nEp = np.zeros((noise.shape[-3],), dtype=int)
+    for ti in range(noise.shape[-3]):
+        # trial offset
+        mu = np.random.standard_normal()
+        noise[:,  ti, :, :] = noise[:, ti, :, :] + mu
+        # trial end time
+        nEp[ti] = noise.shape[-2]*(np.random.uniform()*trlenfrac + (1-trlenfrac))
+        noise[:, ti, nEp[ti]:, :] = 0
+
+    # no signal at the start of the trial
+    startupNoise_samp = int(noise.shape[1]*startupNoisefrac) if startupNoisefrac<1 else startupNoisefrac
+    sigamp[:startupNoise_samp] = 0
+    noise[:,:,:startupNoise_samp,:]=0
+
     # measure is sig + noise
     Fy = noise
     Fy[0, :, :, 0] = Fy[0, :, :, 0] + sigamp[np.newaxis, :] # (nM, nTrl, nEp, nY) [nEp x nTrl]
-    
-    # make variable length trials,  and per-trial offset
-    nEp = np.zeros((Fy.shape[-3]), dtype=int)
-    for ti in range(Fy.shape[-3]):
-        # trial offset
-        mu = np.random.standard_normal()
-        Fy[:,  ti, :, :] = Fy[:, ti, :, :] + mu
-        # trial end time
-        nEp[ti] = Fy.shape[-2]*(np.random.uniform()*trlenfrac + (1-trlenfrac))
-        Fy[:, ti, nEp[ti]:, :] = 0
-
-    # no signal at the start of the trial
-    startupNoise_samp = int(Fy.shape[1]*startupNoisefrac)
-    sigamp[:startupNoise_samp] = 0
-    noise[:,:,:startupNoise_samp,:]=0
 
     return Fy, nEp
 

@@ -294,7 +294,7 @@ def sliceY(Y, stimTimes_samp, featdim=True):
         return Y[:, si, :] if Y.ndim > 2 else Y[si, :]
 
 
-def block_permute(f, n, axis=-1, perm_axis=None, nblk=20):
+def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     """block permute f to generate n new entries
 
     Args:

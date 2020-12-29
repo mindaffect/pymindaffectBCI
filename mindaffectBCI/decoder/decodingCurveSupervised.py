@@ -282,12 +282,19 @@ def testcase():
     """    
     import numpy as np
     import matplotlib.pyplot as plt
-    Fy=np.random.standard_normal((2,10,100,50))
-    Fy[0,:,:,0]=Fy[0,:,:,0] + 0.3
-    from decodingCurveSupervised import decodingCurveSupervised
-    (dc)=decodingCurveSupervised(Fy)
+    from mindaffectBCI.decoder.normalizeOutputScores import mktestFy,  normalizeOutputScores
+    Fy, nEp = mktestFy(sigstr=.5,nM=1,nY=10,nTrl=10,startupNoisefrac=25) #(nM, nTrl, nEp, nY)
+    #Fy = Fy[0,...] # (nTrl,nEp,nY)
+    # Introduce temporal and spatial sparsity like real data
+    Fy = Fy * (np.random.standard_normal((1,Fy.shape[-2],Fy.shape[-1]))>0).astype(np.float)
+    Fy[...,:50,:] = 0 # block zero at start
+
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+    (dc)=decodingCurveSupervised(Fy,nInt=(25,25),nvirt_out=-12,softmaxscale=2)
     plot_decoding_curve(*dc)
-    plt.show(block=False)
+    plt.show(block=True)
+
+    quit()
 
     sFy = np.cumsum(Fy,-2)
     Yi = np.argmax(sFy,-1)
