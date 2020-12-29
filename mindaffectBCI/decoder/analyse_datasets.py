@@ -719,8 +719,8 @@ def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, l
 
 
 def run_analysis():    
-    #analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
-    #                 model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))
+    analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
+                     model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))
     #"plos_one",loader_args=dict(fs_out=120,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
     #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
     #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3)): ave-score:67
@@ -839,7 +839,7 @@ def run_analysis():
     pass
 
 
-if __name__=="__main__":
+def analyse_single():
     from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
     import glob
     import os
@@ -898,5 +898,17 @@ if __name__=="__main__":
     else:
         debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=1e6)#, prediction_offsets=(-2,-1,0,1) )
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
+
+
+if __name__=="__main__":
+
+    # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),
+    #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
+
+    analyse_datasets("mindaffectBCI",dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
+                     loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
+                     model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
+
+    #analyse_single()
 
     #run_analysis()

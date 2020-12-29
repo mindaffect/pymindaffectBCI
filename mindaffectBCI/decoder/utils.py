@@ -247,7 +247,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     S  = YtruecB # (nTr, nSamp, nE) true response, i.e. filtered Y 
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
     X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d) #[d x nSamp]
-    return (X, Y, stimTimes_samp, A, B)
+    return (X.astype(np.float32), Y.astype(np.float32), stimTimes_samp, A.astype(np.float32), B.astype(np.float32))
 
 
 

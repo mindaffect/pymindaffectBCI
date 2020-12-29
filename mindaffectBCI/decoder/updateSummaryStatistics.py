@@ -198,7 +198,7 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
     return Cxy
 
 # @function
-def updateCyy2(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
+def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
     '''
     Compute the Cyy tensors given new data
     Inputs:
@@ -218,28 +218,48 @@ def updateCyy2(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnor
     if tau is None: # estimate the tau
         tau=Cyy.shape[-1]
     if Cyy is None:
-        Cyy = np.zeros((Y.shape[-2], tau, Y.shape[-1], Y.shape[-1]))
+        Cyy = np.zeros((Y.shape[-2], Y.shape[-1], tau, Y.shape[-1], tau),dtype=Y.dtype)
+        #Cyy = np.zeros((Y.shape[-2], tau, Y.shape[-1], Y.shape[-1]))
     if Y.ndim == 3:  # ensure is 4-d
-        Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE) [nE x nY x nEpoch/nSamp x nTrl]
+        Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE)
 
     if stimTime is None: # fast-path, already at sample rate
         if not np.issubdtype(Y.dtype, np.floating): # all at once
             Y = Y.astype(np.float32)
         #print("Y={}".format(Y.shape))
-        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
+        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
+
+        # shrink Y w.r.t. the window and shift to align with the offset
+        Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
+
         #print("Ys={}".format(Ys.shape))
-        MM = np.einsum("TStye, TSyf->ytef", Ys, Y) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
+        MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
+
+        # BODGE: convert to the 'correct' shape
+        # (tau,nY,nE,nE) -> (nY,nE,tau,nE,tau)
+        MM2 = np.zeros((Y.shape[-2],Y.shape[-1],tau,Y.shape[-1],tau),dtype=Y.dtype)
+        # fill in the block diagonal entries
+        for i in range(tau):
+            MM2[...,:,i,:,i] = MM[0,:,:,:]
+            for j in range(i+1,tau):
+                MM2[...,:,i,:,j] = MM[j-i,:,:,:]
+                MM2[...,:,j,:,i] = MM[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
+        MM = MM2
 
     else: # upsample and accumulate
-        raise ValueError("Only non-sliced data!")
+        MM = updateCyy_old(Cyy, Y, stimTime=stimTime, tau=tau, wght=wght, zeropadded=zeropadded, unitnorm=unitnorm)
+
+    if unitnorm:
+        # normalize so the resulting constraint on the estimated signal is that it have
+        # average unit norm
+        MM = MM / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
 
     # accumulate into the running total
     Cyy = wght*Cyy + MM if Cyy is not None else Cyy
     return Cyy
 
 
-# @function
-def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
+def updateCyy_old(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
     '''
     Compute the Cyy tensors given new data
     Inputs:
@@ -259,16 +279,16 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
     if tau is None: # estimate the tau
         tau=Cyy.shape[-1]
     if Cyy is None:
-        Cyy = np.zeros((Y.shape[-2], Y.shape[-1], tau, Y.shape[-1], tau))
+        Cyy = np.zeros((Y.shape[-2], Y.shape[-1], tau, Y.shape[-1], tau),dtype=Y.dtype)
     if Y.ndim == 3:  # ensure is 4-d
         Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE) [nE x nY x nEpoch/nSamp x nTrl]
 
     if stimTime is None: # fast-path, already at sample rate
         if np.issubdtype(Y.dtype, np.floating): # all at once
             #print("Y={}".format(Y.shape))
-            Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE) [ nE x nY x nSamp x tau x nTrl ]
+            Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
             #print("Ys={}".format(Ys.shape))
-            MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys) # compute cross-covariance (nY, nE, tau, nE, tau) [ nE x tau x nE x tau x nY ]
+            MM = np.einsum("TStye, TSuyf->yetfu", Ys, Ys) # compute cross-covariance (nY, nE, tau, nE, tau)
         else: # trial at a time + convert to float
             MM = np.zeros(Cyy.shape)
             # different slice time for every trial, up-sample per-trial
@@ -715,31 +735,66 @@ def testSlicedvsContinuous():
     dur = timeit(lambda: updateSummaryStatistics(X, Y_true, None, tau=10), number=1000, globals=globals())
     print("Raw={}s".format(dur/1000))
 
+Y=None
+X=None
+def testCyy2():
+    updateCyy2(None,Y,None,tau=18)
 
 def testComputationMethods():
+    global X, Y
     import numpy as np
-    from utils import testSignal, sliceData, sliceY
+    import matplotlib.pyplot as plt
+    from mindaffectBCI.decoder.utils import testSignal, sliceData, sliceY
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, autocov, cov, crossautocov, updateCyy, updateCxx, updateCxy
     irf=(1,0,0,0,0,0,0,0,0,0)
     offset=0; # o->lag-by-5, -5=>no-lag, -9->lead-by-4
-    X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=1,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
+    X,Y,st,A,B = testSignal(nTrl=30,nSamp=1000,d=1,nE=2,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
     #plt.subplot(311);plt.plot(X[0,:,0],label='X');plt.plot(Y[0,:,0,0],label='Y');plt.title("offset={}, irf={}".format(offset,irf));plt.legend()
     print("A={}\nB={}".format(A, B))
     print("X{}={}".format(X.shape, X[:30, np.argmax(np.abs(A))]))
     print("Y{}={}".format(Y.shape, Y[0, :30, 0]))
     Y_true = Y[..., 0:1, :]
 
+    tau=30
+
+    Cyy=updateCyy(None,Y,None,tau=tau) #(nY,yd,tau,yd,tau)
+    Cyy2=updateCyy2(None,Y,None,tau=tau) #(nY,yd,tau,yd,tau)
+    print('Cyy-Cyy2={}'.format(np.max(np.abs(Cyy.ravel()-Cyy2.ravel()))))
+    fig,axs=plt.subplots(nrows=3,ncols=1,sharex='all',sharey='all')
+    im=axs[0].imshow(Cyy[0,...].reshape((Cyy.shape[-1]*Cyy.shape[-2],Cyy.shape[-1]*Cyy.shape[-2]))); plt.colorbar(im,ax=axs[0]); axs[0].set_title("Cyy")
+    im=axs[1].imshow(Cyy2[0,...].reshape((Cyy.shape[-1]*Cyy.shape[-2],Cyy.shape[-1]*Cyy.shape[-2]))); plt.colorbar(im,ax=axs[1]);axs[1].set_title("Cyy2")
+    im=axs[2].imshow((Cyy-Cyy2)[0,...].reshape((Cyy.shape[-1]*Cyy.shape[-2],Cyy.shape[-1]*Cyy.shape[-2]))); plt.colorbar(im,ax=axs[2]);axs[2].set_title("Cyy2-Cyy")
+    plt.show()
+
+    import cProfile, pstats
+    cProfile.run("testCyy2()", "{}.profile".format(__file__))
+    s = pstats.Stats("{}.profile".format(__file__))
+    s.strip_dirs()
+    s.sort_stats("time").print_stats(10)
+
+    import timeit
+    t = timeit.timeit(lambda: updateCyy(None,Y,None,tau=tau),number=10)
+    print("updateCyy: {}".format(t))
+    t = timeit.timeit(lambda: updateCyy2(None,Y,None,tau=tau),number=10)
+    print("updateCyy2: {}".format(t))
+
+    quit()
+
+
     # other measures....
-    from updateSummaryStatistics import updateSummaryStatistics, autocov, cov, crossautocov, updateCyy, updateCxx, updateCxy
-    Cxdtxdt = autocov(X, tau=18) # (tau[0],dx,tau[1],dx)
-    Cxdtydt = crossautocov(X, Y[:, :, 0:1], tau=18) # (tau[0],dx,tau[1],dy)
-    Cydxdt  = crossautocov(Y[:, :, 0:1], X, tau=[1,18]) # (tauy,dy,taux,dx)
-    Cydtydt = np.stack([crossautocov(Y[:, :, yi:yi+1], Y[:, :, yi:yi+1], tau=18) for yi in range(Y.shape[-1])], 0) # (nY,tau,d,tau,d)
+    Cxdtxdt = autocov(X, tau=tau) # (tau[0],dx,tau[1],dx)
+    Cxdtydt = crossautocov(X, Y[...,0, :], tau=tau) # (tau[0],dx,tau[1],dy)
+    Cydxdt  = crossautocov(Y[..., 0, :], X, tau=[1,tau]) # (tauy,dy,taux,dx)
+    Cydtydt = np.stack([crossautocov(Y[:, :, yi:yi+1], Y[:, :, yi:yi+1], tau=tau) for yi in range(Y.shape[-1])], 0) # (nY,tau,d,tau,d)
     Cxxdd   = cov(X)
 
     # compare
     Cxx=updateCxx(None,X,None)
-    Cxy=updateCxy(None,X,Y[:,:,0:1,np.newaxis],None,tau=18)#(1,dy,tau,dx)
-    Cyy=updateCyy(None,Y[:,:,:,np.newaxis],None,tau=18) #(nY,yd,tau,yd,tau)
+    Cxy=updateCxy(None,X,Y[:,:,0:1,np.newaxis],None,tau=tau)#(1,dy,tau,dx)
+    Cyy=updateCyy(None,Y[:,:,:,np.newaxis],None,tau=tau) #(nY,yd,tau,yd,tau)
+
+    Cyy2=updateCyy2(None,Y[:,:,:,np.newaxis],None,tau=tau) #(nY,yd,tau,yd,tau)
+    print('Cyy-Cyy2={}'.format(np.max(np.abs(Cyy.ravel()-Cyy2.ravel()))))
 
     print('Cxx-Cxxdd={}'.format(np.max(np.abs(Cxxdd-Cxx).ravel())))
     print('Cxy-Cydxdt={}'.format(np.max(np.abs(Cxy-Cydxdt).ravel())))
@@ -806,4 +861,5 @@ def testCases():
 
     
 if __name__=="__main__":
+    testComputationMethods()
     testCases()
