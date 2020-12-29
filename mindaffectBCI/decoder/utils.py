@@ -294,7 +294,7 @@ def sliceY(Y, stimTimes_samp, featdim=True):
         return Y[:, si, :] if Y.ndim > 2 else Y[si, :]
 
 
-def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
+def block_permute(f, n, axis=-1, perm_axis=None, nblk=20):
     """block permute f to generate n new entries
 
     Args:
@@ -327,23 +327,39 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     blkIdx = [ (i,min(f.shape[perm_axis],i+blkSz)) for i in range(0,f.shape[perm_axis],blkSz) ]
     src_idx = [ slice(0,None) for i in range(f.ndim) ] # index expr for the src data
     dst_idx = [ slice(0,None) for i in range(out.ndim) ] # index expr for the dest data
+
+    # identify the fixed blocks
+    perm_blks = [] # list of permutable blocks
+    for i,bi in enumerate(blkIdx):
+        src_idx[perm_axis] = slice(bi[0],bi[1])
+        is_fixed = np.max(np.sum(f[tuple(src_idx)]!=0,axis=(axis,perm_axis))) < f.shape[axis]*(bi[1]-bi[0])*.05
+        if not is_fixed: 
+            perm_blks.append(i)
+
     for ni in range(n): # gen for rand for each output
-        blk_perm = [i for i in range(len(blkIdx))]
+        blk_perm = perm_blks.copy()
         random.shuffle(blk_perm) # block shuffle  **in-place**
-        ei = 0 # output epoch count
-        for bd,bs in enumerate(blk_perm):
+        blk_map = np.arange(len(blkIdx)) # linear perm
+        blk_map[perm_blks] = blk_perm # shuffle the movable ones
+        for bd,bs in enumerate(blk_map):
 
             (src_bgn,src_end) = blkIdx[bs]
+            (dst_bgn,dst_end) = blkIdx[bd]
+            # trim to fit with zero padding
+            if dst_end-dst_bgn > src_end-src_bgn :
+                dst_end = dst_bgn + src_end - src_bgn
+            elif dst_end-dst_bgn < src_end-src_bgn :
+                src_end = src_bgn + dst_end-dst_bgn
+
+            # make the index expressions
             src_idx[perm_axis] = slice(src_bgn, src_end)
             src_idx[axis] = random.randint(0,f.shape[axis]-1) # pick rand source output
 
-            (dst_bgn,dst_end) = (ei, ei + src_end - src_bgn)
             dst_idx[perm_axis] = slice(dst_bgn,dst_end)
             dst_idx[axis] = ni
 
+            # insert
             out[tuple(dst_idx)] = f[tuple(src_idx)]
-
-            ei = dst_end # update epoch counter for insertion
     return out
 
 

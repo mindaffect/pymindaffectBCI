@@ -165,7 +165,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fe = Fe[0,...]
         return Fe
 
-    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=None, marginalizemodels=True, marginalizedecis=False):
+    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=None, marginalizemodels=True, marginalizedecis=False, dedup0=None):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
@@ -191,6 +191,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             kwargs['softmaxscale']=self.softmaxscale_
         if bwdAccumulate is None and hasattr(self,'bwdAccumulate'):
             bwdAccumulate=self.bwdAccumulate
+
+        if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
+            Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
 
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
                                      marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
@@ -223,7 +226,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Fy = self.predict(X, Y, dedup0=dedup0, prevY=prevY)
         if minDecisLen is None: minDecisLen = self.minDecisLen
         if bwdAccumulate is None: bwdAccumulate = self.bwdAccumulate
-        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate)
+        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, dedup0=False)
 
     def score(self, X, Y):
         '''score this model on this data, N.B. for model_selection higher is *better*'''

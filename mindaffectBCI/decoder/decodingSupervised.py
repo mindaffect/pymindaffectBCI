@@ -98,7 +98,8 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   Ptgt2d = Ptgt.reshape((np.prod(Ptgt.shape[:-1]), Ptgt.shape[-1])) # make 2d-copy
   # add tie-breaking noise
   if tiebreaking_noise > 0:
-      Ptgt2d = Ptgt2d + np.random.standard_normal(Ptgt2d.shape)*tiebreaking_noise
+      Ptgt2d = Ptgt2d + (np.random.standard_normal(Ptgt2d.shape)*tiebreaking_noise).astype(Ptgt.dtype)
+      Ptgt2d = np.maximum(0,np.minimum(1,Ptgt2d,dtype=Ptgt.dtype),dtype=Ptgt.dtype)
 
   Yestidx = np.argmax(Ptgt2d, -1) # max over outputs, i.e. models, decisPts, etc..
   Ptgt_max = Ptgt2d[np.arange(Ptgt2d.shape[0]), Yestidx] # value at max, indexing trick to find..

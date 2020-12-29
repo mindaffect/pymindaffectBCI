@@ -57,16 +57,19 @@ except:
     guiplots=False
 
 def redraw_plots():
-    if guiplots and not matplotlib.is_interactive():
-        figs = plt.get_fignums()
-        for i in figs:
-            if plt.figure(i).get_visible():
-                #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
-                plt.gcf().canvas.flush_events()
-                #plt.gcf().canvas.draw_idle()
-                plt.gcf().canvas.start_event_loop(0.1)
-        #if len(figs)>0 :
-            #plt.show(block=False)
+    try:
+        if guiplots and not matplotlib.is_interactive():
+            figs = plt.get_fignums()
+            for i in figs:
+                if plt.figure(i).get_visible():
+                    #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
+                    plt.gcf().canvas.flush_events()
+                    #plt.gcf().canvas.draw_idle()
+                    plt.gcf().canvas.start_event_loop(0.1)
+            #if len(figs)>0 :
+                #plt.show(block=False)
+    except:
+        pass
 
 
 def get_trial_start_end(msgs, start_ts=None):
@@ -387,7 +390,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
         print("decoding curve {}".format(decoding_curve[1]))
         print("score {}".format(score))
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
-        
+
         if CALIBRATIONPLOTS:
             try:
             #if True:

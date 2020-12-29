@@ -59,13 +59,13 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0:bool=True,nvirt_o
         if not any(keep):
             print('No trials with true label info!')
     
-    if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
-        Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
-
     if nvirt_out is not None:
         # generate virtual outputs for testing -- not from the 'true' target though
         virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2) 
         Fy = np.append(Fy,virt_Fy,axis=-1)
+
+    if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
+        Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
 
     # get the points at which we compute performances
     if len(nInt) < 3:

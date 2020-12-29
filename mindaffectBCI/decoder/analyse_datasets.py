@@ -387,24 +387,6 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
 
-    # print("Plot X+Y")
-    # trli=min(3,X.shape[0]-1)
-    # plt.figure(10); plt.clf()
-    # plt.subplot(211)
-    # plt.imshow(X[trli,:,:].T,aspect='auto')
-    # plt.colorbar()
-    # plt.title('X')
-    # plt.xlabel('time (samp)')
-    # plt.subplot(212)
-    # if Y.ndim == 3:
-    #     plt.imshow(Y[trli, :, :].T, aspect='auto', cmap='gray', interpolation=None)
-    #     plt.xlabel('time (samp)')
-    #     plt.ylabel('target')
-    # else:
-    #     plt.plot(Y[trli, :, 0, :])
-    # plt.title('Y')
-    # plt.show(block=False)
-
     print("Plot summary stats")
     if Y.ndim == 4: # already transformed
         Yevt = Y
@@ -427,28 +409,8 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.pause(.5)
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
-
     # plot all Y-true & encoded version
-    Ytrue=Y[...,0]
-    yscale = np.max(np.abs(Ytrue.ravel()))
-    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
-    plt.sca(YrawAx)
-    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
-    plt.grid(True)
-    plt.title('Y-raw')
-    plt.xlabel('time (seconds)')
-    plt.ylabel('Trial#')
-    plt.sca(YevtAx)
-    Ytrueevt=Yevt[...,0,:] #(nTr,nSamp,nE)
-    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
-    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
-    yscale = np.max(np.abs(Ytrueevt.ravel()))
-    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
-    plt.grid(True)
-    plt.title('Yevt {}'.format(evtlabs))
-    plt.xlabel('time (seconds)')
-    plt.ylabel('Trial#')
-
+    plot_stim_encoding(Y[...,0],Yevt[...,0,:],evtlabs,fs)
 
     # fit the model
     # override with direct keyword arguments
@@ -464,10 +426,10 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # get the prob scores, per-sample
     if 'rawestimator' in cvres:   
         rawFy = cvres['rawestimator'] 
-        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False, dedup0=True)
     else:
         rawFy = cvres['estimator']
-        Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False, dedup0=True)
 
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
@@ -695,6 +657,25 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
     plt.show(block=False)
 
 
+def plot_stim_encoding(Ytrue,Ytrueevt,evtlabs,fs):
+    yscale = np.max(np.abs(Ytrue.ravel()))
+    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
+    plt.sca(YrawAx)
+    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.grid(True)
+    plt.title('Y-raw')
+    plt.xlabel('time (seconds)')
+    plt.ylabel('Trial#')
+    plt.sca(YevtAx)
+    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
+    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
+    yscale = np.max(np.abs(Ytrueevt.ravel()))
+    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+    plt.grid(True)
+    plt.title('Yevt {}'.format(evtlabs))
+    plt.xlabel('time (seconds)')
+    plt.ylabel('Trial#')
+    plt.show(block=False)
 
 
 def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, loader_args=None, *args,**kwargs):
