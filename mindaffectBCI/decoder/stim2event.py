@@ -121,8 +121,9 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
         elif etype == "0110" or etype == 'long':
             F = equals_subarray(M, [0, 1, 1, 0], axis)
 
-        elif etype == "hot-one":
+        elif etype == "hot-one" or etype=='hot-on':
             vals = np.unique(M)
+            if etype=='hot-on' and vals[0]==0: vals=vals[1:]
             F = M[...,np.newaxis] == vals.reshape((1,)*M.ndim+(vals.size,))
 
         elif etype.startswith("hot"):
