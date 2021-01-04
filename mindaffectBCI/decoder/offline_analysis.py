@@ -62,7 +62,7 @@ if 'rc' in savefile or 'audio' in savefile:
         test_idx=slice(40,None)
 elif 'threshold' in savefile:
     evtlabs='hot-on'
-elif 'actuity' in savefile:
+elif 'acuity' in savefile:
     evtlabs='output2event'
 else:
     evtlabs=('re','fe')

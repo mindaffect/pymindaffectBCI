@@ -311,6 +311,8 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     import random
     if perm_axis==None:
         perm_axis = axis-1
+    if perm_axis < 0: # convert to positive axis spec
+        perm_axis = f.ndim + perm_axis
     if n < 0 : # neg is max number outputs, so pad with enough
         n = max(0, -n - f.shape[axis])
 
@@ -320,13 +322,22 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     if n == 0 or f.shape[axis]==0:
         return out
 
-    # use block permutation to make virtual outputs
-    nblk = min( f.shape[perm_axis]/3, nblk )
-    blkSz = int(f.shape[perm_axis]/nblk)
-    # get begin/end of each block
-    blkIdx = [ (i,min(f.shape[perm_axis],i+blkSz)) for i in range(0,f.shape[perm_axis],blkSz) ]
+    # index experessions to extract the source/dest data
     src_idx = [ slice(0,None) for i in range(f.ndim) ] # index expr for the src data
     dst_idx = [ slice(0,None) for i in range(out.ndim) ] # index expr for the dest data
+
+    # find the range where the stimuli are turned on
+    validep = np.sum(f!=0,axis=tuple([i for i in range(f.ndim) if i!=perm_axis])) > f.size/f.shape[perm_axis] * .05
+    perm_idx = np.flatnonzero(validep)
+    perm_idx = (perm_idx[0],perm_idx[-1]+1) if len(perm_idx)>1 else (0,f.shape[perm_axis])
+
+    # use block permutation to make virtual outputs
+    nblk = min( (perm_idx[1]-perm_idx[0])/3, nblk )
+    blkSz = int( (perm_idx[1]-perm_idx[0])/nblk)
+    # get begin/end of each block
+    blkIdx = [ (i,min(perm_idx[1],i+blkSz)) for i in range(perm_idx[0],perm_idx[1],blkSz) ]
+    # add the start/end blocks
+    blkIdx = [(0,perm_idx[0])] + blkIdx + [(perm_idx[1],f.shape[perm_axis])]
 
     # identify the fixed blocks
     perm_blks = [] # list of permutable blocks
