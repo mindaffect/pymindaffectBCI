@@ -18,7 +18,9 @@
 import numpy as np
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.scoreOutput import dedupY0
-def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
+from mindaffectBCI.decoder.utils import block_permute
+
+def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0:bool=True,nvirt_out:int=-20,**kwargs):
     '''
     Compute a decoding curve, i.e. mistake-probability over time for probability based stopping from the per-epoch output scores
     
@@ -28,7 +30,7 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
         objIDs (nY,) : mapping from rows of Fy to output object IDs.  N.B. assumed objID==0 is true target
                 N.B. if objIDs > size(Fy,2), then additional virtual outputs are added
         nInt (2,) : the number of integeration lengths to use, numThresholds. Defaults to ([30,25])
-
+        nvirt_out (int): number of virtual outputs to add to the true outputs
     Returns:
         integerationLengths (int (nInt,)) : the actual integeration lengths in samples
         ProbErr (float (nInt,)) : empherical error probablility at this integeration length
@@ -57,9 +59,13 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0=True,**kwargs):
         if not any(keep):
             print('No trials with true label info!')
     
+    if nvirt_out is not None:
+        # generate virtual outputs for testing -- not from the 'true' target though
+        virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2) 
+        Fy = np.append(Fy,virt_Fy,axis=-1)
+
     if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
         Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
-
 
     # get the points at which we compute performances
     if len(nInt) < 3:
@@ -296,12 +302,19 @@ def testcase():
     """    
     import numpy as np
     import matplotlib.pyplot as plt
-    Fy=np.random.standard_normal((2,10,100,50))
-    Fy[0,:,:,0]=Fy[0,:,:,0] + 0.3
-    from decodingCurveSupervised import decodingCurveSupervised
-    (dc)=decodingCurveSupervised(Fy)
+    from mindaffectBCI.decoder.normalizeOutputScores import mktestFy,  normalizeOutputScores
+    Fy, nEp = mktestFy(sigstr=.5,nM=1,nY=10,nTrl=10,startupNoisefrac=25) #(nM, nTrl, nEp, nY)
+    #Fy = Fy[0,...] # (nTrl,nEp,nY)
+    # Introduce temporal and spatial sparsity like real data
+    Fy = Fy * (np.random.standard_normal((1,Fy.shape[-2],Fy.shape[-1]))>0).astype(np.float)
+    Fy[...,:50,:] = 0 # block zero at start
+
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+    (dc)=decodingCurveSupervised(Fy,nInt=(25,25),nvirt_out=-12,softmaxscale=2)
     plot_decoding_curve(*dc)
-    plt.show(block=False)
+    plt.show(block=True)
+
+    quit()
 
     sFy = np.cumsum(Fy,-2)
     Yi = np.argmax(sFy,-1)

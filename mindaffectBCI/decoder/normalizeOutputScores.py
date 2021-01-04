@@ -114,7 +114,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         sFy = sFy[..., decisIdx, :]
 
     # (nTrl, nDecis) (average) number points in each sum at each decision point
-    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
+    N   = np.mean(np.cumsum(validFy,-2,dtype=np.float32),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
     N   = N[..., decisIdx]
 
     #N = np.tile(decisIdx[np.newaxis, :], (Fy.shape[-3], 1)) # (nTrl, nDecis) number points in each sum [ nDecis x nTrl ]
@@ -241,9 +241,9 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         sigma2 ([np.ndarray]): (nTr, nDecis) estimated variance per sample at each decision point
     """
     validFy = Fy != 0
-    nY  = np.sum(np.any(validFy, -2 if Fy.ndim<4 else (0,-2)), -1).astype(Fy.dtype) # number active outputs in this trial (nM*nTrl) 
+    nY  = np.sum(np.any(validFy, -2 if Fy.ndim<4 else (0,-2)), -1,dtype=Fy.dtype) # number active outputs in this trial (nM*nTrl) 
     # (nTrl, nEp) (average) number points in each sum at each decision point
-    N   = np.mean(np.cumsum(validFy,-2),-1 if validFy.ndim<4 else (-4,-1)).astype(Fy.dtype) # (nTrl,nEp)
+    N   = np.mean(np.cumsum(validFy,-2,dtype=Fy.dtype),-1 if validFy.ndim<4 else (-4,-1)) # (nTrl,nEp)
 
     if decisIdx is None:
         decisIdx = np.array([Fy.shape[-2]-1],dtype=int)
@@ -258,7 +258,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         cFy = cFy - muFy_t
 
     # compute the cumulative sum
-    scFy = np.cumsum(cFy, -2) # cum-sum from start # (nTr, nEp, nY)
+    scFy = np.cumsum(cFy, -2, dtype=Fy.dtype) # cum-sum from start # (nTr, nEp, nY)
 
     # remove per-sample offset (if enough outputs to do reliably)
     if centFy and np.any(nY>3):
@@ -275,7 +275,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
     nvar2csFy = var2csFy / np.maximum(1, N, dtype=scFy.dtype) #np.arange(1,var2csFy.shape[-1]+1) # ave var per-time-step
 
     # compute the average of the estimated slopes for each integeration length
-    muvar2csFy = np.cumsum(nvar2csFy, -1) / np.maximum(1, np.cumsum(N>0,-1))  # ave per-stime-stamp vars before each time-point
+    muvar2csFy = np.cumsum(nvar2csFy, -1, dtype=Fy.dtype) / np.maximum(1, np.cumsum(N>0,-1),dtype=scFy.dtype)  # ave per-stime-stamp vars before each time-point
     
     # return the ave-cumsum-slope-of-variance at each decision length
     sigma2 = muvar2csFy[...,decisIdx] # (nTr,nDecis)
@@ -287,7 +287,7 @@ def estimate_Fy_noise_variance(Fy, decisIdx=None, centFy=True, detrendFy=False, 
         #  sigma'^2 = 1 / ( N_0/sigma_0^2 + N / sigma^2) 
         #           = sigma_0^2 * sigma^2 / ( N_0 sigma^2 + N * sigma_0 )
         osigma2= sigma2
-        sigma2 = ((sigma2*decisIdx).astype(sigma2.dtype) + np.array(priorsigma[0]*priorsigma[1],dtype=sigma2.dtype)) / ( decisIdx + priorsigma[1] ).astype(sigma2.dtype)
+        sigma2 = ((sigma2*N).astype(sigma2.dtype) + np.array(priorsigma[0]*priorsigma[1],dtype=sigma2.dtype)) / ( N + priorsigma[1] ).astype(sigma2.dtype)
         sigma2[osigma2==0] = 0
         sigma2 = np.maximum(osigma2,sigma2) # sigma2.astype(Fy.dtype)
         #print('sigma2 = {}  prior={} -> {}'.format(np.mean(osigma2),priorsigma,np.mean(sigma2)))
@@ -409,35 +409,35 @@ def plot_normalizedScores(Fy, ssFy, scale_sFy, decisIdx):
 
 
 #@function
-def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, offsetstr=10, trlenfrac=.25):
+def mktestFy(nY=10, nM=1, nEp=360, nTrl=100, sigstr=.5, startupNoisefrac=.25, offsetstr=0, trlenfrac=.25):
     import numpy as np
     noise = np.random.standard_normal((nM, nTrl, nEp, nY))
-    noise = noise - np.mean(noise.ravel())
-    noise = noise / np.std(noise.ravel())
+    noise = noise - np.mean(noise,axis=(-1,-2),keepdims=True)
+    noise = noise / np.std(noise,axis=(-1,-2),keepdims=True)
     # add an offset to the scores...
     offset = offsetstr*np.random.standard_normal((noise.shape[-2])) # (nEp)
     noise = noise+offset[:, np.newaxis] # (nM, nTrl, nEp, nY) [ nYxnEpxnTrlxnM ]
 
     sigamp = sigstr*np.ones((noise.shape[-2])) # (nEp)
 
+    # make variable length trials,  and per-trial offset
+    nEp = np.zeros((noise.shape[-3],), dtype=int)
+    for ti in range(noise.shape[-3]):
+        # trial offset
+        mu = np.random.standard_normal()
+        noise[:,  ti, :, :] = noise[:, ti, :, :] + mu
+        # trial end time
+        nEp[ti] = noise.shape[-2]*(np.random.uniform()*trlenfrac + (1-trlenfrac))
+        noise[:, ti, nEp[ti]:, :] = 0
+
+    # no signal at the start of the trial
+    startupNoise_samp = int(noise.shape[1]*startupNoisefrac) if startupNoisefrac<1 else startupNoisefrac
+    sigamp[:startupNoise_samp] = 0
+    noise[:,:,:startupNoise_samp,:]=0
+
     # measure is sig + noise
     Fy = noise
     Fy[0, :, :, 0] = Fy[0, :, :, 0] + sigamp[np.newaxis, :] # (nM, nTrl, nEp, nY) [nEp x nTrl]
-    
-    # make variable length trials,  and per-trial offset
-    nEp = np.zeros((Fy.shape[-3]), dtype=int)
-    for ti in range(Fy.shape[-3]):
-        # trial offset
-        mu = np.random.standard_normal()
-        Fy[:,  ti, :, :] = Fy[:, ti, :, :] + mu
-        # trial end time
-        nEp[ti] = Fy.shape[-2]*(np.random.uniform()*trlenfrac + (1-trlenfrac))
-        Fy[:, ti, nEp[ti]:, :] = 0
-
-    # no signal at the start of the trial
-    startupNoise_samp = int(Fy.shape[1]*startupNoisefrac)
-    sigamp[:startupNoise_samp] = 0
-    noise[:,:,:startupNoise_samp,:]=0
 
     return Fy, nEp
 

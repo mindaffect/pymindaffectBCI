@@ -74,16 +74,16 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
     # Using brainflow for the acquisition driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
     #  so change the board_id and other args to use other boards
-    if acquisition == 'none':
+    if acquisition.lower() == 'none':
         # don't run acq driver here, user will start it manually
-        acquisition = None
-    elif acquisition == 'fakedata':
+        acquisition = NoneProc()
+    elif acquisition.lower() == 'fakedata':
         print('Starting fakedata')
         from mindaffectBCI.examples.acquisition import utopia_fakedata
         acq_args=dict(host='localhost', nch=4, fs=200)
         acquisition = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
         acquisition.start()
-    elif acquisition == 'brainflow':
+    elif acquisition.lower() == 'brainflow':
         from mindaffectBCI.examples.acquisition import utopia_brainflow
         if acq_args is None:
             acq_args = dict(board_id=1, serial_port='com3', log=1) # connect to the ganglion
@@ -92,32 +92,32 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
 
         # give it some time to startup successfully
         sleep(5)
-    elif acquisition == 'ganglion': # pyOpenBCI ganglion driver
+    elif acquisition.lower() == 'ganglion': # pyOpenBCI ganglion driver
         from mindaffectBCI.examples.acquisition import utopia_ganglion
         acquisition = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'cyton': # pyOpenBCI ganglion driver
+    elif acquisition.lower() == 'cyton': # pyOpenBCI ganglion driver
         from mindaffectBCI.examples.acquisition import utopia_cyton
         acquisition = Process(target=utopia_cyton.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'javacyton': # java cyton driver
+    elif acquisition.lower() == 'javacyton': # java cyton driver
         from mindaffectBCI.examples.acquisition import startJavaCyton
         acquisition = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'eego': # ANT-neuro EEGO
+    elif acquisition.lower() == 'eego': # ANT-neuro EEGO
         from mindaffectBCI.examples.acquisition import utopia_eego
         acquisition = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'lsl': # lsl eeg input stream
+    elif acquisition.lower() == 'lsl': # lsl eeg input stream
         from mindaffectBCI.examples.acquisition import utopia_lsl
         acquisition = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'brainproducts': # brainproducts eeg input stream
+    elif acquisition.lower() == 'brainproducts' or acquisition.lower()=='liveamp': # brainproducts eeg input stream
         from mindaffectBCI.examples.acquisition import utopia_brainproducts
         acquisition = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
         acquisition.start()
@@ -144,7 +144,7 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
     Returns:
         Process: sub-process for managing the started decoder
     """    
-    if decoder == 'decoder' or decoder == 'mindaffectBCI.decoder.decoder':
+    if decoder.lower() == 'decoder' or decoder.lower() == 'mindaffectBCI.decoder.decoder'.lower():
         from mindaffectBCI.decoder import decoder
         if decoder_args is None:
             decoder_args = dict(calplots=True)
@@ -155,7 +155,7 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
         decoder.start()
         # allow time for the decoder to startup
         sleep(4)
-    elif decoder == 'none':
+    elif decoder.lower() == 'none':
         decoder = NoneProc()
     return decoder
 
@@ -243,7 +243,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
     #--------------------------- PRESENTATION ------------------------------
     # run the stimulus, with our matrix and default parameters for a noise tag
     #  Make a custom matrix to show:
-    if presentation == 'selectionMatrix' or presentation == 'mindaffectBCI.examples.presentation.selectionMatrix':
+    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.examples.presentation.selectionMatrix'.lower():
         if presentation_args is None:
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
@@ -253,20 +253,20 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         except:
             traceback.print_exc()
 
-    elif presentation == 'sigviewer' or presentation=='none':
+    elif presentation.lower() == 'sigviewer' or presentation=='none':
         try:
             from mindaffectBCI.decoder.sigViewer import sigViewer
             sigViewer()
         except:
             traceback.print_exc()
 
-    elif presentation == 'hue' or presentation == "colorwheel":
+    elif presentation.lower() == 'hue' or presentation.lower() == "colorwheel":
         try:
             from mindaffectBCI.examples.presentation import colorwheel
             colorwheel.run(**presentation_args)
         except:
             traceback.print_exc()
-    elif presentation == 'rpigpio':
+    elif presentation.lower() == 'rpigpio':
         try:
             from mindaffectBCI.examples.presentation import rpigpio
             rpigpio.run(**presentation_args)

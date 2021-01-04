@@ -81,7 +81,7 @@ class Screen:
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 class WaitScreen(Screen):
-    '''Screen which shows a textual instruction for duration or until key-pressed'''
+    '''Screen which shows a blank screen for duration or until key-pressed'''
     def __init__(self, window, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
         super().__init__(window)
         self.t0 = None # timer for the duration
@@ -154,6 +154,95 @@ class WaitScreen(Screen):
 
         if self.logo: self.logo.draw()
 
+
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+#-----------------------------------------------------------------
+class UserInputScreen(WaitScreen):
+    '''Modified screen to enter text'''
+
+    def __init__(self, window, callback, title_text=None, text=None, valid_text=None, duration=150000, logo="Mindaffect_Logo.png"):
+        super().__init__(window, duration, False, logo)
+        self.valid_text = valid_text
+        self.usertext = ''
+        self.callback = callback
+
+        # initialize the instructions screen
+        self.titleLabel = pyglet.text.Label(x=int(self.window.width*.1),
+                                            y=self.window.height,
+                                            anchor_x='left',
+                                            anchor_y='top',
+                                            font_size=24,
+                                            color=(255, 255, 255, 255),
+                                            multiline=True,
+                                            width=int(self.window.width*.8))
+        self.set_title(title_text)
+
+        self.inputLabel = pyglet.text.Label(x=self.window.width//2,
+                                            y=self.window.height//2,
+                                            anchor_x='center',
+                                            anchor_y='center',
+                                            font_size=24,
+                                            color=(255, 255, 255, 255),
+                                            multiline=True,
+                                            width=int(self.window.width*.8))
+        self.set_text(text)
+
+    def set_text(self, text):
+        '''set/update the text to show in the instruction screen'''
+        if type(text) is list:
+            text = "\n".join(text)
+        elif text is None: 
+            text=""
+        self.inputLabel.begin_update()
+        self.inputLabel.text=text
+        self.inputLabel.end_update()
+
+    def set_title(self, text):
+        '''set/update the text to show in the instruction screen'''
+        if type(text) is list:
+            text = "\n".join(text)
+        elif text is None: 
+            text=""
+        self.titleLabel.begin_update()
+        self.titleLabel.text=text
+        self.titleLabel.end_update()
+
+    def draw(self, t):
+        '''check for results from decoder.  show if found..'''
+        global last_text, last_key_press
+        if not self.isRunning:
+            WaitScreen.draw(self,t)
+            return
+        WaitScreen.draw(self,t)
+
+        # query the user for host/port
+        # accumulate user inputs
+        if self.window.last_key_press:
+            if self.window.last_key_press == pyglet.window.key.BACKSPACE:
+                # remove last character
+                self.usertext = self.usertext[:-1]
+            self.window.last_key_press = None
+            if self.window.last_text:
+                print(self.window.last_text + ":" + str(ord(self.window.last_text)))
+            if self.window.last_text == '\n' or self.window.last_text == '\r':
+                self.isDone = True
+                if self.callback is not None:
+                    self.callback(self.usertext)
+            elif self.window.last_text:
+                if self.valid_text is None or self.window.last_text in self.valid_text:
+                    # add to the host string
+                    self.usertext += window.last_text
+            self.window.last_text = None
+            self.set_text(self.usertext)
+
+        # draw the screen bits..
+        self.titleLabel.draw()
+        self.inputLabel.draw()
+
+
+
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
@@ -161,7 +250,7 @@ class WaitScreen(Screen):
 class InstructionScreen(WaitScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
     def __init__(self, window, text, duration=5000, waitKey=True, logo="MindAffect_Logo.png"):
-        super().__init__(window)
+        super().__init__(window, duration, waitKey, logo)
         self.t0 = None # timer for the duration
         self.duration = duration
         self.waitKey = waitKey
@@ -179,31 +268,6 @@ class InstructionScreen(WaitScreen):
                                                width=int(self.window.width*.8))
         self.set_text(text)
 
-        # add the framerate box
-        self.framerate=pyglet.text.Label("", font_size=12, x=self.window.width, y=self.window.height,
-                                        color=(255, 255, 255, 255),
-                                        anchor_x='right', anchor_y='top')
-        
-        self.logo = None
-        if isinstance(logo,str): # filename to load
-            logo = search_directories_for_file(logo,
-                                               os.path.dirname(os.path.abspath(__file__)),
-                                               os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..'))
-            try:
-                logo = pyglet.image.load(logo)
-            except:
-                logo = None
-        if logo:
-            logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-            self.logo = pyglet.sprite.Sprite(logo,self.window.width,self.window.height-16)
-            self.logo.update(scale_x=self.window.width*.1/logo.width, 
-                            scale_y=self.window.height*.1/logo.height)
-
-
-    def reset(self):
-        self.isRunning = False
-        self.isDone = False
-
     def set_text(self, text):
         '''set/update the text to show in the instruction screen'''
         if type(text) is list:
@@ -212,46 +276,14 @@ class InstructionScreen(WaitScreen):
         self.instructLabel.text=text
         self.instructLabel.end_update()
 
-    def is_done(self):
-        # check termination conditions
-        if not self.isRunning:
-            self.isDone = False
-            return self.isDone
-        if self.waitKey:
-            #global last_key_press
-            if self.window.last_key_press:
-                self.key_press = self.window.last_key_press
-                self.isDone = True
-                self.window.last_key_press = None
-        if self.elapsed_ms() > self.duration:
-            self.isDone = True
-
-        return self.isDone
-
-    def elapsed_ms(self):
-        return getTimeStamp()-self.t0
 
     def draw(self, t):
         '''Show a block of text to the user for a given duration on a blank screen'''
         if not self.isRunning:
             self.isRunning = True  # mark that we're running
             self.t0 = getTimeStamp()
-        if self.clearScreen:
-            self.window.clear()
+        WaitScreen.draw(self,t)
         self.instructLabel.draw()
-
-        # check if should update display
-        # TODO[]: only update screen 1x / second
-        global flipstats
-        flipstats.update_statistics()
-        self.framerate.begin_update()
-        self.framerate.text = "{:4.1f} +/-{:4.1f}ms".format(flipstats.median,flipstats.sigma)
-        self.framerate.end_update()
-        self.framerate.draw()
-
-        if self.logo: self.logo.draw()
-
-
 
 
 
@@ -1048,7 +1080,6 @@ class SelectionGridScreen(Screen):
                                         batch=self.batch, group=self.foreground)
 
     def init_logo(self,logo):
-        winw, winh=self.window.get_size()
         # add a logo box
         if isinstance(logo,str): # filename to load
             logo = search_directories_for_file(logo,os.path.dirname(__file__),
@@ -1063,8 +1094,8 @@ class SelectionGridScreen(Screen):
             self.logo.batch = self.batch
             self.logo.group = self.foreground
             self.logo.update(x=self.window.width,  y=self.window.height-16,
-                            scale_x=self.window.width*.1/logo.width, 
-                            scale_y=self.window.height*.1/logo.height)
+                            scale_x=self.window.width*.1/self.logo.image.width, 
+                            scale_y=self.window.height*.1/self.logo.image.height)
 
     def init_opto(self):
         winw, winh=self.window.get_size()
@@ -1236,6 +1267,7 @@ class ExptScreenManager(Screen):
         Welcome=99
         Minimize=101
         Settings=105
+        LogMessage=106
         FrameRateCheck=200
         Reset=110
         ExtraSymbols=300
@@ -1261,7 +1293,8 @@ class ExptScreenManager(Screen):
     main_menu_footer = "\n\n\n" + "Q) Quit" + "\n" + \
                "f) frame-rate-check" + "\n" + \
                "s) settings\n" + \
-               "r) reset calibration model"
+               "r) reset calibration model" + "\n" +\
+               "L) send log message"
                
     menu_keys = {pyglet.window.key._0:ExptPhases.SignalQuality,
                  pyglet.window.key._1:ExptPhases.CalInstruct,
@@ -1270,7 +1303,8 @@ class ExptScreenManager(Screen):
                  pyglet.window.key.F:ExptPhases.FrameRateCheck,
                  pyglet.window.key.S:ExptPhases.Settings,
                  pyglet.window.key.R:ExptPhases.Reset,
-                 pyglet.window.key.Q:ExptPhases.Quit}
+                 pyglet.window.key.Q:ExptPhases.Quit,
+                 pyglet.window.key.L:ExptPhases.LogMessage}
 
     def __init__(self, window:pyglet.window, noisetag:Noisetag, symbols, nCal:int=None, ncal:int=1, npred:int=1, nPred:int=None, 
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
@@ -1317,10 +1351,10 @@ class ExptScreenManager(Screen):
                         "{}) Free Typing: {}".format(keyi,label)
                 self.menu_keys[getattr(pyglet.window.key,"_{:d}".format(keyi))] = self.ExptPhases.ExtraSymbols
 
+
         self.menu = MenuScreen(window, self.main_menu_header+self.main_menu_numbered+self.main_menu_footer, self.menu_keys.keys())
         self.instruct = InstructionScreen(window, '', duration = 50000)
         self.connecting = ConnectingScreen(window, noisetag)
-        self.query  =  QueryDialogScreen(window, 'Query Test:')
         self.electquality = ElectrodequalityScreen(window, noisetag)
         self.results = ResultsScreen(window, noisetag)
 
@@ -1512,7 +1546,7 @@ class ExptScreenManager(Screen):
             print("prediction")
             screen = self.predictionScreen
             screen.reset()
-            screen.set_grid(symbols=self.symbols, bgFraction=.05)
+            screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
             screen.target_only=False
             screen.show_correct=False
@@ -1586,6 +1620,12 @@ class ExptScreenManager(Screen):
         elif self.stage==self.ExptPhases.Settings: # config settings
             print("settings")
             self.screen = SettingsScreen(self.window, self)
+            self.next_stage = self.ExptPhases.MainMenu
+
+        elif self.stage==self.ExptPhases.LogMessage: # log message
+            print("settings")
+            doLogMessage = lambda x: self.noisetag.log(x)
+            self.screen = UserInputScreen(self.window, doLogMessage, "Enter your log message\n\nEnter to send")
             self.next_stage = self.ExptPhases.MainMenu
 
         else: # end
@@ -1824,5 +1864,6 @@ if __name__ == "__main__":
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
     setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'calibration_stimseq','rc5x5.txt')
+    setattr(args,'extra_symbols',['iconic.txt'])
     run(**vars(args))
 

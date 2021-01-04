@@ -70,7 +70,7 @@ except:
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, 
-                priorweight=200, startup_correction=100, prediction_offsets=None, 
+                priorweight=100, startup_correction=10, prediction_offsets=None, 
                 minDecisLen=0, bwdAccumulate=False, verb=0):
         """Base class for general sequence to sequence models and inference
 
@@ -85,8 +85,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
         self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb, self.minDecisLen, self.bwdAccumulate = (tau, offset, priorweight, startup_correction, prediction_offsets, verb, minDecisLen, bwdAccumulate)
-        if self.offset>0 or self.offset<-tau:
-            raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
+        #if self.offset>0 or self.offset<-tau:
+        #    raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
     def stim2event(self, Y, prevY=None, fit=False):
         '''transform Stimulus-encoded to brain-encoded, if needed'''
@@ -168,7 +168,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fe = Fe[0,...]
         return Fe
 
-    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=None, marginalizemodels=True, marginalizedecis=False):
+    def decode_proba(self, Fy, minDecisLen=0, bwdAccumulate=None, marginalizemodels=True, marginalizedecis=False, dedup0=None):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
@@ -194,6 +194,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             kwargs['softmaxscale']=self.softmaxscale_
         if bwdAccumulate is None and hasattr(self,'bwdAccumulate'):
             bwdAccumulate=self.bwdAccumulate
+
+        if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
+            Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)
 
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
                                      marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
@@ -226,7 +229,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Fy = self.predict(X, Y, dedup0=dedup0, prevY=prevY)
         if minDecisLen is None: minDecisLen = self.minDecisLen
         if bwdAccumulate is None: bwdAccumulate = self.bwdAccumulate
-        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate)
+        return self.decode_proba(Fy,marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, dedup0=False)
 
     def score(self, X, Y):
         '''score this model on this data, N.B. for model_selection higher is *better*'''
@@ -365,7 +368,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, center=True, CCA=True, priorweight=200, startup_correction=100, prediction_offsets=None, minDecisLen=100, bwdAccumulate=False, **kwargs):
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, 
+                 center=True, CCA=True, priorweight=100, startup_correction=20, prediction_offsets=None, minDecisLen=100, 
+                 bwdAccumulate=False, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, priorweight=priorweight, startup_correction=startup_correction, prediction_offsets=prediction_offsets, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 

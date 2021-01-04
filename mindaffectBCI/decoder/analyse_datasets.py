@@ -386,24 +386,6 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
 
-    # print("Plot X+Y")
-    # trli=min(3,X.shape[0]-1)
-    # plt.figure(10); plt.clf()
-    # plt.subplot(211)
-    # plt.imshow(X[trli,:,:].T,aspect='auto')
-    # plt.colorbar()
-    # plt.title('X')
-    # plt.xlabel('time (samp)')
-    # plt.subplot(212)
-    # if Y.ndim == 3:
-    #     plt.imshow(Y[trli, :, :].T, aspect='auto', cmap='gray', interpolation=None)
-    #     plt.xlabel('time (samp)')
-    #     plt.ylabel('target')
-    # else:
-    #     plt.plot(Y[trli, :, 0, :])
-    # plt.title('Y')
-    # plt.show(block=False)
-
     print("Plot summary stats")
     if Y.ndim == 4: # already transformed
         Yevt = Y
@@ -427,28 +409,8 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.pause(.5)
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
-
     # plot all Y-true & encoded version
-    Ytrue=Y[...,0]
-    yscale = np.max(np.abs(Ytrue.ravel()))
-    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
-    plt.sca(YrawAx)
-    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
-    plt.grid(True)
-    plt.title('Y-raw')
-    plt.xlabel('time (seconds)')
-    plt.ylabel('Trial#')
-    plt.sca(YevtAx)
-    Ytrueevt=Yevt[...,0,:] #(nTr,nSamp,nE)
-    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
-    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
-    yscale = np.max(np.abs(Ytrueevt.ravel()))
-    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/len(evtlabs)/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/len(evtlabs),'.-')
-    plt.grid(True)
-    plt.title('Yevt {}'.format(evtlabs))
-    plt.xlabel('time (seconds)')
-    plt.ylabel('Trial#')
-
+    plot_stim_encoding(Y[...,0],Yevt[...,0,:],evtlabs,fs)
 
     # fit the model
     #clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
@@ -458,26 +420,26 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     # get the prob scores, per-sample
     if 'rawestimator' in cvres:   
         rawFy = cvres['rawestimator'] 
-        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False, dedup0=True)
     else:
         rawFy = cvres['estimator']
-        Py = clsfr.decode_proba(Fy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False)
+        Py = clsfr.decode_proba(rawFy, marginalizemodels=True, minDecisLen=-1, bwdAccumulate=False, dedup0=True)
 
     Yerr = res[5] # (nTrl,nSamp)
     Perr = res[6] # (nTrl,nSamp)
 
-    plt.figure(); plt.clf()
+    #plt.figure(14); plt.clf()
     plot_trial_summary(X, Y, rawFy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
     plt.gcf().set_size_inches((15,9))
     plt.savefig("{}_trial_summary".format(label)+".pdf")
     plt.pause(.5)
 
-    plt.figure()
+    plt.figure(); plt.clf()
     plot_decoding_curve(res[0]/fs, *res[1:])
     plt.show(block=False)
 
-    plt.figure()
+    plt.figure();plt.clf()
     plt.subplot(211)
     plt.imshow(res[5], origin='lower', aspect='auto',cmap='gray', extent=[0,res[0][-1]/fs,0,res[5].shape[0]])
     plt.clim(0,1)
@@ -690,6 +652,25 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
     plt.show(block=False)
 
 
+def plot_stim_encoding(Ytrue,Ytrueevt,evtlabs,fs):
+    yscale = np.max(np.abs(Ytrue.ravel()))
+    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
+    plt.sca(YrawAx)
+    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.grid(True)
+    plt.title('Y-raw')
+    plt.xlabel('time (seconds)')
+    plt.ylabel('Trial#')
+    plt.sca(YevtAx)
+    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
+    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
+    yscale = np.max(np.abs(Ytrueevt.ravel()))
+    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+    plt.grid(True)
+    plt.title('Yevt {}'.format(evtlabs))
+    plt.xlabel('time (seconds)')
+    plt.ylabel('Trial#')
+    plt.show(block=False)
 
 
 def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, loader_args=None, *args,**kwargs):
@@ -714,8 +695,8 @@ def debug_test_single_dataset(dataset:str,filename:str=None,dataset_args=None, l
 
 
 def run_analysis():    
-    #analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
-    #                 model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))
+    analyse_datasets("plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(30,-1))),
+                     model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3))
     #"plos_one",loader_args=dict(fs_out=120,stopband=((0,3),(45,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
     #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=1)): ave-score:67
     #"plos_one",loader_args=dict(fs_out=60,stopband=((0,3),(25,-1))),model='cca',clsfr_args=dict(tau_ms=350,evtlabs=('re','fe'),rank=3)): ave-score:67
@@ -834,7 +815,7 @@ def run_analysis():
     pass
 
 
-if __name__=="__main__":
+def analyse_single():
     from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
     import glob
     import os
@@ -893,5 +874,17 @@ if __name__=="__main__":
     else:
         debug_test_dataset(X, Y, coords, label=label, tau_ms=450, evtlabs=('re','fe'), rank=1, model='cca', test_idx=test_idx, ranks=(1,2,3,5), startup_correction=100, priorweight=1e6)#, prediction_offsets=(-2,-1,0,1) )
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
+
+
+if __name__=="__main__":
+
+    # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),
+    #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
+
+    analyse_datasets("mindaffectBCI",dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
+                     loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
+                     model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
+
+    #analyse_single()
 
     #run_analysis()
