@@ -1548,7 +1548,7 @@ class ExptScreenManager(Screen):
                 self.prediction_args['numframes'] = self.prediction_trialduration / isi
                 self.prediction_args['selectionThreshold']=self.selectionThreshold
                 
-                self.selectionGrid.noisetag.startPrediction(**self.prediction_args)
+                screen.noisetag.startPrediction(**self.prediction_args)
                 self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
 
