@@ -156,7 +156,6 @@ class Flicker(FSM):
         self.numframes=numframes
         self.nframe=0
         self.tgtidx=tgtidx
-        #self.tgtstate=-1
         self.sendEvents=sendEvents
         self.framesperbit=framesperbit if framesperbit is not None else 1
         self.permute = permute 
@@ -197,7 +196,6 @@ class Flicker(FSM):
         if self.nframe >= self.numframes:
             # final frame is blank screen
             self.ss[:] = [0 for i in range(len(self.stimSeq[0]))]
-            self.tgtState = -1
         else:            
             self.ss       = self.stimSeq[self.nframe//self.framesperbit % len(self.stimSeq)]
             if self.permute: # permute the codebook -> objID mapping if wanted

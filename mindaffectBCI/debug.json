@@ -22,7 +22,7 @@
 
     "presentation":"selectionMatrix",
     "presentation_args":{
-        "ncal":4,
+        "ncal":10,
         "npred":10,
         "selectionThreshold":0.1,
         "symbols":"keyboard.txt",

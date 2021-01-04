@@ -99,7 +99,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=
 
     # up-sample to stim rate
     Y, stim_samp = upsample_stimseq(data_ts, Me, stim_ts, objIDs)
-    Y_ts = np.zeros((Y.shape[0],),dtype=int); 
+    Y_ts = np.zeros((Y.shape[0],),dtype=int) 
     Y_ts[stim_samp]=stim_ts
     if verb >= 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
 

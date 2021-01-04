@@ -132,37 +132,52 @@ def factored2full(W, R):
     return W
 
 def scoreStimulusCont(X, W, R=None, b=None, offset=0):
-    '''
-    Apply spatio-tempoal (possibly factored) model to raw (non epoched) data
-    '''
-    W = factored2full(W, R) # (metd)
-    tau = W.shape[-2]
+    """ Apply spatio-tempoal (possibly factored) model to raw (non epoched) data
+
+    Args:
+        X (np.ndarray (nTr,nSamp,d)): raw per-trial data 
+        W (np.ndarray (nM,nfilt,d)): spatial filters for each factor 
+        R (np.ndarray (nM,nfilt,nE,tau): responses for each stimulus event for each output
+        b (np.ndarray (nE,1)): offset for each stimulus type
+    Returns:
+        np.ndarray (nM,nTrl,nSamp,nE): similarity score for each input epoch for each output
+    """   
+    tau = W.shape[-2] if R is None else R.shape[-1] # get response length
     if X.shape[-2] > tau:
+        # slice and apply
         Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
-        Fe = scoreStimulusEpoch(Xe, W, None, b) # (nM, nTrl, nSamp-tau, nE)
+        Fe = scoreStimulusEpoch(Xe, W, R, b) # (nM, nTrl, nSamp-tau, nE)
     else: # X isn't big enough to apply... => zero score
         Fe = np.zeros((W.shape[0],X.shape[0],1,W.shape[1]),dtype=X.dtype)
     
-    # zero pad to keep the output size
-    # TODO[]: pad with the *actual* values...
-    tmp = np.zeros(Fe.shape[:-2]+(X.shape[-2], Fe.shape[-1]),dtype=X.dtype)
-    # padd after the result = accumulate information *backwards* in time to
-    # start of the window -> Fe causes X
-    # also shift by the desired offset to compensate for shifted windows
-    tmp[..., -offset:Fe.shape[-2]-offset, :] = Fe
-    Fe = tmp
+    # shift for the offset and zero-pad to the input X size
+    # N.B. as we are offsetting from X->Y we move in the **OPPOSITTE** direction to
+    # how Y is shifted! 
+    Feoffset=-offset
+    if Feoffset<=0:
+        tmp = Fe[..., -Feoffset:, :] # shift-back and shrink
+        Fe = np.zeros(Fe.shape[:-2]+(X.shape[-2],)+Fe.shape[-1:],dtype=Fe.dtype)
+        Fe[...,:tmp.shape[-2],:] = tmp # insert
+    else :
+        tmp =  Fe[..., :X.shape[-2]-Feoffset, :] # shrink
+        Fe = np.zeros(Fe.shape[:-2]+(X.shape[-2],)+Fe.shape[-1:],dtype=Fe.dtype)
+        Fe[...,Feoffset:Feoffset+tmp.shape[-2],:] = tmp # shift + insert
 
     return Fe
 
     
-def plot_Fe(Fe):
+def plot_Fe(Fe,evtlabs=None):
     import matplotlib.pyplot as plt
     '''plot the stimulus score function'''
+    if evtlabs is None:
+        evtlabs=range(Fe.shape[-1])
     #print("Fe={}".format(Fe.shape))
     if Fe.ndim > 3:
         if Fe.shape[0]>1 :
             print('Warning stripping model dimension!')
         Fe = Fe[0,...]
+    elif Fe.ndim<3:
+        Fe = Fe[np.newaxis,...] if Fe.ndim==2 else Fe[np.newaxis,np.newaxis,...]
     plt.clf()
     nPlts=min(25,Fe.shape[0])
     if Fe.shape[0]/2 > nPlts:
@@ -172,6 +187,7 @@ def plot_Fe(Fe):
     ncols = int(np.ceil(np.sqrt(nPlts)))
     nrows = int(np.ceil(nPlts/ncols))
     axploti = ncols*(nrows-1)
+    linespacing = np.max(np.abs(Fe))
     ax = plt.subplot(nrows,ncols,axploti+1)
     for ci,ti in enumerate(tis):
         # make the axis
@@ -180,13 +196,15 @@ def plot_Fe(Fe):
         else: # normal plot
             pl = plt.subplot(nrows,ncols,ci+1,sharex=ax, sharey=ax) # share limits
             plt.tick_params(labelbottom=False,labelleft=False) # no labels        
-        pl.plot(Fe[ti,:,:])
+        pl.plot(Fe[ti,:,:]+np.arange(Fe.shape[-1])[np.newaxis,:]*linespacing)
         pl.set_title("{}".format(ti))
-    pl.legend(range(Fe.shape[-1]-1))
+    pl.legend(evtlabs)
     plt.suptitle('Fe')
+    return plt.gca()
 
 #@function
 def testcase():
+    import matplotlib.pyplot as plt
     #   X = (nTrl, nEp, tau, d) [d x tau x nEpoch x nTrl ] raw response for the current stimulus event
     #            d=#electrodes tau=#response-samples  nEpoch=#stimulus events to process
     #    w = (nM, nfilt, d) spatial filters for each output
@@ -198,10 +216,10 @@ def testcase():
     nTrl = 30
     nfilt = 1
     nM = 20
-    X = np.random.randn(nTrl, nSamp, d)
+    X = np.random.randn(nTrl, nSamp, d).astype(np.float32)
     Xe = window_axis(X, winsz = tau, axis = -2)
-    W = np.random.randn(nM, nfilt, d)
-    R = np.random.randn(nM, nfilt, nE, tau)
+    W = np.random.randn(nM, nfilt, d).astype(np.float32)
+    R = np.random.randn(nM, nfilt, nE, tau).astype(np.float32)
     Fe = scoreStimulus(Xe, W, R)
     print("Xe={} -> Fe={}".format(Xe.shape, Fe.shape))
     
@@ -213,6 +231,20 @@ def testcase():
 
     F = scoreStimulusCont(X, W, R)
     print("X={} -> F={}".format(X.shape, F.shape))
+
+    # try different offsets...
+    W = np.random.randn(1, nfilt, d).astype(np.float32)
+    R = np.random.randn(1, nfilt, 1, tau).astype(np.float32)
+    offsets = list(range(-15,15))
+    Fes=[]
+    for i,offset in enumerate(offsets):
+        Fe = scoreStimulusCont(X, W, R, offset=offset)
+        Fes.append(Fe)
+    Fes = np.concatenate(Fes,-1) # (nM,nTr,nSamp,nOffset)
+    plot_Fe(Fes[0,0,...],offsets)
+    plt.show()
+
+
 
 if __name__=="__main__":
     testcase()

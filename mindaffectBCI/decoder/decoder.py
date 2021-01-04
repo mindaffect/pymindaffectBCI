@@ -57,12 +57,19 @@ except:
     guiplots=False
 
 def redraw_plots():
-    if guiplots and not matplotlib.is_interactive():
-        for i in plt.get_fignums():
-            if plt.figure(i).get_visible():
-                #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
-                plt.gcf().canvas.flush_events()
-            #plt.show(block=False)
+    try:
+        if guiplots and not matplotlib.is_interactive():
+            figs = plt.get_fignums()
+            for i in figs:
+                if plt.figure(i).get_visible():
+                    #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
+                    plt.gcf().canvas.flush_events()
+                    #plt.gcf().canvas.draw_idle()
+                    plt.gcf().canvas.start_event_loop(0.1)
+            #if len(figs)>0 :
+                #plt.show(block=False)
+    except:
+        pass
 
 
 def get_trial_start_end(msgs, start_ts=None):
@@ -380,9 +387,10 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                                       bwdAccumulate=clsfr.bwdAccumulate, 
                                       nEpochCorrection=clsfr.startup_correction)
         # extract the final estimated performance
-        #print("decoding curve {}".format(decoding_curve[1]))
-        #print("score {}".format(score))
+        print("decoding curve {}".format(decoding_curve[1]))
+        print("score {}".format(score))
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
+
         if CALIBRATIONPLOTS:
             try:
             #if True:
@@ -651,13 +659,13 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                 Ptgt = Ptgt[-1, -1, :] if Ptgt.ndim==3 else Ptgt[0,-1,-1,:]
                 if PREDICTIONPLOTS and guiplots and len(Ptgt)>1:
                     # bar plot of current Ptgt info
-                    #try:
-                    ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
-                                    nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
-                    Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
-                    plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
-                    #except:
-                    #    pass
+                    try:
+                        ssFy, _, _, _, _ = normalizeOutputScores(Fy[...,used_idx], minDecisLen=-10, marginalizemodels=True, 
+                                        nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
+                        Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
+                        plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
+                    except:
+                        pass
 
                 # send prediction with last recieved stimulus_event timestamp
                 print("Fy={} Yest={} Perr={}".format(Fy.shape, np.argmax(Ptgt), 1-np.max(Ptgt)))
@@ -695,6 +703,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axFy = fig.add_axes((.1,.55,.25,.35),sharex=axPy)
         axFy.tick_params(labelbottom=False)
         plt.tight_layout()
+        plt.show(block=False)
 
     if Fy is not None and axFy is not None:
         axFy.cla()
@@ -714,7 +723,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axPy.set_ylim((0,1))
         axPy.set_xlabel("time ({})".format(t_unit))
         axPy.grid(True)
-        axPy.plot(times,Py[0,:,:])
+        axPy.plot(times,Py[0,-len(times):,:])
 
     if Ptgt is not None and axPtgt is not None:
         # init the fig
@@ -726,8 +735,8 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
         axPtgt.grid(True)
         axPtgt.bar(range(len(Ptgt)),Ptgt)
     #plt.xticklabel(np.flatnonzero(used_idx))
-    plt.show(block=False)
-    # fig.canvas.draw()
+    #
+    plt.gcf().canvas.draw_idle()
 
 def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
         host:str=None, prior_dataset:str=None,

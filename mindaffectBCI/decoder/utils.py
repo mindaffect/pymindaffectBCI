@@ -247,7 +247,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     S  = YtruecB # (nTr, nSamp, nE) true response, i.e. filtered Y 
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
     X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d) #[d x nSamp]
-    return (X, Y, stimTimes_samp, A, B)
+    return (X.astype(np.float32), Y.astype(np.float32), stimTimes_samp, A.astype(np.float32), B.astype(np.float32))
 
 
 
@@ -295,42 +295,82 @@ def sliceY(Y, stimTimes_samp, featdim=True):
 
 
 def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
+    """block permute f to generate n new entries
+
+    Args:
+        f ([type]): the input nd-array to permute
+        n ([type]): the number of new outputs to generate. 
+                    if n<0 then total number of outputs in f+perm = -n
+        axis (int, optional): the axis along which the new permutations will be appended, i.e. the output axis. Defaults to -1.
+        perm_axis ([type], optional): the axis along which to permute, i.e. the time axis. Defaults to axis-1.
+        nblk (int, optional): number of block to cut the permuted axis into for block permutation. Defaults to 10.
+
+    Returns:
+        ndarray: the block permuted version of f
+    """    
     import random
     if perm_axis==None:
         perm_axis = axis-1
+    if perm_axis < 0: # convert to positive axis spec
+        perm_axis = f.ndim + perm_axis
     if n < 0 : # neg is max number outputs, so pad with enough
         n = max(0, -n - f.shape[axis])
 
     out_shape = list(f.shape); out_shape[axis]=n
     out = np.zeros(out_shape, dtype=f.dtype)
 
-    if n == 0 :
+    if n == 0 or f.shape[axis]==0:
         return out
 
-    # use block permutation to make virtual outputs
-    nblk = min( f.shape[perm_axis]/3, nblk )
-    blkSz = int(f.shape[perm_axis]/nblk)
-    # get begin/end of each block
-    blkIdx = [ (i,min(f.shape[perm_axis],i+blkSz)) for i in range(0,f.shape[perm_axis],blkSz) ]
+    # index experessions to extract the source/dest data
     src_idx = [ slice(0,None) for i in range(f.ndim) ] # index expr for the src data
     dst_idx = [ slice(0,None) for i in range(out.ndim) ] # index expr for the dest data
+
+    # find the range where the stimuli are turned on
+    validep = np.sum(f!=0,axis=tuple([i for i in range(f.ndim) if i!=perm_axis])) > f.size/f.shape[perm_axis] * .05
+    perm_idx = np.flatnonzero(validep)
+    perm_idx = (perm_idx[0],perm_idx[-1]+1) if len(perm_idx)>1 else (0,f.shape[perm_axis])
+
+    # use block permutation to make virtual outputs
+    nblk = min( (perm_idx[1]-perm_idx[0])/3, nblk )
+    blkSz = int( (perm_idx[1]-perm_idx[0])/nblk)
+    # get begin/end of each block
+    blkIdx = [ (i,min(perm_idx[1],i+blkSz)) for i in range(perm_idx[0],perm_idx[1],blkSz) ]
+    # add the start/end blocks
+    blkIdx = [(0,perm_idx[0])] + blkIdx + [(perm_idx[1],f.shape[perm_axis])]
+
+    # identify the fixed blocks
+    perm_blks = [] # list of permutable blocks
+    for i,bi in enumerate(blkIdx):
+        src_idx[perm_axis] = slice(bi[0],bi[1])
+        is_fixed = np.max(np.sum(f[tuple(src_idx)]!=0,axis=(axis,perm_axis))) < f.shape[axis]*(bi[1]-bi[0])*.05
+        if not is_fixed: 
+            perm_blks.append(i)
+
     for ni in range(n): # gen for rand for each output
-        blk_perm = [i for i in range(len(blkIdx))]
+        blk_perm = perm_blks.copy()
         random.shuffle(blk_perm) # block shuffle  **in-place**
-        ei = 0 # output epoch count
-        for bd,bs in enumerate(blk_perm):
+        blk_map = np.arange(len(blkIdx)) # linear perm
+        blk_map[perm_blks] = blk_perm # shuffle the movable ones
+        for bd,bs in enumerate(blk_map):
 
             (src_bgn,src_end) = blkIdx[bs]
+            (dst_bgn,dst_end) = blkIdx[bd]
+            # trim to fit with zero padding
+            if dst_end-dst_bgn > src_end-src_bgn :
+                dst_end = dst_bgn + src_end - src_bgn
+            elif dst_end-dst_bgn < src_end-src_bgn :
+                src_end = src_bgn + dst_end-dst_bgn
+
+            # make the index expressions
             src_idx[perm_axis] = slice(src_bgn, src_end)
             src_idx[axis] = random.randint(0,f.shape[axis]-1) # pick rand source output
 
-            (dst_bgn,dst_end) = (ei, ei + src_end - src_bgn)
             dst_idx[perm_axis] = slice(dst_bgn,dst_end)
             dst_idx[axis] = ni
 
+            # insert
             out[tuple(dst_idx)] = f[tuple(src_idx)]
-
-            ei = dst_end # update epoch counter for insertion
     return out
 
 
