@@ -179,6 +179,11 @@ def calibrate_softmaxscale(f, validTgt=None,
     keep = np.any(f[..., 0], axis) # [ nTrl ]
     if not np.all(keep):
         f = f[..., keep, :, :]
+    # strip empty outputs (over all trials)
+    axis = (-4,-3,-2) if f.ndim>3 else (-3,-2)
+    keep = np.any(f!=0,axis=axis) # nY
+    if not np.all(keep):
+        f = f[..., keep]
 
     if nocontrol_condn:
         f_nc = f[..., 1:]
