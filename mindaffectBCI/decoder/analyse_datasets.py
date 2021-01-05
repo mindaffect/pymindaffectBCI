@@ -176,6 +176,8 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
         loader_args ([dict], optional): additional arguments for the dataset loader. Defaults to None.
         clsfr_args ([dict], optional): additional aguments for the model_fitter. Defaults to None.
         tuned_parameters ([dict], optional): sets of hyper-parameters to tune by GridCVSearch
+    Returns:
+        [filenames, scores, decoding_curves] : lists of scores and decoding curves for the analysed datasets
     """    
     if dataset_args is None: dataset_args = dict()
     if loader_args is None: loader_args = dict()
@@ -209,6 +211,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     plt.suptitle("{} ({}) AUDC={:3.2f}(n={} ncls={})\nloader={}\nclsfr={}({})".format(dataset,dataset_args,avescore,len(scores),avenout-1,loader_args,model,clsfr_args))
     plt.savefig("{}_decoding_curve.png".format(dataset))
     plt.show()
+    return filenames, scores, decoding_curves
 
 
 
@@ -881,7 +884,71 @@ def analyse_single():
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
 
+def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, clsfr_args:dict, 
+                        fit_params:dict=dict(), **kwargs):
+    """run a complete dataset with different parameter settings
+
+    Args:
+        dataset ([type]): [description]
+        dataset_args (dict): [description]
+        loader_args (dict): [description]
+        model (str): [description]
+        clsfr_args (dict): [description]
+        fit_params (dict, optional): a dict with a list of parameter values to fit for each argument. Defaults to dict().
+    """    
+    from matplotlib.pyplot import plt
+    from sklearn.model_selection import ParameterGrid
+
+    res=[]
+    for fit_config in ParameterGrid(fit_params):
+        print('\n\n----------------------------- CONFIG ---------------')
+        print("{}".format(fit_config))
+
+        dataset_args_f = dataset_args.copy()
+        loader_args_f = loader_args.copy()
+        clsfr_args_f = clsfr_args.copy()
+        kwargs_f = kwargs.copy()
+        model_f = model
+
+        # override parameters with those from fit_config
+        for k,v in fit_config.items():
+            if k.startswith("dataset_args"):
+                k = k[len("dataset_args")+1:]
+                dataset_args_f[k]=v
+            elif k.startswith("loader_args"):
+                k = k[len("loader_args")+1:]
+                loader_args_f[k]=v
+            elif k.startswith("clsfr_args"):
+                k = k[len("clsfr_args")+1:]
+                clsfr_args_f[k]=v
+            elif k.startswith('model'):
+                model_f=v
+            else:
+                kwargs_f[k]=v                
+
+        plt.fig()
+        filenames, scores, decoding_curves = analyse_datasets(dataset,
+                        dataset_args=dataset_args_f,
+                        loader_args=loader_args_f, model=model_f, clsfr_args=clsfr_args_f,
+                        **kwargs_f)
+        plt.suptitle("config:{}".format(fit_config))
+        res.append(dict(config=fit_config, dataset_args=dataset_args_f, 
+                        loader_args=loader_args, clsfr_args=clsfr_args, 
+                        filenames=filenames, scores=scores, decoding_curves=decoding_curves))
+
+        print("{}".format(fit_config))
+        print('----------------------------- CONFIG ---------------\n\n')
+    return res
+
+
 if __name__=="__main__":
+    hyperparam_search("mindaffectBCI",
+                     dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
+                     loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
+                     model='cca',test_idx = slice(10,None),
+                     clsfr_args=dict(tau_ms=450,offset_ms=50,evtlabs=('re','fe'),ranks=(1,2,3,5,10)),
+                     fit_params=dict(priorweight=[0,50,100],startup_correction=[0,10,50]))
+
 
     # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),
     #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))

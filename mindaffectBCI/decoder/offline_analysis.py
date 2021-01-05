@@ -53,6 +53,8 @@ evtlabs=('re','fe')
 tau_ms = 450
 offset_ms = 75
 prediction_offsets=(0)
+startup_correction=5
+priorweight=50
 ranks=(1,2,3,5,10)
 test_idx = slice(10,None)
 if 'rc' in savefile or 'audio' in savefile:
@@ -87,7 +89,8 @@ if 'central_cap' in savefile:
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
                          test_idx=test_idx, tau_ms=tau_ms, offset_ms=offset_ms, evtlabs=evtlabs, model='cca', 
-                         ranks=ranks, prediction_offsets=prediction_offsets, priorweight=200, startup_correction=50, 
+                         ranks=ranks, prediction_offsets=prediction_offsets, 
+                         priorweight=priorweight, startup_correction=startup_correction, 
                          bwdAccumulate=False, minDecisLen=0)
 
 try:
