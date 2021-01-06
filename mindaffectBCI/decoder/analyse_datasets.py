@@ -205,15 +205,20 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
     avenout=sum(nout)/len(nout)
     print("\n--------\n\n Ave-score={}\n".format(avescore))
     # extract averaged decoding curve info
-    int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
-    print("Ave-DC\n{}\n".format(print_decoding_curve(np.nanmean(int_len,0),np.nanmean(prob_err,0),np.nanmean(prob_err_est,0),np.nanmean(se,0),np.nanmean(st,0))))
-    plot_decoding_curve(int_len,prob_err)
+    print("Ave-DC\n{}\n".format(print_decoding_curves(decoding_curves)))
+    plot_decoding_curves(decoding_curves)
     plt.suptitle("{} ({}) AUDC={:3.2f}(n={} ncls={})\nloader={}\nclsfr={}({})".format(dataset,dataset_args,avescore,len(scores),avenout-1,loader_args,model,clsfr_args))
     plt.savefig("{}_decoding_curve.png".format(dataset))
-    plt.show()
+    plt.show(block=False)
     return filenames, scores, decoding_curves
 
+def print_decoding_curves(decoding_curves):
+    int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
+    return print_decoding_curve(np.nanmean(int_len,0),np.nanmean(prob_err,0),np.nanmean(prob_err_est,0),np.nanmean(se,0),np.nanmean(st,0))
 
+def plot_decoding_curves(decoding_curves):
+    int_len, prob_err, prob_err_est, se, st = flatten_decoding_curves(decoding_curves)
+    plot_decoding_curve(int_len,prob_err)
 
 def analyse_train_test(X:np.ndarray, Y:np.ndarray, coords, splits=1, label:str='', model:str='cca', tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, preprocess_args=None, clsfr_args=dict(),  **kwargs):    
     """analyse effect of different train/test splits on performance and generate a summary decoding plot.
@@ -885,7 +890,7 @@ def analyse_single():
 
 
 def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, clsfr_args:dict, 
-                        fit_params:dict=dict(), **kwargs):
+                        tuned_parameters:dict=dict(), **kwargs):
     """run a complete dataset with different parameter settings
 
     Args:
@@ -896,50 +901,75 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
         clsfr_args (dict): [description]
         fit_params (dict, optional): a dict with a list of parameter values to fit for each argument. Defaults to dict().
     """    
-    from matplotlib.pyplot import plt
+    import matplotlib.pyplot as plt
     from sklearn.model_selection import ParameterGrid
 
+    # TODO[]: reverse loop order, datasets->parameters
+    loader, filenames, _ = get_dataset(dataset,**dataset_args)
     res=[]
-    for fit_config in ParameterGrid(fit_params):
-        print('\n\n----------------------------- CONFIG ---------------')
-        print("{}".format(fit_config))
+    for i, fi in enumerate(filenames):
+        print("{}) {}".format(i, fi))
+        try:
+            oX, oY, ocoords = loader(fi, **loader_args)
+        except:
+            print("Problem loading file: {}".format(fi))
+            continue
 
-        dataset_args_f = dataset_args.copy()
-        loader_args_f = loader_args.copy()
-        clsfr_args_f = clsfr_args.copy()
-        kwargs_f = kwargs.copy()
-        model_f = model
+        # loop over analysis settings
+        for ci,fit_config in enumerate(ParameterGrid(tuned_parameters)):
+            # just to be sure that no state is propogating between config calls
+            X = oX.copy()
+            Y = oY.copy()
+            coords = ocoords.copy()
 
-        # override parameters with those from fit_config
-        for k,v in fit_config.items():
-            if k.startswith("dataset_args"):
-                k = k[len("dataset_args")+1:]
-                dataset_args_f[k]=v
-            elif k.startswith("loader_args"):
-                k = k[len("loader_args")+1:]
-                loader_args_f[k]=v
-            elif k.startswith("clsfr_args"):
-                k = k[len("clsfr_args")+1:]
-                clsfr_args_f[k]=v
-            elif k.startswith('model'):
-                model_f=v
+            # override parameters with those from fit_config
+            clsfr_args_f = clsfr_args.copy()
+            kwargs_f = kwargs.copy()
+            model_f = model
+            for k,v in fit_config.items():
+                if k.startswith("clsfr_args"):
+                    k = k[len("clsfr_args")+1:]
+                    clsfr_args_f[k]=v
+                elif k.startswith('model'):
+                    model_f=v
+                else:
+                    kwargs_f[k]=v                
+
+            print('\n\n----------------------------- CONFIG ---------------')
+            print("{}".format(fit_config))
+            score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model_f, **clsfr_args_f, **kwargs_f)
+
+            if len(res)<=ci : # ensure is long enough
+                res.extend([None]*(ci+1-len(res)))
+            # store the analysis results in a dict
+            if res[ci] is None:
+                res[ci]=dict(config=fit_config, dataset_args=dataset_args, 
+                             loader_args=loader_args, clsfr_args=clsfr_args_f, 
+                             filenames=[fi], scores=[score], decoding_curves=[decoding_curve])
             else:
-                kwargs_f[k]=v                
+                res[ci]['filenames'].append(fi)
+                res[ci]['scores'].append(score)
+                res[ci]['decoding_curves'].append(decoding_curve)
 
-        plt.fig()
-        filenames, scores, decoding_curves = analyse_datasets(dataset,
-                        dataset_args=dataset_args_f,
-                        loader_args=loader_args_f, model=model_f, clsfr_args=clsfr_args_f,
-                        **kwargs_f)
-        plt.suptitle("config:{}".format(fit_config))
-        res.append(dict(config=fit_config, dataset_args=dataset_args_f, 
-                        loader_args=loader_args, clsfr_args=clsfr_args, 
-                        filenames=filenames, scores=scores, decoding_curves=decoding_curves))
+        #except Exception as ex:
+        #    print("Error: {}\nSKIPPED".format(ex))
+        # write the current summary info
+        def print_hyperparam_summary(res):
+            fn = res[0]['filenames']
+            s = "N={}\nfn={}\n".format(len(fn),[f[-30:] for f in fn])
+            for ri in res:
+                s += '\n\n----------------------------- CONFIG ---------------\n'
+                s += "{}\n".format(ri['config'])
+                s += print_decoding_curves(ri['decoding_curves'])
+            return s
+        s = print_hyperparam_summary(res)
+        print(s)
+        with open('hpsearch_{}.res'.format(dataset),'w') as f:
+            f.write(s)
 
-        print("{}".format(fit_config))
-        print('----------------------------- CONFIG ---------------\n\n')
+    import pickle
+    pickle.dump(res,open('hpsearch_{}.pk'.format(dataset),'wb'))
     return res
-
 
 if __name__=="__main__":
     hyperparam_search("mindaffectBCI",
@@ -947,7 +977,7 @@ if __name__=="__main__":
                      loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
                      model='cca',test_idx = slice(10,None),
                      clsfr_args=dict(tau_ms=450,offset_ms=50,evtlabs=('re','fe'),ranks=(1,2,3,5,10)),
-                     fit_params=dict(priorweight=[0,50,100],startup_correction=[0,10,50]))
+                     tuned_parameters=dict(startup_correction=[0,50,100,200],priorweight=[0,50,100],nvirt_out=[-12,-15,-20]))
 
 
     # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),

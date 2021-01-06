@@ -159,7 +159,7 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 def calibrate_softmaxscale(f, validTgt=None, 
                            scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50,100), 
                            MINP=.01, marginalizemodels=True, marginalizedecis=False, 
-                           nocontrol_condn=0, n_virt_outputs=-12):
+                           nocontrol_condn=0):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -185,15 +185,9 @@ def calibrate_softmaxscale(f, validTgt=None,
     if not np.all(keep):
         f = f[..., keep]
 
-    if nocontrol_condn:
+    if nocontrol_condn and f.shape[-1]>5:
         f_nc = f[..., 1:]
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
-
-    if n_virt_outputs is not None:
-        # generate virtual outputs for testing -- not from the 'true' target though
-        virt_f = block_permute(f[...,1:], n_virt_outputs, axis=-1, perm_axis=-2)
-        print("Added {} virt outputs\n".format(virt_f.shape[-1]))
-        f = np.append(f,virt_f,axis=-1)
 
     validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
