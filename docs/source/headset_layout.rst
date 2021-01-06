@@ -33,8 +33,11 @@ possible from the brain signals measured.
 MarkIV UltraCortex headset
 --------------------------
 
-The OpenBCI headset has successfully been tested with the use of the O1, Oz, Poz and O2
-electrodes for the signals, the Pz for the reference and one of the earclips for the Ground.
+The OpenBCI headset has successfully been tested with the use of the O1, Oz, O2, PO3, POz, PO4, T5, ad T6
+electrodes for the signals, one of the earclips for reference and the other earclip for the Ground. 
+Consult the image below for the respective locations on the headset.
 Please note that only a handful of tests have been conducted with this headset, and the
 electrodes might not be optimal. Also, note that the headset uses dry electrodes, this
 might induce longer classification times.
+
+.. image:: images/UC_loc.png
