@@ -96,7 +96,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         decisIdx = np.array([Fy.shape[-2]-1])
         sFy = np.sum(Fy, -2, keepdims=True)
     else:            
-        if (bwdAccumulate): # (nM, nTrl, nEp, nY)
+        if bwdAccumulate: # (nM, nTrl, nEp, nY)
             #print("Fy={} lastEp={}".format(Fy.shape,lastEp)) 
             oFy=Fy.copy()
             Fy=Fy.copy()
@@ -130,6 +130,7 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
     cf = np.array(1)
+    # scale up to summed variance
     if normSum is not None and normSum > 0:
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
         # TODO: use N= number non-zero entries rather than just length..
@@ -142,13 +143,6 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # where cf is the correction for the sampling bias in the estimator
     if nEpochCorrection is not None and nEpochCorrection > 0 :
         
-        #cf = c4(1 + N/np.maximum(1, nEpochCorrection)) 
-        #cf = c4(N/np.maximum(1, nEpochCorrection))**2 # too agressive 
-        #sFy_scale = sFy_scale / cf.astype(sFy_scale.dtype)
-        
-        #cf = 1 + np.sqrt(nEpochCorrection/np.maximum(N,1))
-        #sFy_scale = sFy_scale * cf.astype(sFy_scale.dtype)
-        
         #cf = cf + 1/c4(1 + N/np.maximum(1, nEpochCorrection)) 
         
         cf = cf + nEpochCorrection/np.sqrt(N+1)
@@ -159,6 +153,11 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # apply the normalization to convert to z-score (i.e. unit-noise)
     sFy_scale[sFy_scale == 0] = 1
     ssFy = sFy/sFy_scale[..., np.newaxis].astype(sFy.dtype)
+
+    # TODO[] : convert back to forward order
+    if bwdAccumulate: # (nM, nTrl, nEp, nY)
+        #print("Fy={} lastEp={}".format(Fy.shape,lastEp)) 
+        pass
 
     return ssFy, sFy_scale, decisIdx, nEp, nY
 

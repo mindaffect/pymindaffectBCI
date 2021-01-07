@@ -977,15 +977,14 @@ if __name__=="__main__":
                      loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
                      model='cca',test_idx = slice(10,None),
                      clsfr_args=dict(tau_ms=450,offset_ms=50,evtlabs=('re','fe'),ranks=(1,2,3,5,10)),
-                     tuned_parameters=dict(startup_correction=[0,50,100,200],priorweight=[0,50,100],nvirt_out=[-12,-15,-20]))
-
+                     tuned_parameters=dict(startup_correction=[100], bwdAccumulate=[True], minDecisLen=[0,100,200,400], priorweight=[50], nvirt_out=[-15]))
 
     # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),
     #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
 
-    analyse_datasets("mindaffectBCI",dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
-                     loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
-                     model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
+    # analyse_datasets("mindaffectBCI",dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
+    #                  loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
+    #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))
 
     #analyse_single()
 

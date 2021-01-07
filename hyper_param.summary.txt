@@ -1,0 +1,61 @@
+Stop Err
+               startup_correction
+                10      25      50      100     150
+priorweight
+       0        39.9    39.2    38.6    38.6    39.6
+       5        39.5    38.4    38.2    38.1    38.5
+       10       39.5    38.3    38.0    37.9    38.1
+       50       39.4    38.3    37.8    37.7    37.6
+       100      39.6    38.5    37.8    37.8    37.8
+       150      40.0    38.7    37.8    37.7    37.9
+       
+Stop Acc
+               startup_correction
+                10      25      50      100     150
+priorweight
+       0        19.2    7.3     2.3     6.1     12.8
+       5        17.8    10.6    3.0     6.5     10.5
+       10       19.2    11.8    5.9     7.5     9.5
+       50       25.2    18.2    10.2    6.5     8.3
+       100      28.7    20.7    10.5    7.3     7.9
+       150      29.7    19.8    15.3    8.5     8.2
+
+C: startup correction==100 is useful for stopping perfrormance
+   startup correction>25/50 is good for stopping accuracy
+   correlated interaction between prior and startup, more startup + more prior
+   Pick either: 100/50 or 50/10
+   
+N-virt out:
+               startup_correction
+                100     200
+nvirt_out
+       -9       23      25      
+       -15      20      21
+       -20      21      21
+
+Stop Acc
+               startup_correction
+                100     200
+nvirt_out
+       -10      17      16  
+       -15      19      17
+       -20      20      17
+
+C: small nvirt_out helps a bit with the
+   stopping rule
+C: startup correction = 200 reduces performance
+
+
+BwdAccumulate:
+False       :  37.6 / 11.7
+True        :  37.4 / 11.9
+
+                    minDecisLen
+               0    100     200     400   
+True        :  37.5 37.4    37.4    37.4
+
+stop-accuracy
+                    minDecisLen
+                0   100     200     400
+                11  7       9       10
+C: bwd accumulate has little/no effect - and minDecisLen has little benefit
