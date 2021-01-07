@@ -19,7 +19,7 @@ import numpy as np
 from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, zero_outliers, crossautocov, updateCyy, updateCxy, autocov, updateCxx, plot_erp, plot_summary_statistics, plot_factoredmodel
 from mindaffectBCI.decoder.multipleCCA import multipleCCA
 from mindaffectBCI.decoder.scoreOutput import scoreOutput, dedupY0
-from mindaffectBCI.decoder.utils import window_axis
+from mindaffectBCI.decoder.utils import block_permute, window_axis
 from mindaffectBCI.decoder.scoreStimulus import scoreStimulus, scoreStimulusCont, factored2full
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
 from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
@@ -70,8 +70,8 @@ except:
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, 
-                priorweight=100, startup_correction=10, prediction_offsets=None, 
-                minDecisLen=0, bwdAccumulate=False, verb=0):
+                priorweight=50, startup_correction=100, prediction_offsets=None, 
+                minDecisLen=0, bwdAccumulate=False, nvirt_out=-20, nocontrol_condn=0, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -84,9 +84,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
           startup_correction (int, Optional): length in samples of addition startup correction where the noise-variance is artificially increased due to insufficient data.  Defaults to 100.
         """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
-        self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb, self.minDecisLen, self.bwdAccumulate = (tau, offset, priorweight, startup_correction, prediction_offsets, verb, minDecisLen, bwdAccumulate)
-        #if self.offset>0 or self.offset<-tau:
-        #    raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
+        self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets = (tau, offset, priorweight, startup_correction, prediction_offsets)
+        self.verb, self.minDecisLen, self.bwdAccumulate, self.nvirt_out, self.nocontrol_condn = (verb, minDecisLen, bwdAccumulate, nvirt_out, nocontrol_condn)
         
     def stim2event(self, Y, prevY=None, fit=False):
         '''transform Stimulus-encoded to brain-encoded, if needed'''
@@ -200,7 +199,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
         Yest, Perr, Ptgt, _, _ = decodingSupervised(Fy, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate,
                                      marginalizemodels=marginalizemodels, marginalizedecis=marginalizedecis, 
-                                     nEpochCorrection=self.startup_correction, **kwargs)
+                                     nEpochCorrection=self.startup_correction, nvirt_out=self.nvirt_out, **kwargs)
         if marginalizemodels and Ptgt.ndim>3 and Ptgt.shape[-4]>0: # hide our internal model dimension?
             Yest=Yest[0,...]
             Perr=Perr[0,...]
@@ -340,8 +339,18 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
         if calibrate_softmax:
             # calibrate the softmax scale to give more valid probabilities
-            nFy,_,_,_,_ = normalizeOutputScores(Fy, minDecisLen=-10, nEpochCorrection=self.startup_correction, priorsigma=(self.sigma0_,self.priorweight))
-            self.softmaxscale_ = calibrate_softmaxscale(nFy)
+            # add virtual outputs if wanted -- so it's a better test
+            cal_Fy = Fy
+            if self.nvirt_out is not None:
+                # generate virtual outputs for testing -- not from the 'true' target though
+                # N.B. can't add virtual outputs *after* score normalization as the normalization
+                #      process breaks the IID assumption underlying the permutation approach
+                virt_Fy = block_permute(Fy[...,1:], self.nvirt_out, axis=-1, perm_axis=-2)
+                nvirt_out = virt_Fy.shape[-1]
+                print("Added {} virtual outputs for calibration".format(nvirt_out))
+                cal_Fy = np.append(cal_Fy,virt_Fy,axis=-1)
+            nFy,_,_,_,_ = normalizeOutputScores(cal_Fy, minDecisLen=-10, nEpochCorrection=self.startup_correction, priorsigma=(self.sigma0_,self.priorweight))
+            self.softmaxscale_ = calibrate_softmaxscale(nFy, nocontrol_condn=self.nocontrol_condn)
 
         Fy_raw = Fy
         if return_estimator and Fy.ndim>3:
@@ -369,7 +378,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, 
-                 center=True, CCA=True, priorweight=100, startup_correction=20, prediction_offsets=None, minDecisLen=100, 
+                 center=True, CCA=True, priorweight=50, startup_correction=100, prediction_offsets=None, minDecisLen=0, 
                  bwdAccumulate=False, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, priorweight=priorweight, startup_correction=startup_correction, prediction_offsets=prediction_offsets, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)

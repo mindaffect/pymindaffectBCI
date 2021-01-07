@@ -309,17 +309,24 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
         ndarray: the block permuted version of f
     """    
     import random
+    if axis < 0:
+        axis = f.ndim + axis
     if perm_axis==None:
         perm_axis = axis-1
     if perm_axis < 0: # convert to positive axis spec
         perm_axis = f.ndim + perm_axis
+
+    # strip empty outputs (over all trials)
+    tmp = tuple(i for i in range(f.ndim) if i not in [axis])
+    valid_output = np.flatnonzero(np.any(f!=0,axis=tmp)) # which outputs have non-zero value
+
     if n < 0 : # neg is max number outputs, so pad with enough
-        n = max(0, -n - f.shape[axis])
+        n = max(0, -n - len(valid_output))
 
     out_shape = list(f.shape); out_shape[axis]=n
     out = np.zeros(out_shape, dtype=f.dtype)
 
-    if n == 0 or f.shape[axis]==0:
+    if n == 0 or len(valid_output)==0:
         return out
 
     # index experessions to extract the source/dest data
@@ -364,7 +371,7 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
 
             # make the index expressions
             src_idx[perm_axis] = slice(src_bgn, src_end)
-            src_idx[axis] = random.randint(0,f.shape[axis]-1) # pick rand source output
+            src_idx[axis] = valid_output[random.randint(0,len(valid_output)-1)] # pick rand source output
 
             dst_idx[perm_axis] = slice(dst_bgn,dst_end)
             dst_idx[axis] = ni
