@@ -195,6 +195,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
                 raise ValueError("any feature only for axis==-2")   
             # any, means true if any target is true, N.B. use logical_or to broadcast
             F = np.any(F > 0, axis=-1, keepdims=True)
+            #F = np.repeat(F,repeats=M.shape[-1],axis=-1) # blow up to orginal size
 
         elif modifier in ('onset','first'):
             # first stimulus RE for any output
@@ -206,7 +207,8 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
             F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
             F[F>1] = 0 # zero out if more than 1 stimulus since trial start
 
-        if F.shape == M.shape:
+        if F.shape[:-1] == M.shape[:-1] and (F.shape[-1]==1 or F.shape[-1]==M.shape[-1]) :
+            # single output to add
             E[..., ei] = F
         elif len(evtypes)==1:
             E = F
@@ -246,6 +248,7 @@ def testcase():
     e = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
     e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
     e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
+    e = stim2event(M.T, ('re', 'fe', 'anyre'), axis=-2); print("refeanyer :{}".format(e[0, ...].T))
     e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
     e = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
 

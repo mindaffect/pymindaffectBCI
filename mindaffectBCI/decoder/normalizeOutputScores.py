@@ -143,11 +143,12 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
     # E[sigma]=c4(n)*sigma -> sigma = E[sigma]/c4(n)
     # where cf is the correction for the sampling bias in the estimator
     cf = 1/c4(np.maximum(N,1)) 
-    if nEpochCorrection is not None and nEpochCorrection > 0 :
+    if nEpochCorrection is not None and nEpochCorrection :
         
-        #cf = 1/c4(np.maximum(N,1)/np.maximum(nEpochCorrection, 1)) 
-        
-        cf = cf + np.maximum(nEpochCorrection,1)/np.maximum(N,1)
+        if nEpochCorrection > 0 :
+            cf = (1 + np.maximum(nEpochCorrection,1)/np.maximum(N,1))
+        else:    
+            cf = 1/c4(np.maximum(N,1)/np.maximum(nEpochCorrection, 1)) 
 
     sigma = sigma * cf.astype(sigma.dtype)
     

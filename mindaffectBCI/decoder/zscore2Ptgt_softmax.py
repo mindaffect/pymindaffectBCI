@@ -159,14 +159,18 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 def calibrate_softmaxscale(f, validTgt=None, 
                            scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50,100), 
                            MINP=1e-5, marginalizemodels=True, marginalizedecis=False, 
-                           nocontrol_condn=0, verb=1):
+                           nocontrol_condn=.1, verb=0):
     '''
-    attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
+    attempt to calibrate the scale for a softmax decoder to return calibrated probabilities, optionally simulate a no-control condition for controlling the false-positive detections
 
     Args:
-     f ((nM,)nTrl,nDecis,nY): normalized accumulated scores]
-     validTgt(bool (nM,)nTrl,nY): which targets are valid in which trials
-     scales (list:int): set of possible soft-max scales to try
+     f ((nM,)nTrl,nDecis,nY): normalized accumulated scores
+     validTgt(bool (nM,)nTrl,nY): which targets are valid in which trials.
+     scales (list:int): set of possible soft-max scales to try.
+     marginalizemodels (bool): marginalize over models when computing the output pvals? Defaults to True.
+     marginalizedecis (bool): marginalize over decision points when computing the output pvals? Defaults to False.
+     nocontrol_condn (float): if >0, then simulate a set of no-control condition trials by only including
+            the non-target outputs, and include the loss on this dataset weighted by `nocontrol_condn` in the loss
      MINP (float): minimium P-value.  We clip the true-target p-val to this level as a way
             of forcing the fit to concentrate on getting the p-val right when high, rather than
             over penalizing when it's wrong
@@ -214,8 +218,9 @@ def calibrate_softmaxscale(f, validTgt=None,
             # inlude a non-control class loss
             Ptgt_nc = zscore2Ptgt_softmax(f_nc,softmaxscale=s,validTgt=vtgt_nc,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
             Edi_nc = np.sum( -np.log(np.maximum(1-np.maximum(np.max(Ptgt_nc,axis=-1),.9),MINP)) ) #/ (f.shape[-1]-1)
-            if verb > 0: print("{:3d}) scale={:5.1f} Ed={:5.1f} = {:5.1f} + {:5.1f}".format(i,s,Edi+Edi_nc, Edi, Edi_nc * nocontrol_condn))
-            Edi = Edi + Edi_nc * nocontrol_condn
+            Edii = Edi + Edi_nc * nocontrol_condn
+            if verb > 0: print("{:3d}) scale={:5.1f} Ed={:5.1f} = {:5.1f} + {:5.1f}".format(i,s,Edii, Edi, Edi_nc * nocontrol_condn))
+            Edi = Edii
         else:
             if verb > 0: print("{:3d}) scale={:5.1f} Ed={:5.1f}".format(i,s,Edi))
 
@@ -366,9 +371,9 @@ if __name__=="__main__":
         Y=Y[...,keep,:,:]
 
     visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=0,priorweight=0,
-            nocontrol_condn=True, n_virt_outputs=0)
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=30,priorweight=0,
+            nocontrol_condn=.1, n_virt_outputs=0)
 
     visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=0,priorweight=0,
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=30,priorweight=0,
             nocontrol_condn=False, n_virt_outputs=0)
