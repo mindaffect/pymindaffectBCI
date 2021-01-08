@@ -158,8 +158,8 @@ def marginalize_scores(f, axis, prior=None, keepdims=False):
 
 def calibrate_softmaxscale(f, validTgt=None, 
                            scales=(.01,.02,.05,.1,.2,.3,.4,.5,1,1.5,2,2.5,3,3.5,4,5,7,10,15,20,30,50,100), 
-                           MINP=.01, marginalizemodels=True, marginalizedecis=False, 
-                           nocontrol_condn=0, verb=0):
+                           MINP=1e-5, marginalizemodels=True, marginalizedecis=False, 
+                           nocontrol_condn=0, verb=1):
     '''
     attempt to calibrate the scale for a softmax decoder to return calibrated probabilities
 
@@ -185,11 +185,16 @@ def calibrate_softmaxscale(f, validTgt=None,
     if not np.all(keep):
         f = f[..., keep]
 
+    validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
+
+    # compute label confidence weighting, by estimating the performance at each time-point
+    ycorr = np.argmax(f,axis=-1)[...,np.newaxis]==0
+    axis = (-4,-3) if f.ndim>3 else (-3,)
+    pcorr = np.sum(ycorr,axis=axis,keepdims=True)/np.prod([ycorr.shape[i] for i in axis])
+
     if nocontrol_condn and f.shape[-1]>5:
         f_nc = f[..., 1:]
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
-
-    validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
@@ -201,17 +206,18 @@ def calibrate_softmaxscale(f, validTgt=None,
         Ptgt = zscore2Ptgt_softmax(f,softmaxscale=s,validTgt=validTgt,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
 
         # Compute the loss = cross-entropy.  
-        # As Y==0 is *always* the true-class, this becomes simply sum log this class 
-        Edi = np.sum( -np.log(np.maximum(Ptgt[...,0:1],1e-5)) )
+        # As Y==0 is *always* the true-class, this becomes simply sum log this class
+        Ptrue = Ptgt[...,0:1]
+        Edi = -np.sum( pcorr*np.log(np.maximum(Ptrue,MINP)) + (1-pcorr)*np.log(np.maximum(1-np.maximum(Ptrue,.8),MINP)) )
 
         if nocontrol_condn:
             # inlude a non-control class loss
             Ptgt_nc = zscore2Ptgt_softmax(f_nc,softmaxscale=s,validTgt=vtgt_nc,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
-            Edi_nc = np.sum( -np.log(np.maximum(Ptgt_nc[...,0:1],1e-5)) ) / (f.shape[-1]-1)
-            if verb > 0: print("{}) scale={} Ed={} = {}+{}".format(i,s,Edi+Edi_nc, Edi, Edi_nc * nocontrol_condn))
+            Edi_nc = np.sum( -np.log(np.maximum(1-np.maximum(np.max(Ptgt_nc,axis=-1),.9),MINP)) ) #/ (f.shape[-1]-1)
+            if verb > 0: print("{:3d}) scale={:5.1f} Ed={:5.1f} = {:5.1f} + {:5.1f}".format(i,s,Edi+Edi_nc, Edi, Edi_nc * nocontrol_condn))
             Edi = Edi + Edi_nc * nocontrol_condn
         else:
-            if verb > 0: print("{}) scale={} Ed={}".format(i,s,Edi))
+            if verb > 0: print("{:3d}) scale={:5.1f} Ed={:5.1f}".format(i,s,Edi))
 
         Ed[i] = Edi
     # use the max-entropy scale
@@ -255,7 +261,7 @@ def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
     ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
                                 normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
                                 marginalizemodels=marginalizemodels, priorsigma=(sigma0,priorweight))
-    softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels, nocontrol_condn=nocontrol_condn, n_virt_outputs=n_virt_outputs)
+    softmaxscale = calibrate_softmaxscale(ssFy,marginalizemodels=marginalizemodels, nocontrol_condn=nocontrol_condn)
 
     ssFy,scale_sFy,N,_,_=normalizeOutputScores(Fy.copy(),minDecisLen=-1, nEpochCorrection=nEpochCorrection, 
                                 normSum=normSum, detrendFy=detrendFy, centFy=centFy, bwdAccumulate=False,
@@ -360,9 +366,9 @@ if __name__=="__main__":
         Y=Y[...,keep,:,:]
 
     visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
-            nocontrol_condn=True, n_virt_outputs=-20)
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=0,priorweight=0,
+            nocontrol_condn=True, n_virt_outputs=0)
 
     visPtgt(Fy.copy(),normSum=True, centFy=True, detrendFy=False, bwdAccumulate=False, minDecisLen=100,
-            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=100,priorweight=100,
-            nocontrol_condn=False, n_virt_outputs=-20)
+            marginalizemodels=True,marginalizedecis=True,nEpochCorrection=0,priorweight=0,
+            nocontrol_condn=False, n_virt_outputs=0)

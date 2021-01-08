@@ -129,26 +129,30 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         sigma2 = np.mean(sigma2,-3)
 
     # scale = std-deviation over outputs of smoothed summed score at each decison point
-    cf = np.array(1)
-    # scale up to summed variance
     if normSum is not None and normSum > 0:
+        # scale up to summed variance
         # \sum_i N(0, sigma)) ~ N(0, sqrt(i)*sigma) 
-        # TODO: use N= number non-zero entries rather than just length..
-        cf = cf + np.sqrt(N) #  (nM,nTrl,nDecis)
+        sigma2 = sigma2 * np.maximum(N,1).astype(sigma2.dtype) #  (nM,nTrl,nDecis)
+
+    # get the std-dev
+    sigma = np.sqrt(sigma2) 
 
     # correction factor for sampling bias in the std
     # estimation of of the correction factors to
     # from: https://en.wikipedia.org/wiki/Unbiased_estimation_of_standard_deviation
     # E[sigma]=c4(n)*sigma -> sigma = E[sigma]/c4(n)
     # where cf is the correction for the sampling bias in the estimator
+    cf = 1/c4(np.maximum(N,1)) 
     if nEpochCorrection is not None and nEpochCorrection > 0 :
         
-        #cf = cf + 1/c4(1 + N/np.maximum(1, nEpochCorrection)) 
+        #cf = 1/c4(np.maximum(N,1)/np.maximum(nEpochCorrection, 1)) 
         
-        cf = cf + nEpochCorrection/np.sqrt(N+1)
+        cf = cf + np.maximum(nEpochCorrection,1)/np.maximum(N,1)
+
+    sigma = sigma * cf.astype(sigma.dtype)
     
-    # get the score scaling - including the correction factors
-    sFy_scale = np.sqrt(sigma2) * cf.astype(sigma2.dtype)
+    # get the score scaling = std-def = sigma = sqrt(sigma^2)
+    sFy_scale = sigma
 
     # apply the normalization to convert to z-score (i.e. unit-noise)
     sFy_scale[sFy_scale == 0] = 1

@@ -70,8 +70,8 @@ except:
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, 
-                priorweight=50, startup_correction=100, prediction_offsets=None, 
-                minDecisLen=0, bwdAccumulate=False, nvirt_out=-20, nocontrol_condn=0, verb=0):
+                priorweight=0, startup_correction=0, prediction_offsets=None, 
+                minDecisLen=0, bwdAccumulate=False, nvirt_out=0, nocontrol_condn=.05, verb=0):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -360,9 +360,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, rank=1, reg=(1e-8,None), rcond=(1e-4,1e-8), badEpThresh=6, symetric=False, 
-                 center=True, CCA=True, priorweight=50, startup_correction=100, prediction_offsets=None, minDecisLen=0, 
-                 bwdAccumulate=False, **kwargs):
-        super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, priorweight=priorweight, startup_correction=startup_correction, prediction_offsets=prediction_offsets, minDecisLen=minDecisLen, bwdAccumulate=bwdAccumulate, **kwargs)
+                 center=True, CCA=True, **kwargs):
+        super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, **kwargs)
         self.rank, self.reg, self.rcond, self.badEpThresh, self.symetric, self.center, self.CCA = (rank,reg,rcond,badEpThresh,symetric,center,CCA)
 
     def fit(self, X, Y, stimTimes=None):
