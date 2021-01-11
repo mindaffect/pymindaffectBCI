@@ -111,6 +111,7 @@ def init(framerate_hz:float=15, numleds:int=2, led2gpiopin:list=(2,3,4), nCal:in
     if opto: # 1st led is opto
         optoled = LED(led2gpiopin[gpioi])
         gpioi = gpioi+1
+        print("opto -> led {} ".format(optoled))
 
     leds=[]
     for i in range(numleds):
@@ -121,6 +122,7 @@ def init(framerate_hz:float=15, numleds:int=2, led2gpiopin:list=(2,3,4), nCal:in
         except:
             print("Error adding extra leds -- did you specify enough in led2gpiopin")
             raise
+        print("ID {} -> led {} ".format(objIDs[-1],leds[-1]))
 
     nt=Noisetag()
     nt.connect()
