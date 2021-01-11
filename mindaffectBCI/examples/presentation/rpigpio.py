@@ -78,7 +78,7 @@ def selectionHandler(objID):
 #------------------------------------------------------------------------
 # Initialization : display
 def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cuedprediction=True, 
-         duration=4, cueduration=2, feedbackduration=4, opto:bool=True, **kwargs):
+         duration=4, calduration=4, predduration=10, cueduration=2, feedbackduration=4, opto:bool=True, **kwargs):
     """setup the pi for GPIO based presentation
 
     Args:
@@ -126,6 +126,8 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cue
     nt.startExpt(nCal=nCal,nPred=nPred, cuedprediction=cuedprediction,
                 cueframes=cueduration//isi,
                 numframes=duration//isi,
+                calframes=calduration/isi,
+                predframes=predduration/isi,
                 feedbackframes=feedbackduration//isi,
                 interphaseframes=40//isi)
     # register function to call if selection is made
@@ -153,6 +155,8 @@ def parse_args():
     parser.add_argument('--framerate_hz',type=float, help='flicker rate', default=15)
     parser.add_argument('--numleds',type=int, help='number of flickering leds', default=2)
     parser.add_argument('--duration',type=float, help='duration in seconds of trial flickering', default=5)
+    parser.add_argument('--calduration',type=float, help='duration in seconds of calibration trial flickering', default=5)
+    parser.add_argument('--predduration',type=float, help='duration in seconds of prediction trial flickering', default=10)
     parser.add_argument('--cueduration',type=float, help='duration in seconds of trial cue', default=2)
     parser.add_argument('--feedbackduration',type=float, help='duration in seconds of trial feedback', default=2)
     parser.add_argument('--cuedprediction',type=bool, help='use cued or un-cued prediction', default=True)
