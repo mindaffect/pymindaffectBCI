@@ -159,7 +159,52 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
         decoder = NoneProc()
     return decoder
 
-def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
+def startPresentationProcess(presentation,presentation_args):
+    target=None
+    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.examples.presentation.selectionMatrix'.lower():
+        if presentation_args is None:
+            presentation_args = dict(symbols= [['Hello', 'Good bye'], 
+                                               ['Yes',   'No']])
+        from mindaffectBCI.examples.presentation import selectionMatrix
+        target = selectionMatrix.run
+
+    elif presentation.lower() == 'sigviewer':
+        from mindaffectBCI.decoder.sigViewer import sigViewer
+        target=sigViewer.run
+
+    elif presentation =='fakepresentation':
+        import mindaffectBCI.noisetag
+        target=mindaffectBCI.noisetag.run
+
+    elif presentation.lower() == 'hue' or presentation.lower() == "colorwheel":
+        from mindaffectBCI.examples.presentation import colorwheel
+        target=colorwheel.run
+
+    elif presentation.lower() == 'rpigpio':
+        from mindaffectBCI.examples.presentation import rpigpio
+        target = rpigpio.run
+
+    elif isinstance(presentation,str) and not presentation == 'none':
+        try:
+            import importlib
+            pres = importlib.import_module(presentation)
+            target = pres.run
+        except:
+            print("Error: could not run the presentation method")
+            traceback.print_exc()
+    
+    elif presentation is None or presentation is False:
+        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
+        return None
+
+    if not target is None:
+        presentation = Process(target=target, kwargs=presentation_args, daemon=True)
+        presentation.start()
+        return presentation
+    else:
+        return None
+
+def run(label='', logdir=None, block=True, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
     """[summary]
 
     Args:
@@ -171,6 +216,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
         presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
         presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.
+        block (bool, optional): return immeadiately or wait for presentation to finish and then terminate all processes.  Default to True
 
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
@@ -241,64 +287,17 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
-    # run the stimulus, with our matrix and default parameters for a noise tag
-    #  Make a custom matrix to show:
-    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.examples.presentation.selectionMatrix'.lower():
-        if presentation_args is None:
-            presentation_args = dict(symbols= [['Hello', 'Good bye'], 
-                                               ['Yes',   'No']])
-        try:
-            from mindaffectBCI.examples.presentation import selectionMatrix
-            selectionMatrix.run(**presentation_args)
-        except:
-            traceback.print_exc()
+    # run the stimulus, in a background processwith our matrix and default parameters for a noise tag
+    presentation_process = startPresentationProcess(presentation, presentation_args)
 
-    elif presentation.lower() == 'sigviewer':
-        try:
-            from mindaffectBCI.decoder.sigViewer import sigViewer
-            sigViewer()
-        except:
-            traceback.print_exc()
-
-    elif presentation =='fakepresentation':
-        try:
-            import mindaffectBCI.noisetag
-            mindaffectBCI.noisetag.run(**presentation_args)
-        except:
-            traceback.print_exc()
-
-    elif presentation =='none':
-        # just sleep until hub is finished
-        try: 
+    if block == True:
+        if presentation_process is not None:
+            # wait for presentation to terminate
+            presentation_process.join()
+        else:
             hub_process.wait()
-        except:
-            pass
-
-    elif presentation.lower() == 'hue' or presentation.lower() == "colorwheel":
-        try:
-            from mindaffectBCI.examples.presentation import colorwheel
-            colorwheel.run(**presentation_args)
-        except:
-            traceback.print_exc()
-    elif presentation.lower() == 'rpigpio':
-        try:
-            from mindaffectBCI.examples.presentation import rpigpio
-            rpigpio.run(**presentation_args)
-        except:
-            traceback.print_exc()
-
-    elif isinstance(presentation,str) and not presentation == 'none':
-        try:
-            import importlib
-            pres = importlib.import_module(presentation)
-            pres.run(**presentation_args)
-        except:
-            print("Error: could not run the presentation method")
-            traceback.print_exc()
-    
-    elif presentation is None or presentation is False:
-        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
-        return
+    else:
+        return False
 
     # TODO []: pop-up a monitoring object / dashboard!
 
