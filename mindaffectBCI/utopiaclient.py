@@ -1187,6 +1187,10 @@ class UtopiaClient:
             hp=self.sock.getpeername()
             return ":".join(str(i) for i in hp)
         return None
+    def gethost(self):
+        if self.isConnected:
+            return self.sock.getpeername()[0]
+        return None
         
     def disconnect(self):
         """disconnect() -- close a connection."""
