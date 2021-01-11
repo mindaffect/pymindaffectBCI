@@ -163,7 +163,7 @@ def parse_args():
     parser.add_argument('--cueduration',type=float, help='duration in seconds of trial cue', default=2)
     parser.add_argument('--feedbackduration',type=float, help='duration in seconds of trial feedback', default=2)
     parser.add_argument('--cuedprediction',type=bool, help='use cued or un-cued prediction', default=True)
-    parser.add_argument('--opto',type=bool, help='use the 1st led as an "opto" led, i.e. always tracks the cued target.', default=False)
+    parser.add_argument('--opto',type=bool, help='use the 1st led as an "opto" led, i.e. always tracks the cued target.', default=True)
     args = parser.parse_args()
     return args
 
