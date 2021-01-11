@@ -61,7 +61,7 @@ def draw():
 
     if target_state is not None and target_state>=0:
         print("t*" if target_state>0 else 't.', end='', flush=True)
-        if optoled:
+        if optoled is not None:
             optoled.on() if target_state>0 else optoled.off()
     # send info on updated display state
     nt.sendStimulusState()
