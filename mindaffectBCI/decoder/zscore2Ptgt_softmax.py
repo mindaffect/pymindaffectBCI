@@ -196,6 +196,7 @@ def calibrate_softmaxscale(f, validTgt=None,
     axis = (-4,-3) if f.ndim>3 else (-3,)
     pcorr = np.sum(ycorr,axis=axis,keepdims=True)/np.prod([ycorr.shape[i] for i in axis])
 
+    f_nc = None
     if nocontrol_condn and f.shape[-1]>5:
         f_nc = f[..., 1:]
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
@@ -214,7 +215,7 @@ def calibrate_softmaxscale(f, validTgt=None,
         Ptrue = Ptgt[...,0:1]
         Edi = -np.sum( pcorr*np.log(np.maximum(Ptrue,MINP)) + (1-pcorr)*np.log(np.maximum(1-np.maximum(Ptrue,.8),MINP)) )
 
-        if nocontrol_condn:
+        if nocontrol_condn and not f_nc == None:
             # inlude a non-control class loss
             Ptgt_nc = zscore2Ptgt_softmax(f_nc,softmaxscale=s,validTgt=vtgt_nc,marginalizemodels=marginalizemodels,marginalizedecis=marginalizedecis)
             Edi_nc = np.sum( -np.log(np.maximum(1-np.maximum(np.max(Ptgt_nc,axis=-1),.9),MINP)) ) #/ (f.shape[-1]-1)

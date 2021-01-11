@@ -93,15 +93,32 @@ Conclusion:
   it doesn't really do anything
   
 Test: rcond
+-----
                 StopErr         StopAcc
 rcond
-    (1e-8,0)     36.9
-    (1e-6,0)     37.1
-    (1e-4,0)     37.0
-    (1e-2,0)     38.8
-    (1e-8,1e-8)  37.1
-    (1e-8,1e-6)  36.9
-    (1e-8,1e-4)  37.0
-    (1e-6,1e-6)  37.0
-    (1e-4,1e-6)  37.1
-    (1e-2,1e-4)  38.6
+    (1e-8,0)     37.3           7.8
+    (1e-6,0)     37.1           8.0
+    (1e-6,1e-8)  37.2           7.9
+    (1e-6,1e-6)  37.2           7.9
+    (1e-4,0)     37.3           7.5
+    (1e-4,1e-8)  37.3           7.8
+    (1e-4,1e-6)  37.2           7.7
+    (1e-2,0   )  37.3           7.5
+    (1e-2,1e-8)  37.2
+    (1e-2,1e-6)  37.2
+Conclusion:
+  it doesn't really do anything
+
+Test:  offset_ms
+------
+                StopErr         StopAcc
+offset_ms
+    0
+    50
+    100
+    
+Conclusion:
+
+  
+Conclusion:
+  Only significant effect is: bandpass 4,25
