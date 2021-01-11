@@ -77,8 +77,8 @@ def selectionHandler(objID):
 
 #------------------------------------------------------------------------
 # Initialization : display
-def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cuedprediction=True, 
-         duration=4, calduration=4, predduration=10, cueduration=2, feedbackduration=4, opto:bool=True, **kwargs):
+def init(framerate_hz:float=15, numleds:int=2, led2gpiopin:list=(2,3,4), nCal:int=10, nPred:int=10, cuedprediction:bool=True, 
+         duration:float=4, calduration:float=4, predduration:float=10, cueduration:float=2, feedbackduration:float=4, interphaseduration:float=10, opto:bool=True, **kwargs):
     """setup the pi for GPIO based presentation
 
     Args:
@@ -91,6 +91,9 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cue
         duration (int, optional): flicker duration. Defaults to 4.
         cueduration (int, optional): target cue duration. Defaults to 2.
         feedbackduration (int, optional): target feedback duration. Defaults to 4.
+        calduration (float, optional): flicker duration for calibration trials. Defaults to 4
+        predduration (float, optional): flicker duration for prediction trials. Defaults to 10
+        interphaseduration (float, optional): duration of the wait between calibration and prediction phases. Defaults to 10
         opto (bool,optional): flag if use the 1st led as 'opto' trigger, so it always shows the cued target. Defaults to True.
     """
     global nt, objIDs, leds, optoled, isi
@@ -129,7 +132,7 @@ def init(framerate_hz=15, numleds=2, led2gpiopin=(2,3,4), nCal=10, nPred=10, cue
                 calframes=calduration/isi,
                 predframes=predduration/isi,
                 feedbackframes=feedbackduration//isi,
-                interphaseframes=40//isi)
+                interphaseframes=interphaseduration//isi)
     # register function to call if selection is made
     nt.addSelectionHandler(selectionHandler)
 
