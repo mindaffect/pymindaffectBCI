@@ -1,61 +1,137 @@
-Stop Err
-               startup_correction
-                10      25      50      100     150
+Test:  nocontrol vs startup_correction
+------
+                         nocontrol
+                StopErr         StopAcc
+                0       .1      0       .1
+startup_correction
+        -100    41.8   40.4     46.3    21.2
+        -50     41.6   40.3     45.3    21.5
+        0       41.7   40.2     45.6    21.2
+        50      43.1   38.0     68.3    5.6
+        100     43.0   38.1     68.0    6.1
+
+Conclusion:
+ nocontrol=.1, correction=50 is the best.
+
+
+Test: noncontrol strength
+------
+                         nocontrol
+                StopErr         StopAcc
+                .05    .1       .05    .1
+startup_correction
+        50      37.9   38.0     6.9     5.6
+
+Conclusion:
+ .05 and .1 no-control strength are very similar
+
+nvirt-out
+         0      37.9   37.9     6.9     6.0
+         -10    38.1   37.9     4.4     7.2
+Conclusion:
+ nvirt_out -10 makes very little 
+ 
+Test: highpass
+------
+                StopErr         StopAcc
+highpass
+    1           48.6            6.0                     
+    2           39.6            6.6               
+    3           37.6            9.0         
+    4           37.2            8.1        
+    5           37.6            7.3             
+    7           38.4            4.7             
+Conclusion:
+  highpass = 4 is best
+  
+  
+Test: Event-coding
+------
+                StopErr         StopAcc
+evtlabs
+  re,fe         37.2            7.9                     
+    fe          41.0            5.2
+  fe,anyfe      40.5            17.0
+  re,fe,anyfe   36.7            24.4 
+  re,fe,any1    38.5            14.7
+  0,1           94
+00,01,10,11     85                         
+
+Conclusion:
+  re,fe,anyfe is best, but gives poor stop accuracy
+  re,fe is best all round
+
+Test: priorweight
+------
+                StopErr         StopAcc
 priorweight
-       0        39.9    39.2    38.6    38.6    39.6
-       5        39.5    38.4    38.2    38.1    38.5
-       10       39.5    38.3    38.0    37.9    38.1
-       50       39.4    38.3    37.8    37.7    37.6
-       100      39.6    38.5    37.8    37.8    37.8
-       150      40.0    38.7    37.8    37.7    37.9
-       
-Stop Acc
-               startup_correction
-                10      25      50      100     150
-priorweight
-       0        19.2    7.3     2.3     6.1     12.8
-       5        17.8    10.6    3.0     6.5     10.5
-       10       19.2    11.8    5.9     7.5     9.5
-       50       25.2    18.2    10.2    6.5     8.3
-       100      28.7    20.7    10.5    7.3     7.9
-       150      29.7    19.8    15.3    8.5     8.2
+    0            35.9                   
+    10           35.8                   
+    50           35.9                   
+    100          36.2                   
 
-C: startup correction==100 is useful for stopping perfrormance
-   startup correction>25/50 is good for stopping accuracy
-   correlated interaction between prior and startup, more startup + more prior
-   Pick either: 100/50 or 50/10
-   
-N-virt out:
-               startup_correction
-                100     200
-nvirt_out
-       -9       23      25      
-       -15      20      21
-       -20      21      21
+Conclusion:
+  prior on it's own does nothing
+  only startup_correction is enough
+    
+    
+Test: Regularization
+------
+                StopErr         StopAcc
+reg
+    (1e-8,0)     36.9
+    (1e-6,0)     37.1
+    (1e-4,0)     37.0
+    (1e-2,0)     38.8
+    (1e-8,1e-8)  37.1
+    (1e-8,1e-6)  36.9
+    (1e-8,1e-4)  37.0
+    (1e-6,1e-6)  37.0
+    (1e-4,1e-6)  37.1
+    (1e-2,1e-4)  38.6
+Conclusion:
+  it doesn't really do anything
+  
+Test: rcond
+-----
+                StopErr         StopAcc
+rcond
+    (1e-8,0)     37.3           7.8
+    (1e-6,0)     37.1           8.0
+    (1e-6,1e-8)  37.2           7.9
+    (1e-6,1e-6)  37.2           7.9
+    (1e-4,0)     37.3           7.5
+    (1e-4,1e-8)  37.3           7.8
+    (1e-4,1e-6)  37.2           7.7
+    (1e-2,0   )  37.3           7.5
+    (1e-2,1e-8)  37.2
+    (1e-2,1e-6)  37.2
+Conclusion:
+  it doesn't really do anything
 
-Stop Acc
-               startup_correction
-                100     200
-nvirt_out
-       -10      17      16  
-       -15      19      17
-       -20      20      17
+Test:  offset_ms
+------
+                StopErr         StopAcc
+offset_ms, tau_ms
+    0,  250     52.2
+    50, 250     38.7
+    100,250     37.4
+    150,250     35.3
+    0,  350     37.5
+    50, 350     37.5
+    100,350     36.3
+    150,350     35.3
+    0,  450     37.6
+    50, 450     37.1
+    100,450     37.0
+    0,  550     38.2
+    50, 550     38.5
+    100,550     39.3
+    
+Conclusion:
+   Smaller, better focused window helps a little.
+   -> 100,350
 
-C: small nvirt_out helps a bit with the
-   stopping rule
-C: startup correction = 200 reduces performance
-
-
-BwdAccumulate:
-False       :  37.6 / 11.7
-True        :  37.4 / 11.9
-
-                    minDecisLen
-               0    100     200     400   
-True        :  37.5 37.4    37.4    37.4
-
-stop-accuracy
-                    minDecisLen
-                0   100     200     400
-                11  7       9       10
-C: bwd accumulate has little/no effect - and minDecisLen has little benefit
+  
+Conclusion:
+  Only significant effect is: bandpass 4,25

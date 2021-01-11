@@ -173,8 +173,20 @@ def compute_stopping_curve(nInt,integerationLengths,Perr,Yerr):
     stopYerr=aveThreshPerrIntYerr[mi,3]
     return stopPerrThresh,stopYerr
 
+def comp_audc(aveProbErr): 
+    """ area under decoding curve """
+    return 100.0*np.mean(aveProbErr)# ** 0.6)
+def comp_psae(aveProbErrEst, aveProbErr, MINSCALEPERR=.1):  
+    """ sum squared perr estimate error -- weighted by estimated value, so small estvalues cost more """
+    return 100.0*np.mean(np.abs(aveProbErrEst - aveProbErr) / np.maximum(aveProbErrEst,MINSCALEPERR))
+def comp_ausc(stopYerr):
+    """Area under stopping curve"""
+    return 100.0*np.mean(stopYerr) 
+def comp_ssae(stopYerr, stopPerrThresh, MINSCALEPERR=.1):
+    """ sum squared stopping threshold estimate error -- weighted by estimated value, so small estvalues cost more """
+    return 100.0*np.mean(np.abs(stopYerr - stopPerrThresh) / np.maximum(stopPerrThresh,MINSCALEPERR))
     
-def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopYerr=None,stopPerrThresh=None):
+def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopYerr=None,stopPerrThresh=None, MINSCALEPERR=.1):
     """[summary]
 
     Args:
@@ -187,8 +199,6 @@ def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopY
     Returns:
         [type]: [description]
     """    
-    MINSCALEPERR=0.1
-    
     s=''    
     # get set lengths to print performance for
     logIdx=np.linspace(0,len(integerationLengths)-1,min(len(integerationLengths),9),dtype=int,endpoint=True)
@@ -197,30 +207,21 @@ def print_decoding_curve(integerationLengths,aveProbErr,aveProbErrEst=None,stopY
 
     #print("logidx={}".format(logIdx))
     # make a formated summary string
-    # area under decoding curve (weighted)
-    audc=100.0*np.mean(aveProbErr)# ** 0.6)
     s+='%18s  '%('IntLen') + " ".join(['%4d '%(i) for i in integerationLengths[logIdx]]) + "\n"
     s+='%18s  '%('Perr')   + " ".join(['%4.2f '%(i) for i in aveProbErr[logIdx]])
-    s+='  AUDC %4.1f'%(audc) + "\n"
+    s+='  AUDC %4.1f'%(comp_audc(aveProbErr)) + "\n"
 
     # PERREST
     if not aveProbErrEst is None:
-        # sum squared perr estimate error
-        psae=100.0*np.mean(np.abs(aveProbErrEst - aveProbErr) / np.maximum(aveProbErr,MINSCALEPERR))
-        
         s+='%18s  '%('Perr(est)')+ " ".join(['%4.2f '%(i) for i in aveProbErrEst[logIdx]])    
-        s+='  PSAE %4.1f'%(psae) + '\n'    
+        s+='  PSAE %4.1f'%(comp_psae(aveProbErrEst,aveProbErr,MINSCALEPERR)) + '\n'    
 
     # STOPPING CURVE
     if not stopYerr is None:
-        # area under stopping curve
-        ausc=100.0*np.mean(stopYerr) 
-        # sum-squared error in stopping estimate
-        ssae=100.0*np.mean(np.abs(stopYerr - stopPerrThresh) / np.maximum(stopYerr,MINSCALEPERR))
         s+="%18s  "%("StopErr") + " ".join(['%4.2f '%(i) for i in stopYerr[logIdx]])
-        s+="  AUSC %4.1f"%(ausc) + "\n"
+        s+="  AUSC %4.1f"%(comp_ausc(stopYerr)) + "\n"
         s+='%18s  '%('StopThresh(P)') + " ".join(['%4.2f '%(i) for i in stopPerrThresh[logIdx]])
-        s+="  SSAE %4.1f"%(ssae) + "\n"
+        s+="  SSAE %4.1f"%(comp_ssae(stopYerr,stopPerrThresh,MINSCALEPERR)) + "\n"
         
     return s
 

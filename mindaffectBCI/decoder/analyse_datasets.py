@@ -885,7 +885,7 @@ def analyse_single():
 
 
 def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, clsfr_args:dict, 
-                        tuned_parameters:dict=dict(), **kwargs):
+                       preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
     """run a complete dataset with different parameter settings
 
     Args:
@@ -904,34 +904,48 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
     res=[]
     for i, fi in enumerate(filenames):
         print("{}) {}".format(i, fi))
-        try:
-            oX, oY, ocoords = loader(fi, **loader_args)
-        except:
-            print("Problem loading file: {}".format(fi))
-            continue
 
         # loop over analysis settings
         for ci,fit_config in enumerate(ParameterGrid(tuned_parameters)):
-            # just to be sure that no state is propogating between config calls
-            X = oX.copy()
-            Y = oY.copy()
-            coords = ocoords.copy()
-
             # override parameters with those from fit_config
             clsfr_args_f = clsfr_args.copy()
             kwargs_f = kwargs.copy()
+            loader_args_f = loader_args.copy()
+            preprocess_args_f = preprocess_args.copy()
             model_f = model
             for k,v in fit_config.items():
                 if k.startswith("clsfr_args"):
                     k = k[len("clsfr_args")+1:]
                     clsfr_args_f[k]=v
+                elif k.startswith("loader_args"):
+                    k = k[len("loader_args")+1:]
+                    loader_args_f[k]=v
+                elif k.startswith("preprocess_args"):
+                    k = k[len("preprocess_args")+1:]
+                    preprocess_args_f[k]=v
                 elif k.startswith('model'):
                     model_f=v
                 else:
                     kwargs_f[k]=v                
 
+            # (re)-load the dataset with the given config
+            #  only reload if the load config has changed
+            if ci==0 or not loader_args_f == loader_args : 
+                try:
+                    oX, oY, ocoords = loader(fi, **loader_args)
+                except:
+                    print("Problem loading file: {}".format(fi))
+                    continue
+
+            # just to be sure that no state is propogating between config calls
+            X = oX.copy()
+            Y = oY.copy()
+            coords = ocoords.copy()
+
             print('\n\n----------------------------- CONFIG ---------------')
             print("{}".format(fit_config))
+            if preprocess_args_f is not None:
+                X, Y, coords = preprocess(oX, oY, ocoords, **preprocess_args_f)
             score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model_f, **clsfr_args_f, **kwargs_f)
 
             if len(res)<=ci : # ensure is long enough
@@ -953,10 +967,10 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
             fn = res[0]['filenames']
             s = "N={}\nfn={}\n".format(len(fn),[f[-30:] for f in fn])
             for ri in res:
-                s += '\n\n----------------------------- CONFIG ---------------\n'
-                s += "{}\n".format(ri['config'])
+                s += "\n{}\n".format(ri['config'])
                 s += print_decoding_curves(ri['decoding_curves'])
             return s
+        print('\n\n---------------------- CONFIG --------------------\n')
         s = print_hyperparam_summary(res)
         print(s)
         with open('hpsearch_{}.res'.format(dataset),'w') as f:
@@ -967,12 +981,18 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
     return res
 
 if __name__=="__main__":
+    tuned_parameters=dict(preprocess_args_stopband=[(4,25,'bandpass')], startup_correction=[50], priorweight=[0], nvirt_out=[0], nocontrol_condn=[.1])
+    #tuned_parameters['priorweight']=[0,10,50,100] 
+    #tuned_parameters['reg']=[(None,None)] #[(1e-8,0),(1e-6,0),(1e-4,0),(1e-2,0),(1e-8,1e-8),(1e-8,1e-6),(1e-8,1e-4),(1e-6,1e-6),(1e-4,1e-6),(1e-2,1e-4)]
+    #tuned_parameters['rcond']=[(1e-8,0),(1e-8,1e-6),(1e-6,0),(1e-6,1e-8),(1e-6,1e-6),(1e-6,1e-4),(1e-4,0),(1e-4,1e-8),(1e-4,1e-6),(1e-4,1e-4),(1e-2,0),(1e-2,1e-8),(1e-2,1e-6),(1e-2,1e-4)]
+    tuned_parameters['clsfr_args_evtlabs']=[('re','fe'),('re','fe','anyfe'),('fe','anyfe')]
+
     hyperparam_search("mindaffectBCI",
                      dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
-                     loader_args=dict(fs_out=100,stopband=((45,65),(5,25,'bandpass'))),
+                     loader_args=dict(fs_out=100,stopband=(45,-1)),
                      model='cca',test_idx = slice(10,None),
                      clsfr_args=dict(tau_ms=450,offset_ms=50,evtlabs=('re','fe'),ranks=(1,2,3,5,10)),
-                     tuned_parameters=dict(startup_correction=[100], bwdAccumulate=[True], minDecisLen=[0,100,200,400], priorweight=[50], nvirt_out=[-15]))
+                     tuned_parameters=tuned_parameters)
 
     # analyse_datasets("plos_one",loader_args=dict(fs_out=100,stopband=(3,30,'bandpass')),
     #                  model='cca',clsfr_args=dict(tau_ms=450,evtlabs=('re','fe'),ranks=(1,2,3,5,10)))

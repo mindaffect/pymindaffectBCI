@@ -253,12 +253,26 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         except:
             traceback.print_exc()
 
-    elif presentation.lower() == 'sigviewer' or presentation=='none':
+    elif presentation.lower() == 'sigviewer':
         try:
             from mindaffectBCI.decoder.sigViewer import sigViewer
             sigViewer()
         except:
             traceback.print_exc()
+
+    elif presentation =='fakepresentation':
+        try:
+            import mindaffectBCI.noisetag
+            mindaffectBCI.noisetag.run(**presentation_args)
+        except:
+            traceback.print_exc()
+
+    elif presentation =='none':
+        # just sleep until hub is finished
+        try: 
+            hub_process.wait()
+        except:
+            pass
 
     elif presentation.lower() == 'hue' or presentation.lower() == "colorwheel":
         try:

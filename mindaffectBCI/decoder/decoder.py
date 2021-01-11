@@ -37,14 +37,17 @@ LOGDIR = os.path.join(PYDIR,'../../logs/')
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 try :
+    import os
+    if os.name == 'posix' and 'DISPLAY' not in os.environ:
+        raise ValueError("No display")
     import matplotlib
     import matplotlib.pyplot as plt
     guiplots=True
-    for be in matplotlib.rcsetup.all_backends: 
-        try:
-            matplotlib.use(be)
-            print(be)
-        except: pass
+    #for be in matplotlib.rcsetup.all_backends: 
+    #    try:
+    #        matplotlib.use(be)
+    #        print(be)
+    #    except: pass
     print("Initial backend: {}".format(matplotlib.get_backend()))
     try:
         # backends to try: "TkAgg" "WX" "WXagg"
@@ -866,21 +869,36 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def fit_prior_dataset(clsfr=None, prior_dataset=None, cv=5, out_fs=100, tau_ms=450, offset_ms=0, evtlabs=('re','fe'), prediction_offsets=None, **kwargs):
+    # use a multi-cca for the model-fitting
+    if clsfr is None:
+        if isinstance(evtlabs,str): # decode string coded spec
+            evtlabs = evtlabs.split(',')
+        clsfr = MultiCCA(tau=int(out_fs*tau_ms/1000), evtlabs=evtlabs, offset=int(out_fs*offset_ms/1000), prediction_offsets=prediction_offsets, **kwargs)
+        print('clsfr={}'.format(clsfr))
+    # pre-train the model if the prior_dataset is given
+    if prior_dataset is not None:
+        doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=out_fs, n_ch=None)
+
 if  __name__ == "__main__":
     args = parse_args()
 
-    if args.savefile is not None or False:#
-        #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
-        #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
-        #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
-        savefile='~/Desktop/mark/mindaffectBCI*.txt'
-        savefile=args.logdir + "/mindaffectBCI*.txt"
-        setattr(args,'savefile',savefile)
-        #setattr(args,'out_fs',100)
-        #setattr(args,'savefile_fs',200)
-        #setattr(args,'cv',5)
-        setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
-        setattr(args,'prior_dataset',None)
+    if args.savefile is not None or True:#
+        if args.savefile is None:
+            #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
+            #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
+            #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
+            savefile='~/Desktop/mark/mindaffectBCI*.txt'
+            savefile=args.logdir + "/mindaffectBCI*.txt"
+            setattr(args,'savefile',savefile)
+            #setattr(args,'out_fs',100)
+            #setattr(args,'savefile_fs',200)
+            #setattr(args,'cv',5)
+            setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
+            #setattr(args,'prior_dataset',None)
+
+        fit_prior_dataset(clsfr=None, prior_dataset=args.prior_dataset, cv=args.cv, out_fs=args.out_fs, tau_ms=args.tau_ms, offset_ms=0, evtlabs=args.evtlabs)
+
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
@@ -889,6 +907,7 @@ if  __name__ == "__main__":
                                  timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='decoder') # 20hz updates
         # add the file-proxy ui as input argument
         setattr(args,'ui',ui)
+
 
 
     # # HACK: set debug attrs....

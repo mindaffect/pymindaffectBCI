@@ -58,6 +58,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         X, W = spatially_whiten(X,reg=reg)
 
     if stopband is not None and stopband is not False:
+        print('filter: {}'.format(stopband))
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
     if whiten_spectrum > 0:
