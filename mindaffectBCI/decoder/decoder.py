@@ -37,14 +37,17 @@ LOGDIR = os.path.join(PYDIR,'../../logs/')
 PREDICTIONPLOTS = False
 CALIBRATIONPLOTS = False
 try :
+    import os
+    if os.name == 'posix' and 'DISPLAY' not in os.environ:
+        raise ValueError("No display")
     import matplotlib
     import matplotlib.pyplot as plt
     guiplots=True
-    for be in matplotlib.rcsetup.all_backends: 
-        try:
-            matplotlib.use(be)
-            print(be)
-        except: pass
+    #for be in matplotlib.rcsetup.all_backends: 
+    #    try:
+    #        matplotlib.use(be)
+    #        print(be)
+    #    except: pass
     print("Initial backend: {}".format(matplotlib.get_backend()))
     try:
         # backends to try: "TkAgg" "WX" "WXagg"
