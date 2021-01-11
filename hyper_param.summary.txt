@@ -51,7 +51,7 @@ Test: Event-coding
 evtlabs
   re,fe         37.2            7.9                     
     fe          41.0            5.2
-  fe,anyfe
+  fe,anyfe      40.5            17.0
   re,fe,anyfe   36.7            24.4 
   re,fe,any1    38.5            14.7
   0,1           94
@@ -112,12 +112,25 @@ Conclusion:
 Test:  offset_ms
 ------
                 StopErr         StopAcc
-offset_ms
-    0
-    50
-    100
+offset_ms, tau_ms
+    0,  250     52.2
+    50, 250     38.7
+    100,250     37.4
+    150,250     35.3
+    0,  350     37.5
+    50, 350     37.5
+    100,350     36.3
+    150,350     35.3
+    0,  450     37.6
+    50, 450     37.1
+    100,450     37.0
+    0,  550     38.2
+    50, 550     38.5
+    100,550     39.3
     
 Conclusion:
+   Smaller, better focused window helps a little.
+   -> 100,350
 
   
 Conclusion:

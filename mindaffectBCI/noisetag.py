@@ -1217,30 +1217,50 @@ def doFrame(t,stimState,tgt_idx=-1,objIDs=None,utopiaController=None):
     else:
         print('_',end='',flush=True)
     
+def run(symbols=None, ncal:int=10, npred:int=10, cuedprediction:bool=True, frameperbit:int=1,
+        calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, 
+        stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1, **kwargs):
+    """run a noisetagging *fake-presentation* example
 
-if __name__ == "__main__":
+    Args:
+        symbols ([type], optional): [description]. Defaults to None.
+        ncal (int, optional): [description]. Defaults to 10.
+        npred (int, optional): [description]. Defaults to 10.
+        cuedprediction (bool, optional): [description]. Defaults to True.
+        frameperbit (int, optional): [description]. Defaults to 1.
+        calibration_trialduration (float, optional): [description]. Defaults to 4.2.
+        prediction_trialduration (float, optional): [description]. Defaults to 20.
+        feedbackduration (float, optional): [description]. Defaults to 2.
+        stimfile (str, optional): [description]. Defaults to None.
+        stimseq (str, optional): [description]. Defaults to None.
+        selectionThreshold (float, optional): [description]. Defaults to .1.
+    """
     # make the noisetag object to manage the tagging selections
-    ntexpt = Noisetag()
-    ntexpt.connect()
+    nt = Noisetag(stimFile=stimfile,stimSeq=stimseq,clientid='fakepresentation')
+    nt.connect()
+    nsymb = sum([len(r) for r in symbols]) if symbols is not None else 10
     # set the subset of active objects being displayed
-    ntexpt.setnumActiveObjIDs(10)
+    nt.setnumActiveObjIDs(nsymb)
     # tell it to play a full experiment sequence
-    ntexpt.startExpt(framesperbit=4)
+    nt.startExpt(nCal=ncal, nPred=npred, cuedprediction=cuedprediction, framesperbit=frameperbit, selectionThreshold=selectionThreshold)
     # mainloop
     nframe=0
     while True:
         try :
             # update the stimulus state w.r.t. current time
-            ntexpt.updateStimulusState(nframe)
+            nt.updateStimulusState(nframe)
             # get the stimulus state info we whould display
-            ss,ts,objIDs,sendEvent=ntexpt.getStimulusState()
+            ss,ts,objIDs,sendEvent=nt.getStimulusState()
             # update the display drawing
             doFrame(nframe,ss,ts,objIDs)            
             # send info about what we did to the decoder
-            ntexpt.sendStimulusState()
+            nt.sendStimulusState()
             # simulate waiting for the flip
             time.sleep(isi)
         except StopIteration :
             # this event is raised when the stimulus sequence is finished
             break
         nframe=nframe+1
+
+if __name__ == "__main__":
+    run()
