@@ -10,7 +10,7 @@
 
     "decoder":"decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[5.5,25,"bandpass"]],
+        "stopband" : [[45,65],[4,25,"bandpass"]],
         "out_fs" : 100,
         "evtlabs" : ["re","fe"],
         "ftype":"butter",
@@ -18,10 +18,11 @@
         "cv":5,
         "label":"decoder",
         "prior_dataset": "calibration_dataset_*.pk",
-        "tau_ms" : 450,
+        "tau_ms" : 300,
+        "offset_ms": 125,
         "prediction_offsets" : [0],
         "calplots" : true,
-        "predplots" : true
+        "predplots" : false
     },
 
     

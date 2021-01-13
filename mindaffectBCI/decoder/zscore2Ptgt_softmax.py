@@ -200,6 +200,7 @@ def calibrate_softmaxscale(f, validTgt=None,
     if nocontrol_condn and f.shape[-1]>5:
         f_nc = f[..., 1:]
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
+        print('No-control amplitude {} on {} nc-outputs'.format(nocontrol_condn,f_nc.shape[-1]))
 
     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
