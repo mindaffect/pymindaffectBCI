@@ -188,11 +188,7 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
         XY = XY - muXY[...,np.newaxis,:] #(nY,nE,tau,d)
 
     if unitnorm:
-        #print('Cxy - unitnorm!')
-        #if verb>0 : 
-        #print("tau={}".format(tau))
-        #XY = XY / np.sqrt(tau)
-        pass
+        XY = XY / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
     
     Cxy = wght*Cxy + XY if Cxy is not None else XY
     return Cxy
@@ -215,49 +211,63 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
     Outputs:
       Cyy -- (nY, tau, nE, nE)
     '''
-    if tau is None: # estimate the tau
-        tau=Cyy.shape[-1]
-    if Cyy is None:
-        Cyy = np.zeros((Y.shape[-2], Y.shape[-1], tau, Y.shape[-1], tau),dtype=Y.dtype)
-        #Cyy = np.zeros((Y.shape[-2], tau, Y.shape[-1], Y.shape[-1]))
+    if stimTime is None:
+        MM = compCyy_diag(Y,tau,wght,zeropadded,unitnorm)
+        MM = Cyy_diag2full(MM)
+        Cyy = wght*Cyy + MM if Cyy is not None else MM
+    else:
+        Cyy = updateCyy_old(Cyy,Y,stimTime,tau,wght,zeropadded,unitnorm)
+            # accumulate into the running total
+    return Cyy
+
+def Cyy_diag2full(MM):
+    # BODGE: tau-diag Cyy entries to the 'correct' shape
+    # (tau,nY,nE,nE) -> (nY,nE,tau,nE,tau)
+    MM2 = np.zeros((MM.shape[-3],MM.shape[-2],MM.shape[-4],MM.shape[-2],MM.shape[-4]),dtype=MM.dtype)
+    # fill in the block diagonal entries
+    for i in range(MM.shape[-4]):
+        MM2[...,:,i,:,i] = MM[0,:,:,:]
+        for j in range(i+1,MM.shape[-4]):
+            MM2[...,:,i,:,j] = MM[j-i,:,:,:]
+            MM2[...,:,j,:,i] = MM[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
+    MM = MM2
+    return MM2
+
+def compCyy_diag(Y, tau, wght=1, zeropadded=True, unitnorm=True):
+    '''
+    Compute the main tau diagonal entries of a Cyy tensor
+    Args:
+      Y (nTrl, nEp/nSamp, nY, nE): the new stim info to be added
+               Indicator for which events occured for which outputs
+               nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
+      tau (int): number of samples in the stimulus response
+      stimTime (list): the times (in samples) of the epochs in Y.  Default to None.
+                  None : if Y is already at sample rate
+      zeropadded (bool): flag variable length Y are padded with 0s
+      wght (float): weighting for the new vs. old data. Defaults to 1.
+      unitnorm(bool) : flag if we normalize the Cyy with number epochs. Defaults to True.
+    Returns:
+      Cyy -- (tau, nY, nE, nE)
+    '''
     if Y.ndim == 3:  # ensure is 4-d
         Y = Y[np.newaxis, :, :, :] # (nTrl, nEp/nSamp, nY, nE)
 
-    if stimTime is None: # fast-path, already at sample rate
-        if not np.issubdtype(Y.dtype, np.floating): # all at once
-            Y = Y.astype(np.float32)
-        #print("Y={}".format(Y.shape))
-        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
+    if not np.issubdtype(Y.dtype, np.floating): # all at once
+        Y = Y.astype(np.float32)
+    #print("Y={}".format(Y.shape))
+    Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
 
-        # shrink Y w.r.t. the window and shift to align with the offset
-        Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
+    # shrink Y w.r.t. the window and shift to align with the offset
+    Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
 
-        #print("Ys={}".format(Ys.shape))
-        MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
-
-        # BODGE: convert to the 'correct' shape
-        # (tau,nY,nE,nE) -> (nY,nE,tau,nE,tau)
-        MM2 = np.zeros((Y.shape[-2],Y.shape[-1],tau,Y.shape[-1],tau),dtype=Y.dtype)
-        # fill in the block diagonal entries
-        for i in range(tau):
-            MM2[...,:,i,:,i] = MM[0,:,:,:]
-            for j in range(i+1,tau):
-                MM2[...,:,i,:,j] = MM[j-i,:,:,:]
-                MM2[...,:,j,:,i] = MM[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
-        MM = MM2
-
-    else: # upsample and accumulate
-        MM = updateCyy_old(Cyy, Y, stimTime=stimTime, tau=tau, wght=wght, zeropadded=zeropadded, unitnorm=unitnorm)
+    #print("Ys={}".format(Ys.shape))
+    MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
 
     if unitnorm:
         # normalize so the resulting constraint on the estimated signal is that it have
         # average unit norm
         MM = MM / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
-
-    # accumulate into the running total
-    Cyy = wght*Cyy + MM if Cyy is not None else Cyy
-    return Cyy
-
+    return MM
 
 def updateCyy_old(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
     '''
@@ -323,7 +333,7 @@ def updateCyy_old(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unit
         MM = MM / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
 
     # accumulate into the running total
-    Cyy = wght*Cyy + MM if Cyy is not None else Cyy
+    Cyy = wght*Cyy + MM if Cyy is not None else MM
     return Cyy
 
 
@@ -738,7 +748,7 @@ def testSlicedvsContinuous():
 Y=None
 X=None
 def testCyy2():
-    updateCyy2(None,Y,None,tau=18)
+    updateCyy(None,Y,None,tau=18)
 
 def testComputationMethods():
     global X, Y
@@ -758,7 +768,7 @@ def testComputationMethods():
     tau=30
 
     Cyy=updateCyy(None,Y,None,tau=tau) #(nY,yd,tau,yd,tau)
-    Cyy2=updateCyy2(None,Y,None,tau=tau) #(nY,yd,tau,yd,tau)
+    Cyy2=updateCyy_old(None,Y,None,tau=tau) #(nY,yd,tau,yd,tau)
     print('Cyy-Cyy2={}'.format(np.max(np.abs(Cyy.ravel()-Cyy2.ravel()))))
     fig,axs=plt.subplots(nrows=3,ncols=1,sharex='all',sharey='all')
     im=axs[0].imshow(Cyy[0,...].reshape((Cyy.shape[-1]*Cyy.shape[-2],Cyy.shape[-1]*Cyy.shape[-2]))); plt.colorbar(im,ax=axs[0]); axs[0].set_title("Cyy")
@@ -773,10 +783,10 @@ def testComputationMethods():
     s.sort_stats("time").print_stats(10)
 
     import timeit
+    t = timeit.timeit(lambda: updateCyy_old(None,Y,None,tau=tau),number=10)
+    print("updateCyy_old: {}".format(t))
     t = timeit.timeit(lambda: updateCyy(None,Y,None,tau=tau),number=10)
     print("updateCyy: {}".format(t))
-    t = timeit.timeit(lambda: updateCyy2(None,Y,None,tau=tau),number=10)
-    print("updateCyy2: {}".format(t))
 
     quit()
 

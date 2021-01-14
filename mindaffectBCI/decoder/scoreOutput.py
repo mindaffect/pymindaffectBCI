@@ -178,7 +178,7 @@ def convYR(Y,R,offset=None):
     #print("YtR={}".format(YtR.shape))
     return YtR #(nM,nTrl,nSamp,nY,nfilt)
 
-def convXYR(X,Y,W,R,offset=0):
+def convWXYR(X,Y,W,R,offset=0):
     WX=convWX(X,W) # (nTr,nSamp,nfilt)
     YR=convYR(Y,R,offset) # (nTr,nSamp,nY,nfilt)
     # Sum out  filt dimesion
@@ -191,16 +191,132 @@ def sse(X,Y,W,R,offset=0):
     sse = np.sum((WX[...,np.newaxis,:]-YR)**2)
     return sse
 
+def decomp_sse(X,Y,W,R,offset=0):
+    WX=convWX(X,W) # (nTr,nSamp,nfilt)
+    YR=convYR(Y,R,offset) # (nTr,nSamp,nY,nfilt)
+    sse = np.sum((WX[...,np.newaxis,:]-YR)**2)
+    WXXW = np.sum(WX**2)
+    # Sum out  filt dimesion
+    WXYR = np.sum(WX[...,np.newaxis,:]*YR,-1) #(nTr,nSamp,nY)
+
 def corr(X,Y,W,R,offset=0):
     WX = convWX(X,W)
     YR = convYR(Y,R,offset)
     corr = np.sum((WX[...,np.newaxis,:]-YR)**2) / np.sum(WX**2)
     return corr
+     
+def plot_Fy(Fy,cumsum=True, label=None, legend=False, maxplots=25):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    '''plot the output score function'''
+    if cumsum:
+        Fy = np.cumsum(Fy.copy(),-2)
+    if label is None:
+        label = ''
+    plt.clf()
+    nPlts=min(maxplots,Fy.shape[0])
+    if Fy.shape[0]/2 > nPlts:
+        tis = np.linspace(0,Fy.shape[0]/2-1,nPlts,dtype=int)
+    else:
+        tis = np.arange(0,nPlts,dtype=int)
+    ncols = int(np.ceil(np.sqrt(nPlts)))
+    nrows = int(np.ceil(nPlts/ncols))
+    #fig, plts = plt.subplots(nrows, ncols, sharex='all', sharey='all', squeeze=False)
+    axploti = ncols*(nrows-1)
+    ax = plt.subplot(nrows,ncols,axploti+1)
+    Yerr = np.any(Fy[...,-1,1:] > Fy[...,-1,:1],-1)
+    for ci,ti in enumerate(tis):
+        # make the axis
+        if ci==axploti: # common axis plot
+            pl = ax
+        else: # normal plot
+            pl = plt.subplot(nrows,ncols,ci+1,sharex=ax, sharey=ax) # share limits
+            plt.tick_params(labelbottom=False,labelleft=False) # no labels        
+        #pl = plts[ci//ncols, ci%ncols]
+        pl.plot(Fy[ti,:,1:],color='.5')
+        pl.plot(Fy[ti,:,0:1],'k')
+        
+        pl.set_title("{}{}".format(ti," " if Yerr[ti] else "*"))
+        pl.grid(True)
+    if legend:
+        pl.legend(range(Fy.shape[-1]-1))
+    plt.suptitle('{}\n {} Fy {}/{} correct'.format(label,"cumsum" if cumsum else "", sum(np.logical_not(Yerr)),len(Yerr)))
+    
+def plot_Fycomparsion(Fy,Fys,ti=0):    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from normalizeOutputScores import normalizeOutputScores
+    from decodingSupervised import decodingSupervised
+    plt.subplot(231); plt.cla(); plt.plot(Fy[ti,:,:],label='Fy');  plt.title('Inner-product'); 
+
+    # Ptgt every sample, accum from trial start
+    ssFy,varsFy,N,nEp,nY=normalizeOutputScores(Fy, minDecisLen=-1, filtLen=5)
+    plt.subplot(232); plt.cla(); plt.plot(np.cumsum(Fy[ti,:,:],-2),label='sFy');plt.plot(varsFy[ti,1:],'k-',linewidth=5,label='scale'); plt.title('cumsum(Inner-product)');  plt.title('cumsum(Inner-product)');
+    Yest,Perr,Ptgt,decismdl,decisEp=decodingSupervised(Fy, minDecisLen=-1, marginalizemodels=False, filtLen=5)
+    plt.subplot(233); plt.cla(); plt.plot(Ptgt[ti,:,:],label='Ptgt');  plt.title('Ptgt');
+
+    #X2 = np.sum(X**2,axis=-1,keepdims=True); Fys=Fys-X2/2     #  include norm of X to be sure.
+    plt.subplot(234); plt.cla(); plt.plot(Fys[ti,:,:],label='sFy');  plt.title('-SSE'); 
+
+    # Ptgt every sample, accum from trial start
+    ssFy,varsFy,N,nEp,nY=normalizeOutputScores(Fys, minDecisLen=-1, filtLen=5)
+    Yest,Perr,Ptgt,decismdl,decisEp=decodingSupervised(Fys, minDecisLen=-1, marginalizemodels=False, filtLen=5)
+    plt.subplot(235); plt.cla(); plt.plot(np.cumsum(Fys[ti,:,:],-2),label='sFy'); plt.plot(varsFy[ti,1:],'k-',linewidth=5,label='scale'); plt.title('cumsum(-SSE)');
+    plt.subplot(236); plt.cla(); plt.plot(Ptgt[ti,:,:],label='Ptgt');  plt.title('Ptgt(-SSE)'); 
+
+
+def plot_outputscore(X,Y,W=None,R=None,offset=0):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from model_fitting import MultiCCA
+    from scoreStimulus import scoreStimulus
+    from scoreOutput import scoreOutput
+    from decodingCurveSupervised import decodingCurveSupervised
+    ''' plot the factored model to visualize the fit and the scoring functions'''
+    if W is None:
+        cca = MultiCCA(tau=R,evtlabs=None)
+        if X.ndim < 3: # BODGE:
+            cca.fit(X[np.newaxis,...], Y[np.newaxis,...])
+        else:
+            cca.fit(X, Y)
+        W=cca.W_
+        R=cca.R_
+
+        Fy=cca.predict(X,Y)
+        (_) = decodingCurveSupervised(Fy)
+
+        
+    WXYR,WX,YR=convWXYR(X,Y,W,R,offset)
+    
+    plt.clf();
+    plt.subplot(511);plt.plot(np.squeeze(WX));plt.grid();plt.title("WX");
+    plt.subplot(512);plt.plot(Y[...,0],label='Y');plt.plot(np.squeeze(R).T,'k',label='R',linewidth=5);plt.grid();plt.title("Y");
+    plt.subplot(513);plt.plot(np.squeeze(YR[...,0]));plt.grid();plt.title("YR");
+    
+    plt.subplot(5,3,10);plt.plot(np.squeeze(WXYR));plt.grid();plt.title("WXYR")
+    plt.subplot(5,3,11);plt.plot(np.squeeze(np.cumsum(WXYR,-2)));plt.grid();plt.title("cumsum(WXYR)")
+
+    err = WX[...,np.newaxis,:]-YR
+    sse = np.sum(err**2,-1)
+
+    plt.subplot(5,3,12);plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("cumsum(sse)")
+
+    #cor = np.cumsum(WXYR,-2)/np.sqrt(np.cumsum(np.sum(YR**2,-1),-2))
+    #plt.subplot(5,3,12);plt.cla();plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("corr")
+
+    Fe = scoreStimulus(X,W,R)
+    Fy = scoreOutput(Fe,Y,R=R,outputscore='ip')
+    Fys = scoreOutput(Fe,Y,R=R,outputscore='sse')
+
+    plt.subplot(5,3,13);plt.plot(np.squeeze(Fy));plt.grid();plt.title("Fy")
+    plt.subplot(5,3,14);plt.plot(np.squeeze(np.cumsum(Fy,-2)));plt.grid();plt.title("cumsum(Fy)")
+    plt.subplot(5,3,15);plt.plot(np.squeeze(np.cumsum(2*Fys,-2)));plt.grid();plt.title("cumsum(Fy(sse))")
+
 
 #@function
 def testcases():
     from mindaffectBCI.decoder.utils import testSignal
-    from mindaffectBCI.decoder.scoreOutput import scoreOutput, plot_outputscore, convWX, convYR, convXYR
+    from mindaffectBCI.decoder.scoreOutput import scoreOutput, plot_outputscore, convWX, convYR, convWXYR
     from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
     from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
     from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
@@ -319,113 +435,5 @@ def datasettest():
 
     plot_outputscore(X[0,...],Y[0,...],W,R)
 
-       
-def plot_Fy(Fy,cumsum=True, label=None, legend=False, maxplots=25):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    '''plot the output score function'''
-    if cumsum:
-        Fy = np.cumsum(Fy.copy(),-2)
-    if label is None:
-        label = ''
-    plt.clf()
-    nPlts=min(maxplots,Fy.shape[0])
-    if Fy.shape[0]/2 > nPlts:
-        tis = np.linspace(0,Fy.shape[0]/2-1,nPlts,dtype=int)
-    else:
-        tis = np.arange(0,nPlts,dtype=int)
-    ncols = int(np.ceil(np.sqrt(nPlts)))
-    nrows = int(np.ceil(nPlts/ncols))
-    #fig, plts = plt.subplots(nrows, ncols, sharex='all', sharey='all', squeeze=False)
-    axploti = ncols*(nrows-1)
-    ax = plt.subplot(nrows,ncols,axploti+1)
-    Yerr = np.any(Fy[...,-1,1:] > Fy[...,-1,:1],-1)
-    for ci,ti in enumerate(tis):
-        # make the axis
-        if ci==axploti: # common axis plot
-            pl = ax
-        else: # normal plot
-            pl = plt.subplot(nrows,ncols,ci+1,sharex=ax, sharey=ax) # share limits
-            plt.tick_params(labelbottom=False,labelleft=False) # no labels        
-        #pl = plts[ci//ncols, ci%ncols]
-        pl.plot(Fy[ti,:,1:],color='.5')
-        pl.plot(Fy[ti,:,0:1],'k')
-        
-        pl.set_title("{}{}".format(ti," " if Yerr[ti] else "*"))
-        pl.grid(True)
-    if legend:
-        pl.legend(range(Fy.shape[-1]-1))
-    plt.suptitle('{}\n {} Fy {}/{} correct'.format(label,"cumsum" if cumsum else "", sum(np.logical_not(Yerr)),len(Yerr)))
-    
-def plot_Fycomparsion(Fy,Fys,ti=0):    
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from normalizeOutputScores import normalizeOutputScores
-    from decodingSupervised import decodingSupervised
-    plt.subplot(231); plt.cla(); plt.plot(Fy[ti,:,:],label='Fy');  plt.title('Inner-product'); 
-
-    # Ptgt every sample, accum from trial start
-    ssFy,varsFy,N,nEp,nY=normalizeOutputScores(Fy, minDecisLen=-1, filtLen=5)
-    plt.subplot(232); plt.cla(); plt.plot(np.cumsum(Fy[ti,:,:],-2),label='sFy');plt.plot(varsFy[ti,1:],'k-',linewidth=5,label='scale'); plt.title('cumsum(Inner-product)');  plt.title('cumsum(Inner-product)');
-    Yest,Perr,Ptgt,decismdl,decisEp=decodingSupervised(Fy, minDecisLen=-1, marginalizemodels=False, filtLen=5)
-    plt.subplot(233); plt.cla(); plt.plot(Ptgt[ti,:,:],label='Ptgt');  plt.title('Ptgt');
-
-    #X2 = np.sum(X**2,axis=-1,keepdims=True); Fys=Fys-X2/2     #  include norm of X to be sure.
-    plt.subplot(234); plt.cla(); plt.plot(Fys[ti,:,:],label='sFy');  plt.title('-SSE'); 
-
-    # Ptgt every sample, accum from trial start
-    ssFy,varsFy,N,nEp,nY=normalizeOutputScores(Fys, minDecisLen=-1, filtLen=5)
-    Yest,Perr,Ptgt,decismdl,decisEp=decodingSupervised(Fys, minDecisLen=-1, marginalizemodels=False, filtLen=5)
-    plt.subplot(235); plt.cla(); plt.plot(np.cumsum(Fys[ti,:,:],-2),label='sFy'); plt.plot(varsFy[ti,1:],'k-',linewidth=5,label='scale'); plt.title('cumsum(-SSE)');
-    plt.subplot(236); plt.cla(); plt.plot(Ptgt[ti,:,:],label='Ptgt');  plt.title('Ptgt(-SSE)'); 
-
-
-def plot_outputscore(X,Y,W=None,R=None,offset=0):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from model_fitting import MultiCCA
-    from scoreStimulus import scoreStimulus
-    from scoreOutput import scoreOutput
-    from decodingCurveSupervised import decodingCurveSupervised
-    ''' plot the factored model to visualize the fit and the scoring functions'''
-    if W is None:
-        cca = MultiCCA(tau=R,evtlabs=None)
-        if X.ndim < 3: # BODGE:
-            cca.fit(X[np.newaxis,...], Y[np.newaxis,...])
-        else:
-            cca.fit(X, Y)
-        W=cca.W_
-        R=cca.R_
-
-        Fy=cca.predict(X,Y)
-        (_) = decodingCurveSupervised(Fy)
-
-        
-    WXYR,WX,YR=convXYR(X,Y,W,R,offset)
-    
-    plt.clf();
-    plt.subplot(511);plt.plot(np.squeeze(WX));plt.grid();plt.title("WX");
-    plt.subplot(512);plt.plot(Y[...,0],label='Y');plt.plot(np.squeeze(R).T,'k',label='R',linewidth=5);plt.grid();plt.title("Y");
-    plt.subplot(513);plt.plot(np.squeeze(YR[...,0]));plt.grid();plt.title("YR");
-    
-    plt.subplot(5,3,10);plt.plot(np.squeeze(WXYR));plt.grid();plt.title("WXYR")
-    plt.subplot(5,3,11);plt.plot(np.squeeze(np.cumsum(WXYR,-2)));plt.grid();plt.title("cumsum(WXYR)")
-
-    err = WX[...,np.newaxis,:]-YR
-    sse = np.sum(err**2,-1)
-
-    plt.subplot(5,3,12);plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("cumsum(sse)")
-
-    #cor = np.cumsum(WXYR,-2)/np.sqrt(np.cumsum(np.sum(YR**2,-1),-2))
-    #plt.subplot(5,3,12);plt.cla();plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("corr")
-
-    Fe = scoreStimulus(X,W,R)
-    Fy = scoreOutput(Fe,Y,R=R,outputscore='ip')
-    Fys = scoreOutput(Fe,Y,R=R,outputscore='sse')
-
-    plt.subplot(5,3,13);plt.plot(np.squeeze(Fy));plt.grid();plt.title("Fy")
-    plt.subplot(5,3,14);plt.plot(np.squeeze(np.cumsum(Fy,-2)));plt.grid();plt.title("cumsum(Fy)")
-    plt.subplot(5,3,15);plt.plot(np.squeeze(np.cumsum(2*Fys,-2)));plt.grid();plt.title("cumsum(Fy(sse))")
-    
 if __name__=="__main__":
     testcases()

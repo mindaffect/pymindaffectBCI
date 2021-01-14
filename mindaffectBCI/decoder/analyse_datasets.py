@@ -982,10 +982,11 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
 
 if __name__=="__main__":
     tuned_parameters=dict(preprocess_args_stopband=[(4,25,'bandpass')], startup_correction=[50], priorweight=[0], nvirt_out=[0], nocontrol_condn=[.1])
-    tuned_parameters['nocontrol_condn']=[.1,.2,.5]
+    tuned_parameters['nocontrol_condn']=[.5]
     tuned_parameters['nvirt_out']=[0]
     tuned_parameters['startup_correction']=[50]
     tuned_parameters['priorweight']=[0]
+    tuned_parameters['outputscore']=['ip','sse']
     #tuned_parameters['priorweight']=[0,10,50,100] 
     #tuned_parameters['reg']=[(None,None)] #[(1e-8,0),(1e-6,0),(1e-4,0),(1e-2,0),(1e-8,1e-8),(1e-8,1e-6),(1e-8,1e-4),(1e-6,1e-6),(1e-4,1e-6),(1e-2,1e-4)]
     #tuned_parameters['rcond']=[(1e-8,0),(1e-8,1e-6),(1e-6,0),(1e-6,1e-8),(1e-6,1e-6),(1e-6,1e-4),(1e-4,0),(1e-4,1e-8),(1e-4,1e-6),(1e-4,1e-4),(1e-2,0),(1e-2,1e-8),(1e-2,1e-6),(1e-2,1e-4)]

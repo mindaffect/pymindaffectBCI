@@ -63,6 +63,7 @@ def decodingCurveSupervised(Fy,objIDs=None,nInt=(30,25),dedup0:bool=True,nvirt_o
         # generate virtual outputs for testing -- not from the 'true' target though
         virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2) 
         Fy = np.append(Fy,virt_Fy,axis=-1)
+        print("Added {} virtual outputs".format(virt_Fy.shape[-1]))
 
     if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
         Fy = dedupY0(Fy, zerodup=dedup0>0, yfeatdim=False)

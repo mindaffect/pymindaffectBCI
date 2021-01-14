@@ -69,7 +69,7 @@ except:
     
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
-    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, 
+    def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip',
                 priorweight=0, startup_correction=50, prediction_offsets=None, 
                 minDecisLen=0, bwdAccumulate=False, nvirt_out=-20, nocontrol_condn=.5, verb=0):
         """Base class for general sequence to sequence models and inference
@@ -86,7 +86,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
         self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets = (tau, offset, priorweight, startup_correction, prediction_offsets)
         self.verb, self.minDecisLen, self.bwdAccumulate, self.nvirt_out, self.nocontrol_condn = (verb, minDecisLen, bwdAccumulate, nvirt_out, nocontrol_condn)
-        
+        self.outputscore = outputscore
+
     def stim2event(self, Y, prevY=None, fit=False):
         '''transform Stimulus-encoded to brain-encoded, if needed'''
         # convert from stimulus coding to brain response coding
@@ -146,7 +147,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         # get output scores.  Optionally, include time-shifts in output.
         if offsets is None and self.prediction_offsets is not None:
             offsets = self.prediction_offsets
-        Fy = scoreOutput(Fe, Y, dedup0=dedup0, R=self.R_, offset=offsets) #(nM, nTrl, nSamp, nY)
+        Fy = scoreOutput(Fe, Y, dedup0=dedup0, R=self.R_, offset=offsets, outputscore=self.outputscore) #(nM, nTrl, nSamp, nY)
         
         # BODGE: strip un-needed model dimension
         if Fy.ndim > 3 and Fy.shape[0] == 1:
@@ -171,7 +172,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         """Convert stimulus scores to stimulus probabities of being the target
 
         Args:
-            Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores
+            Fy (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequence scores, from predict
             minDecisLen (int,optional): minimum number of samples on which to make a prediction. Defaults to 0.
             bwdAccumulate (bool, optional): accumulate information backwards in the trials.  Defaults to True.
             marginalizemodels (bool,optional): flag if we should marginalize over models when have multiple prediction models.  Defaults to True.
