@@ -18,14 +18,14 @@
 import numpy as np
 import warnings
 
-def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
-                reg=1e-8, rank=1, CCA=True, rcond=1e-4, symetric=False):
+def multipleCCA(Cxx=None, Cyx=None, Cyy=None,
+                reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False):
     '''
     Compute multiple CCA decompositions using the given summary statistics
-      [J,W,R]=multiCCA(Cxx,Cxy,Cyy,regx,regy,rank,CCA)
+      [J,W,R]=multiCCA(Cxx,Cyx,Cyy,regx,regy,rank,CCA)
     Inputs:
       Cxx  = (d,d) current data covariance
-      Cxy  = (nM,nE,tau,d) current per output ERPs
+      Cyx  = (nM,nE,tau,d) current per output ERPs
       Cyy  = (nM,nE,tau,nE,tau) current response covariance for each output
            OR
              (nM,tau,nE,nE) compressed cov for each output at different time-lags
@@ -47,20 +47,20 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
       Y = (nEp/nSamp,nY,nE) indicator for each event-type and output of it's type in each epoch
       X = (nEp/nSamp,tau,d) sliced pre-processed raw data into per-stimulus event responses
       stimTimes = (nEp) # sample number for each epoch or None if sample rate
-      Cxx,Cxy,Cyy=updateSummaryStatistics(X, Y, stimTimes)
-      J,w, r=multiCCA(Cxx, Cxy, Cyy, reg) # w=(nM,d)[dx1],r=(nM,nE,tau)[tau x nE] are the found spatial,spectral filters
+      Cxx,Cyx,Cyy=updateSummaryStatistics(X, Y, stimTimes)
+      J,w, r=multiCCA(Cxx, Cyx, Cyy, reg) # w=(nM,d)[dx1],r=(nM,nE,tau)[tau x nE] are the found spatial,spectral filters
       # incremental zeroTrain
-      Cxx=[];Cxy=[];Cyy=[]; prediction=[];
+      Cxx=[];Cyx=[];Cyy=[]; prediction=[];
       while isCalibration:
          # Slicing
          newX,newE,stimTimes= preprocessnSliceTrial(); #function which get 1 trials data+stim
          # Model Fitting
-         Cxx, Cxy, Cyy= updateSummaryStatistics(newX, newE, stimTimes, Cxx, Cxy, Cyy);
-         J, w, r      = multipleCCA(Cxx, Cxy, Cyy, regx, regy) # w=[dx1],r=[tau x nE] are the found spatial,spectral filters
+         Cxx, Cyx, Cyy= updateSummaryStatistics(newX, newE, stimTimes, Cxx, Cyx, Cyy);
+         J, w, r      = multipleCCA(Cxx, Cyx, Cyy, regx, regy) # w=[dx1],r=[tau x nE] are the found spatial,spectral filters
       end
       # re-compute with current state, can try different regulisors, e.g. for adaptive bad-ch
       regx = updateRegFromBadCh();
-      J, w, r=multipleCCA(Cxx, Cxy, Cyy, reg)
+      J, w, r=multipleCCA(Cxx, Cyx, Cyy, reg)
     Copyright (c) MindAffect B.V. 2018
     '''
     rank = int(max(1, rank))
@@ -71,17 +71,17 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
     if not hasattr(rcond, '__iter__'):
         rcond = (rcond, rcond)  # ensure 2 element list
         
-    # 3d Cxy, Cyy for linear alg stuff, (nM,feat,feat) - N.B. add model dim if needed
-    nM = Cxy.shape[0] if Cxy.ndim > 3 else 1
+    # 3d Cyx, Cyy for linear alg stuff, (nM,feat,feat) - N.B. add model dim if needed
+    nM = Cyx.shape[0] if Cyx.ndim > 3 else 1
     if Cxx.ndim > 2:
         Cxx2d = np.reshape(Cxx, (nM, Cxx.shape[-4]*Cxx.shape[-3], Cxx.shape[-2]*Cxx.shape[-1]))
     else:
         Cxx2d = np.reshape(Cxx, (nM, Cxx.shape[-2], Cxx.shape[-1]))
 
     if Cxx.ndim < 4 and Cyy.ndim >= 4:
-        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3]*Cxy.shape[-2], Cxy.shape[-1]))  # (nM,(nE*tau),d)
+        Cyx2d = np.reshape(Cyx, (nM, Cyx.shape[-3]*Cyx.shape[-2], Cyx.shape[-1]))  # (nM,(nE*tau),d)
     elif Cxx.ndim >= 4 and Cyy.ndim < 4:
-        Cxy2d = np.reshape(Cxy, (nM, Cxy.shape[-3], Cxy.shape[-2]*Cxy.shape[-1]))  # (nM,nE,(tau*d))
+        Cyx2d = np.reshape(Cyx, (nM, Cyx.shape[-3], Cyx.shape[-2]*Cyx.shape[-1]))  # (nM,nE,(tau*d))
     elif Cxx.ndim >= 4 and Cyy.ndim >= 4:
         raise NotImplementedError("Not immplemented yet for double temporally embedded inputs")
         
@@ -89,53 +89,53 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
         Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-4]*Cyy.shape[-3], Cyy.shape[-2] * Cyy.shape[-1]))  # (nM,(nE*tau),(nE*tau))
     else:
         Cyy2d = np.reshape(Cyy, (nM, Cyy.shape[-2], Cyy.shape[-1]))  # (nM,e,e)    
-    rank = min(min(rank, Cxy2d.shape[-1]), Cyy2d.shape[-1])
+    rank = min(min(rank, Cyx2d.shape[-1]), Cyy2d.shape[-1])
 
     
     # convert to double precision if needed
     if np.issubdtype(Cxx2d.dtype, np.float32) or np.issubdtype(Cxx2d.dtype, np.signedinteger):
         Cxx2d = np.array(Cxx2d, dtype=np.float64)
-    if np.issubdtype(Cxy2d.dtype, np.float32) or np.issubdtype(Cxy2d.dtype, np.signedinteger):
-        Cxy2d = np.array(Cxy2d, dtype=np.float64)
+    if np.issubdtype(Cyx2d.dtype, np.float32) or np.issubdtype(Cyx2d.dtype, np.signedinteger):
+        Cyx2d = np.array(Cyx2d, dtype=np.float64)
     if np.issubdtype(Cyy2d.dtype, np.float32) or np.issubdtype(Cyy2d.dtype, np.signedinteger):
         Cyy2d = np.array(Cyy2d, dtype=np.float64)
     
     # do CCA/PLS for each output in turn
-    J = np.zeros((Cxy2d.shape[0]))  # [ nM ]
-    W = np.zeros((Cxy2d.shape[0], rank, Cxy2d.shape[2]))  # (nM,rank,d)
-    R = np.zeros((Cxy2d.shape[0], rank, Cxy2d.shape[1]))  # (nM,rank,(nE*tau)) 
-    for mi in range(Cxy2d.shape[0]):  # loop over posible models
+    J = np.zeros((Cyx2d.shape[0]))  # [ nM ]
+    W = np.zeros((Cyx2d.shape[0], rank, Cyx2d.shape[2]))  # (nM,rank,d)
+    R = np.zeros((Cyx2d.shape[0], rank, Cyx2d.shape[1]))  # (nM,rank,(nE*tau)) 
+    for mi in range(Cyx2d.shape[0]):  # loop over posible models
         # get output specific ERPs
-        Cxym = Cxy2d[mi, :, :]  # ((tau*nE),d)
+        Cyxm = Cyx2d[mi, :, :]  # ((tau*nE),d)
 
         # Whitener for X
         if CCA[0]:
             # compute model specific whitener, or re-use the  last one
             if mi <= Cxx2d.shape[0]:
                 isqrtCxx, _ = robust_whitener(Cxx2d[mi, :, :], reg[0], rcond[0], symetric)
-            # compute whitened Cxy
-            isqrtCxxCxym = np.dot(Cxym, isqrtCxx) # (nM,(nE*tau),d)
+            # compute whitened Cyx
+            isqrtCxxCyxm = np.dot(Cyxm, isqrtCxx) # (nM,(nE*tau),d)
         else:
-            isqrtCxxCxym = Cxym
+            isqrtCxxCyxm = Cyxm
 
         # Whitener for Y
         if CCA[1]:
             # compute model-specific whitener, or re-use the last one
             if mi <= Cyy2d.shape[0]:
                 isqrtCyy, _ = robust_whitener(Cyy2d[mi, :, :], reg[1], rcond[1], symetric)
-            isqrtCxxCxymisqrtCyy = np.dot(isqrtCyy.T, isqrtCxxCxym)
+            isqrtCxxCyxmisqrtCyy = np.dot(isqrtCyy.T, isqrtCxxCyxm)
         else:
-            isqrtCxxCxymisqrtCyy = isqrtCxxCxym
+            isqrtCxxCyxmisqrtCyy = isqrtCxxCyxm
 
         # SVD for the double  whitened cross covariance
         #N.B. Rm=((nE*tau),rank),lm=(rank),Wm=(rank,d)
-        Rm, lm, Wm = np.linalg.svd(isqrtCxxCxymisqrtCyy, full_matrices=False)  
+        Rm, lm, Wm = np.linalg.svd(isqrtCxxCyxmisqrtCyy, full_matrices=False)  
         Wm = Wm.T  # (d,rank)
 
         # include relative component weighting directly in the  Left/Right singular values
         nlm = lm / np.max(lm)  # normalize so predictions have unit average norm
-        Wm = Wm #* np.sqrt(nlm[np.newaxis, :])
-        Rm = Rm * nlm[np.newaxis, :] #* np.sqrt(nlm[np.newaxis, :])
+        Wm = Wm * np.sqrt(nlm[np.newaxis, :])
+        Rm = Rm * np.sqrt(nlm[np.newaxis, :]) #* np.sqrt(nlm[np.newaxis, :])
 
         # pre-apply the pre-whitener so can apply the result directly on input data
         if CCA[0]:
@@ -158,7 +158,7 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
         W = np.reshape(W, (W.shape[0], W.shape[1], Cxx.shape[-2], Cxx.shape[-1]))
 
     # strip model dim if not needed
-    if Cxy.ndim == 3:
+    if Cyx.ndim == 3:
         R = R[0, ...]
         W = W[0, ...]
         J = J[0, ...]
@@ -166,7 +166,7 @@ def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
     return J, W, R
 
 
-def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=True, verb:int=0):
+def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=True, verb:int=1):
     """compute a robust whitener for the input covariance matrix C, s.t. isqrtC*C*isqrtC.T = I
     Args:
         C ((d,d) np.ndarray): Sample covariance matrix of the data
@@ -196,7 +196,8 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
             C = C + reg
 
     # eigen decomp
-    sigma, U = np.linalg.eig(C)  # sigma=(r,) U=(d,k)
+    # N.B. use eigh as eig is numerically crap!
+    sigma, U = np.linalg.eigh(C)  # sigma=(r,) U=(d,k)
     U = U.real
     
     # identify bad/degenerate eigen-values, complex, negative, inf, nan or too small
@@ -205,7 +206,7 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
                             np.isnan(sigma),  # nan
                             np.abs(sigma)<np.finfo(sigma.dtype).eps)), 0)  # too-small
     if verb:
-        print("{} bad eig".format(sum(bad)))
+        print("{}/{} bad eig".format(sum(bad),len(bad)))
     # zero these bad ones
     sigma[bad] = 0
 
@@ -225,21 +226,26 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
             bad[si[:abs(rcond)]] = True  # this many are bad
 
     if verb:
-        print("{} rcond+bad eig".format(sum(bad)))
+        print("{}/{} rcond+bad eig".format(sum(bad),len(bad)))
 
     # compute the whitener (and it's inverse)
     if not all(bad):
         keep = np.logical_not(bad)
         Ukeep = U[:, keep]  # (d,r)
         sqrtsigmakeep = np.sqrt(np.abs(sigma[keep]))  #(r,)
-        # non-symetric (and rank  reducing) version
-        sqrtC = Ukeep * sqrtsigmakeep[np.newaxis, :]
-        isqrtC= Ukeep * (1.0/sqrtsigmakeep[np.newaxis, :])
         
         # post apply U to get symetric version if wanted
         if symetric:
-            sqrtC = np.dot(sqrtC, Ukeep.T)
-            isqrtC= np.dot(isqrtC, Ukeep.T)
+            # non-symetric (and rank  reducing) version
+            sqrtC = Ukeep * np.sqrt(sqrtsigmakeep)[np.newaxis, :]
+            isqrtC= Ukeep * np.sqrt(1.0/sqrtsigmakeep)[np.newaxis, :]
+            sqrtC = np.dot(sqrtC, sqrtC.T)
+            isqrtC= np.dot(isqrtC, isqrtC.T)
+        else:
+            # non-symetric (and rank  reducing) version
+            sqrtC = Ukeep * sqrtsigmakeep[np.newaxis, :]
+            isqrtC= Ukeep * (1.0/sqrtsigmakeep[np.newaxis, :])
+            
     else:
         warnings.warn('Degenerate C matrices input!')
         sqrtC = np.array(1.0, dtype=C.dtype)
@@ -251,7 +257,7 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
 
 def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     ''' do a cross-validated training of a multicca model using sklearn'''
-    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, crossautocov, updateCyy, updateCxy, autocov, updateCxx
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, crossautocov, updateCyy, updateCyx, autocov, updateCxx
     from mindaffectBCI.decoder.multipleCCA import multipleCCA
     from mindaffectBCI.decoder.scoreOutput import scoreOutput, dedupY0
     from mindaffectBCI.decoder.scoreStimulus import scoreStimulus, scoreStimulusCont
@@ -275,8 +281,8 @@ def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     print("CV:", end='')
     for i, (train_idx, valid_idx) in enumerate(kf.split(np.zeros(Xe.shape[0]), np.zeros(Ye_true.shape[0]))):
         print(".", end='', flush=True)
-        Cxx, Cxy, Cyy = updateSummaryStatistics(Xe[train_idx, :, :, :], Ye_true[train_idx, :, :, :], stimTimes)
-        J, W, R = multipleCCA(Cxx, Cxy, Cyy, rank=rank)
+        Cxx, Cyx, Cyy = updateSummaryStatistics(Xe[train_idx, :, :, :], Ye_true[train_idx, :, :, :], stimTimes)
+        J, W, R = multipleCCA(Cxx, Cyx, Cyy, rank=rank)
         # valid performance
         Fei = scoreStimulus(Xe[valid_idx, :, :, :], W, R)
         #print("Fei = {}".format(Fei.shape))
@@ -286,13 +292,19 @@ def cvSupervised(Xe, Me, stimTimes, evtlabs=('re', 'fe'), n_splits=10, rank=1):
     decodingCurveSupervised(Fy)
 
     # retrain with all the data
-    Cxx, Cxy, Cyy = updateSummaryStatistics(Xe, Ye_true, stimTimes)
-    J, W, R = multipleCCA(Cxx, Cxy, Cyy)
+    Cxx, Cyx, Cyy = updateSummaryStatistics(Xe, Ye_true, stimTimes)
+    J, W, R = multipleCCA(Cxx, Cyx, Cyy)
     return (W, R, Fy)
     
 
 def testcase():
     from mindaffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
+    from mindaffectBCI.decoder.multipleCCA import multipleCCA
+    from mindaffectBCI.decoder.scoreOutput import scoreOutput
+    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
+    import matplotlib.pyplot as plt
+
     #from multipleCCA import *
     if False:
         X, Y, st = testNoSignal()
@@ -300,32 +312,33 @@ def testcase():
         X, Y, st, A, B = testSignal(tau=10, noise2signal=10)
 
     Y_true = Y[:, :, 0:1, :] if Y.ndim > 3 else Y[:, 0:1, :] # N.B. hack with [0] to stop removal of dim...
-    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
-    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, tau=10)
+    Cxx, Cyx, Cyy = updateSummaryStatistics(X, Y_true, tau=10, unitnorm=False)
 
-    plot_summary_statistics(Cxx,Cxy,Cyy)
+    plot_summary_statistics(Cxx,Cyx,Cyy)
 
     # single supervised training
-    from mindaffectBCI.decoder.multipleCCA import multipleCCA
-    J, w, r = multipleCCA(Cxx, Cxy, Cyy, rcond=-.3, symetric=True) # 50% rank reduction
+    J, w, r = multipleCCA(Cxx, Cyx, Cyy, rcond=1e-6, reg=1e-4, symetric=False) # 50% rank reduction
+
+    # check the target norm constraint is correct
+    w.reshape(-1).T@Cxx.reshape((w.size,w.size))@w.reshape(-1)
+    r.reshape(-1).T@Cyy.reshape((r.size,r.size))@r.reshape(-1)
+
+    WX=convWX(X,W)
+    YR=convYR(Y_true,R)
     
     plot_factoredmodel(w, r)
 
     # apply to the data
-    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
     Fe = scoreStimulus(X, w, r)
-    import matplotlib.pyplot as plt;
     plt.clf()
     plt.plot(np.einsum("Tsd,d->s",X,w.ravel()),'b',label="Xw")
     plt.plot(Y_true.ravel(),'g',label="Y")
     plt.plot(Fe.ravel()/np.max(Fe.ravel())/2,'r',label="Fe")
     plt.legend()
-    from mindaffectBCI.decoder.scoreOutput import scoreOutput
     print("Fe={}".format(Fe.shape))
     print("Y={}".format(Y.shape))
     Fy = scoreOutput(Fe, Y, r) # (nM,nTrl,nEp,nY)
     print("Fy={}".format(Fy.shape))
-    import matplotlib.pyplot as plt
     sFy=np.cumsum(Fy, -2)
     plt.clf();plt.plot(sFy[0, 0, :, :]);plt.xlabel('epoch');plt.ylabel('output');plt.show()
 
@@ -349,12 +362,12 @@ def fit_predict(X, Y, tau=10, uss_args=dict(), mcca_args=dict()):
     # 1) Test without filterbank
     Y_true = Y[:, :, 0:1, :] if Y.ndim > 3 else Y[np.newaxis, :, 0:1, :]  # (nTrl,nEp,1,nE)
     uss_args['tau']=tau
-    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, **uss_args)
+    Cxx, Cyx, Cyy = updateSummaryStatistics(X, Y_true, **uss_args)
     plt.figure()
-    plot_summary_statistics(Cxx,Cxy,Cyy)
+    plot_summary_statistics(Cxx,Cyx,Cyy)
 
     # single supervised training
-    J, w, r = multipleCCA(Cxx, Cxy, Cyy, **mcca_args) 
+    J, w, r = multipleCCA(Cxx, Cyx, Cyy, **mcca_args) 
     plt.figure()
     plot_factoredmodel(w, r, ncol=3)
     Fe = scoreStimulus(X, w, r)
@@ -401,13 +414,13 @@ def testcase_matlab_summarystatistics():
     ss = loadmat('C:/Users/Developer/Desktop/utopia/matlab/buffer/SummaryStatistics.mat')
     print(ss)
     Cxx=ss['Cxx']
-    Cxy=np.moveaxis(ss['Cxy'],(0,1,2),(2,1,0)) # (d,tau,e)->(e,tau,d)
+    Cyx=np.moveaxis(ss['Cyx'],(0,1,2),(2,1,0)) # (d,tau,e)->(e,tau,d)
     Cyy=np.moveaxis(ss['Cyy'],(0,1,2,3),(3,2,1,0)) # (e,tau,e,tau) -> (tau,e,tau,e)
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_erp, plot_factoredmodel
-    plot_summary_statistics(Cxx,Cxy,Cyy)
+    plot_summary_statistics(Cxx,Cyx,Cyy)
     plt.show()
     from mindaffectBCI.decoder.multipleCCA import multipleCCA
-    J,W,R = multipleCCA(Cxx,Cxy,Cyy)
+    J,W,R = multipleCCA(Cxx,Cyx,Cyy)
     plot_factoredmodel(W,R)
     plot.show()
 
