@@ -199,12 +199,14 @@ def corr(X,Y,W,R,offset=0):
 
 #@function
 def testcases():
-    from utils import testSignal
-    from scoreOutput import scoreOutput, plot_outputscore, convWX, convYR, convXYR
-    from scoreStimulus import scoreStimulus
-    from decodingSupervised import decodingSupervised
-    from normalizeOutputScores import normalizeOutputScores
+    from mindaffectBCI.decoder.utils import testSignal
+    from mindaffectBCI.decoder.scoreOutput import scoreOutput, plot_outputscore, convWX, convYR, convXYR
+    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
+    from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+    from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores
     import numpy as np
+    import matplotlib.pyplot as plt
 
     # Fe  = (nM,nTrl,nSamp,nE) similarity score for each event type for each stimulus
     # Ye  = (nTrl,nSamp,nY,nE) Indicator for which events occured for which outputs
@@ -245,25 +247,39 @@ def testcases():
 
     # more complex example with actual signal/noise
     irf=(1,1,-1,-1,0,0,0,0,0,0)
-    X,Y,st,W,R = testSignal(nTrl=1,nSamp=1000,d=1,nE=1,nY=10,isi=2,irf=irf,noise2signal=0)
+    X,Y,st,A,R = testSignal(nTrl=1,nSamp=1000,d=1,nE=1,nY=10,isi=2,irf=irf,noise2signal=0)
+    Y=Y[...,0] # (nTrl,nSamp,nY)
+    W=np.linalg.pinv(A)
+    
+    from mindaffectBCI.decoder.model_fitting import MultiCCA
+    cca = MultiCCA(tau=len(irf), offset=0, rank=1, evtlabs=1)
+    cca.fit(X,Y[...,0:1])
+    Fy = cca.predict(X, Y, dedup0=True)
+    (_) = decodingCurveSupervised(Fy)
+    W=cca.W_
+    R=cca.R_
+    b=cca.b_
 
-    plot_outputscore(X[0,...],Y[0,:,0:3,:],W,R)
+    WX=convWX(X,W) # (nTr,nSamp,nfilt)
+    YR=convYR(Y[...,0:1,np.newaxis],R,0) # (nTr,nSamp,nY,nfilt)
+    
+    plot_outputscore(X[0,...],Y[0,:,0:3,np.newaxis],W,R)
     plt.show()
     
     # add a correlated output
-    Y[:,:,1,:]=Y[:,:,0,:]*.5
-    plot_outputscore(X[0,...],Y[0,:,0:3,:],W,R)
+    Y[:,:,1]=Y[:,:,0]*.5
+    plot_outputscore(X[0,...],Y[0,:,0:3,np.newaxis],W,R)
     plt.show()
     
 
 def datasettest():
     # N.B. imports in function to avoid import loop..
-    from datasets import get_dataset
-    from model_fitting import MultiCCA, BwdLinearRegression, FwdLinearRegression
-    from analyse_datasets import debug_test_dataset
-    from scoreOutput import plot_outputscore
-    from decodingCurveSupervised import decodingCurveSupervised
-    if True:
+    from mindaffectBCI.decoder.offline.datasets import get_dataset
+    from mindaffectBCI.decoder.model_fitting import MultiCCA, BwdLinearRegression, FwdLinearRegression
+    from mindaffectBCI.decoder.analyse_datasets import debug_test_dataset
+    from mindaffectBCI.decoder.scoreOutput import plot_outputscore
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
+    if False:
         tau_ms=300
         offset_ms=0
         rank=1
@@ -400,8 +416,8 @@ def plot_outputscore(X,Y,W=None,R=None,offset=0):
 
     plt.subplot(5,3,12);plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("cumsum(sse)")
 
-    cor = np.cumsum(WXYR,-2)/np.sqrt(np.cumsum(np.sum(YR**2,-1),-2))
-    plt.subplot(5,3,12);plt.cla();plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("corr")
+    #cor = np.cumsum(WXYR,-2)/np.sqrt(np.cumsum(np.sum(YR**2,-1),-2))
+    #plt.subplot(5,3,12);plt.cla();plt.plot(np.squeeze(np.cumsum(-sse,-2)));plt.grid();plt.title("corr")
 
     Fe = scoreStimulus(X,W,R)
     Fy = scoreOutput(Fe,Y,R=R,outputscore='ip')

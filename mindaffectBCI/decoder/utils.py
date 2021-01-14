@@ -57,6 +57,17 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     return F
 
 
+def pad_dim(A,axis,pad,prepend=False):
+    padsize=list(A.shape)
+    padsize[axis]=pad
+    pad = np.zeros(padsize,dtype=A.dtype)
+    if prepend:
+        A = np.append(pad,A,axis=axis)
+    else:
+        A = np.append(A,pad,axis=axis)
+    return A
+
+
 class RingBuffer:
     ''' time efficient linear ring-buffer for storing packed data, e.g. continguous np-arrays '''
     def __init__(self, maxsize, shape, dtype=np.float32):
