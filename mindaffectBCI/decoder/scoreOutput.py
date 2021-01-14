@@ -379,12 +379,12 @@ def testcases():
     WX=convWX(X,W) # (nTr,nSamp,nfilt)
     YR=convYR(Y[...,0:1,np.newaxis],R,0) # (nTr,nSamp,nY,nfilt)
     
-    plot_outputscore(X[0,...],Y[0,:,0:3,np.newaxis],W,R)
+    plot_outputscore(X[0,...],Y[0,:,:,np.newaxis],W,R)
     plt.show()
     
     # add a correlated output
     Y[:,:,1]=Y[:,:,0]*.5
-    plot_outputscore(X[0,...],Y[0,:,0:3,np.newaxis],W,R)
+    plot_outputscore(X[0,...],Y[0,:,:,np.newaxis],W,R)
     plt.show()
     
 

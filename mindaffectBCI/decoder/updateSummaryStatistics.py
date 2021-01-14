@@ -20,7 +20,8 @@ from mindaffectBCI.decoder.utils import window_axis, idOutliers, zero_outliers
 #@function
 def updateSummaryStatistics(X, Y, stimTimes=None, 
                             Cxx=None, Cxy=None, Cyy=None, 
-                            badEpThresh=4, halflife_samp=1, cxxp=True, cyyp=True, tau=None, offset=0, center=True):
+                            badEpThresh=4, halflife_samp=1, cxxp=True, cyyp=True, tau=None,
+                            offset=0, center=True, unitnorm=True):
     '''
     Compute updated summary statistics (Cxx, Cxy, Cyy) for new data in X with event-info Y
       [Cxx, Cxy, Cyy, state]=updateSummaryStatistics(X, Y, stimTime_samp, Cxx, Cxy, Cyy, state, halflife_samp, badEpThresh)
@@ -75,15 +76,15 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
     X, Y = zero_outliers(X, Y, badEpThresh)
     
     # update the cross covariance XY
-    Cxy = updateCxy(Cxy, X, Y, stimTimes, tau, wght, offset, center)
+    Cxy = updateCxy(Cxy, X, Y, stimTimes, tau, wght, offset, center, unitnorm=unitnorm)
     # Update Cxx
     if (cxxp):
-        Cxx = updateCxx(Cxx, X, stimTimes, None, wght, center)
+        Cxx = updateCxx(Cxx, X, stimTimes, None, wght, center, unitnorm=unitnorm)
 
     # ensure Cyy has the right size if not entry-per-model
     if (cyyp):
         # TODO [] : support overlapping info between update calls
-        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght)
+        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght, unitnorm=unitnorm)
         
     return Cxx, Cxy, Cyy
 
@@ -91,7 +92,7 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
 def updateCxx(Cxx, X, stimTimes=None, tau=None, wght=1, center=False, unitnorm=True):
     '''
     Cxx = [d x d] current data covariance
-    X = (nTrl, nEp, tau, d) raw response for the current stimulus event
+    X ((nTrl, nEp, tau, d) raw response for the current stimulus event
             d=#electrodes tau=#response-samples  nEpoch=#stimulus events to process
         OR
         (nTrl, nSamp, d) 
@@ -104,29 +105,18 @@ def updateCxx(Cxx, X, stimTimes=None, tau=None, wght=1, center=False, unitnorm=T
         X = X[np.newaxis, ...]
 
     # use X as is, computing purely spatial cov
-    if tau is None:
-        # N.B. reshape is expensive with window_axis
-        if X.ndim == 3:
-            XX = np.einsum("TEd,TEe->de", X, X)
-            N = X.shape[0]
-        elif X.ndim == 4:
-            XX = np.einsum("TEtd,TEte->de", X, X)
-            N = X.shape[0]*X.shape[1]
+    # N.B. reshape is expensive with window_axis
+    if X.ndim == 3:
+        XX = np.einsum("TEd,TEe->de", X, X)
+    elif X.ndim == 4:
+        XX = np.einsum("TEtd,TEte->de", X, X)
 
-        if center:
-            sX = np.sum(X.reshape((-1,X.shape[-1])),axis=0) # feature mean (d,)
-            XX = XX - np.einsum("i,j->ij",sX,sX) *X.shape[-1]/X.size
+    if center:
+        sX = np.sum(X.reshape((-1,X.shape[-1])),axis=0) # feature mean (d,)
+        XX = XX - np.einsum("i,j->ij",sX,sX) *X.shape[-1]/X.size
         
-
-    else: # compute time-shifted covariance
-        Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp, tau, d)
-        # N.B. reshape is expensive if use window axis
-        XX = np.einsum("TEtd,TEue->tdue",Xe, Xe)
-
-        if center:
-            raise NotImplementedError("Centering with shifts!")
-
     if unitnorm:
+        N = X.shape[0]*X.shape[1]
         XX = XX / N
 
     Cxx = wght*Cxx + XX if Cxx is not None else XX
@@ -188,6 +178,8 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
         XY = XY - muXY[...,np.newaxis,:] #(nY,nE,tau,d)
 
     if unitnorm:
+        # normalize so the resulting constraint on the estimated signal is that it have
+        # average unit norm
         XY = XY / (Y.shape[0]*Y.shape[1]) # / nTrl*nEp
     
     Cxy = wght*Cxy + XY if Cxy is not None else XY
@@ -835,10 +827,28 @@ def testCases():
     print("Y{}={}".format(Y.shape, Y[0, :30, 0]))
     
     tau=10; uss_offset=0
-    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y, None, tau=tau, offset=uss_offset)
+    Y_true = Y[...,0:1,:]
+    Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y_true, None, tau=tau, offset=uss_offset, center=False, unitnorm=True)
     print("Cxx={} Cxy={} Cyy={}".format(Cxx.shape, Cxy.shape, Cyy.shape))
     plt.figure(1);plot_summary_statistics(Cxx,Cxy,Cyy); plt.show()
 
+    N=Y_true.shape[0]*Y_true.shape[1]
+    # compare with direct computation.
+    Cxx0 = np.einsum('tsd,tse->de',X,X)/N
+    print('Cxx={}'.format(np.max(np.abs(Cxx-Cxx0))))
+
+    Ytau = window_axis(Y_true, winsz=tau, axis=-3)    # window
+    Ytau = pad_dim(Ytau,axis=-4,pad=tau-1,prepend=True) # shift
+    Ytau = Ytau[:,:,::-1,...] # time-reverse
+    Cxy0 = np.einsum('TSd,TStye->yetd',X[...,:Ytau.shape[1],:],Ytau)/N # yetd
+    #Cxy0 = Cxy0[...,::-1,:] # time-reverse to match updateCxy
+    print('Cxy={}'.format(np.max(np.abs(Cxy-Cxy0))))
+    
+    Cyy0 = np.einsum('TStye,TSuyf->yetfu',Ytau,Ytau)/N
+    print('Cyy={}'.format(np.max(np.abs(Cyy-Cyy0))))
+    
+
+    
     Cxys=[]
     offsets = list(range(-15,15))
     for i,offset in enumerate(offsets):
