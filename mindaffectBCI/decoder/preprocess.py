@@ -194,6 +194,58 @@ def spatially_whiten(X:np.ndarray, symetric:bool=True, test_idx=None, **kwargs):
     X = X @ W
     return (X,W)
 
+
+def est_matrix_variate_gaussian(X:np.ndarray,axis=(-2,-1),rcond=1e-12):
+    cov = [ np.eye(X.shape[i],X.shape[i]) for i in axis]
+    icov = [ np.eye(X.shape[i],X.shape[i]) for i in axis]
+
+    # build the index expressions
+    sumidx = [ chr(ord('a')+i) for i in range(X.ndim)] # unique char idx 
+    lsub = sumidx.copy();    rsub = sumidx.copy() 
+    lsub[axis[0]]='u';       rsub[axis[0]]='v'
+    lsub[axis[1]]='w';       rsub[axis[1]]='x'
+    idxstr = ["{},{},{}".format("".join(lsub),'uv',"".join(rsub)),
+              "{},{},{}".format("".join(lsub),'wx',"".join(rsub))]
+    print('idxstrs={}'.format(idxstr))
+    for iter in range(40):
+        # axis[0]
+        icov[0] = np.linalg.pinv(cov[0],rcond=rcond,hermitian=True)
+        cov[1] = np.einsum(idxstr[0], X, icov[0], X)/X.shape[axis[0]]
+        # axis[1]
+        icov[1] = np.linalg.pinv(cov[1],rcond=rcond,hermitian=True)
+        cov[0] = np.einsum(idxstr[1], X, icov[1], X)/X.shape[axis[1]]
+        # balance norm over components
+        norm = [ np.mean(np.diag(c)) for c in cov ]
+        nf = np.sqrt(np.prod(norm))
+        for i in range(len(cov)):
+            cov[i] = cov[i] * nf / norm[i]
+        # TODO[]: convergence testing   
+    return cov
+
+
+def matrix_var_gaussian_test():
+    nL=5; nR=9
+    L = np.random.standard_normal((1000,nL))@np.random.standard_normal((nL,nL))
+    R = np.random.standard_normal((1000,nR))@np.random.standard_normal((nR,nR))
+    X = np.einsum("il,ir->ilr",L,R)
+
+    covfull = X.reshape((X.shape[0],-1)).T@X.reshape((X.shape[0],-1))
+    print("Full\n{}".format(covfull))
+    print('{}'.format(np.diag(covfull)))
+    plt.imshow(covfull)
+
+    cov = est_matrix_variate_gaussian(X)
+    for i,c in enumerate(cov):
+        print("{})\n {}".format(i,c))
+
+    decomp = np.kron(cov[0],cov[1])
+    print('Decomp\n{}'.format(decomp))
+    print("{}".format(np.diag(decomp)))
+    plt.imshow(decomp);plt.colorbar()
+
+    (covfull-decomp)/covfull
+    plt.imshow(covfull-decomp);plt.colorbar()
+
 def adaptive_spatially_whiten(X:np.ndarray, test_idx=None, wght=.1, symetric=True, **kwargs):
     """spatially whiten the nd-array X
 

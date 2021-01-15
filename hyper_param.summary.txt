@@ -259,3 +259,120 @@ Conclusion:
   * priorweight = 50 makes stopping curve -- unless combined with startupcorr
   * start-corr = 50 makes it best
   * no-control and startup work well together
+
+
+Test: center vs symetric vs outputscore vs CCA
+CCA     Center  Score   Symetric
+True    True    IP      True        35.8
+                        False       35.8
+        False   IP      True        35.8
+                        False       35.7
+
+        True    SSE     True        56.0
+                        False       56.7
+        False   SSE     True        56.5
+                        False       56.7
+
+(t,f)   True    IP      True        43.6
+                        False       43.5
+        False   IP      True        43.5
+                        False       43.5
+
+        True    SSE     True        47.7
+                        False       47.7
+        False   SSE     True        47.7
+                        False       47.7
+
+(f,t)   True    IP      True        62.5
+                        False       62.5
+        False   IP      True        62.5
+                        False       62.5
+        True    SSE     True        62.5
+                        False       62.5
+        False   SSE     True        62.5
+                        False       62.5
+
+False   True   IP      True        63.2
+                        False       63.2
+        False   IP      True        63.2
+                        False       63.2
+        True    SSE     True        63.2
+                        False       63.2
+        False   SSE     True        62.9
+                        False       63.7
+Conclusion:
+    Opt: CCA=True, Score=IP
+    Center - no effect
+    Symetric - no effect
+    CCA_x - false looses a lot of performance
+    CCA_y - false looses a bit of performance. 43.5(false)->35.5(true)
+    Score - IP is better score. 
+    SSE is better score without Cyy normalization than with Cyy normalization
+
+Question: Why does IP do better with Cyy normalization?
+          Why does SSE do better without Cyy normalization?
+
+
+Test: pre-whitener = No-CCA whitener
+whiten      CCA=True     CCA=(False,True)   CCA=(f,t) late_whiten
+    0       36           62                 62.8
+    .1      36.2         66                 62.8
+    .5      36.3         65                 53.8
+    .9      36.0         63                 45.6
+    1       40.2         70                 37.4
+Conclusion: 
+    pre-whitening doesn't work!!! why?
+    A: must whiten **after** bandpass
+
+Test: whiten vs. whiten_spectrum
+CCA=(False,True)
+Whiten   Whiten_spectrum
+ False      False       63
+            .1          60
+            .5          59
+            .9          56
+            .95         55
+    .1      False       61
+            .1          58
+            .5          57
+            .9          64
+            .95         53
+    .5      False       53    
+            .1          50
+            .5          49
+            .9          48
+            .95         47
+    .9      False       46
+            .1          43
+            .5          42
+            .9          39
+            .95         37
+    .95     .95         36.4
+            .99         34.9
+            1.0         37.1
+    .99     .95         34.3
+            .99         32.7
+            1.0         35.0
+    True    False       37    
+            .1          35
+            .5          35
+            .9          33
+            .95         33
+            .99         32.1
+            1.0         33.8
+            
+Conclusion: 
+    Whiten + whiten spectrum is slightly better than whiten alone. 37->32
+
+Test: Adaptive whitening.
+adapt_whiten
+    0       36.1
+    .1      36.1
+    .5      35.9
+    .9      36.1
+    1       35.9
+Conclusion:
+     Adaptive whitening performs very similarly to full-whiten
+     Even going to whitening single trials on their own is fine
+
+Test: adpative spectral whitening
