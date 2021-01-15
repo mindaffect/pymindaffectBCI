@@ -896,7 +896,7 @@ def print_hyperparam_summary(res):
 
 
 def dataset_GridSearchCV(res, loader, filename, loader_args:dict=dict(), model:str='cca', clsfr_args:dict=dict(), 
-                       label:str=None, preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
+                         preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
     from sklearn.model_selection import ParameterGrid
     # loop over analysis settings
     for ci,fit_config in enumerate(ParameterGrid(tuned_parameters)):
@@ -939,7 +939,7 @@ def dataset_GridSearchCV(res, loader, filename, loader_args:dict=dict(), model:s
         print("{}".format(fit_config))
         if 1: #try:
             if preprocess_args_f is not None:
-                X, Y, coords = preprocess(oX, oY, ocoords, **preprocess_args_f)
+                X, Y, coords = preprocess(oX, oY, ocoords, test_idx=kwargs.get('test_idx',None), **preprocess_args_f)
             score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model_f, **clsfr_args_f, **kwargs_f)
         #except:
         #    continue
@@ -980,7 +980,9 @@ def datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_workers:int=0, 
     for i, filename in enumerate(filenames):
         print("{}) {}".format(i, filename))
 
-        res = dataset_GridSearchCV(res, loader, filename, loader_args, model, clsfr_args, label, preprocess_args, tuned_parameters, **kwargs)
+        res = dataset_GridSearchCV(res, loader=loader, filename=filename, loader_args=loader_args, 
+                                    model=model, clsfr_args=clsfr_args, preprocess_args=preprocess_args,
+                                    tuned_parameters=tuned_parameters, **kwargs)
         with open('hpsearch_{}.res'.format(label),'w') as f:
             f.write(print_hyperparam_summary(res))
 
@@ -1016,7 +1018,7 @@ def concurrent_datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_work
     loader, filenames, _ = get_dataset(dataset,**dataset_args)
     for i, filename in enumerate(filenames):
         print("{}) {}".format(i, filename))
-        future = executor.submit(dataset_GridSearchCV, [], loader, filename, loader_args, model, clsfr_args, label, preprocess_args, tuned_parameters, **kwargs)
+        future = executor.submit(dataset_GridSearchCV, [], loader, filename, loader_args, model, clsfr_args, preprocess_args, tuned_parameters, **kwargs)
         futures.append(future)
 
     # wait for the jobs to finish
@@ -1026,6 +1028,7 @@ def concurrent_datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_work
     res=[]
     for future in concurrent.futures.as_completed(futures):
         res_fi = future.result()
+        # merge into the set of all results
         if res :
             for ci,res_ci in enumerate(res_fi):
                 res[ci]['filenames'].extend(res_ci['filenames'])
@@ -1033,6 +1036,7 @@ def concurrent_datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_work
                 res[ci]['decoding_curves'].extend(res_ci['decoding_curves'])
         else:
             res = res_fi
+        # dump to file
         with open('hpsearch_{}.res'.format(label),'w') as f:
             f.write(print_hyperparam_summary(res))
 
@@ -1050,7 +1054,8 @@ if __name__=="__main__":
     tuned_parameters['nvirt_out']=[0]
     tuned_parameters['startup_correction']=[50]
     tuned_parameters['priorweight']=[0]
-    tuned_parameters['preprocess_args_whiten']=[False, .1, .5, .9, True]
+    #tuned_parameters['preprocess_args_whiten']=[False, .1, .5, .9, True]
+    tuned_parameters['preprocess_args_adaptive_whiten']=[.1,.5,.9,.95,1]
     #tuned_parameters['preprocess_args_whiten_spect']=[False, .1, .5]
     #tuned_parameters['outputscore']=['ip']
     #tuned_parameters['symetric']=[False]

@@ -91,14 +91,14 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
 #@function
 def updateCxx(Cxx, X, stimTimes=None, tau=None, wght=1, center=False, unitnorm=True):
     '''
-    Cxx = [d x d] current data covariance
-    X ((nTrl, nEp, tau, d) raw response for the current stimulus event
+    Cxx (ndarray (d,d)): current data covariance
+    X (ndarray):  (nTrl, nEp, tau, d) raw response for the current stimulus event
             d=#electrodes tau=#response-samples  nEpoch=#stimulus events to process
         OR
-        (nTrl, nSamp, d) 
-    stimTimes_samp = (nTrl, nEp) sample times for start each epoch.  Used to detect
-    wght=[1x1]
-    center:bool - compute centered covariance? (True)
+       (nTrl, nSamp, d) 
+    stimTimes_samp (ndarray (nTrl, nEp)): sample times for start each epoch.  Used to detect
+    wght (float): weight to accumulate this Cxx with the previous data, s.t. Cxx = Cxx_old*wght + Cxx_new.  Defaults to 1.
+    center (bool): flag if center the data before computing covariance? Defaults to True.
     '''
     # ensure 3d
     if X.ndim == 2:

@@ -20,7 +20,7 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-def preprocess(X, Y, coords, fs=None, whiten=False, prewhiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, standardize=False, stopband=None, filterbank=None, nY=None, fir=None):
+def preprocess(X, Y, coords, fs=None, test_idx=None, whiten=False, adaptive_whiten=False, prewhiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, standardize=False, stopband=None, filterbank=None, nY=None, fir=None):
     """apply simple pre-processing to an input dataset
 
     Args:
@@ -57,7 +57,7 @@ def preprocess(X, Y, coords, fs=None, whiten=False, prewhiten=False, whiten_spec
     if prewhiten>0:
         reg = 1-prewhiten if not isinstance(whiten,bool) else 0
         print("pre-whiten:{}".format(reg))
-        X, W = spatially_whiten(X,reg=reg)
+        X, W = spatially_whiten(X,reg=reg,test_idx=test_idx)
 
     if stopband is not None and stopband is not False:
         print('filter: {}'.format(stopband))
@@ -66,12 +66,17 @@ def preprocess(X, Y, coords, fs=None, whiten=False, prewhiten=False, whiten_spec
     if whiten>0:
         reg = 1-whiten if not isinstance(whiten,bool) else 0
         print("whiten:{}".format(reg))
-        X, W = spatially_whiten(X,reg=reg)
+        X, W = spatially_whiten(X,reg=reg,test_idx=test_idx)
+
+    if adaptive_whiten>0:
+        wght = adaptive_whiten if not isinstance(whiten,bool) else .9
+        print("adaptive_whiten:{}".format(wght))
+        X, W = adaptive_spatially_whiten(X,wght=wght,test_idx=test_idx)
 
     if whiten_spectrum > 0:
         reg = 1-whiten_spectrum if not isinstance(whiten_spectrum,bool) else .1
         print("Spectral whiten:{}".format(reg))
-        X, W = spectrally_whiten(X, axis=-2, reg=reg)
+        X, W = spectrally_whiten(X, axis=-2, reg=reg,test_idx=test_idx)
 
     if decorrelate > 0:
         reg = decorrelate if not isinstance(decorrelate,bool) else .4
@@ -168,7 +173,7 @@ def rmBadTrial(X, Y, coords, thresh=3.5, verb=1):
     return X,Y,coords
 
 
-def spatially_whiten(X:np.ndarray, *args, **kwargs):
+def spatially_whiten(X:np.ndarray, symetric:bool=True, test_idx=None, **kwargs):
     """spatially whiten the nd-array X
 
     Args:
@@ -178,12 +183,39 @@ def spatially_whiten(X:np.ndarray, *args, **kwargs):
         X (np.ndarray): the whitened X
         W (np.ndarray): the whitening matrix used to whiten X
     """    
-    Cxx = updateCxx(None,X,None)
-    W,_ = robust_whitener(Cxx, *args, **kwargs)
-    X = X @ W #np.einsum("...d,dw->...w",X,W)
+    if test_idx is None:
+        Xtrn = X
+    else:
+        trn_idx = np.ones(X.shape[0],bool)
+        trn_idx[test_idx]=False
+        Xtrn = X[trn_idx,...]        
+    Cxx = updateCxx(None,Xtrn,None)
+    W,_ = robust_whitener(Cxx, symetric=symetric, **kwargs)
+    X = X @ W
     return (X,W)
 
-def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
+def adaptive_spatially_whiten(X:np.ndarray, test_idx=None, wght=.1, symetric=True, **kwargs):
+    """spatially whiten the nd-array X
+
+    Args:
+        X (np.ndarray): the data to be whitened, with channels/space in the *last* axis
+
+    Returns:
+        X (np.ndarray): the whitened X
+        W (np.ndarray): the whitening matrix used to whiten X
+    """
+    N = 0
+    Cxx = 0
+    for ti in range(X.shape[0]):
+        Cxxi = updateCxx(None,X[ti,...])
+        Cxx = Cxx*wght + Cxxi 
+        N   = N*wght + 1
+        W,_ = robust_whitener(Cxx/N, symetric=symetric, **kwargs)
+        X[ti,...] = X[ti,...] @ W
+    return (X,W)
+
+
+def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2, test_idx=None):
     """spatially whiten the nd-array X
 
     Args:
@@ -198,7 +230,16 @@ def spectrally_whiten(X:np.ndarray, reg=.01, axis=-2):
     # TODO[]: add hanning window to reduce spectral leakage
 
     Fx = fft(X,axis=axis)
-    H=np.abs(Fx)
+
+    # limit data we fit the model on
+    if test_idx is None:
+        Fxtrn = Fx
+    else:
+        trn_idx = np.ones(X.shape[0],bool)
+        trn_idx[test_idx]=False
+        Fxtrn = Fx[trn_idx,...]        
+
+    H=np.abs(Fxtrn)
     if Fx.ndim+axis > 0:
         H = np.mean(H, axis=tuple(range(Fx.ndim+axis))) # grand average spectrum (freq,d)
 
