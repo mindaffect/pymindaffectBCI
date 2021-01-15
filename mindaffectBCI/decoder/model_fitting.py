@@ -67,6 +67,14 @@ except:
     class NotFittedError(Exception):
         pass
     
+
+
+
+#----------------------------------------------------------
+#
+#  BASESEQUENCE2SEQUENCE
+#
+#-----------------------------------------------------------
 class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     '''Base class for sequence-to-sequence learning.  Provides, prediction and scoring functions, but not the fitting method'''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, outputscore='ip',
@@ -375,6 +383,14 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         else:
             plot_erp(self.W_, evtlabs=evtlabs, **kwargs)
 
+
+
+
+#----------------------------------------------------------
+#
+#  M U L T I C C A
+#
+#-----------------------------------------------------------
     
 class MultiCCA(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using CCA as a bi-directional forward/backward learning method '''
@@ -492,7 +508,14 @@ class MultiCCA(BaseSequence2Sequence):
         res['Fy_rank']=Fy # store the pre-rank info
         return res
 
-    
+
+
+#----------------------------------------------------------
+#
+#  FWD
+#
+#-----------------------------------------------------------
+
 class FwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using forward linear regression  X = A*Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-6, badEpThresh=6, center=True, **kwargs):
@@ -556,6 +579,13 @@ class FwdLinearRegression(BaseSequence2Sequence):
 
         return self
 
+
+#----------------------------------------------------------
+#
+#  BWD
+#
+#-----------------------------------------------------------
+
 class BwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using backward linear regression  W*X = Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-5, badEpThresh=6, center=True, **kwargs):
@@ -612,6 +642,13 @@ class BwdLinearRegression(BaseSequence2Sequence):
             self.b_ = None
 
         return self
+
+
+#----------------------------------------------------------
+#
+# LINEAR SKLEARN
+#
+#-----------------------------------------------------------
 
 #from sklearn.linear_model import Ridge
 class LinearSklearn(BaseSequence2Sequence):

@@ -20,13 +20,15 @@ from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 import numpy as np
 
-def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, standardize=False, stopband=None, filterbank=None, nY=None, fir=None):
+def preprocess(X, Y, coords, fs=None, whiten=False, prewhiten=False, whiten_spectrum=False, decorrelate=False, badChannelThresh=None, badTrialThresh=None, center=False, car=False, standardize=False, stopband=None, filterbank=None, nY=None, fir=None):
     """apply simple pre-processing to an input dataset
 
     Args:
         X ([type]): the EEG data (tr,samp,d)
         Y ([type]): the stimulus (tr,samp,e)
         coords ([type]): [description]
+        stopband (list): list of bandpass filters to apply to the data.  Defaults to None.
+        prewhiten (float, optional): spatially whiten before band-pass if >0 then strength of the spatially regularized whitener. Defaults to False.
         whiten (float, optional): if >0 then strength of the spatially regularized whitener. Defaults to False.
         whiten_spectrum (float, optional): if >0 then strength of the spectrally regularized whitener. Defaults to False.
         badChannelThresh ([type], optional): threshold in standard deviations for detection and removal of bad channels. Defaults to None.
@@ -52,17 +54,22 @@ def preprocess(X, Y, coords, fs=None, whiten=False, whiten_spectrum=False, decor
         print('CAR')
         X = X - np.mean(X, axis=-1, keepdims=True)
 
-    if whiten>0:
-        reg = whiten if not isinstance(whiten,bool) else 0
-        print("whiten:{}".format(reg))
+    if prewhiten>0:
+        reg = 1-prewhiten if not isinstance(whiten,bool) else 0
+        print("pre-whiten:{}".format(reg))
         X, W = spatially_whiten(X,reg=reg)
 
     if stopband is not None and stopband is not False:
         print('filter: {}'.format(stopband))
         X, _, _ = butter_sosfilt(X,stopband,fs=coords[-2]['fs'])
 
+    if whiten>0:
+        reg = 1-whiten if not isinstance(whiten,bool) else 0
+        print("whiten:{}".format(reg))
+        X, W = spatially_whiten(X,reg=reg)
+
     if whiten_spectrum > 0:
-        reg = whiten_spectrum if not isinstance(whiten_spectrum,bool) else .1
+        reg = 1-whiten_spectrum if not isinstance(whiten_spectrum,bool) else .1
         print("Spectral whiten:{}".format(reg))
         X, W = spectrally_whiten(X, axis=-2, reg=reg)
 

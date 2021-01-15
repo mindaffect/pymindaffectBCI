@@ -34,6 +34,7 @@ from mindaffectBCI.decoder.utils import block_permute
 import matplotlib.pyplot as plt
 import gc
 import re
+import traceback
 
 
 
@@ -884,9 +885,81 @@ def analyse_single():
         #debug_test_dataset(X, Y, coords, label=label, tau_ms=400, evtlabs=('re','fe'), rank=1, model='lr', ignore_unlabelled=True)
 
 
-def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, clsfr_args:dict, 
-                       preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
-    """run a complete dataset with different parameter settings
+
+def print_hyperparam_summary(res):
+    fn = res[0]['filenames']
+    s = "N={}\nfn={}\n".format(len(fn),[f[-30:] for f in fn])
+    for ri in res:
+        s += "\n{}\n".format(ri['config'])
+        s += print_decoding_curves(ri['decoding_curves'])
+    return s
+
+
+def dataset_GridSearchCV(res, loader, filename, loader_args:dict=dict(), model:str='cca', clsfr_args:dict=dict(), 
+                       label:str=None, preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
+    from sklearn.model_selection import ParameterGrid
+    # loop over analysis settings
+    for ci,fit_config in enumerate(ParameterGrid(tuned_parameters)):
+        # override parameters with those from fit_config
+        clsfr_args_f = clsfr_args.copy()
+        kwargs_f = kwargs.copy()
+        loader_args_f = loader_args.copy()
+        preprocess_args_f = preprocess_args.copy()
+        model_f = model
+        for k,v in fit_config.items():
+            if k.startswith("clsfr_args"):
+                k = k[len("clsfr_args")+1:]
+                clsfr_args_f[k]=v
+            elif k.startswith("loader_args"):
+                k = k[len("loader_args")+1:]
+                loader_args_f[k]=v
+            elif k.startswith("preprocess_args"):
+                k = k[len("preprocess_args")+1:]
+                preprocess_args_f[k]=v
+            elif k.startswith('model'):
+                model_f=v
+            else:
+                kwargs_f[k]=v                
+
+        # (re)-load the dataset with the given config
+        #  only reload if the load config has changed
+        if ci==0 or not loader_args_f == loader_args : 
+            try:
+                oX, oY, ocoords = loader(filename, **loader_args)
+            except:
+                print("Problem loading file: {}".format(filename))
+                continue
+
+        # just to be sure that no state is propogating between config calls
+        X = oX.copy()
+        Y = oY.copy()
+        coords = ocoords.copy()
+
+        print('\n\n----------------------------- CONFIG ---------------')
+        print("{}".format(fit_config))
+        if 1: #try:
+            if preprocess_args_f is not None:
+                X, Y, coords = preprocess(oX, oY, ocoords, **preprocess_args_f)
+            score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model_f, **clsfr_args_f, **kwargs_f)
+        #except:
+        #    continue
+
+        if len(res)<=ci : # ensure is long enough
+            res.extend([None]*(ci+1-len(res)))
+        # store the analysis results in a dict
+        if res[ci] is None:
+            res[ci]=dict(config=fit_config, 
+                         loader_args=loader_args, clsfr_args=clsfr_args_f, 
+                         filenames=[filename], scores=[score], decoding_curves=[decoding_curve])
+        else:
+            res[ci]['filenames'].append(filename)
+            res[ci]['scores'].append(score)
+            res[ci]['decoding_curves'].append(decoding_curve)
+    return res
+
+def datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_workers:int=0, loader_args:dict=dict(), model:str='cca', clsfr_args:dict=dict(), 
+                       label:str=None, preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
+    """run a complete dataset with different parameter settings expanding the grid of tuned_parameters
 
     Args:
         dataset ([type]): [description]
@@ -896,89 +969,80 @@ def hyperparam_search(dataset, dataset_args:dict, loader_args:dict, model:str, c
         clsfr_args (dict): [description]
         fit_params (dict, optional): a dict with a list of parameter values to fit for each argument. Defaults to dict().
     """    
-    import matplotlib.pyplot as plt
-    from sklearn.model_selection import ParameterGrid
+    import concurrent.futures
+
+    if label is None:
+        label = dataset
 
     # TODO[]: reverse loop order, datasets->parameters
     loader, filenames, _ = get_dataset(dataset,**dataset_args)
     res=[]
-    for i, fi in enumerate(filenames):
-        print("{}) {}".format(i, fi))
+    for i, filename in enumerate(filenames):
+        print("{}) {}".format(i, filename))
 
-        # loop over analysis settings
-        for ci,fit_config in enumerate(ParameterGrid(tuned_parameters)):
-            # override parameters with those from fit_config
-            clsfr_args_f = clsfr_args.copy()
-            kwargs_f = kwargs.copy()
-            loader_args_f = loader_args.copy()
-            preprocess_args_f = preprocess_args.copy()
-            model_f = model
-            for k,v in fit_config.items():
-                if k.startswith("clsfr_args"):
-                    k = k[len("clsfr_args")+1:]
-                    clsfr_args_f[k]=v
-                elif k.startswith("loader_args"):
-                    k = k[len("loader_args")+1:]
-                    loader_args_f[k]=v
-                elif k.startswith("preprocess_args"):
-                    k = k[len("preprocess_args")+1:]
-                    preprocess_args_f[k]=v
-                elif k.startswith('model'):
-                    model_f=v
-                else:
-                    kwargs_f[k]=v                
+        res = dataset_GridSearchCV(res, loader, filename, loader_args, model, clsfr_args, label, preprocess_args, tuned_parameters, **kwargs)
+        with open('hpsearch_{}.res'.format(label),'w') as f:
+            f.write(print_hyperparam_summary(res))
 
-            # (re)-load the dataset with the given config
-            #  only reload if the load config has changed
-            if ci==0 or not loader_args_f == loader_args : 
-                try:
-                    oX, oY, ocoords = loader(fi, **loader_args)
-                except:
-                    print("Problem loading file: {}".format(fi))
-                    continue
-
-            # just to be sure that no state is propogating between config calls
-            X = oX.copy()
-            Y = oY.copy()
-            coords = ocoords.copy()
-
-            print('\n\n----------------------------- CONFIG ---------------')
-            print("{}".format(fit_config))
-            if preprocess_args_f is not None:
-                X, Y, coords = preprocess(oX, oY, ocoords, **preprocess_args_f)
-            score, decoding_curve, _, _, _ = analyse_dataset(X, Y, coords, model_f, **clsfr_args_f, **kwargs_f)
-
-            if len(res)<=ci : # ensure is long enough
-                res.extend([None]*(ci+1-len(res)))
-            # store the analysis results in a dict
-            if res[ci] is None:
-                res[ci]=dict(config=fit_config, dataset_args=dataset_args, 
-                             loader_args=loader_args, clsfr_args=clsfr_args_f, 
-                             filenames=[fi], scores=[score], decoding_curves=[decoding_curve])
-            else:
-                res[ci]['filenames'].append(fi)
-                res[ci]['scores'].append(score)
-                res[ci]['decoding_curves'].append(decoding_curve)
-
-        #except Exception as ex:
-        #    print("Error: {}\nSKIPPED".format(ex))
-        # write the current summary info
-        def print_hyperparam_summary(res):
-            fn = res[0]['filenames']
-            s = "N={}\nfn={}\n".format(len(fn),[f[-30:] for f in fn])
-            for ri in res:
-                s += "\n{}\n".format(ri['config'])
-                s += print_decoding_curves(ri['decoding_curves'])
-            return s
-        print('\n\n---------------------- CONFIG --------------------\n')
-        s = print_hyperparam_summary(res)
-        print(s)
-        with open('hpsearch_{}.res'.format(dataset),'w') as f:
-            f.write(s)
-
-    import pickle
-    pickle.dump(res,open('hpsearch_{}.pk'.format(dataset),'wb'))
+    print('\n\n---------------------- CONFIG --------------------\n')
+    s = print_hyperparam_summary(res)
+    print(s)
+    with open('hpsearch_{}.res'.format(label),'w') as f:
+        f.write(s)
     return res
+
+def concurrent_datasets_GridSearchCV(dataset, dataset_args:dict=dict(), max_workers:int=None, loader_args:dict=dict(), model:str='cca', clsfr_args:dict=dict(), 
+                       label:str=None, preprocess_args:dict=dict(), tuned_parameters:dict=dict(), **kwargs):
+    """run a complete dataset with different parameter settings expanding the grid of tuned_parameters
+
+    Args:
+        dataset ([type]): [description]
+        dataset_args (dict): [description]
+        loader_args (dict): [description]
+        model (str): [description]
+        clsfr_args (dict): [description]
+        fit_params (dict, optional): a dict with a list of parameter values to fit for each argument. Defaults to dict().
+    """    
+    import concurrent.futures
+
+    if label is None:
+        label = dataset
+
+    futures=[]
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=max_workers)
+    print("Running with {} parallel tasks".format(max_workers))
+
+    # submit the jobs to run -- one-job-per-datafile
+    loader, filenames, _ = get_dataset(dataset,**dataset_args)
+    for i, filename in enumerate(filenames):
+        print("{}) {}".format(i, filename))
+        future = executor.submit(dataset_GridSearchCV, [], loader, filename, loader_args, model, clsfr_args, label, preprocess_args, tuned_parameters, **kwargs)
+        futures.append(future)
+
+    # wait for the jobs to finish
+    #concurrent.futures.wait(futures,None,concurrent.futures.ALL_COMPLETED)
+
+    # collect the results as the jobs finish
+    res=[]
+    for future in concurrent.futures.as_completed(futures):
+        res_fi = future.result()
+        if res :
+            for ci,res_ci in enumerate(res_fi):
+                res[ci]['filenames'].extend(res_ci['filenames'])
+                res[ci]['scores'].extend(res_ci['scores'])
+                res[ci]['decoding_curves'].extend(res_ci['decoding_curves'])
+        else:
+            res = res_fi
+        with open('hpsearch_{}.res'.format(label),'w') as f:
+            f.write(print_hyperparam_summary(res))
+
+    print('\n\n---------------------- CONFIG --------------------\n')
+    s = print_hyperparam_summary(res)
+    print(s)
+    with open('hpsearch_{}.res'.format(label),'w') as f:
+        f.write(s)
+    return res
+
 
 if __name__=="__main__":
     tuned_parameters=dict(preprocess_args_stopband=[(4,25,'bandpass')], startup_correction=[50], priorweight=[0], nvirt_out=[0], nocontrol_condn=[.1])
@@ -986,15 +1050,20 @@ if __name__=="__main__":
     tuned_parameters['nvirt_out']=[0]
     tuned_parameters['startup_correction']=[50]
     tuned_parameters['priorweight']=[0]
-    tuned_parameters['outputscore']=['ip','sse']
+    tuned_parameters['preprocess_args_whiten']=[False, .1, .5, .9, True]
+    #tuned_parameters['preprocess_args_whiten_spect']=[False, .1, .5]
+    #tuned_parameters['outputscore']=['ip']
+    #tuned_parameters['symetric']=[False]
+    tuned_parameters['CCA']=[(False,True)]
+    #tuned_parameters['center']=[True]
     #tuned_parameters['priorweight']=[0,10,50,100] 
-    #tuned_parameters['reg']=[(None,None)] #[(1e-8,0),(1e-6,0),(1e-4,0),(1e-2,0),(1e-8,1e-8),(1e-8,1e-6),(1e-8,1e-4),(1e-6,1e-6),(1e-4,1e-6),(1e-2,1e-4)]
+    #tuned_parameters['reg']=[(None,None),(1e-8,0),(1e-6,0),(1e-4,0),(1e-2,0),(1e-8,1e-8),(1e-8,1e-6),(1e-8,1e-4),(1e-6,1e-6),(1e-4,1e-6),(1e-2,1e-4)]
     #tuned_parameters['rcond']=[(1e-8,0),(1e-8,1e-6),(1e-6,0),(1e-6,1e-8),(1e-6,1e-6),(1e-6,1e-4),(1e-4,0),(1e-4,1e-8),(1e-4,1e-6),(1e-4,1e-4),(1e-2,0),(1e-2,1e-8),(1e-2,1e-6),(1e-2,1e-4)]
     #tuned_parameters['clsfr_args_evtlabs']=[('re','fe'),('re','fe','anyfe')]
     #tuned_parameters['clsfr_args_tau_ms']=[300,450]
     #tuned_parameters['clsfr_args_offset_ms']=[50,125,175]
 
-    hyperparam_search("mindaffectBCI",
+    concurrent_datasets_GridSearchCV("mindaffectBCI", max_workers=None,
                      dataset_args=dict(exptdir='~/Desktop/mark',regexp='noisetag'),
                      loader_args=dict(fs_out=100,stopband=(45,-1)),
                      model='cca',test_idx = slice(10,None),

@@ -166,11 +166,11 @@ def multipleCCA(Cxx=None, Cyx=None, Cyy=None,
     return J, W, R
 
 
-def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=True, verb:int=1):
+def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=True, verb:int=0):
     """compute a robust whitener for the input covariance matrix C, s.t. isqrtC*C*isqrtC.T = I
     Args:
         C ((d,d) np.ndarray): Sample covariance matrix of the data
-        reg (float, optional): regularization strength when computing the whitener. Defaults to 0.
+        reg (float, optional): regularization strength when computing the whitener, 0=no-reg, 1=no-whiten. Defaults to 0.
         rcond (float, optional): reverse-condition number for truncating degenerate eigen-values when computing the inverse. Defaults to 1e-6.
         symetric (bool, optional): flag to produce a symetric-whitener (which preserves location) or not. Defaults to True.
         verb (int, optional): verbosity level. Defaults to 0.

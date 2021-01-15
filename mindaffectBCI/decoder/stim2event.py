@@ -80,7 +80,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=Non
     E = np.zeros(M.shape+(len(evtypes), ), M.dtype) # list event types
     #print("E.dtype={}".format(E.dtype))
     if len(M) == 0: # guard empty inputs
-        return E
+        return E, evtypes
     # single elment padding matrix    
     padshape=list(M.shape); padshape[axis] = 1; pad = np.zeros(padshape, dtype=M.dtype)
     evtlabs=[]
