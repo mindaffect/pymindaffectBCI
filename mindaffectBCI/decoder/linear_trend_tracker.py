@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
+import numpy as np
 
 class linear_trend_tracker():
     """ linear trend tracker with adaptive forgetting factor

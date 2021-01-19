@@ -133,7 +133,7 @@ def multipleCCA(Cxx=None, Cyx=None, Cyy=None,
         Wm = Wm.T  # (d,rank)
 
         # include relative component weighting directly in the  Left/Right singular values
-        nlm = lm / np.max(lm)  # normalize so predictions have unit average norm
+        nlm = (lm / np.max(lm)) if np.max(lm)>0 else np.ones(lm.shape,dtype=lm.dtype)  # normalize so predictions have unit average norm
         Wm = Wm * np.sqrt(nlm[np.newaxis, :])
         Rm = Rm * np.sqrt(nlm[np.newaxis, :]) #* np.sqrt(nlm[np.newaxis, :])
 

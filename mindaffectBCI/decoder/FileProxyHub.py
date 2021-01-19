@@ -119,12 +119,13 @@ def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), ord
     #ppfn = None
 
     nsamp=0
-    t=0
+    t=None
     data=[]
     ts=[]
     while U.isConnected:
-        msgs = U.getNewMessages(100)
-        print('.',end='',flush=True)
+        msgs = U.getNewMessages(1000)
+        if t is None: t = U.lasttimestamp
+        print('{} s\r'.format((U.lasttimestamp-t)/1000),end='',flush=True)
         for m in msgs:
             if m.msgID == DataPacket.msgID:
                 timestamp = m.timestamp % (1<<24)
@@ -150,8 +151,6 @@ def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), ord
 if __name__=="__main__":
     import sys
     filename = sys.argv[1] if len(sys.argv)>1 else None
-
-    filename = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
 
     testcase(filename)
 

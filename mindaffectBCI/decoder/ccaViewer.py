@@ -29,9 +29,9 @@ import matplotlib.gridspec as gridspec
 def ccaViewer(*args, **kwargs):
     run(*args, **kwargs)
 
-def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
-              offset_ms=(-15, 0), evtlabs=None, ch_names=None, nstimulus_events: int=600, 
-              rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100):
+def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float = 100, tau_ms: float=500,
+              offset_ms=(-15, 0), evtlabs=None, ch_names=None, ch_pos=None, nstimulus_events: int=600, 
+              rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100, **kwargs):
     ''' view the live CCA decomposition.'''
 
     if ui is None:
@@ -41,8 +41,25 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
         ui.connect(host)
     ui.update()
 
+    nCh = ui.data_ringbuffer.shape[-1] - 1
+
     if evtlabs is None:
         evtlabs = ('re', 'fe')
+
+    if ch_names is None:
+        ch_names = np.arange(nCh)
+
+    # extract position info for topo-plots if possible
+    if ch_pos is None and len(ch_names) > 0:
+        # try to load position info from capfile
+        try: 
+            print("trying to get pos from cap file!")
+            from mindaffectBCI.decoder.readCapInf import getPosInfo
+            cnames, xy, xyz, iseeg =getPosInfo(ch_names)
+            if all(iseeg):
+                ch_pos = xy
+        except:
+            pass
 
     # compute the size of the erp slice
     irf_range_ms = (offset_ms[0], tau_ms+offset_ms[1])
@@ -51,7 +68,7 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
     irf_times = np.linspace(irf_range_ms[0], irf_range_ms[1], irflen_samp)
 
     # initialize the arrays to hold the stimulus responses, and their label info, and a current cursor
-    irf = np.zeros((nstimulus_events, irflen_samp, ui.data_ringbuffer.shape[-1] - 1)) # (nERP,irflen,d)
+    irf = np.zeros((nstimulus_events, irflen_samp, nCh)) # (nERP,irflen,d)
     irf_lab = np.zeros((nstimulus_events, len(evtlabs)), dtype=int)  # (nErp,nstim)
     nY = np.zeros(len(evtlabs),dtype=int)
 
@@ -64,7 +81,7 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
     fig = plt.figure(1)
     fig.clear()
 
-    # main spec, inc titles
+    # main spec, inc titles; ERP | CCA
     outer_grid = fig.add_gridspec(nrows=2, ncols=2, height_ratios=[1,6])
 
     # right-sub-spec for the ERPs
@@ -88,22 +105,55 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
 
     # left-sub-spec for the decomposition
     plt.figtext(.75,.9,'CCA Decomposition',ha='center')
-    # get grid-spec to layout the plots, 1 for spatial, 1 for temporal
-    gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[3,1])
+
+    # get grid-spec to layout the plots 1 row per rank, and 1 for spatial, 1 for temporal
+    gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[1,3])
     spatial_ax = [ None for i in range(rank)]
     spatial_lines = [ None for i in range(rank)] 
     temporal_ax = [None for j in range(rank)]
     temporal_lines = [[None for i in range(len(evtlabs))] for j in range(rank)]
 
     # make the bottom 2 axs already so can share their limits.
-    temporal_ax[-1] = fig.add_subplot(gs[-1, 0])
-    spatial_ax[-1] = fig.add_subplot(gs[-1, 1])
+    spatial_ax[-1] = fig.add_subplot(gs[-1, 0])
+    temporal_ax[-1] = fig.add_subplot(gs[-1, 1])
     for ri in range(rank):
-        # single temporal plot for all ranks
+        # spatial-plot
+        if ri==rank-1: 
+            ax = spatial_ax[ri]
+            ax.set_xlabel("Space")
+        else:
+            ax = fig.add_subplot(gs[ri, 0], sharex=spatial_ax[-1], sharey=spatial_ax[-1])
+            spatial_ax[ri] = ax
+        ax.set_ylabel("Comp #{}".format(ri))    
+
+        w = np.zeros((irf.shape[-1],))
+        if not ch_pos is None: # make as topoplot
+            #from scipy.interpolate import griddata
+            #xs, ys = np.mgrid[np.min(ch_pos[:,0])-.1:np.min(ch_pos[:,0])-.1:30j,
+            #                  np.min(ch_pos[:,1])-.1:np.max(ch_pos[:,1])+.1:30j]
+            #img = griddata(ch_pos,w,(xs,ys)) # (30,30)
+            #spatial_axis[ri]= ax.imshow(img,extent=(rng_x+rng_y),aspect='auto')
+
+            interp_pos = np.concatenate((ch_pos+ np.array((0,.1)), ch_pos + np.array((-.1,-.05)), ch_pos + np.array((+.1,-.05))),0)
+            spatial_lines[ri]=ax.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(w,3),cmap='Spectral')
+
+            for i,(x,y) in enumerate(ch_pos):
+                ax.text(x,y,ch_names[i],ha='center',va='center') # label
+            ax.set_aspect(aspect='equal')
+            ax.set_frame_on(False) # no frame
+            ax.tick_params(labelbottom=False,labelleft=False,which='both',bottom=False,left=False) # no labels, ticks
+            plt.colorbar(spatial_lines[ri],ax=ax)
+
+        else: # line-plot
+            ax.grid(True)
+            ax.tick_params(labelbottom=False)
+            spatial_lines[ri] = ax.plot(ch_names[:irf.shape[-1]], np.zeros((irf.shape[-1])), color=(0, 0, 0))
+
+        # single temporal plot for all events
         if ri==rank-1: # tick-plot
             ax = temporal_ax[-1]
         else:
-            ax = fig.add_subplot(gs[ri, 0], sharex=temporal_ax[-1], sharey=temporal_ax[-1])
+            ax = fig.add_subplot(gs[ri, 1], sharex=temporal_ax[-1], sharey=temporal_ax[-1])
             ax.tick_params(labelbottom=False)
         # setup the lines
         for ei, lab in enumerate(evtlabs):
@@ -111,7 +161,6 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
             temporal_lines[ri][ei] = ax.plot(irf_times, np.zeros(irf_times.shape), label=lab)[0]
             # len(evtlabs))))
             #temporal_lines[ri][ei].set_label(evtlabs[ei])
-        ax.set_ylabel("Comp #{}".format(ri))    
         ax.grid(True)
         #ax.autoscale(axis='y')
         if ri==rank-1:
@@ -119,17 +168,6 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
             ax.legend()
         temporal_ax[ri] = ax
 
-        # spatial-plot
-        if ri==rank-1: # tick-plot
-            ax = spatial_ax[ri]
-            ax.set_xlabel("Space")
-        else:
-            ax = fig.add_subplot(gs[ri, 1], sharex=spatial_ax[-1], sharey=spatial_ax[-1])
-            ax.tick_params(labelbottom=False)
-
-        ax.grid(True)
-        spatial_ax[ri] = ax
-        spatial_lines[ri] = ax.plot(np.zeros((irf.shape[-1])), color=(0, 0, 0))
 
     # add a reset ERP button
     def reset(event):
@@ -153,19 +191,24 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
     t0 = ui.getTimeStamp()
     block_start_ts = t0
     oM = None  # last few stimulus states, for correct transformation of later events
-    while ui.getTimeStamp() < t0+timeout_ms:
+    dirty=True # flag if we shoudl redraw the window
+    while ui.getTimeStamp() < t0+maxruntime_ms:
 
         # exit if figure is closed..
         if not plt.fignum_exists(1):
             quit()
 
         # re-draw the display
-        fig.canvas.draw()
+        #fig.canvas.draw()
         fig.canvas.flush_events()
+        if dirty : 
+            fig.canvas.draw()
+            dirty=False
+        #fig.canvas.start_event_loop(0.1)
         #plt.pause(.001)
 
         # Update the records
-        nmsgs, ndata, nstim = ui.update(timeout_ms=100)
+        nmsgs, ndata, nstim = ui.update(timeout_ms=timeout_ms)
         if nstim == 0:
             continue
         
@@ -232,18 +275,28 @@ def run(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
         W_lim = [ d if not np.isnan(d) else 0 for d in W_lim ] # guard
 
         # Update the plots for each event type
+        dirty = True
         for ri in range(rank):
-            sign = np.sign(W[ri,np.argmax(np.abs(W[ri,:]))]) # normalize directions
+            sgn = np.sign(W[ri,np.argmax(np.abs(W[ri,:]))]) # normalize directions
 
             # plot the temporal responses
             for ei in range(len(evtlabs)):
-                temporal_lines[ri][ei].set_ydata(R[ri,ei,:]*sign)
+                temporal_lines[ri][ei].set_ydata(R[ri,ei,:]*sgn)
             temporal_ax[ri].set_ylim( R_lim )
 
             # plot the spatial patterns
             # TODO[]: as a topographic plot
-            spatial_lines[ri][-1].set_ydata(W[ri,:]*sign)
-            spatial_ax[ri].set_ylim(W_lim)
+            if not ch_pos is None: # make as topoplot
+                # BODGE: deal with co-linear inputs by replacing each channel with a triangle of points
+                interp_pos = np.concatenate((ch_pos+ np.array((0,.1)), ch_pos + np.array((-.1,-.05)), ch_pos + np.array((+.1,-.05))),0)
+                spatial_lines[ri]=ax.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(W[ri,:]*sgn,3),cmap='Spectral')
+
+                #spatial_lines[ri]=ax.tricontourf(ch_pos[:,0],ch_pos[:,1],np.zeros((irf.shape[-1]),cmap='Spectral')
+                #spatial_lines[ri].set_ydata(W[ri,:]*sgn)
+                #spatial_ax[ri].set_clim(W_lim)
+            else:
+                spatial_lines[ri][-1].set_ydata(W[ri,:]*sgn)
+                spatial_ax[ri].set_ylim(W_lim)
 
 
 def parse_args():
@@ -258,7 +311,8 @@ def parse_args():
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
-    parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor', default=None)
+    parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor. None means fast as possible', default=None)
+    parser.add_argument('--timeout_ms', type=float, help="timeout for wating for new data from hub",default=100)
     args = parser.parse_args()
     if args.evtlabs: 
         args.evtlabs = args.evtlabs.split(',')
@@ -271,13 +325,19 @@ def parse_args():
 if __name__=='__main__':
     args = parse_args()
 
+    if True:
+        args.savefile = '~/Desktop/logs/mindaffectBCI*.txt'
+        args.ch_names = 'C1,Cz,C2,C3'.split(',') 
+        args.savefile_speedup=1
+        args.timeout_ms = 1000
+
     if args.savefile is not None:
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
         U = FileProxyHub(args.savefile,use_server_ts=True,speedup=args.savefile_speedup)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  send_signalquality=False,
-                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='viewer')
+                                 timeout_ms=args.timeout_ms, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='viewer')
     else:
         data_preprocessor = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs)
         ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False, clientid='viewer')
@@ -288,4 +348,4 @@ if __name__=='__main__':
     except:
         pass
 
-    ccaViewer(ui, evtlabs=args.evtlabs, ch_names=args.ch_names, rank=args.rank)
+    ccaViewer(ui, **vars(args))
