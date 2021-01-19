@@ -667,6 +667,9 @@ def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=Non
             cRng= np.max(np.abs(A.reshape((-1))))
             levels = np.linspace(-cRng,cRng,20)
             tt=pA.tricontourf(ch_pos[:,0],ch_pos[:,1],A[ci,:]*sign,levels=levels,cmap='Spectral')
+            # BODGE: deal with co-linear inputs by replacing each channel with a triangle of points
+            #interp_pos = np.concatenate((ch_pos+ np.array((0,.1)), ch_pos + np.array((-.1,-.05)), ch_pos + np.array((+.1,-.05))),0)
+            #tt=pA.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(W[ri,:]*sgn,3),levels=levels,cmap='Spectral')
             for i,n in enumerate(ch_names):
                 #pA.plot(ch_pos[i,0],ch_pos[i,1],'.',markersize=5) # marker
                 pA.text(ch_pos[i,0],ch_pos[i,1],n,ha='center',va='center') # label

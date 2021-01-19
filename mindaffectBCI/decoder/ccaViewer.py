@@ -30,7 +30,7 @@ def ccaViewer(*args, **kwargs):
     run(*args, **kwargs)
 
 def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float = 500, tau_ms: float=500,
-              offset_ms=(-15, 0), evtlabs=None, ch_names=None, ch_pos=None, nstimulus_events: int=600, 
+              offset_ms=(-15, 0), evtlabs=None, ch_names=None, ch_pos=None, topo_colorbar:bool=False, nstimulus_events: int=600, 
               rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100, **kwargs):
     """on-line view of the CCA Forward-Backward model of the data
 
@@ -98,7 +98,7 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
     fig.clear()
 
     # main spec, inc titles; ERP | CCA
-    outer_grid = fig.add_gridspec(nrows=2, ncols=2, height_ratios=[1,6])
+    outer_grid = fig.add_gridspec(nrows=2, ncols=2, height_ratios=[1,6], width_ratios=[1,2])
 
     # right-sub-spec for the ERPs
     plt.figtext(.25,.9,'ERPs',ha='center')
@@ -123,7 +123,7 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
     plt.figtext(.75,.9,'CCA Decomposition',ha='center')
 
     # get grid-spec to layout the plots 1 row per rank, and 1 for spatial, 1 for temporal
-    gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[1,3])
+    gs = outer_grid[-1,1].subgridspec(nrows=rank, ncols=2, width_ratios=[1,2])
     spatial_ax = [ None for i in range(rank)]
     spatial_lines = [ None for i in range(rank)] 
     temporal_ax = [None for j in range(rank)]
@@ -151,14 +151,15 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
             #spatial_axis[ri]= ax.imshow(img,extent=(rng_x+rng_y),aspect='auto')
 
             interp_pos = np.concatenate((ch_pos+ np.array((0,.1)), ch_pos + np.array((-.1,-.05)), ch_pos + np.array((+.1,-.05))),0)
-            spatial_lines[ri]=ax.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(w,3),cmap='Spectral')
+            spatial_lines[ri]=ax.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(w,3),cmap='bwr')
 
             for i,(x,y) in enumerate(ch_pos):
                 ax.text(x,y,ch_names[i],ha='center',va='center') # label
             ax.set_aspect(aspect='equal')
             ax.set_frame_on(False) # no frame
             ax.tick_params(labelbottom=False,labelleft=False,which='both',bottom=False,left=False) # no labels, ticks
-            plt.colorbar(spatial_lines[ri],ax=ax)
+            if topo_colorbar:
+                plt.colorbar(spatial_lines[ri],ax=ax)
 
         else: # line-plot
             ax.grid(True)
@@ -205,7 +206,7 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
     
     # start the render loop
     t0 = ui.getTimeStamp()
-    block_start_ts = t0
+    block_start_ts = None
     oM = None  # last few stimulus states, for correct transformation of later events
     dirty=True # flag if we shoudl redraw the window
     while ui.getTimeStamp() < t0+maxruntime_ms:
@@ -225,6 +226,7 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
 
         # Update the records
         nmsgs, ndata, nstim = ui.update(timeout_ms=timeout_ms)
+        if block_start_ts is None and ndata>0: block_start_ts = ui.data_timestamp
         if nstim == 0:
             continue
         
@@ -232,7 +234,7 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
         valid_end_ts = min(ui.stimulus_timestamp + irflen_ms, ui.data_timestamp)
 
         # skip if no new data to process
-        if block_start_ts + irflen_ms > valid_end_ts:
+        if valid_end_ts > block_start_ts and block_start_ts + irflen_ms > valid_end_ts:
             continue 
 
         block_end_ts = valid_end_ts
@@ -284,10 +286,10 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
         W = W[0,...]
         R = R[0,...]
 
-        R_lim = (-np.max(np.abs(R.ravel())) * 2, np.max(np.abs(R.ravel())) * 2)
+        R_lim = (-np.max(np.abs(R)), np.max(np.abs(R)))
         R_lim = [ d if not np.isnan(d) else 0 for d in R_lim ] # guard
 
-        W_lim = (-np.max(np.abs(W.ravel()))*2, np.max(np.abs(W.ravel()))*2)
+        W_lim = (-np.max(np.abs(W)), np.max(np.abs(W)))
         W_lim = [ d if not np.isnan(d) else 0 for d in W_lim ] # guard
 
         # Update the plots for each event type
@@ -303,13 +305,11 @@ def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float =
             # plot the spatial patterns
             # TODO[]: as a topographic plot
             if not ch_pos is None: # make as topoplot
+                levels = np.linspace(W_lim[0],W_lim[1],7)
                 # BODGE: deal with co-linear inputs by replacing each channel with a triangle of points
                 interp_pos = np.concatenate((ch_pos+ np.array((0,.1)), ch_pos + np.array((-.1,-.05)), ch_pos + np.array((+.1,-.05))),0)
-                spatial_lines[ri]=ax.tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(W[ri,:]*sgn,3),cmap='Spectral')
+                spatial_lines[ri]=spatial_ax[ri].tricontourf(interp_pos[:,0],interp_pos[:,1],np.tile(W[ri,:]*sgn,3),levels=levels,cmap='bwr')
 
-                #spatial_lines[ri]=ax.tricontourf(ch_pos[:,0],ch_pos[:,1],np.zeros((irf.shape[-1]),cmap='Spectral')
-                #spatial_lines[ri].set_ydata(W[ri,:]*sgn)
-                #spatial_ax[ri].set_clim(W_lim)
             else:
                 spatial_lines[ri][-1].set_ydata(W[ri,:]*sgn)
                 spatial_ax[ri].set_ylim(W_lim)
@@ -341,10 +341,10 @@ def parse_args():
 if __name__=='__main__':
     args = parse_args()
 
-    if False:
+    if True:
         args.savefile = '~/Desktop/logs/mindaffectBCI*.txt'
-        args.ch_names = 'C1,Cz,C2,C3'.split(',') 
-        args.savefile_speedup=1
+        args.ch_names = 'P5,P4,Oz,T6'.split(',') 
+        args.savefile_speedup=None
         args.timeout_ms = 1000
 
     if args.savefile is not None:
