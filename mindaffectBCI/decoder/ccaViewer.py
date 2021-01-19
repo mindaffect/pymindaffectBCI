@@ -250,31 +250,42 @@ def parse_args():
     import argparse
     import json
     parser = argparse.ArgumentParser()
-    parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
+    parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=3)
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
+    parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
+    parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
+    parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor', default=None)
     args = parser.parse_args()
     if args.evtlabs: 
         args.evtlabs = args.evtlabs.split(',')
     if args.ch_names:
         args.ch_names = args.ch_names.split(',')
+        
     return args
 
 
 if __name__=='__main__':
     args = parse_args()
 
-    data_preprocessor = None
-    data_preprocessor = butterfilt_and_downsample(order=4, stopband=((45,65), (0, 4), (25, -1)), fs_out=100)
-    ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
-    ui.connect(hostname)
+    if args.savefile is not None:
+        from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
+        U = FileProxyHub(args.savefile,use_server_ts=True,speedup=args.savefile_speedup)
+        ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
+        ui = UtopiaDataInterface(data_preprocessor=ppfn,
+                                 send_signalquality=False,
+                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='viewer')
+    else:
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False, clientid='viewer')
+        ui.connect(args.host)
 
     try:
         matplotlib.use('Qt4Cairo')
     except:
         pass
 
-    ccaViewer(ui, evtlabs=evtlabs, ch_names=ch_names, rank=rank)
+    ccaViewer(ui, evtlabs=args.evtlabs, ch_names=args.ch_names, rank=args.rank)

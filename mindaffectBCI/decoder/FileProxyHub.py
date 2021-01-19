@@ -38,6 +38,7 @@ class FileProxyHub:
         self.lasttimestamp = None
         self.use_server_ts = use_server_ts
         self.file = open(self.filename,'r')
+        print('FileProxyHub.py:: playback file {} at {}x speedup'.format(self.filename,self.speedup))
     
     def getTimeStamp(self):
         """[summary]
