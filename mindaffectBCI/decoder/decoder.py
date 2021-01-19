@@ -863,6 +863,7 @@ def parse_args():
     parser.add_argument('--calplots', action='store_false', help='turn OFF model and decoding plots after calibration')
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
+    parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor', default=None)
     parser.add_argument('--logdir', type=str, help='directory to save log/data files', default='~/Desktop/logs')
     parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
@@ -900,7 +901,7 @@ if  __name__ == "__main__":
         fit_prior_dataset(clsfr=None, prior_dataset=args.prior_dataset, cv=args.cv, out_fs=args.out_fs, tau_ms=args.tau_ms, offset_ms=0, evtlabs=args.evtlabs)
 
         from mindaffectBCI.decoder.FileProxyHub import FileProxyHub
-        U = FileProxyHub(args.savefile,use_server_ts=True)
+        U = FileProxyHub(args.savefile,use_server_ts=True,speedup=args.savefile_speedup)
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
