@@ -307,12 +307,12 @@ def parse_args():
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
-    parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=3)
+    parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=1)
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
     parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor. None means fast as possible', default=None)
-    parser.add_argument('--timeout_ms', type=float, help="timeout for wating for new data from hub",default=100)
+    parser.add_argument('--timeout_ms', type=float, help="timeout for wating for new data from hub, equals min-redraw time.",default=500)
     args = parser.parse_args()
     if args.evtlabs: 
         args.evtlabs = args.evtlabs.split(',')
@@ -325,7 +325,7 @@ def parse_args():
 if __name__=='__main__':
     args = parse_args()
 
-    if True:
+    if False:
         args.savefile = '~/Desktop/logs/mindaffectBCI*.txt'
         args.ch_names = 'C1,Cz,C2,C3'.split(',') 
         args.savefile_speedup=1
