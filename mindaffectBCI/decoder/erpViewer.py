@@ -20,7 +20,7 @@ import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
 
-def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=500,
+def erpViewer(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms: float=np.inf, tau_ms: float=500,
               offset_ms=(-15, 0), evtlabs=None, ch_names=None, nstimulus_events: int=600, rank=3, center=True):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
@@ -130,19 +130,23 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
     # start the render loop
     t0 = ui.getTimeStamp()
     pending = []  # list of stimulus events for which still waiting for data to complete
-    while ui.getTimeStamp() < t0+timeout_ms:
+    dirty = False # flag if do full canvas redraw
+    while ui.getTimeStamp() < t0+maxruntime_ms:
 
         # exit if figure is closed..
         if not plt.fignum_exists(1):
             quit()
 
         # re-draw the display
-        fig.canvas.draw()
         fig.canvas.flush_events()
+        if dirty : 
+            fig.canvas.draw()
+            dirty=False
+
         #plt.pause(.001)
 
         # Update the records
-        nmsgs, ndata, nstim = ui.update(timeout_ms=100)
+        nmsgs, ndata, nstim = ui.update(timeout_ms=timeout_ms)
 
         # skip if no stimulus events to process
         if nstim == 0:
@@ -193,6 +197,7 @@ def erpViewer(ui: UtopiaDataInterface, timeout_ms: float=np.inf, tau_ms: float=5
         pending = new_pending
 
         # Update the plots for each event type
+        dirty=True
         for ei, lab in enumerate(evtlabs):
 
             # extract this events irfs
@@ -261,7 +266,8 @@ def parse_args():
     parser.add_argument('--savefile', type=str, help='run decoder using this file as the proxy data source', default=None)
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
     parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor', default=None)
-    
+    parser.add_argument('--timeout_ms', type=float, help="timeout for wating for new data from hub, equals min-redraw time.",default=500)
+   
     args = parser.parse_args()
     if args.evtlabs: 
         args.evtlabs = args.evtlabs.split(',')
@@ -291,4 +297,5 @@ if __name__=='__main__':
     except:
         pass
 
-    erpViewer(ui, evtlabs=args.evtlabs, ch_names=args.ch_names, rank=args.rank)
+    erpViewer(ui, **vars(args))
+    

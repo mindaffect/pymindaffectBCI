@@ -29,15 +29,31 @@ import matplotlib.gridspec as gridspec
 def ccaViewer(*args, **kwargs):
     run(*args, **kwargs)
 
-def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float = 100, tau_ms: float=500,
+def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float = 500, tau_ms: float=500,
               offset_ms=(-15, 0), evtlabs=None, ch_names=None, ch_pos=None, nstimulus_events: int=600, 
               rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100, **kwargs):
-    ''' view the live CCA decomposition.'''
+    """on-line view of the CCA Forward-Backward model of the data
 
+    Args:
+        ui (UtopiaDataInterface): UtopiaDataInterface to get the live data from the hub.  If None then we will make a new data-interface and try to connect to the given hub information.
+        host (str, optional): host name where the data hub is running. Defaults to '-'.
+        stopband ([type], optional): data filtering parameters to use in the UtopiaDataInterface, if not given. Defaults to None.
+        out_fs (int, optional): sampling rate of the output of the UtopiaDataInterface - if not given. Defaults to 100.
+        maxruntime_ms (float, optional): terminate automatically after this long. Defaults to np.inf.
+        timeout_ms (float, optional): max time to wait for data from hub, equals the max-plot redraw rate. Defaults to 500.
+        tau_ms (float, optional): length of the estimated impulse response. Defaults to 500.
+        offset_ms (tuple, optional): offset for the start/end of the impulse response w.r.t. the trigger. Defaults to (-15, 0).
+        evtlabs (list, optional): the types of events used to model the brain response.  See `stim2event` for more information on the types of transformation allowed. Defaults to None.
+        ch_names (list, optional): names of the measurement channels -- used to get channel-positions of ch_pos is not given. Defaults to None.
+        ch_pos (list, optional): channel positions. Defaults to None.
+        nstimulus_events (int, optional): max number of stimulus events to include in the running Event-Related-Potential. Defaults to 600.
+        rank (int, optional): number of CCA components to plot. Defaults to 3.
+        reg (float, optional): regularization strength used in the cca decomposition. Defaults to .02.
+        center (bool, optional): center the data before computing the cca decomposition. Defaults to True.
+    """    
     if ui is None:
-        data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)#999)
-        #data_preprocessor = butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=60)
-        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)#, sample2timestamp='none')
+        data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=out_fs)
+        ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
         ui.connect(host)
     ui.update()
 

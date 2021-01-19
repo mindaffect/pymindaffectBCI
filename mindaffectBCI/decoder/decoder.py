@@ -65,12 +65,14 @@ def redraw_plots():
             figs = plt.get_fignums()
             for i in figs:
                 if plt.figure(i).get_visible():
-                    #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
                     plt.gcf().canvas.flush_events()
-                    #plt.gcf().canvas.draw_idle()
-                    plt.gcf().canvas.start_event_loop(0.1)
+                    if DIRTY: # re-draw content!
+                        #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
+                        #plt.gcf().canvas.draw_idle()
+                        plt.gcf().canvas.start_event_loop(0.1)
             #if len(figs)>0 :
                 #plt.show(block=False)
+            DIRTY=False
     except:
         pass
 
@@ -403,6 +405,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
                 plt.suptitle("Model + Decoding Performance")
+                DIRTY=True
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=fs)
                 plt.figure(3) # plot the CCA info
@@ -667,6 +670,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                                         nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
                         Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
                         plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
+                        DIRTY=True
                     except:
                         pass
 
