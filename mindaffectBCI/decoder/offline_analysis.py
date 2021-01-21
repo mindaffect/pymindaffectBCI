@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 
 # last file saved to default save location
 savefile = None
-savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
+#savefile = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')
 #savefile = '~/Desktop/mark/mindaffectBCI_*.txt'
 #savefile = '~/Desktop/khash/mindaffectBCI*faces*.txt'
 #savefile = '~/Downloads/mindaffectBCI*.txt'
@@ -53,7 +53,7 @@ savefile = max(files, key=os.path.getctime)
 stopband=((45,65),(5,25,'bandpass'))
 evtlabs=('re','fe')
 tau_ms = 450
-offset_ms = 75
+offset_ms = 0 # N.B. offset not support for models except LR
 prediction_offsets=(0)
 startup_correction=5
 priorweight=50
@@ -106,7 +106,7 @@ if 'central_cap' in savefile:
 #                        bwdAccumulate=True, minDecisLen=0)
 
 score, dc, Fy, clsfr, rawFy = debug_test_dataset(X, Y, coords,
-                         test_idx=test_idx, tau_ms=tau_ms, offset_ms=offset_ms, evtlabs=evtlabs, model='cca', 
+                         test_idx=test_idx, tau_ms=tau_ms, offset_ms=offset_ms, evtlabs=evtlabs, model='lr', #cca', 
                          ranks=ranks, prediction_offsets=prediction_offsets, 
                          priorweight=priorweight, startup_correction=startup_correction, 
                          bwdAccumulate=False, minDecisLen=0)

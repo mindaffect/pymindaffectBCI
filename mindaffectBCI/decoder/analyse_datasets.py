@@ -419,6 +419,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
     
     # plot all Y-true & encoded version
+    plt.figure();plt.clf()
     plot_stim_encoding(Y[...,0],Yevt[...,0,:],evtlabs,fs)
 
     # fit the model
@@ -438,6 +439,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     Perr = res[6] # (nTrl,nSamp)
 
     #plt.figure(14); plt.clf()
+    plt.figure();plt.clf()
     plot_trial_summary(X, Y, rawFy, fs=fs, Yerr=Yerr[:,-1], Py=Py, Fe=Fe, label=label)
     plt.show(block=False)
     plt.gcf().set_size_inches((15,9))

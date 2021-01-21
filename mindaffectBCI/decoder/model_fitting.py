@@ -261,6 +261,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     def gof_score(self,X,Y, featdim=False):
         ''' compute goodness of fit score for the current model for X,Y'''
         from mindaffectBCI.decoder.scoreOutput import convWX, convYR
+        if self.R_ is None:
+            return 0
         Ye = self.stim2event(Y) # (nTr,nSamp,1,nE)
         WX = convWX(X,self.W_) # (nM,nTr,nSamp,nFilt)
         # BODGE: unit norm wX over time/filters -- shouldn't be necessary!
@@ -519,7 +521,8 @@ class MultiCCA(BaseSequence2Sequence):
 class FwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using forward linear regression  X = A*Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-6, badEpThresh=6, center=True, **kwargs):
-        super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, **kwargs)
+        super().__init__(evtlabs=evtlabs, tau=tau, offset=0, **kwargs)
+        assert offset==0, 'only offset == 0 supported'
         self.reg = reg
         self.rcond = rcond
         self.badEpThresh = badEpThresh
@@ -590,6 +593,7 @@ class BwdLinearRegression(BaseSequence2Sequence):
     ''' Sequence 2 Sequence learning using backward linear regression  W*X = Y '''
     def __init__(self, evtlabs=('re','fe'), tau=18, offset=0, reg=None, rcond=1e-5, badEpThresh=6, center=True, **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, **kwargs)
+        assert offset==0, 'only offset == 0 currenly supported for {}'.format(self.__class__)
         self.reg = reg
         self.rcond = rcond
         self.badEpThresh = badEpThresh
@@ -653,8 +657,9 @@ class BwdLinearRegression(BaseSequence2Sequence):
 #from sklearn.linear_model import Ridge
 class LinearSklearn(BaseSequence2Sequence):
     ''' Wrap a normal sk-learn classifier for sequence to sequence learning '''
-    def __init__(self, clsfr, labelizeY=False, ignore_unlabelled=True, badEpThresh=None, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, clsfr, labelizeY=False, ignore_unlabelled=True, badEpThresh=None, offset:float=0, **kwargs):
+        super().__init__(offset=0, **kwargs)
+        assert offset==0, 'only offset == 0 currenly supported for {}'.format(self.__class__)
         self.clsfr = clsfr
         self.labelizeY = labelizeY
         self.badEpThresh = badEpThresh
