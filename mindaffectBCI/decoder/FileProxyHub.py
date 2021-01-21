@@ -106,9 +106,10 @@ class FileProxyHub:
                 sleep(ttg/1000./self.speedup)
         # update the time-stamp cursor
         self.lasttimestamp = self.lasttimestamp + timeout_ms
+        self.lastrealtimestamp = self.getRealTimeStamp()
         return msgs
 
-def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
+def testcase(filename, speedup=None, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
     """[summary]
 
     Args:
@@ -121,7 +122,7 @@ def testcase(filename, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), ord
     import numpy as np
     from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker, butterfilt_and_downsample
 
-    U = FileProxyHub(filename)
+    U = FileProxyHub(filename,speedup=speedup)
     tsfilt = timestamp_interpolation(fs=fs,sample2timestamp=linear_trend_tracker(500))
 
     if stopband is not None:

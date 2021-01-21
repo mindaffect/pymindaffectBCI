@@ -904,6 +904,7 @@ if  __name__ == "__main__":
             setattr(args,'timeout_ms',500)
             #setattr(args,'out_fs',100)
             #setattr(args,'savefile_fs',200)
+            setattr(args,'savefile_speedup',2)
             #setattr(args,'cv',5)
             setattr(args,'predplots',True) # prediction plots -- useful for prediction perf debugging
             #setattr(args,'prior_dataset',None)
