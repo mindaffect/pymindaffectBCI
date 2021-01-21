@@ -552,7 +552,8 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
         return
 
     if PREDICTIONPLOTS and guiplots:
-        plt.close('all')
+        #plt.close('all')
+        pass
 
     # TODO []: Block based prediction is slightly slower?  Why?
     if timeout_ms is None:
@@ -893,7 +894,7 @@ if  __name__ == "__main__":
             #savefile="~/utopia/java/messagelib/UtopiaMessages_.log"
             #savefile="~/utopia/java/utopia2ft/UtopiaMessages_*1700.log"
             #savefile="~/Downloads/jason/UtopiaMessages_200923_1749_*.log"
-            savefile='~/Desktop/mark/mindaffectBCI*.txt'
+            #savefile='~/Desktop/mark/mindaffectBCI*.txt'
             savefile=args.logdir + "/mindaffectBCI*.txt"
             setattr(args,'savefile',savefile)
             #setattr(args,'out_fs',100)
