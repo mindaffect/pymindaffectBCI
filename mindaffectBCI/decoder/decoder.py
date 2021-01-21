@@ -59,20 +59,21 @@ try :
 except:
     guiplots=False
 
+DIRTY=[]
 def redraw_plots():
     try:
         if guiplots and not matplotlib.is_interactive():
             figs = plt.get_fignums()
             for i in figs:
-                if plt.figure(i).get_visible():
-                    plt.gcf().canvas.flush_events()
-                    if DIRTY: # re-draw content!
-                        #plt.figure(i).canvas.draw_idle()  # v.v.v. slow
-                        #plt.gcf().canvas.draw_idle()
-                        plt.gcf().canvas.start_event_loop(0.1)
+                fig = plt.figure(i)
+                if fig.get_visible():
+                    fig.canvas.flush_events()
+            for fig in DIRTY: # re-draw content!
+                fig.canvas.draw_idle()
+                #fig.canvas.start_event_loop(0.1)
             #if len(figs)>0 :
                 #plt.show(block=False)
-            DIRTY=False
+            DIRTY=[]
     except:
         pass
 
@@ -391,7 +392,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                                       marginalizedecis=True, minDecisLen=clsfr.minDecisLen, 
                                       bwdAccumulate=clsfr.bwdAccumulate, 
                                       nEpochCorrection=clsfr.startup_correction)
-        # extract the final estimated performance
+        # extract the final estimated performanceq
         print("decoding curve {}".format(decoding_curve[1]))
         print("score {}".format(score))
         perr = decoding_curve[1][-1] if len(decoding_curve)>1 else 1-score
@@ -405,7 +406,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.subplot(1,3,3) # put decoding curve in last sub-plot
                 plot_decoding_curve(*decoding_curve)
                 plt.suptitle("Model + Decoding Performance")
-                DIRTY=True
+                DIRTY.append(plt.gcf())
                 #  from analyse_datasets import debug_test_dataset
                 #  debug_test_dataset(X,Y,None,fs=fs)
                 plt.figure(3) # plot the CCA info
@@ -414,6 +415,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
                 plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=fs)
                 plt.suptitle("Summary Statistics")
+                DIRTY.append(plt.gcf())
                 try:
                     import pickle
                     fn = os.path.join(LOGDIR,'summary_statistics_{}.pk'.format(UNAME))
@@ -426,6 +428,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plot_erp(Cxy,evtlabs=clsfr.evtlabs,fs=fs)
                 plt.suptitle("Event Related Potential (ERP)")
                 plt.show(block=False)
+                DIRTY.append(plt.gcf())
                 # save figures
                 plt.figure(1)
                 plt.savefig(os.path.join(LOGDIR,'model_{}.png'.format(UNAME)))
@@ -671,7 +674,7 @@ def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, mo
                                         nEpochCorrection=clsfr.startup_correction, priorsigma=(clsfr.sigma0_,clsfr.priorweight))
                         Py = clsfr.decode_proba(Fy[...,used_idx], marginalizemodels=True, minDecisLen=-10, bwdAccumulate=False)
                         plot_trial_summary(Ptgt,ssFy,Py,fs=ui.fs/10)
-                        DIRTY=True
+                        DIRTY.append(plt.gcf())
                     except:
                         pass
 
@@ -746,7 +749,7 @@ def plot_trial_summary(Ptgt, Fy=None, Py=None, fs:float=None):
     #
     plt.gcf().canvas.draw_idle()
 
-def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_timeout_ms: float=100, 
+def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, timeout_ms: float=100, 
         host:str=None, prior_dataset:str=None,
         tau_ms:float=450, offset_ms:float=0, out_fs:float=100, evtlabs=None, 
         stopband=((45,65),(5.5,25,'bandpass')), ftype='butter', order:int=6, cv:int=5,
@@ -805,7 +808,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
         #ppfn = None
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=55, clientid='decoder') # 20hz updates
+                                 timeout_ms=timeout_ms, mintime_ms=55, clientid='decoder') # 20hz updates
     ui.connect(host=host, queryifhostnotfound=False)
     ui.update()
     # log the config
@@ -832,7 +835,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, msg_tim
             if not clsfr.is_fitted() and prior_dataset is not None:
                 doModelFitting(clsfr, None, cv=cv, prior_dataset=prior_dataset, fs=ui.fs, n_ch=ui.data_ringbuffer.shape[-1])
 
-            doPredictionStatic(ui, clsfr)
+            doPredictionStatic(ui, clsfr, timeout_ms=timeout_ms)
 
         elif current_mode.lower() in ("reset"):
             prior_dataset = None
@@ -870,6 +873,7 @@ def parse_args():
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
     parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor', default=None)
     parser.add_argument('--logdir', type=str, help='directory to save log/data files', default='~/Desktop/logs')
+    parser.add_argument('--timeout_ms', type=float, help="timeout to wait for data from utopia hub. Min prediction update time.",default=100)
     parser.add_argument('--prior_dataset', type=str, help='prior dataset to fit initial model to', default='~/Desktop/logs/calibration_dataset*.pk')
 
     args = parser.parse_args()
@@ -897,6 +901,7 @@ if  __name__ == "__main__":
             #savefile='~/Desktop/mark/mindaffectBCI*.txt'
             savefile=args.logdir + "/mindaffectBCI*.txt"
             setattr(args,'savefile',savefile)
+            setattr(args,'timeout_ms',500)
             #setattr(args,'out_fs',100)
             #setattr(args,'savefile_fs',200)
             #setattr(args,'cv',5)
@@ -910,7 +915,7 @@ if  __name__ == "__main__":
         ppfn = butterfilt_and_downsample(order=6, stopband=args.stopband, fs_out=args.out_fs, ftype='butter')
         ui = UtopiaDataInterface(data_preprocessor=ppfn,
                                  stimulus_preprocessor=None,
-                                 timeout_ms=100, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='decoder') # 20hz updates
+                                 timeout_ms=args.timeout_ms, mintime_ms=0, U=U, fs=args.savefile_fs, clientid='decoder') # 20hz updates
         # add the file-proxy ui as input argument
         setattr(args,'ui',ui)
 
