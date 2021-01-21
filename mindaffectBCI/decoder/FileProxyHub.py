@@ -17,7 +17,7 @@
 
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_message
 from mindaffectBCI.utopiaclient import DataPacket
-from time import sleep
+from time import sleep, perf_counter
 
 class FileProxyHub:
     ''' Proxy UtopiaClient which gets messages from a saved log file '''
@@ -36,17 +36,28 @@ class FileProxyHub:
         self.speedup = speedup
         self.isConnected = True
         self.lasttimestamp = None
+        self.lastrealtimestamp = self.getRealTimeStamp()
         self.use_server_ts = use_server_ts
         self.file = open(self.filename,'r')
         print('FileProxyHub.py:: playback file {} at {}x speedup'.format(self.filename,self.speedup))
     
     def getTimeStamp(self):
-        """[summary]
+        """ get the time-stamp in milliscecond on the data clock
 
         Returns:
             [type]: [description]
         """        
         return self.lasttimestamp
+
+    def getRealTimeStamp(self):
+        """
+        get the time-stamp in milliseconds on the real-time-clock
+
+        Returns:
+            int: the timestamp
+        """        
+        return (int(perf_counter()*1000) % (1<<31))
+
     
     def autoconnect(self, *args,**kwargs):
         """[summary]
@@ -90,7 +101,9 @@ class FileProxyHub:
             # mark as disconneted at EOF
             self.isConnected = False
         if self.speedup :
-            sleep(timeout_ms/1000./self.speedup)
+            ttg = timeout_ms - (self.getRealTimeStamp() - self.lastrealtimestamp)
+            if ttg>0 :
+                sleep(ttg/1000./self.speedup)
         # update the time-stamp cursor
         self.lasttimestamp = self.lasttimestamp + timeout_ms
         return msgs
