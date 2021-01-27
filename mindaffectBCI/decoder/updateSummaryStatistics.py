@@ -1,4 +1,4 @@
-#  Copyright (c) 2019 MindAffect B.V. 
+# Copyright (c) 2019 MindAffect B.V. 
 #  Author: Jason Farquhar <jason@mindaffect.nl>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
@@ -21,7 +21,7 @@ from mindaffectBCI.decoder.utils import window_axis, idOutliers, zero_outliers
 def updateSummaryStatistics(X, Y, stimTimes=None, 
                             Cxx=None, Cxy=None, Cyy=None, 
                             badEpThresh=4, halflife_samp=1, cxxp=True, cyyp=True, tau=None,
-                            offset=0, center=True, unitnorm=True):
+                            offset=0, center=True, unitnorm=True, perY=True):
     '''
     Compute updated summary statistics (Cxx, Cxy, Cyy) for new data in X with event-info Y
       [Cxx, Cxy, Cyy, state]=updateSummaryStatistics(X, Y, stimTime_samp, Cxx, Cxy, Cyy, state, halflife_samp, badEpThresh)
@@ -84,7 +84,7 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
     # ensure Cyy has the right size if not entry-per-model
     if (cyyp):
         # TODO [] : support overlapping info between update calls
-        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght, unitnorm=unitnorm)
+        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght, unitnorm=unitnorm, perY=perY)
         
     return Cxx, Cxy, Cyy
 
@@ -186,7 +186,7 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
     return Cxy
 
 # @function
-def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True):
+def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True, perY=perY):
     '''
     Compute the Cyy tensors given new data
     Inputs:
@@ -204,7 +204,7 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
       Cyy -- (nY, tau, nE, nE)
     '''
     if stimTime is None:
-        MM = compCyy_diag(Y,tau,wght,zeropadded,unitnorm)
+        MM = compCyy_diag(Y,tau,wght,zeropadded,unitnorm,perY=perY)
         MM = Cyy_diag2full(MM)
         Cyy = wght*Cyy + MM if Cyy is not None else MM
     else:
@@ -215,17 +215,22 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm
 def Cyy_diag2full(MM):
     # BODGE: tau-diag Cyy entries to the 'correct' shape
     # (tau,nY,nE,nE) -> (nY,nE,tau,nE,tau)
-    MM2 = np.zeros((MM.shape[-3],MM.shape[-2],MM.shape[-4],MM.shape[-2],MM.shape[-4]),dtype=MM.dtype)
+    if MM.ndim == 3: # (tau,nE,nE) -> (tau,1,nE,nE)
+        MM = np.reshape(MM,(MM.shape[0],1,MM.shape[1],MM.shape[2]))
+    MM2 = np.zeros((MM.shape[-3],MM.shape[-2],MM.shape[-4],MM.shape[-2],MM.shape[-4]),dtype=MM.dtype) # (nY,nE,tau,nE,tau)
     # fill in the block diagonal entries
     for i in range(MM.shape[-4]):
         MM2[...,:,i,:,i] = MM[0,:,:,:]
         for j in range(i+1,MM.shape[-4]):
             MM2[...,:,i,:,j] = MM[j-i,:,:,:]
             MM2[...,:,j,:,i] = MM[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
+    if MM.ndim==3: # ( 1,nE,tau,nE,tau) -> (nE,tau,nE,tau)
+        MM2 = MM2[0,...]
     MM = MM2
     return MM2
 
-def compCyy_diag(Y, tau, wght=1, zeropadded=True, unitnorm=True):
+
+def compCyy_diag(Y, tau:float, wght:float=1, zeropadded:bool=True, unitnorm:bool=True, perY:bool=True):
     '''
     Compute the main tau diagonal entries of a Cyy tensor
     Args:
@@ -253,7 +258,10 @@ def compCyy_diag(Y, tau, wght=1, zeropadded=True, unitnorm=True):
     Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
 
     #print("Ys={}".format(Ys.shape))
-    MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
+    if perY:
+        MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
+    else: # cross output covariance
+        MM = np.einsum("TStye, TSzf->tyezf", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
 
     if unitnorm:
         # normalize so the resulting constraint on the estimated signal is that it have
