@@ -18,7 +18,7 @@
 import numpy as np
 import warnings
 
-def multipleCCA(Cxx=None, Cxy=None, Cyy=None,
+def multiwayCCA(Cxx=None, Cxy=None, Cyy=None,
                 reg=0, regy=0,
                 rank=1, CCA=True, rcond=1e-6, symetric=False):
     '''

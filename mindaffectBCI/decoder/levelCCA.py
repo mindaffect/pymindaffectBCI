@@ -19,8 +19,9 @@ def levelsSummaryStatistics(X_TSd,Y_TSye,tau, offset:int=0, center:bool=True, un
     return Cxx_dd, Cyx_yetd, Cyy_tyeye
 
 
-def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None,
-                  reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False, tol=1e-6, max_iter:int=10):
+def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
+                  reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False, tol=1e-3, 
+                  max_iter:int=10, eta:float=.5, syopt=None, showplots=False):
     """
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cyx,Cyy,regx,regy,rank,CCA)
@@ -44,6 +45,7 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None,
       R_etk (rank,nE,tau): responses for each stimulus event for each output
       S_y (nY): weighting over levels
     """
+    import matplotlib.pyplot as plt
     rank = int(max(1, rank))
     if not hasattr(reg, '__iter__'):
         reg = (reg, reg)  # ensure 2 element list
@@ -59,18 +61,28 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None,
     nD = Cxx_dd.shape[0]
 
     # pre-expand Cyy
+    # TODO[]: remove the need to actually do this -- as it's a ram/compute hog
     Cyy_yetyet = Mtyeye2Myetyet(Cyy_tyeye)
     
     # pre-compute the spatial whitener part.
     isqrtCxx_dd, _ = robust_whitener(Cxx_dd,reg[0],rcond[0],symetric=True)
     #2.c) Whiten Cxy
     CyxisqrtCxx_yetd = np.einsum('yetd,df->yetf',Cyx_yetd,isqrtCxx_dd)
-
+    isqrtCxxCxxisqrtCxx_dd = np.einsum('df,de,eg->fg',isqrtCxx_dd,Cxx_dd,isqrtCxx_dd)
 
     J = 1e9
-    S_y = np.ones((nY),dtype=Cyx_yetd.dtype)/nY # seed weighting over y
+    Js = np.zeros((max_iter,2))
+    Js[:]=np.nan
+    if showplots:
+        plt.figure()
+        plt.pause(.1)
+
+    if S_y is None:
+        S_y = np.ones((nY),dtype=Cyx_yetd.dtype)/nY  # seed weighting over y
     #S_y[0]=1; S_y[1:]=0;
     for iter in range(max_iter):
+        oJ = J
+        oS_y = S_y
 
         # 1) Apply the output weighting and make 2d Cyy
         sCyys_etet = np.einsum("y,yetzfu,z->etfu",S_y,Cyy_yetyet,S_y) 
@@ -93,36 +105,71 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None,
         r = min(len(l_idx), rank)  # guard rank>effective dim
         # 2.5) extract the desired rank sub-space solutions
         R_ket = R_ket[l_idx[:r],:,:] 
-        l_k = l_k[l_idx[:r]]
+        l_k = l_k[l_idx[:r]]  # l_k = coor for this component
         W_kd = W_kd[l_idx[:r],:]
 
-        # 2.6) pre-apply the whitener so can apply directly to input
-        R_ket = np.einsum('ket,etfu->kfu',R_ket,isqrtCyy_etet)
-        W_kd = np.einsum('kd,df->kf',W_kd,isqrtCxx_dd)
+        # 2.6) pre-apply the whitener + scaling so can apply directly to input
+        R_ket = np.einsum('ket,etfu->kfu',R_ket,isqrtCyy_etet) #* np.sqrt(l_k[:,np.newaxis, np.newaxis])
+        W_kd = np.einsum('kd,df->kf',W_kd,isqrtCxx_dd) #* np.sqrt(l_k[:,np.newaxis])
         
         #3) Update componenst for the output weighting
-        rCyyr_yy = np.einsum("ket,yetzfu,kfu->yz",R_ket,Cyy_yetyet,R_ket) 
-        rCyxw_y = np.einsum('kd,yetd,ket->y',W_kd,Cyx_yetd,R_ket)
+        wCxxw  = np.einsum('kd,de,ke', W_kd, Cxx_dd, W_kd) # N.B. should be I_k
+        rCyyr_yy = np.einsum("ket,yetzfu,kfu->yz",R_ket,Cyy_yetyet,R_ket) # N.B. should be I_k
+        rCyxw_y = np.einsum('ket,yetd,kd->y',R_ket,Cyx_yetd,W_kd) 
 
         # 4) Solve for optimal S, under the positivity constraint using
         # multi-updates
-        oS_y = S_y
-        if False:
-            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
+        J = wCxxw - 2 * rCyxw_y @ S_y + S_y.T @ rCyyr_yy @ S_y # should be 1 - 2* ip + 1
+        J_wr = J
+        # TODO [X] : non-negative least squares
+        # TODO [] : norm-constrained optimization
+        if syopt=='negridge': 
+            # simple least squares with penalty for negative weights
+            C = rCyyr_yy + np.diag(S_y<0).astype(S_y.dtype)*np.mean(np.diag(rCyyr_yy))*100
+            S_y = np.linalg.pinv(C, hermitian=True) @ rCyxw_y
             #S_y = np.maximum(S_y,0)
-            S_y = S_y / np.sqrt(S_y@S_y.T)
-        else:
-            S_y = 
+        elif syopt=='lspos': 
+            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
+            S_y = np.maximum(S_y,0)
+        elif syopt=='expgrad': # exponiated gradient - maintain non-negative
+            dS_y = rCyyr_yy @ S_y - rCyxw_y
+            edS_y = np.exp(-eta*dS_y)
+            S_y = S_y * edS_y
+        elif syopt=='gd':
+            dS_y = rCyyr_yy @ S_y - rCyxw_y
+            S_y = S_y + eta * 1e-2 * dS_y
+        else: # default
+            if not syopt is None and not syopt=='ls': 
+                print('Warning: unrecognised optimization type specified')
+            # simple least squares
+            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
+        S_y = S_y / np.sum(S_y) # maintain the norm
         #print("{:3d}) S_y = {}".format(iter,np.array_str(S_y,precision=3)))
 
         # 5) Goodness of fit tracking
-        oJ = J
-        # TODO[]: object value computation
-        J = 0
-        dS_y = np.sum(np.abs(S_y - oS_y))
-        print("{:3d}) dS_y = {}".format(iter,dS_y,np.array_str(S_y,precision=3)))
-        if dS_y < tol:
+        J = wCxxw - 2 * rCyxw_y @ S_y + S_y.T @ rCyyr_yy @ S_y
+        J_s = J
+        Js[iter,:]=[J_wr,J_s]
+        if showplots and iter%100 == 0:
+            plt.cla()
+            plt.plot(Js[:iter,:])
+            plt.legend(('pre','post'))
+            plt.pause(.001)
+        deltaS_y = np.sum(np.abs(S_y - oS_y))
+        deltaJ = np.abs(J-oJ)
+        if iter<10 or iter%100==0:
+            print("{:3d}) |S_y|={:4.3f} dS_y={:4.3f}  J={:4.3f} dJ={:4.3f}".format(iter,np.sum(S_y),deltaS_y,J_s,deltaJ))
+        #print("{:3d}) dS_y = {}".format(iter,dS_y,np.array_str(S_y,precision=3)))
+        if deltaS_y < tol or deltaJ < tol:
+            print("{:3d}) |S_y|={:4.3f} dS_y={:4.3f}  J={:4.3f} dJ={:4.3f}".format(iter,np.sum(S_y),deltaS_y,J_s,deltaJ))
             break
+            
+    if showplots:
+        print("{:3d}) |S_y|={:4.3f} dS_y={:5.4f}  J={:4.3f} dJ={:5.4f}".format(iter,np.sum(S_y),deltaS_y,J_s,deltaJ))
+        plt.cla()
+        plt.plot(Js[:iter,:])
+        plt.legend(('pre','post'))
+        plt.pause(.001)
 
     # include relative component weighting directly in the  Left/Right singular values
     nl_k = (l_k / np.max(l_k)) if np.max(l_k)>0 else np.ones(l_k.shape,dtype=l_k.dtype)  
@@ -202,14 +249,41 @@ def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unit
     print("d R_ket {}".format(np.max(np.abs(R_ket0 - R_ket))))
 
 
-def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,zeropadded=True,badEpThresh=4):
-    from mindaffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
-    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
-    from mindaffectBCI.decoder.multipleCCA import multipleCCA
-    from mindaffectBCI.decoder.scoreOutput import scoreOutput
-    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
+def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs):
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_factoredmodel
     import matplotlib.pyplot as plt
 
+    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs)
+    print("{}) J={}".format('opt',J))
+
+    print(f"W_kd {W_kd.shape}")
+    print(f"R_ket {R_ket.shape}")
+    print(f"S_y {S_y.shape} = {S_y}")
+
+    # plot soln
+    plt.figure()
+    plot_factoredmodel(W_kd,R_ket)
+    plt.suptitle(' levels allY soln') 
+
+    # levels strength in separate plot
+    plt.figure()
+    plt.plot(S_y)
+    plt.suptitle(' levels output weight') 
+
+    # plot SS
+    # pre-expand Cyy
+    Cyy_yetyet = Mtyeye2Myetyet(Cyy_tyeye)
+    sCyys_etet = np.einsum("y,yetzfu,z->etfu",S_y,Cyy_yetyet,S_y) 
+    sCyx_etd = np.einsum('yetd,y->etd',Cyx_yetd,S_y)
+    plt.figure()
+    plot_summary_statistics(Cxx_dd,sCyx_etd,sCyys_etet[np.newaxis,...])
+    plt.suptitle(' levels S_y' )
+    plt.show(block=False)
+
+
+def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,zeropadded=True,badEpThresh=4):
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
+    import matplotlib.pyplot as plt
 
     Cxx_dd0, Cyx_yetd0, Cyy_yetet0 = updateSummaryStatistics(X_TSd,Y_TSye[...,0:1,:],tau=tau,offset=offset,center=center,unitnorm=unitnorm,zeropadded=zeropadded,badEpThresh=badEpThresh)
 
@@ -233,25 +307,24 @@ def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,ze
     plt.suptitle(' levels allY' )
     plt.show(block=False)
     
-    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rcond=1e-6, reg=1e-4, symetric=True, max_iter=50)
+    # test with single output scores:
+    nY = Cyx_yetd.shape[0]
+    for yi in range(nY):
+        S_y = np.zeros((nY))
+        S_y[yi]=1
+        J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, S_y=S_y, rcond=1e-6, reg=1e-4, symetric=True, max_iter=1)
+        print("{}) J={}".format(yi,J))
 
-    print(f"W_kd {W_kd.shape}")
-    print(f"R_ket {R_ket.shape}")
-    print(f"S_y {S_y.shape} = {S_y}")
 
-    # plot soln
-    plt.figure()
-    plot_factoredmodel(W_kd,R_ket)
-    plt.suptitle(' levels allY soln') 
-    
-    # levels strength in separate plot
-    plt.figure()
-    plt.plot(S_y)
-    plt.suptitle(' levels output weight') 
+    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None)
+
+    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='negridge')
+
+    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='lspos')
 
     plt.show()    
 
-def testcase():
+def testcase(nTrl=10, nSamp=1000, nY=30, tau=10, noise2signal=5):
     from mindaffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
     from mindaffectBCI.decoder.multipleCCA import multipleCCA
@@ -263,11 +336,11 @@ def testcase():
     if False:
         X_TSd, Y_TSye, st = testNoSignal()
     else:
-        X_TSd, Y_TSye, st, A, B = testSignal(nY=40, tau=10, noise2signal=7)
+        X_TSd, Y_TSye, st, A, B = testSignal(nTrl=nTrl, nSamp=nSamp, nY=nY, tau=tau, noise2signal=noise2signal)
 
     #testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0)
         
-    testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0)
+    testcase_levelsCCA(X_TSd,Y_TSye,tau=int(tau*1.5),offset=0)
 
 
 if __name__=="__main__":

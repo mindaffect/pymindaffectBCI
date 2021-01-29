@@ -216,8 +216,20 @@ def testNoSignal(d=10, nE=2, nY=1, isi=5, tau=None, nSamp=10000, nTrl=1):
     Y[:, stimTimes_samp, :, :] = Me
     return (X, Y, stimTimes_samp)
 
-def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000, stimthresh=.6, noise2signal=1, irf=None):
+def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, stimthresh=.6, noise2signal=1, irf=None):
     '''
+    Args:
+       nTrl (int): number trials
+       d (int): sim eeg number electrodes
+       nE (int): number event types
+       nY (int): number outputs
+       isi (int): inter-stimulus-interval
+       tau (int): the length of the event impulse response
+       offset (int): offset in samples for the response w.r.t. the stimulus
+       nSamp (int): number samples in a single trial
+       stimthresh (float): threshold level for activating a Y (w.r.t. a unit-std-dev gaussian)
+       noise2sig (float): relative noise strength
+       irf (list): the actual impulse reponse function to use
     Returns:
        X (nTrk,nSamp,d): data
        Y (nTrl,nSamp,nY,nE): stimulus
