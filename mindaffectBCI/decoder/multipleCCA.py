@@ -18,30 +18,31 @@
 import numpy as np
 import warnings
 
-def multipleCCA(Cxx=None, Cyx=None, Cyy=None,
-                reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False):
+def multipleCCA(Cxx:np.ndarray=None, Cyx:np.ndarray=None, Cyy:np.ndarray=None,
+                reg:float=1e-9, rank:int=1, CCA:bool=True, rcond:float=(1e-8,1e-8), symetric:bool=False):
     '''
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cyx,Cyy,regx,regy,rank,CCA)
-    Inputs:
-      Cxx  = (d,d) current data covariance
-      Cyx  = (nM,nE,tau,d) current per output ERPs
-      Cyy  = (nM,nE,tau,nE,tau) current response covariance for each output
+    Args:
+      Cxx (d,d): current data covariance
+      Cyx (nM,nE,tau,d): current per output ERPs
+      Cyy (nM,nE,tau,nE,tau): current response covariance for each output
            OR
              (nM,tau,nE,nE) compressed cov for each output at different time-lags
       reg  = (1,) :float or (2,):float linear weighting reg strength or separate values for Cxx and Cyy 
             OR (d,) regularisation ridge coefficients for Cxx  (0)
-      rank= [1x1] number of top cca components to return (1)
-      CCA = [bool] or (2,):bool  flag if we normalize the spatial dimension. (true)
-      rcond  = [float] tolerance for singular eigenvalues.        (1e-4)
+      rank (float): number of top cca components to return (1)
+      CCA (bool): [bool] or (2,):bool  flag if we normalize the spatial dimension. (true)
+      rcond (float): tolerance for singular eigenvalues.        (1e-4)
                or [2x1] separate rcond for Cxx (rcond(1)) and Cyy (rcond(2))
                or [2x1] (-1<-0) negative values = keep this fraction of eigen-values
                or (2,1) <-1 keep this many eigenvalues
-      symetric = [bool] us symetric whitener?
-    Outputs:
-      J     = (nM,) optimisation objective scores
-      W     = (nM,rank,d) spatial filters for each output
-      R     = (nM,rank,nE,tau) responses for each stimulus event for each output
+      symetric (bool): use symetric whitener?
+    Returns:
+      J (nM,): optimisation objective scores
+      W (nM,rank,d): spatial filters for each output
+      R (nM,rank,nE,tau): responses for each stimulus event for each output
+
     Examples:
       # Supervised CCA
       Y = (nEp/nSamp,nY,nE) indicator for each event-type and output of it's type in each epoch

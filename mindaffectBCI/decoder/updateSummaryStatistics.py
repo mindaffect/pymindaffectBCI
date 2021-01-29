@@ -21,7 +21,7 @@ from mindaffectBCI.decoder.utils import window_axis, idOutliers, zero_outliers
 def updateSummaryStatistics(X, Y, stimTimes=None, 
                             Cxx=None, Cxy=None, Cyy=None, 
                             badEpThresh=4, halflife_samp=1, cxxp=True, cyyp=True, tau=None,
-                            offset=0, center=True, unitnorm=True, perY=True):
+                            offset=0, center=True, unitnorm=True, zeropadded:bool=True, perY=True):
     '''
     Compute updated summary statistics (Cxx, Cxy, Cyy) for new data in X with event-info Y
       [Cxx, Cxy, Cyy, state]=updateSummaryStatistics(X, Y, stimTime_samp, Cxx, Cxy, Cyy, state, halflife_samp, badEpThresh)
@@ -76,20 +76,20 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
     X, Y = zero_outliers(X, Y, badEpThresh)
     
     # update the cross covariance XY
-    Cxy = updateCxy(Cxy, X, Y, stimTimes, tau, wght, offset, center, unitnorm=unitnorm)
+    Cxy = updateCxy(Cxy, X, Y, stimTimes, tau, wght, offset=offset, center=center, unitnorm=unitnorm)
     # Update Cxx
     if (cxxp):
-        Cxx = updateCxx(Cxx, X, stimTimes, None, wght, center, unitnorm=unitnorm)
+        Cxx = updateCxx(Cxx, X, stimTimes, None, wght, offset=offset, center=center, unitnorm=unitnorm)
 
     # ensure Cyy has the right size if not entry-per-model
     if (cyyp):
         # TODO [] : support overlapping info between update calls
-        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght, unitnorm=unitnorm, perY=perY)
+        Cyy = updateCyy(Cyy, Y, stimTimes, tau, wght, offset=offset, unitnorm=unitnorm, perY=perY, zeropadded=zeropadded)
         
     return Cxx, Cxy, Cyy
 
 #@function
-def updateCxx(Cxx, X, stimTimes=None, tau=None, wght=1, center=False, unitnorm=True):
+def updateCxx(Cxx, X, stimTimes=None, tau:int=None, wght:float=1, offset:int=0, center:bool=False, unitnorm:bool=True):
     '''
     Cxx (ndarray (d,d)): current data covariance
     X (ndarray):  (nTrl, nEp, tau, d) raw response for the current stimulus event
@@ -186,7 +186,7 @@ def updateCxy(Cxy, X, Y, stimTimes=None, tau=None, wght=1, offset=0, center=Fals
     return Cxy
 
 # @function
-def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, zeropadded=True, unitnorm=True, perY=perY):
+def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, offset:float=0, zeropadded=True, unitnorm=True, perY=True):
     '''
     Compute the Cyy tensors given new data
     Inputs:
@@ -485,7 +485,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     if Cxy.ndim > 3:
         if Cxy.shape[0] > 1:
             print("Warning: only the 1st set ERPs is plotted")
-        Cxy = Cxy[0, ...]
+        Cxy = np.mean(Cxy,0)
     nevt = Cxy.shape[-3]
     for ei in range(nevt):
         if ei==0:
@@ -505,7 +505,7 @@ def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=No
     if Cyy.ndim > 4:
         if Cyy.shape[0] > 1:
             print("Warning: only the 1st set ERPs is plotted")
-        Cyy = Cyy[0, ...]
+        Cyy = np.mean(Cyy,0)
     Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
     plt.subplot(313)
     plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])

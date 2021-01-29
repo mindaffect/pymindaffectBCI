@@ -217,6 +217,14 @@ def testNoSignal(d=10, nE=2, nY=1, isi=5, tau=None, nSamp=10000, nTrl=1):
     return (X, Y, stimTimes_samp)
 
 def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000, stimthresh=.6, noise2signal=1, irf=None):
+    '''
+    Returns:
+       X (nTrk,nSamp,d): data
+       Y (nTrl,nSamp,nY,nE): stimulus
+       stimTimes_samp (nEp): sample times
+       A (nE,d): source spatial pattern
+       B (tau): stim impulse response pattern
+    '''
     #simple test problem, with overlapping response
     import numpy as np
     if tau is None:
@@ -227,7 +235,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     # up-sample to sample rate
     stimTimes_samp = np.arange(0, nSamp-tau, isi) # (nEp)
     Y = np.zeros((nSamp, nY, E.shape[-1]))
-    Y[stimTimes_samp, :, :] = E[:len(stimTimes_samp), :, :] #per-sample stimulus activity (nSamp, nY, nE) [nE x nY x nSamp]
+    Y[stimTimes_samp, :, :] = E[:len(stimTimes_samp), :, :] #per-sample stimulus activity (nSamp, nY, nE)
     Y = np.tile(Y,(nTrl,1,1,1)) # replicate for the trials
     # generate the brain source
     A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
@@ -257,7 +265,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=10000,
     #print("YtruecB={}".format(YtruecB.shape))
     S  = YtruecB # (nTr, nSamp, nE) true response, i.e. filtered Y 
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
-    X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d) #[d x nSamp]
+    X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d)
     return (X.astype(np.float32), Y.astype(np.float32), stimTimes_samp, A.astype(np.float32), B.astype(np.float32))
 
 
