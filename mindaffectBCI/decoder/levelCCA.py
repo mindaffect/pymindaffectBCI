@@ -123,11 +123,9 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
         J_wr = J
         # TODO [X] : non-negative least squares
         # TODO [] : norm-constrained optimization
-        if syopt=='negridge': 
-            # simple least squares with penalty for negative weights
-            C = rCyyr_yy + np.diag(S_y<0).astype(S_y.dtype)*np.mean(np.diag(rCyyr_yy))*100
-            S_y = np.linalg.pinv(C, hermitian=True) @ rCyxw_y
-            #S_y = np.maximum(S_y,0)
+        if syopt=='ls': 
+            # simple least squares
+            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
         elif syopt=='lspos': 
             S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
             S_y = np.maximum(S_y,0)
@@ -138,11 +136,13 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
         elif syopt=='gd':
             dS_y = rCyyr_yy @ S_y - rCyxw_y
             S_y = S_y + eta * 1e-2 * dS_y
-        else: # default
-            if not syopt is None and not syopt=='ls': 
+        else:
+            if not syopt=='negridge' and not syopt is None:
                 print('Warning: unrecognised optimization type specified')
-            # simple least squares
-            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
+
+            # simple least squares with penalty for negative weights
+            C = rCyyr_yy + np.diag(S_y<0).astype(S_y.dtype)*np.mean(np.diag(rCyyr_yy))*100
+            S_y = np.linalg.pinv(C, hermitian=True) @ rCyxw_y
         S_y = S_y / np.sum(S_y) # maintain the norm
         #print("{:3d}) S_y = {}".format(iter,np.array_str(S_y,precision=3)))
 
@@ -160,6 +160,8 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
         if iter<10 or iter%100==0:
             print("{:3d}) |S_y|={:4.3f} dS_y={:4.3f}  J={:4.3f} dJ={:4.3f}".format(iter,np.sum(S_y),deltaS_y,J_s,deltaJ))
         #print("{:3d}) dS_y = {}".format(iter,dS_y,np.array_str(S_y,precision=3)))
+
+        # convergence testing
         if deltaS_y < tol or deltaJ < tol:
             print("{:3d}) |S_y|={:4.3f} dS_y={:4.3f}  J={:4.3f} dJ={:4.3f}".format(iter,np.sum(S_y),deltaS_y,J_s,deltaJ))
             break
