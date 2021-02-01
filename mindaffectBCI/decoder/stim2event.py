@@ -17,7 +17,7 @@
 
 import numpy as np
 from mindaffectBCI.decoder.utils import equals_subarray
-def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-1, oM:np.ndarray=None):
+def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=None):
     '''
     convert per-sample stimulus sequence into per-sample event sequence (e.g. rising/falling edge, or long/short flash)
 

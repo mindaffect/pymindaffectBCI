@@ -21,7 +21,7 @@ def levelsSummaryStatistics(X_TSd,Y_TSye,tau, offset:int=0, center:bool=True, un
 
 def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
                   reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False, tol=1e-3, 
-                  max_iter:int=10, eta:float=.5, syopt=None, showplots=False):
+                  max_iter:int=100, eta:float=.5, syopt=None, showplots=False):
     """
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cyx,Cyy,regx,regy,rank,CCA)
@@ -178,9 +178,9 @@ def Mtyeye2Myetyet(M_tyeye):
     return M_yetyet
 
 
-def nonneglsopt(C_xx,C_yx,C_yy,s_y,sysopt='negridge',max_iter=3,tol=1e-4):
-    if sysopt is None:
-        sysopt = 'negridge'
+def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,verb:int=0):
+    if syopt is None:
+        syopt = 'negridge'
 
     J = C_xx - 2*C_yx@s_y + s_y.T@C_yy@s_y
     for iter in range(max_iter):
@@ -194,29 +194,33 @@ def nonneglsopt(C_xx,C_yx,C_yy,s_y,sysopt='negridge',max_iter=3,tol=1e-4):
         elif syopt=='expgrad': # exponiated gradient - maintain non-negative
             ds_y = C_yy @ s_y - C_yx
             eds_y = np.exp(-eta*ds_y)
-            s_y = s_y * eds
+            s_y = s_y * eds_y
         elif syopt=='gd': # simple gradient descent
             ds_y = rC_yy @ s_y - C_yx
             s_y = s_y + eta * 1e-2 * ds_y
-        elif sysopt = 'mu': # mulplicative update
-            s_y = s_y * C_yx / (C_yy@s_y) 
-        elif sysopt == 'irwls' or sysopt == 'negridge':
+        elif syopt == 'mu': # mulplicative update
+            s_y = s_y * np.abs(C_yx) / (C_yy@s_y + 1e-6)
+        elif syopt == 'irwls' or syopt == 'negridge':
             # iterative re-weighted least squares to enforce the non-negavitivity constraint
-            C = C_yy + np.diag(s_y<0).astype(s_y.dtype)*np.mean(np.diag(C_yy))*100
+            C = C_yy + np.diag(s_y<0).astype(s_y.dtype)*np.mean(np.diag(C_yy))*10
             s_y = np.linalg.pinv(C, hermitian=True) @ C_yx
         else:
-            raise ValueError('unknown optimization type')
+            raise ValueError('unknown optimization type: {}'.format(syopt))
 
         # project onto the sum constraint
         s_y = s_y / np.sum(s_y)
 
         # updated objective
-        J = C_xx - 2*C_xy@s_y + s_y.T@C_yy@s_y
-        print("{:2d} J={}  dJ={}".format(J,oJ-J))
+        J = C_xx - 2*C_yx@s_y + s_y.T@C_yy@s_y
+        if verb>0 : print("{:2d} J={}  dJ={}".format(iter,J,oJ-J))
         if np.abs(oJ-J) < tol:
             break
+
+    s_y = np.maximum(1e-6,s_y) # move away from 0 to prevent degeneracies 
+    # project onto the sum constraint
+    s_y = s_y / np.sum(s_y)
             
-    return w
+    return s_y
 
 
 
@@ -274,11 +278,12 @@ def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unit
     print("d R_ket {}".format(np.max(np.abs(R_ket0 - R_ket))))
 
 
-def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs):
+def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None, label=None, **kwargs):
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_factoredmodel
     import matplotlib.pyplot as plt
+    if syopt is None: syopt='negridge'
 
-    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs)
+    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=syopt, **kwargs)
     print("{}) J={}".format('opt',J))
 
     print(f"W_kd {W_kd.shape}")
@@ -288,12 +293,12 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs):
     # plot soln
     plt.figure()
     plot_factoredmodel(W_kd,R_ket)
-    plt.suptitle(' levels allY soln') 
+    plt.suptitle('{} {} soln'.format(label,syopt)) 
 
     # levels strength in separate plot
     plt.figure()
     plt.plot(S_y)
-    plt.suptitle(' levels output weight') 
+    plt.suptitle('{} {} output weight'.format(label,syopt)) 
 
     # plot SS
     # pre-expand Cyy
@@ -302,7 +307,7 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, **kwargs):
     sCyx_etd = np.einsum('yetd,y->etd',Cyx_yetd,S_y)
     plt.figure()
     plot_summary_statistics(Cxx_dd,sCyx_etd,sCyys_etet[np.newaxis,...])
-    plt.suptitle(' levels S_y' )
+    plt.suptitle(' {} {}'.format(label,syopt) )
     plt.show(block=False)
 
 
@@ -320,7 +325,7 @@ def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,ze
 
     print(" With all Y")
     
-    Cxx_dd, Cyx_yetd, Cyy_tyeye = levelsSummaryStatistics(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,zeropadded=True)
+    Cxx_dd, Cyx_yetd, Cyy_tyeye = levelsSummaryStatistics(X_TSd,Y_TSye,tau=tau,offset=offset,center=center,unitnorm=unitnorm,zeropadded=zeropadded)
 
     print(f"Cxx_dd {Cxx_dd.shape}")
     print(f"Cyz_yetd {Cyx_yetd.shape}")
@@ -341,31 +346,76 @@ def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,ze
         print("{}) J={}".format(yi,J))
 
 
-    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None)
-
     debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='negridge')
 
-    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='lspos')
+    #debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='lspos')
+
+    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='mu')
 
     plt.show()    
 
-def testcase(nTrl=10, nSamp=1000, nY=30, tau=10, noise2signal=5):
-    from mindaffectBCI.decoder.utils import testNoSignal, testSignal, sliceData, sliceY
-    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
-    from mindaffectBCI.decoder.multipleCCA import multipleCCA
-    from mindaffectBCI.decoder.scoreOutput import scoreOutput
-    from mindaffectBCI.decoder.scoreStimulus import scoreStimulus
+
+def simdata(nTrl=10, nSamp=1000, nY:int=30, tau:int=10, offset:int=0, noise2signal=5):
+    from mindaffectBCI.decoder.utils import testNoSignal, testSignal
     import matplotlib.pyplot as plt
 
     #from multipleCCA import *
     if False:
         X_TSd, Y_TSye, st = testNoSignal()
-    else:
+    elif True:
         X_TSd, Y_TSye, st, A, B = testSignal(nTrl=nTrl, nSamp=nSamp, nY=nY, tau=tau, noise2signal=noise2signal)
+
+    return X_TSd, Y_TSye, None
+
+
+def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
+    from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
+    from mindaffectBCI.decoder.stim2event import stim2event
+    from mindaffectBCI.decoder.analyse_datasets import debug_test_dataset
+
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    import os
+    root = Tk()
+    root.withdraw()
+    savefile = askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)),
+                                title='Chose mindaffectBCI save File',
+                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
+    root.destroy()
+
+    # load
+    X_TSd, Y_TSy, coords = load_mindaffectBCI(savefile, stopband=stopband, order=6, ftype='butter', fs_out=100)
+
+    #score, dc, Fy, clsfr, rawFy = debug_test_dataset(X_TSd, Y_TSy, coords,tau_ms=450, evtlabs=evtlabs, model='cca')
+
+    if 'visual_acuity' in savefile:
+        X_TSd = X_TSd[10:,...] 
+        Y_TSy = Y_TSy[10:,...,1:] # strip true output info
+    else:
+        # limit to 1st 20 cal trials
+        X_TSd = X_TSd[:10,...]
+        Y_TSy = Y_TSy[:10,...]
+
+    Y_TSye, labs = stim2event(Y_TSy,evtlabs)
+
+    return X_TSd, Y_TSye, coords[1]['fs']
+
+
+
+def testcase(tau_ms=650, offset_ms=0):
+    if False:
+        X_TSd, Y_TSye, fs = simdata()
+
+    else:
+        X_TSd, Y_TSye, fs = loaddata()
+
+    if fs is None: fs=100
+    tau = int(tau_ms*fs/1000)
+    offset = int(offset_ms*fs/1000)
 
     #testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0)
         
-    testcase_levelsCCA(X_TSd,Y_TSye,tau=int(tau*1.5),offset=0)
+    testcase_levelsCCA(X_TSd,Y_TSye,tau=tau,offset=offset)
 
 
 if __name__=="__main__":

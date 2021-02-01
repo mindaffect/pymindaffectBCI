@@ -251,17 +251,22 @@ def compCyy_diag(Y, tau:float, wght:float=1, zeropadded:bool=True, unitnorm:bool
 
     if not np.issubdtype(Y.dtype, np.floating): # all at once
         Y = Y.astype(np.float32)
-    #print("Y={}".format(Y.shape))
-    Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
-
-    # shrink Y w.r.t. the window and shift to align with the offset
-    Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
 
     #print("Ys={}".format(Ys.shape))
     if perY:
-        MM = np.einsum("TStye, TSyf->tyef", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
+        #print("Y={}".format(Y.shape))
+        Ys = window_axis(Y, winsz=tau, axis=-3) # window of length tau (nTrl, nSamp, tau, nY, nE)
+
+        # shrink Y w.r.t. the window and shift to align with the offset
+        Ye = Y[:, :Ys.shape[-4], :, :] # shift fowards and shrink
+        MM = np.einsum("TStye, TSyf->tyef", Ys, Ye, casting='unsafe', dtype=Ys.dtype, optimize=True) # compute cross-covariance (tau, nY, nE, nE)
     else: # cross output covariance
-        MM = np.einsum("TStye, TSzf->tyezf", Ys, Ye) # compute cross-covariance (tau, nY, nE, nE)
+        #MM = np.einsum("TStye, TSzf->tyezf", Ys, Ye, casting='unsafe', dtype=Ys.dtype, optimize=True ) # compute cross-covariance (tau, nY, nE, nE)
+        MM = np.zeros((tau,Y.shape[-2],Y.shape[-1],Y.shape[-2],Y.shape[-1]),dtype=Y.dtype)
+        MM[0,...] = np.einsum('TSye,TSzf->yezf',Y,Y) # special case as python makes :end+1 hard ...
+        for t in range(1,tau): # manually slide over Y -- as einsum doesn't manage the memory well
+            MM[t,...] = np.einsum('TSye,TSzf->yezf',Y[:,t:,:,:],Y[:,:-t,:,:])
+
 
     if unitnorm:
         # normalize so the resulting constraint on the estimated signal is that it have

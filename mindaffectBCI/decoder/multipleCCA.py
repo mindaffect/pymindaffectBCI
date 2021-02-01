@@ -249,8 +249,8 @@ def robust_whitener(C:np.ndarray, reg:float=0, rcond:float=1e-6, symetric:bool=T
             
     else:
         warnings.warn('Degenerate C matrices input!')
-        sqrtC = np.array(1.0, dtype=C.dtype)
-        isqrtC = np.array(1.0, dtype=C.dtype)
+        sqrtC = np.eye(C.shape[0], dtype=C.dtype)
+        isqrtC = sqrtC
     return (isqrtC, isqrtC)
 
 
