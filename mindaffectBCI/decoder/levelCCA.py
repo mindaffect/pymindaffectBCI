@@ -123,26 +123,7 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
         J_wr = J
         # TODO [X] : non-negative least squares
         # TODO [] : norm-constrained optimization
-        if syopt=='ls': 
-            # simple least squares
-            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
-        elif syopt=='lspos': 
-            S_y = np.linalg.pinv(rCyyr_yy, hermitian=True) @ rCyxw_y
-            S_y = np.maximum(S_y,0)
-        elif syopt=='expgrad': # exponiated gradient - maintain non-negative
-            dS_y = rCyyr_yy @ S_y - rCyxw_y
-            edS_y = np.exp(-eta*dS_y)
-            S_y = S_y * edS_y
-        elif syopt=='gd':
-            dS_y = rCyyr_yy @ S_y - rCyxw_y
-            S_y = S_y + eta * 1e-2 * dS_y
-        else:
-            if not syopt=='negridge' and not syopt is None:
-                print('Warning: unrecognised optimization type specified')
-
-            # simple least squares with penalty for negative weights
-            C = rCyyr_yy + np.diag(S_y<0).astype(S_y.dtype)*np.mean(np.diag(rCyyr_yy))*100
-            S_y = np.linalg.pinv(C, hermitian=True) @ rCyxw_y
+        S_y = nonneglsopt(wCxxw, rCyxw_y, rCyyr_yy, S_y, syopt)
         S_y = S_y / np.sum(S_y) # maintain the norm
         #print("{:3d}) S_y = {}".format(iter,np.array_str(S_y,precision=3)))
 
@@ -195,6 +176,48 @@ def Mtyeye2Myetyet(M_tyeye):
             # lower diag, transpose the event types
             M_yetyet[:,:,j,:,:,i] = M_tyeye[j-i,:,:,:,:].swapaxes(-3,-1).swapaxes(-4,-2)
     return M_yetyet
+
+
+def nonneglsopt(C_xx,C_yx,C_yy,s_y,sysopt='negridge',max_iter=3,tol=1e-4):
+    if sysopt is None:
+        sysopt = 'negridge'
+
+    J = C_xx - 2*C_yx@s_y + s_y.T@C_yy@s_y
+    for iter in range(max_iter):
+        oJ=J
+        if syopt=='ls': 
+            # simple least squares
+            s_y = np.linalg.pinv(C_yy, hermitian=True) @ C_yx
+        elif syopt=='lspos': 
+            s_y = np.linalg.pinv(C_yy, hermitian=True) @ C_yx
+            s_y = np.maximum(s_y,0)
+        elif syopt=='expgrad': # exponiated gradient - maintain non-negative
+            ds_y = C_yy @ s_y - C_yx
+            eds_y = np.exp(-eta*ds_y)
+            s_y = s_y * eds
+        elif syopt=='gd': # simple gradient descent
+            ds_y = rC_yy @ s_y - C_yx
+            s_y = s_y + eta * 1e-2 * ds_y
+        elif sysopt = 'mu': # mulplicative update
+            s_y = s_y * C_yx / (C_yy@s_y) 
+        elif sysopt == 'irwls' or sysopt == 'negridge':
+            # iterative re-weighted least squares to enforce the non-negavitivity constraint
+            C = C_yy + np.diag(s_y<0).astype(s_y.dtype)*np.mean(np.diag(C_yy))*100
+            s_y = np.linalg.pinv(C, hermitian=True) @ C_yx
+        else:
+            raise ValueError('unknown optimization type')
+
+        # project onto the sum constraint
+        s_y = s_y / np.sum(s_y)
+
+        # updated objective
+        J = C_xx - 2*C_xy@s_y + s_y.T@C_yy@s_y
+        print("{:2d} J={}  dJ={}".format(J,oJ-J))
+        if np.abs(oJ-J) < tol:
+            break
+            
+    return w
+
 
 
 def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,zeropadded=True,badEpThresh=4):
