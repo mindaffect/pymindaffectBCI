@@ -20,8 +20,9 @@ def levelsSummaryStatistics(X_TSd,Y_TSye,tau, offset:int=0, center:bool=True, un
 
 
 def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
-                  reg=1e-9, rank=1, CCA=True, rcond=(1e-8,1e-8), symetric=False, tol=1e-3, 
-                  max_iter:int=100, eta:float=.5, syopt=None, showplots=False):
+                  reg:float=1e-9, rank:int=1, CCA:bool=True, rcond:float=(1e-8,1e-8), 
+                  symetric:bool=False, tol:float=1e-3, 
+                  max_iter:int=100, eta:float=.5, syopt:str=None, showplots:bool=False):
     """
     Compute multiple CCA decompositions using the given summary statistics
       [J,W,R]=multiCCA(Cxx,Cyx,Cyy,regx,regy,rank,CCA)
@@ -196,7 +197,7 @@ def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,verb:in
             eds_y = np.exp(-eta*ds_y)
             s_y = s_y * eds_y
         elif syopt=='gd': # simple gradient descent
-            ds_y = rC_yy @ s_y - C_yx
+            ds_y = C_yy @ s_y - C_yx
             s_y = s_y + eta * 1e-2 * ds_y
         elif syopt == 'mu': # mulplicative update
             s_y = s_y * np.abs(C_yx) / (C_yy@s_y + 1e-6)
@@ -278,12 +279,13 @@ def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unit
     print("d R_ket {}".format(np.max(np.abs(R_ket0 - R_ket))))
 
 
-def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None, label=None, **kwargs):
+def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank:int=1, syopt=None, label=None, outputs=None, fs:float=None, ch_names:list=None, **kwargs):
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_factoredmodel
     import matplotlib.pyplot as plt
     if syopt is None: syopt='negridge'
+    if outputs is None: outputs = [ i for i in range(Cyy_tyeye.shape[1])]
 
-    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=syopt, **kwargs)
+    J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=syopt, rank=rank, **kwargs)
     print("{}) J={}".format('opt',J))
 
     print(f"W_kd {W_kd.shape}")
@@ -292,13 +294,13 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None, label=None, **k
 
     # plot soln
     plt.figure()
-    plot_factoredmodel(W_kd,R_ket)
+    plot_factoredmodel(W_kd,R_ket,fs=fs,ch_names=ch_names,ncol=3)
+    plt.subplot(1,3,3)
+    plt.plot(outputs,S_y)
+    plt.ylim((0,np.max(S_y)))
+    plt.grid()
+    plt.title('output weight') 
     plt.suptitle('{} {} soln'.format(label,syopt)) 
-
-    # levels strength in separate plot
-    plt.figure()
-    plt.plot(S_y)
-    plt.suptitle('{} {} output weight'.format(label,syopt)) 
 
     # plot SS
     # pre-expand Cyy
@@ -306,12 +308,17 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt=None, label=None, **k
     sCyys_etet = np.einsum("y,yetzfu,z->etfu",S_y,Cyy_yetyet,S_y) 
     sCyx_etd = np.einsum('yetd,y->etd',Cyx_yetd,S_y)
     plt.figure()
-    plot_summary_statistics(Cxx_dd,sCyx_etd,sCyys_etet[np.newaxis,...])
+    plot_summary_statistics(Cxx_dd,sCyx_etd,sCyys_etet[np.newaxis,...],fs=fs,ch_names=ch_names)
     plt.suptitle(' {} {}'.format(label,syopt) )
     plt.show(block=False)
 
+    return W_kd, R_ket, S_y
 
-def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,zeropadded=True,badEpThresh=4):
+
+def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,rank:int=1,
+                       center=True,unitnorm=True,zeropadded=True,badEpThresh=4,
+                       single_output_test:bool=False, 
+                       fs:float=None, ch_names:list=None, outputs:list=None, label:str=None):
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_summary_statistics, plot_factoredmodel
     import matplotlib.pyplot as plt
 
@@ -338,21 +345,33 @@ def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unitnorm=True,ze
     plt.show(block=False)
     
     # test with single output scores:
-    nY = Cyx_yetd.shape[0]
-    for yi in range(nY):
-        S_y = np.zeros((nY))
-        S_y[yi]=1
-        J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, S_y=S_y, rcond=1e-6, reg=1e-4, symetric=True, max_iter=1)
-        print("{}) J={}".format(yi,J))
+    if single_output_test:
+        nY = Cyx_yetd.shape[0]
+        for yi in range(nY):
+            S_y = np.zeros((nY))
+            S_y[yi]=1
+            J, W_kd, R_ket, S_y = levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, S_y=S_y, rank=rank, rcond=1e-6, reg=1e-4, symetric=True, max_iter=1)
+            print("{}) J={}".format(yi,J))
 
 
-    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='negridge')
+    W_kd, R_ket, S_y = debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank=rank, syopt='negridge', fs=fs, ch_names=ch_names, outputs=outputs, label=label)
 
-    #debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='lspos')
+    if label=='visual_acuity':
+        # 2d S_y
+        w = int(np.sqrt(S_y.shape[-1])) 
+        h = (S_y.shape[-1]) // w
+        plt.figure()
+        plt.imshow(S_y.reshape((w,h)),aspect='auto')
+        plt.colorbar()
+        plt.suptitle("S_y")
 
-    debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, syopt='mu')
 
-    plt.show()    
+    #debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank=rank, syopt='lspos')
+
+    #debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank=rank, syopt='mu')
+
+    plt.show()
+    return W_kd, R_ket, S_y
 
 
 def simdata(nTrl=10, nSamp=1000, nY:int=30, tau:int=10, offset:int=0, noise2signal=5):
@@ -388,34 +407,74 @@ def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
 
     #score, dc, Fy, clsfr, rawFy = debug_test_dataset(X_TSd, Y_TSy, coords,tau_ms=450, evtlabs=evtlabs, model='cca')
 
+    outputs = None
+    label=None
     if 'visual_acuity' in savefile:
+        # strip calibration trials
         X_TSd = X_TSd[10:,...] 
-        Y_TSy = Y_TSy[10:,...,1:] # strip true output info
+        # and strip true output info
+        Y_TSy = Y_TSy[10:,...,1:]
+
+        evtlabs=('re','fe') # ('1')
+
+        # hack assume on a grid
+        w = int(np.sqrt(Y_TSy.shape[-1])) 
+        h = (Y_TSy.shape[-1]) // w
+        outputs= [ (i,j) for i in range(w) for j in range(h)]
+        label='visual_acuity'
+
+    elif 'threshold' in savefile or 'detection' in savefile:
+        # strip calibration trials
+        X_TSd = X_TSd[10:,...] 
+        # and strip true output info
+        Y_TSy = Y_TSy[10:,...,1:]
+
+        # convert levels to outputs so get weighting over them
+        Y_TSyl, outputs = stim2event(Y_TSy,'hot-on')
+        print("Levels = {}".format(outputs))
+        Y_TSy = Y_TSyl.reshape((Y_TSyl.shape[0],Y_TSyl.shape[1],-1)) # compress levels into outputs
+        
+        evtlabs=('1')
+        label='threshold'
+
+    elif 'rc'in savefile:
+        evtlabs=('re','ntre')
+        label='rc'
+
     else:
+        evtlabs=('re','fe')
         # limit to 1st 20 cal trials
         X_TSd = X_TSd[:10,...]
         Y_TSy = Y_TSy[:10,...]
 
     Y_TSye, labs = stim2event(Y_TSy,evtlabs)
+    coords.append(dict(name='output', unit=None, coords=labs))
 
-    return X_TSd, Y_TSye, coords[1]['fs']
+    # set the ch_names dependng on the file type...
+    if 'face' in savefile:
+        coords[2]['coords'] = ('P9','cp5','cp6','P10','O1','POz','O2','Oz') 
+    elif 'central_cap' in savefile:
+        coords[2]['coords'] = ('Cp5','Cp1','Cp2','Cp6','P3','P2','P4','POz')
 
 
+    return X_TSd, Y_TSye, coords, outputs, label
 
-def testcase(tau_ms=650, offset_ms=0):
+
+def testcase(tau_ms:float=650, offset_ms:float=0, rank:int=2):
     if False:
-        X_TSd, Y_TSye, fs = simdata()
+        X_TSd, Y_TSye, coords, outputs, label = simdata()
 
     else:
-        X_TSd, Y_TSye, fs = loaddata()
+        X_TSd, Y_TSye, coords, outputs, label = loaddata()
 
-    if fs is None: fs=100
+    fs = coords[1]['fs'] if coords is not None else 100
+    ch_names = coords[2]['coords'] if coords is not None else None
     tau = int(tau_ms*fs/1000)
     offset = int(offset_ms*fs/1000)
 
     #testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0)
         
-    testcase_levelsCCA(X_TSd,Y_TSye,tau=tau,offset=offset)
+    testcase_levelsCCA(X_TSd,Y_TSye,tau=tau,offset=offset,rank=rank,fs=fs,ch_names=ch_names,outputs=outputs,label=label)
 
 
 if __name__=="__main__":
