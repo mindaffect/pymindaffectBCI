@@ -77,6 +77,19 @@ class StimSeq :
         res+="\n\n"
         return res
 
+    def plot(self,show=False,title=None):
+        import matplotlib.pyplot as plt
+        import numpy as np
+        yscale = np.max(np.abs(self.stimSeq))
+        if self.stimTime_ms is not None:
+            plt.plot(self.stimTime_ms, self.stimSeq + yscale*np.arange(len(self.stimSeq[0]))[np.newaxis,:],'.-')
+        else:
+            plt.plot(self.stimSeq + yscale*np.arange(len(self.stimSeq[0]))[np.newaxis,:],'.-')
+        if title:
+            plt.title(title)
+        if show: 
+            plt.show()
+
     def is_integer(self):
         return all([ s.is_integer() for row in self.stimSeq for s in row ])
 
@@ -294,9 +307,13 @@ def mkRandLevel(ncodes=36, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlev
     """make a random levels stimulus -- where rand level every soa frames
 
     Args:
-        width (int, optional): width of the matrix. Defaults to 5.
-        height (int, optional): height of the matrix. Defaults to 5.
-        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+        ncodes (int, optional): number different sequences to make. Defaults to 36.
+        nEvent (int, optional): number of events in each sequence. Defaults to 400.
+        soa (int, optional): stimulus onset asycnroncy - number of 'null' events between stim events. Defaults to 3.
+        jitter (int, optional): jitter in soa between stimulus events. Defaults to 1.
+        minval (int, optional): minimum stimulus event level. Defaults to 0.
+        maxval (int, optional): max stimulus event level. Defaults to 1.
+        nlevels (int, optional): number of levels beween min and max. Defaults to 10.
 
     Returns:
         [StimSeq]: The generated stimulus sequence
@@ -345,11 +362,66 @@ def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1
     return StimSeq(None,array.tolist(),None)
 
 
+def mkBlockRandPatternReversal(ncodes=1, nEvent=400, soa=3, blockLen=10, blockLevels:list()=None):
+    """make a block random pattern reversal stimulus
+    Args:
+        blockLen (int): length of each block
+        blockLevels (list): list of pairs of levels (for the pattern reversal) to use in each block
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=int)
+    for c in range(array.shape[1]):
+        cursor = 0 # current position in this sequence
+        while cursor < array.shape[0]:
+            # generate random block sequence
+            blk_ss = np.zeros((blockLen,),dtype=array.dtype)
+            bi = np.random.randint(0,len(blockLevels))
+            nlvl = len(blockLevels[bi])
+            for li in range(nlvl):
+                blk_ss[li::nlvl] = blockLevels[bi][li]
+            array[cursor:cursor+blk_ss.shape[0],c] = blk_ss
+            cursor += blk_ss.shape[0] + soa # move the cursor on
+
+    return StimSeq(None,array.tolist(),None)
+
+
+def mkBlockSweepPatternReversal(ncodes=1, nEvent=400, soa=3, blockLen=10, blockLevels:list()=None):
+    """make a block random pattern reversal stimulus
+    Args:
+        blockLen (int): length of each block
+        blockLevels (list): list of pairs of levels (for the pattern reversal) to use in each block
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=int)
+
+    for c in range(array.shape[1]):
+        bi = 0 
+        cursor = 0 # current position in this sequence
+        while cursor < array.shape[0]:
+            # generate random block sequence
+            blk_ss = np.zeros((blockLen,),dtype=array.dtype)
+            nlvl = len(blockLevels[bi])
+            for li in range(nlvl):
+                blk_ss[li::nlvl] = blockLevels[bi][li]
+            array[cursor:cursor+blk_ss.shape[0],c] = blk_ss
+            cursor += blk_ss.shape[0] + soa # move the cursor on
+            bi = (bi + 1) % len(blockLevels)
+
+    return StimSeq(None,array.tolist(),None)
+
+
 def mkCodes():
     """[summary]
     """    
     # test generators
     rc=mkRowCol(width=5,height=5, repeats=10)
+    rc.plot(show=True,title='rc')
     rc.toFile('rc5x5.png')
     rc.toFile('rc5x5.txt')
 
@@ -358,18 +430,32 @@ def mkCodes():
     ssvep.toFile('ssvep.txt')
 
     ssvep_cont = mkFreqTag(isbinary=False)
+    ssvep.plot(show=True,title='ssvep')
     ssvep_cont.toFile('ssvep_cont.png')
     ssvep_cont.toFile('ssvep_cont.txt')
 
     # random integers 0-9
     level10 = mkRandLevel(maxval=9, nlevels=10)
+    level10.plot(show=True,title='level10')
     level10.toFile('level10.png')
     level10.toFile('level10.txt')
 
     # random levels 0-1
     level11_cont = mkRandLevel(nlevels=11)
+    level11_cont.plot(show=True,title='level11_cont')
     level11_cont.toFile('level11_cont.png')
     level11_cont.toFile('level11_cont.txt')
+
+    # block pat rev
+    bpr = mkBlockRandPatternReversal(blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
+    bpr.plot(show=True,title='block rand pattern reversal')
+    bpr.toFile('6blk_rand_pr.png')
+    bpr.toFile('6blk_rand_pr.txt')
+
+    bpr = mkBlockSweepPatternReversal(blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
+    bpr.plot(show=True,title='block sweep pattern reversal')
+    bpr.toFile('6blk_sweep_pr.png')
+    bpr.toFile('6blk_sweep_pr.txt')
 
 # testcase code
 if __name__ == "__main__":
