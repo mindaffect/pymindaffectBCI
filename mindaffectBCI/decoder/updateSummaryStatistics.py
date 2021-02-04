@@ -605,11 +605,11 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     pl.legend()
 
 
-def plot_factoredmodel(A, R, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, offset_ms=None, offset=None, spatial_filter_type="Filter", ncol=2):
+def plot_factoredmodel(A, R, S=None, evtlabs=None, times=None, ch_names=None, ch_pos=None, fs=None, offset_ms=None, offset=None, spatial_filter_type="Filter", ncol=2):
     '''
     Make a multi-plot of a factored model
-    A = (k,d)
-    R = (k,e,tau)
+    A_kd = k components and d sensors
+    R_ket = k components, e events, tau samples response-duration
     '''
     A=A.copy()
     R=R.copy()
