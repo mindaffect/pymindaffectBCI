@@ -28,11 +28,16 @@ import os
 
 class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
     """variant of SelectionGridScreen which changes the background image on 'flash' rather than luminosity
-    """    
+    """  
+    def __init__(self, window, symbols, noisetag, scale_to_fit:bool=True, color_labels:bool=True, **kwargs):
+        self.scale_to_fit = scale_to_fit
+        self.color_labels = color_labels
+        super().__init__(window,symbols,noisetag,**kwargs)
+
     def init_target(self, symb, x, y, w, h, font_size:int=None):
         # make list of sprites for the different state-dependent images
         symbs = symb.split("|")
-        sprite = [self.init_sprite(symb,x,y,w,h)[0] for symb in symbs]
+        sprite = [self.init_sprite(symb,x,y,w,h,scale_to_fit=self.scale_to_fit)[0] for symb in symbs]
 
         # get the label
         symb = symbs[0] if len(symbs)>1 else symb
@@ -49,7 +54,7 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
             self.objects[idx][img_idx].visible = True
             #self.objects[idx][img_idx].color = self.state2color[state]
         if self.labels[idx]:
-            col = self.state2color.get(state,(255,255,255,255))
+            col = self.state2color.get(state,(255,255,255,255)) if self.color_labels else (255,255,255,255)
             self.labels[idx].color=  col if len(col)==4 else col+(255,) #(255,255,255,255) # reset labels
 
 if __name__ == "__main__":
@@ -59,4 +64,10 @@ if __name__ == "__main__":
     setattr(args,'framesperbit',4)
     setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
     setattr(args,'calibration_screen_args', dict(font_size=10))
+    setattr(args,"extra_screens",["mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen"])
+    setattr(args,"extra_stimseqs",["6blk_rand_pr.txt","6blk_sweep_pr.txt","6blk_rand.txt"])
+    setattr(args,"extra_screen_args",[dict(font_size=10, scale_to_fit=False, color_labels=False)])
+
     selectionMatrix.run(**vars(args))

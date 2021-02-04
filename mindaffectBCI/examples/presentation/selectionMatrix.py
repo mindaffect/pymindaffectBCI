@@ -1044,7 +1044,7 @@ class SelectionGridScreen(Screen):
                                 batch=self.batch, group=self.foreground)
         return label
 
-    def init_sprite(self, symb, x, y, w, h):
+    def init_sprite(self, symb, x, y, w, h, scale_to_fit=True):
         try : # symb is image to use for this button
             img = search_directories_for_file(symb,os.path.dirname(__file__),
                                               os.path.join(os.path.dirname(__file__),'images'))
@@ -1062,7 +1062,8 @@ class SelectionGridScreen(Screen):
         sprite.w = w
         sprite.h = h
         # re-scale (on GPU) to the size of this grid cell
-        sprite.update(scale_x=int(sprite.w)/sprite.image.width, scale_y=int(sprite.h)/sprite.image.height)
+        if scale_to_fit:
+            sprite.update(scale_x=int(sprite.w)/sprite.image.width, scale_y=int(sprite.h)/sprite.image.height)
         return sprite, symb
 
 
@@ -1316,7 +1317,9 @@ class ExptScreenManager(Screen):
                  calibration_screen:Screen=None, calibration_screen_args:dict=dict(), 
                  prediction_screen:Screen=None, prediction_screen_args:dict=dict(),
                  stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
-                 simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, extra_screens=None, bgFraction=.1,
+                 simple_calibration:bool=False, calibration_symbols=None, 
+                 extra_symbols=None, extra_screens=None, extra_stimseqs=None, extra_labels=None,  extra_screen_args=None,
+                 bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
         self.window = window
         self.noisetag = noisetag
@@ -1327,14 +1330,22 @@ class ExptScreenManager(Screen):
         self.bgFraction = bgFraction
         # auto-generate menu items for each prediction symbols set
         self.extra_symbols = extra_symbols
+        self.extra_stimseqs = extra_stimseqs
         if extra_symbols:
             if not extra_screens is None:
-                raise ValueError("Cant have extra symbols and extra screens")
+                extra_screen_cls = extra_screens 
+            else:
+                extra_screen_cls = ['SelectionGridScreen']
             # convert to a set of screens
             extra_screens = []
-            for symbols in extra_symbols:
-                scr = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
-                scr.label = symbols
+            for i,symbols in extra_symbols:
+                cls = extra_screen_cls[i] if i < len(extra_screen_cls) else extra_screen_cls[-1]
+                if extra_screen_args : 
+                    args = extra_screen_args[i] if i < len(extra_screen_args) else extra_screen_args[-1]
+                else:
+                    args = dict()
+                scr = import_and_make_class(cls, window=window, symbols=symbols, noisetag=noisetag, optosensor=optosensor, **args)
+                scr.label = symbols if extra_labels is None else extra_labels[i]
                 extra_screens.append(scr)
 
         self.extra_screens = extra_screens
@@ -1342,8 +1353,14 @@ class ExptScreenManager(Screen):
         if extra_screens is not None:
             for i,s in enumerate(extra_screens):
                 if isinstance(s,str):
+                    if extra_screen_args : 
+                        args = extra_screen_args[i] if i < len(extra_screen_args) else extra_screen_args[-1]
+                    else:
+                        args = dict()
                     try:
-                        extra_screens[i] = import_and_make_class(s)
+                        extra_screens[i] = import_and_make_class(s, window=window, symbols=symbols, noisetag=noisetag, optosensor=optosensor, **args)
+                        if extra_labels is not None:
+                            extra_screens[i].label = extra_labels[i]
                     except:
                         print('Couldnt make the screen {}'.format(s))
 
@@ -1351,7 +1368,7 @@ class ExptScreenManager(Screen):
                 keyi = i + 4
                 label = getattr(ps,'label',type(ps).__name__) # use label slot, fallback on class name
                 self.main_menu_numbered = self.main_menu_numbered + "\n" + \
-                        "{}) Free Typing: {}".format(keyi,label)
+                        "{}) {}".format(keyi,label)
                 self.menu_keys[getattr(pyglet.window.key,"_{:d}".format(keyi))] = self.ExptPhases.ExtraSymbols
 
 
@@ -1584,7 +1601,10 @@ class ExptScreenManager(Screen):
                 self.prediction_args['framesperbit'] = self.framesperbit
                 self.prediction_args['numframes'] = self.prediction_trialduration / isi
                 self.prediction_args['selectionThreshold']=self.selectionThreshold
-                
+
+                if self.extra_stimseqs:
+                    screen.noisetag.set_stimSeq(self.extra_stimseqs[extrai])
+
                 screen.noisetag.startPrediction(**self.prediction_args)
                 self.screen = screen
             self.next_stage = self.ExptPhases.MainMenu
@@ -1774,7 +1794,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
         calibration_screen:Screen=None, calibration_screen_args:dict=dict(),
         prediction_screen:Screen=None, prediction_screen_args:dict=dict(),        
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
-        extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
+        extra_symbols=None, extra_screens=None, extra_stimseqs=None, extra_labels=None, extra_screen_args=None,
+        calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
 
     Args:
@@ -1832,7 +1853,7 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,
-                        extra_symbols=extra_symbols,
+                        extra_symbols=extra_symbols, extra_screens=extra_screens, extra_stimseqs=extra_stimseqs, extra_labels=extra_labels, extra_screen_args=extra_screen_args,
                         bgFraction=bgFraction, 
                         calibration_args=calibration_args, calibration_trialduration=calibration_trialduration, 
                         prediction_args=prediction_args, prediction_trialduration=prediction_trialduration, feedbackduration=feedbackduration)
