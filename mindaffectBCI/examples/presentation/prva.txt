@@ -1,0 +1,2 @@
+# pattern reversal va test, for 6 levels of grating sizes
++|visualacuity/grating1.jpg|visualacuity/grating1_neg.jpg|visualacuity/grating2.jpg|visualacuity/grating2_neg.jpg|visualacuity/grating3.jpg|visualacuity/grating3_neg.jpg|visualacuity/grating4.jpg|visualacuity/grating4_neg.jpg|visualacuity/grating7.jpg|visualacuity/grating7_neg.jpg|visualacuity/grating10.jpg|visualacuity/grating10_neg.jpg

@@ -833,7 +833,7 @@ class SelectionGridScreen(Screen):
                  optosensor:bool=True, 
                  target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=None,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
-                 logo:str='MindAffect_Logo.png'):
+                 logo:str='MindAffect_Logo.png', font_size:int=None):
         '''Intialize the stimulus display with the grid of strings in the
         shape given by symbols.
         Store the grid object in the fakepresentation.objects list so can
@@ -854,6 +854,7 @@ class SelectionGridScreen(Screen):
         self.optosensor = optosensor
         self.framerate_display = framerate_display
         self.logo = logo
+        self.font_size = font_size
         # N.B. noisetag does the whole stimulus sequence
         self.set_noisetag(noisetag)
         if self.symbols is not None:
@@ -1034,6 +1035,7 @@ class SelectionGridScreen(Screen):
 
     def init_label(self, symb, x, y, w, h, font_size=None):
         # add the foreground label for this cell, and add to drawing batch
+        if font_size is None: font_size = self.font_size
         if font_size is None or font_size == 'auto':
             font_size = int(min(w,h)*.75*72/96/len(symb))
         label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
@@ -1044,7 +1046,8 @@ class SelectionGridScreen(Screen):
 
     def init_sprite(self, symb, x, y, w, h):
         try : # symb is image to use for this button
-            img = search_directories_for_file(symb,os.path.dirname(__file__),os.path.join(os.path.dirname(__file__),'images'))
+            img = search_directories_for_file(symb,os.path.dirname(__file__),
+                                              os.path.join(os.path.dirname(__file__),'images'))
             img = pyglet.image.load(img)
             symb = '.' # symb is a fixation dot
         except :
@@ -1126,7 +1129,7 @@ class SelectionGridScreen(Screen):
         """        
         if self.objects[idx]:
             if isinstance(state,int): # integer state, map to color lookup table
-                self.objects[idx].color = self.state2color[state]
+                self.objects[idx].color = self.state2color.get(state,self.state2color[0])
             elif isinstance(state,float): # float state, map to intensity
                 self.objects[idx].color = tuple(int(c*state) for c in self.state2color[1])
         if self.labels[idx]:
@@ -1310,8 +1313,8 @@ class ExptScreenManager(Screen):
                  calibration_trialduration:float=4.2, prediction_trialduration:float=10,  waitduration:float=1, feedbackduration:float=2,
                  framesperbit:int=None, fullscreen_stimulus:bool=True, 
                  selectionThreshold:float=.1, optosensor:bool=True,  
-                 calibrationScreen:Screen=None, calscreen_args:dict=dict(), 
-                 predictionScreen:Screen=None, predscreen_args:dict=dict(),
+                 calibration_screen:Screen=None, calibration_screen_args:dict=dict(), 
+                 prediction_screen:Screen=None, prediction_screen_args:dict=dict(),
                  stimseq:str=None, stimfile:str=None, calibration_stimseq:str=None,
                  simple_calibration:bool=False, calibration_symbols=None, extra_symbols=None, extra_screens=None, bgFraction=.1,
                  calibration_args:dict=None, prediction_args:dict=None):
@@ -1358,19 +1361,19 @@ class ExptScreenManager(Screen):
         self.electquality = ElectrodequalityScreen(window, noisetag)
         self.results = ResultsScreen(window, noisetag)
 
-        if calibrationScreen is not None:
-            if isinstance(calibrationScreen,str):
-                calibrationScreen = import_and_make_class(calibrationScreen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**calscreen_args)
+        if calibration_screen is not None:
+            if isinstance(calibration_screen,str):
+                calibration_screen = import_and_make_class(calibration_screen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**calibration_screen_args)
         else:
-            calibrationScreen = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
-        self.calibrationScreen = calibrationScreen
+            calibration_screen = SelectionGridScreen(window, symbols, noisetag, optosensor=optosensor)
+        self.calibration_screen = calibration_screen
         
-        if predictionScreen is not None:
-            if isinstance(predictionScreen,str):
-                predictionScreen = import_and_make_class(predictionScreen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**predscreen_args)
+        if prediction_screen is not None:
+            if isinstance(prediction_screen,str):
+                prediction_screen = import_and_make_class(prediction_screen,window=window,symbols=symbols,noisetag=noisetag,optosensor=optosensor,**prediction_screen_args)
         else:
-            predictionScreen = calibrationScreen
-        self.predictionScreen = predictionScreen
+            prediction_screen = calibration_screen
+        self.prediction_screen = prediction_screen
 
         self.stage = self.ExptPhases.Connecting
         self.next_stage = self.ExptPhases.Connecting
@@ -1475,7 +1478,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Calibration: # calibration
             print("calibration")
-            screen = self.calibrationScreen
+            screen = self.calibration_screen
             screen.reset()
             screen.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             screen.setliveFeedback(False)
@@ -1513,7 +1516,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.CuedPrediction: # pred
             print("cued prediction")
-            screen = self.predictionScreen
+            screen = self.prediction_screen
             screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
@@ -1544,7 +1547,7 @@ class ExptScreenManager(Screen):
 
         elif self.stage==self.ExptPhases.Prediction: # pred
             print("prediction")
-            screen = self.predictionScreen
+            screen = self.prediction_screen
             screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
@@ -1602,7 +1605,7 @@ class ExptScreenManager(Screen):
             #print("flicker with selection")
             #self.selectionGrid.noisetag.startFlickerWithSelection(numframes=10/isi)
             print("single trial")
-            screen = self.predictionScreen
+            screen = self.prediction_screen
             screen.set_grid([[None, 'up', None],
                                          ['left', 'fire', 'right']])
             screen.noisetag.startSingleTrial(numframes=10/isi)
@@ -1768,8 +1771,8 @@ def load_symbols(fn):
 
 def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float=4.2,  prediction_trialduration:float=20, feedbackduration:float=2, stimfile:str=None, stimseq:str=None, selectionThreshold:float=.1,
         framesperbit:int=1, optosensor:bool=True, fullscreen:bool=False, windowed:bool=None, 
-        calibrationScreen:Screen=None, calscreen_args:dict=dict(), 
-        predictionScreen:Screen=None, predscreen_args:dict=dict(),        
+        calibration_screen:Screen=None, calibration_screen_args:dict=dict(),
+        prediction_screen:Screen=None, prediction_screen_args:dict=dict(),        
         fullscreen_stimulus:bool=True, simple_calibration=False, host=None, calibration_symbols=None, calibration_stimseq:str=None, bgFraction=.1,
         extra_symbols=None, calibration_args:dict=None, prediction_args:dict=None):
     """ run the selection Matrix with default settings
@@ -1824,8 +1827,8 @@ def run(symbols=None, ncal:int=10, npred:int=10, calibration_trialduration:float
         calibration_symbols = symbols
     # make the screen manager object which manages the app state
     ss = ExptScreenManager(window, nt, symbols, ncal=ncal, npred=npred, framesperbit=framesperbit, 
-                        calibrationScreen=calibrationScreen, calscreen_args=calscreen_args,
-                        predictionScreen=predictionScreen, predscreen_args=predscreen_args,
+                        calibration_screen=calibration_screen, calibration_screen_args=calibration_screen_args,
+                        prediction_screen=prediction_screen, prediction_screen_args=prediction_screen_args,
                         fullscreen_stimulus=fullscreen_stimulus, selectionThreshold=selectionThreshold, 
                         optosensor=optosensor, simple_calibration=simple_calibration, calibration_symbols=calibration_symbols, 
                         stimseq=stimseq, calibration_stimseq=calibration_stimseq,
@@ -1864,6 +1867,6 @@ if __name__ == "__main__":
     setattr(args,'extra_symbols',['3x3.txt','robot_control.txt'])
     #setattr(args,'stimfile','level11_cont.txt')
     setattr(args,'calibration_stimseq','rc5x5.txt')
-    setattr(args,'extra_symbols',['iconic.txt'])
+    setattr(args,'extra_symbols',['prva.txt'])
     run(**vars(args))
 

@@ -123,5 +123,5 @@ class SnakeGameScreen(selectionMatrix.WaitScreen):
 if __name__=="__main__":
     args = selectionMatrix.parse_args()
     setattr(args,'symbols',None)
-    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.snake_game.SnakeGameScreen')
+    setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.snake_game.SnakeGameScreen')
     selectionMatrix.run(**vars(args))

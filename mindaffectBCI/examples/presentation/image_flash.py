@@ -47,14 +47,16 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
                 sprite.visible = False
             img_idx = state if len(self.objects[idx])>1 and state<len(self.objects[idx]) else 0
             self.objects[idx][img_idx].visible = True
-            self.objects[idx][img_idx].color = self.state2color[state]
+            #self.objects[idx][img_idx].color = self.state2color[state]
         if self.labels[idx]:
-            self.labels[idx].color=(255,255,255,255) # reset labels
+            col = self.state2color.get(state,(255,255,255,255))
+            self.labels[idx].color=  col if len(col)==4 else col+(255,) #(255,255,255,255) # reset labels
 
 if __name__ == "__main__":
     args = selectionMatrix.parse_args()
-    setattr(args,'symbols','rc5x5_faces.txt')
-    setattr(args,'stimfile','rc5x5.txt')
+    setattr(args,'symbols','prva.txt')
+    setattr(args,'stimfile','6blk_rand_pr.txt')
     setattr(args,'framesperbit',4)
-    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
+    setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
+    setattr(args,'calibration_screen_args', dict(font_size=10))
     selectionMatrix.run(**vars(args))

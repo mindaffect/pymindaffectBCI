@@ -22,7 +22,7 @@
         "selectionThreshold":0.1,
         "symbols":"symbols.txt",
         "stimfile":"rc5x5.png",
-        "calibrationScreen":"mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen",
+        "calibration_screen":"mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen",
         "calscreen_args":{"transform":"rotation"},
         "bgFraction":0.3,
         "prediction_args":{"permute":true},

@@ -79,5 +79,5 @@ if __name__ == "__main__":
     setattr(args,'symbols',[['yes|yesno\\yes_f.wav','no|yesno\\no_m.wav']])
     setattr(args,'stimfile','rc5x5.txt')
     setattr(args,'framesperbit',4)
-    setattr(args,'calibrationScreen','mindaffectBCI.examples.presentation.sound_flash.SoundFlashScreen')
+    setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.sound_flash.SoundFlashScreen')
     selectionMatrix.run(**vars(args))
