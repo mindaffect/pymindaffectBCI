@@ -437,6 +437,15 @@ def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
         evtlabs=('1')
         label='threshold'
 
+    elif 'reversal' in savefile :
+        # convert pairs of levels into outputs
+        Y_TSyl, outputs = stim2event(Y_TSy,oddeven_pattern_reversal)
+        print("Levels = {}".format(outputs))
+        Y_TSy = Y_TSyl.reshape((Y_TSyl.shape[0],Y_TSyl.shape[1],-1)) # compress levels into outputs
+        
+        evtlabs=('pr')
+        label='reversal'
+
     elif 'rc'in savefile:
         evtlabs=('re','ntre')
         label='rc'

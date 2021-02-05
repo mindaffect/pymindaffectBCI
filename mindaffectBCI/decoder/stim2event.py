@@ -99,7 +99,10 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
             F, elab = etype(M, axis, oM)
 
         elif not isinstance(etype,str): # not-function not str -> assume it's a value to match:
-            F = (M == etype)
+            if hasattr(etype,'__iter__'):
+                F = equals_subarray(M, etype, axis)
+            else:
+                F = (M == etype)
 
         # 1-bit
         elif etype == "flash" or etype == '1':
@@ -269,10 +272,23 @@ def hot_greaterthan(M,axis,oM):
 
 def hoton_lessthan(M,axis,oM): 
     vals = np.unique(M)
-    if len(vals)>1: vals=vals[2:] # strip min as nothing is <min
+    if len(vals)>1: vals=vals[1:] # strip min as nothing is <min
     F = M[...,np.newaxis] < vals.reshape((1,)*M.ndim+(vals.size,))
     elab = tuple("<{}".format(v) for v in vals)  # labs are now the values used
     return F,elab
+
+def oddeven_pattern_reversal(M,axis,oM):
+    vals = np.unique(M)
+    if vals[0]==0: vals=vals[1:]
+    maxval = np.max(vals)//2
+    vals = np.arange(1,maxval+1, dtype=M.dtype) # max even value
+    F = np.zeros(M.shape+(len(vals),),dtype=M.dtype)
+    for i,v in enumerate(vals):
+        print('{}) v={}'.format(i,v))
+        F[...,i] = np.logical_or(equals_subarray(M,(v,v+1),axis),
+                                 equals_subarray(M,(v+1,v),axis))
+    return F,vals
+    
 
 def testcase():
     from mindaffectBCI.decoder.stim2event import stim2event
@@ -281,25 +297,27 @@ def testcase():
                   [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]])
     
     print("Raw  :{}".format(M))
-    e = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
-    e = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))
-    e = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
-    e = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
-    e = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
-    e = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
-    e = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
-    e = stim2event(M, 'hot-one', axis=-1);      print("hot-one :{}".format(e[0, ...].T))
-    e = stim2event(M, 'hot2', axis=-1);      print("hot2 :{}".format(e[0, ...].T))
-    e = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
-    e = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
-    e = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
-    e = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
-    e = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
-    e = stim2event(M.T, ('re', 'fe', 'anyre'), axis=-2); print("refeanyer :{}".format(e[0, ...].T))
-    e = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
-    e = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, ((0,1),(1,2)), axis=-1);  print("(0,1):{}".format(e[0, ...].T))
+    e,_ = stim2event(M, oddeven_pattern_reversal, axis=-1);  print("pr:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'diff', axis=-1);      print("diff :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'inc', axis=-1);       print("inc  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'dec', axis=-1);       print("dec  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'new', axis=-1);      print("new  :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'grad', axis=-1);      print("grad :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'hot-one', axis=-1);      print("hot-one :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'hot2', axis=-1);      print("hot2 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M*30, 'inc10', axis=-1);       print("inc10 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M*30, 'dec10', axis=-1);       print("dec10 :{}".format(e[0, ...].T))
+    e,_ = stim2event(M-1, 'cross', axis=-1);       print("cross :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, ('re', 'fe'), axis=-1); print("refe :{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'onsetre', axis=-1);     print("onsetre:{}".format(e[0, ...].T))
+    e,_ = stim2event(M.T, ('re', 'fe', 'anyre'), axis=-2); print("refeanyer :{}".format(e[0, ...].T))
+    e,_ = stim2event(M.T, ('re', 'fe', 'rest'), axis=-2); print("referest :{}".format(e[0, ...].T))
+    e,_ = stim2event(M.T, 'ntre', axis=-2);      print("ntre :{}".format(e[0, ...].T))
 
     # test incremental calling, propogating prefix between calls
     oM= None
