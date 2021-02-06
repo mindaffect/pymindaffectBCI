@@ -22,16 +22,18 @@ from time import sleep, perf_counter
 class FileProxyHub:
     ''' Proxy UtopiaClient which gets messages from a saved log file '''
     def __init__(self, filename:str=None, speedup:float=None, use_server_ts:bool=True):
-        self.filename = filename
         import glob
         import os
-        if self.filename is None or self.filename == '-':
+        if filename is None or filename == '-':
             # default to last log file if not given
             files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
             self.filename = max(files, key=os.path.getctime)
+        elif filename == 'askloadsavefile':
+            filename = askloadsavefile()
         else:
             files = glob.glob(os.path.expanduser(filename))
-            self.filename = max(files, key=os.path.getctime)
+            filename = max(files, key=os.path.getctime)
+        self.filename = filename
         print("Loading : {}\n".format(self.filename))
         self.speedup = speedup
         self.isConnected = True

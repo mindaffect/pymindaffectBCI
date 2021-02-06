@@ -164,7 +164,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
             F = M > n
 
         elif etype.startswith("pr"):
-            a,b = [int(e) for e in etype[2:].split(',')]
+            a,b = [int(e) for e in etype[2:].replace(',','_').split('_')]
             F = np.logical_or(equals_subarray(M,(a,b),axis),
                               equals_subarray(M,(b,a),axis))
 

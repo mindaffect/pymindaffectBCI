@@ -319,6 +319,7 @@ def parse_args():
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
+    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=1)
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)

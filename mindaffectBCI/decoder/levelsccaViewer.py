@@ -374,6 +374,8 @@ def parse_args():
     parser.add_argument('--host',type=str, help='address (IP) of the utopia-hub', default=None)
     parser.add_argument('--evtypes', type=str, help='comma separated list of stimulus even types to use', default='re,fe')
     parser.add_argument('--out_fs',type=int, help='output sample rate', default=100)
+    parser.add_argument('--tau_ms',type=float, help='output sample rate', default=450)
+    parser.add_argument('--offset_ms',type=float, help='offset from time 0 for analysis', default=None)
     parser.add_argument('--stopband',type=json.loads, help='set of notch filters to apply to the data before analysis', default=((45,65),(5.5,25,'bandpass')))
     parser.add_argument('--rank', type=str, help='rank of decomposition to use', default=1)
     parser.add_argument('--ch_names', type=str, help='list of channel names, or capfile', default=None)
@@ -381,27 +383,26 @@ def parse_args():
     parser.add_argument('--savefile_fs', type=float, help='effective sample rate for the save file', default=None)
     parser.add_argument('--savefile_speedup', type=float, help='play back the save file with this speedup factor. None means fast as possible', default=None)
     parser.add_argument('--timeout_ms', type=float, help="timeout for wating for new data from hub, equals min-redraw time.",default=500)
+    parser.add_argument('--events2outputs',type=bool, help='set if we convert events to outputs before analysis',default=False)
     args = parser.parse_args()
     if args.evtypes: 
         args.evtypes = args.evtypes.split(',')
     if args.ch_names:
         args.ch_names = args.ch_names.split(',')
-        
+
     return args
-
-
 
 if __name__=='__main__':
     args = parse_args()
 
-    if True:
+    if False:
         args.ch_names = ('P7','PO7','PO8','P8','Oz','Iz','POz','Cz') 
-        args.savefile_speedup=None
+        args.savefile_speedup=1
         args.timeout_ms = 1000
-        from mindaffectBCI.decoder.FileProxyHub import askloadsavefile
-        args.savefile = askloadsavefile()
+        #from mindaffectBCI.decoder.FileProxyHub import askloadsavefile
+        args.savefile = "askloadsavefile" #()
         import mindaffectBCI.decoder.stim2event 
-        args.evtypes = ('pr1,2','pr3,4','pr5,6','pr7,8','pr9,10','pr11,12') # mindaffectBCI.decoder.stim2event.oddeven_pattern_reversal
+        args.evtypes = ('pr1_2','pr3_4','pr5_6','pr7_8','pr9_10','pr11_12') # mindaffectBCI.decoder.stim2event.oddeven_pattern_reversal
         args.events2outputs = True
         args.offset_ms = (0,0)
 
