@@ -109,6 +109,21 @@ class FileProxyHub:
         self.lastrealtimestamp = self.getRealTimeStamp()
         return msgs
 
+
+def askloadsavefile(initialdir=None):
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    import os
+    if initialdir is None:
+        initialdir = os.getcwd()
+    root = Tk()
+    root.withdraw()
+    savefile = askopenfilename(initialdir=initialdir,
+                                title='Chose mindaffectBCI save File',
+                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
+    return savefile
+
+
 def testcase(filename, speedup=None, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
     """[summary]
 

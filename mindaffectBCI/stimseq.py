@@ -395,7 +395,7 @@ def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1
     return StimSeq(None,array.tolist(),None)
 
 
-def mkBlockRandPatternReversal(ncodes=1, nEvent=400, soa=0, blockLen=10, blockLevels:list()=None, randblk=True):
+def mkBlockRandPatternReversal(ncodes=1, nEvent=None, nSweep=1, soa=0, blockLen=10, blockLevels:list()=None, randblk=True):
     """make a block random pattern reversal stimulus
     Args:
         blockLen (int): length of each block
@@ -405,6 +405,8 @@ def mkBlockRandPatternReversal(ncodes=1, nEvent=400, soa=0, blockLen=10, blockLe
         [StimSeq]: The generated stimulus sequence
     """    
     import numpy as np
+    if nEvent is None:
+        nEvent = nSweep * len(blockLevels) * ( blockLen + soa )
     array = np.zeros((nEvent,ncodes),dtype=int)
     blkSeq = np.arange(len(blockLevels))
     for c in range(array.shape[1]):
@@ -439,11 +441,11 @@ def mkCodes():
     bpr.plot(show=True,title='block rand pattern reversal')
     bpr.toFile('6blk_rand.txt')
 
-    bpr = mkBlockRandPatternReversal(ncodes=1,blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
+    bpr = mkBlockRandPatternReversal(ncodes=1, nSweep=1, blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
     bpr.plot(show=True,title='block rand pattern reversal')
     bpr.toFile('6blk_rand_pr.txt')
 
-    bpr = mkBlockSweepPatternReversal(ncodes=1,blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
+    bpr = mkBlockSweepPatternReversal(ncodes=1, nSweep=1, blockLevels=[(1,2),(3,4),(5,6),(7,8),(9,10),(11,12)])
     bpr.plot(show=True,title='block sweep pattern reversal')
     bpr.toFile('6blk_sweep_pr.txt')
 

@@ -662,23 +662,27 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
 
 
 def plot_stim_encoding(Ytrue,Ytrueevt,evtlabs,fs):
+    if evtlabs is None : evtlabs = np.arange(Ytrueevt.shape[-1]) if Ytrueevt is not None else [0]
     yscale = np.max(np.abs(Ytrue.ravel()))
-    fig,(YrawAx,YevtAx)=plt.subplots(nrows=1,ncols=2, sharex=True, sharey=True)
-    plt.sca(YrawAx)
+    ncols = 2 if Ytrueevt is not None else 1
+    fig,ax=plt.subplots(nrows=1,ncols=ncols, sharex=True, sharey=True)
+    if ncols==1 : ax=[ax]
+    plt.sca(ax[0])
     plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
     plt.title('Y-raw')
     plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
-    plt.sca(YevtAx)
-    Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
-    Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
-    yscale = np.max(np.abs(Ytrueevt.ravel()))
-    plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
-    plt.grid(True)
-    plt.title('Yevt {}'.format(evtlabs))
-    plt.xlabel('time (seconds)')
-    plt.ylabel('Trial#')
+    if Ytrueevt is not None:
+        plt.sca(ax[1])
+        Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
+        Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
+        yscale = np.max(np.abs(Ytrueevt.ravel()))
+        plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+        plt.grid(True)
+        plt.title('Yevt {}'.format(evtlabs))
+        plt.xlabel('time (seconds)')
+        plt.ylabel('Trial#')
     plt.show(block=False)
 
 

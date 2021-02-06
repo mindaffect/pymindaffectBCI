@@ -20,7 +20,7 @@ import numpy as np
 from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
 
 
-def erpViewer(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms: float=np.inf, tau_ms: float=500,
+def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms: float=np.inf, tau_ms: float=500,
               offset_ms=(-15, 0), evtlabs=None, ch_names=None, nstimulus_events: int=600, rank=3, center=True):
     ''' simple sig-viewer using the ring-buffer for testing '''
     import matplotlib.pyplot as plt
@@ -297,5 +297,5 @@ if __name__=='__main__':
     except:
         pass
 
-    erpViewer(ui, **vars(args))
+    run(ui, **vars(args))
     

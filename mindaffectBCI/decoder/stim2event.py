@@ -163,6 +163,11 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
             n = float(etype[1:]) if len(etype)>1 else 0
             F = M > n
 
+        elif etype.startswith("pr"):
+            a,b = [int(e) for e in etype[2:].split(',')]
+            F = np.logical_or(equals_subarray(M,(a,b),axis),
+                              equals_subarray(M,(b,a),axis))
+
         # continuous values
         elif etype == "ave":
             if not axis == M.ndim-2:
@@ -277,11 +282,12 @@ def hoton_lessthan(M,axis,oM):
     elab = tuple("<{}".format(v) for v in vals)  # labs are now the values used
     return F,elab
 
-def oddeven_pattern_reversal(M,axis,oM):
-    vals = np.unique(M)
-    if vals[0]==0: vals=vals[1:]
-    maxval = np.max(vals)//2
-    vals = np.arange(1,maxval+1, dtype=M.dtype) # max even value
+def oddeven_pattern_reversal(M,axis,oM,vals=None):
+    if vals is None:
+        vals = np.unique(M)
+        if vals[0]==0: vals=vals[1:]
+        maxval = np.max(vals)
+        vals = np.arange(1,maxval,2, dtype=M.dtype) # max even value
     F = np.zeros(M.shape+(len(vals),),dtype=M.dtype)
     for i,v in enumerate(vals):
         print('{}) v={}'.format(i,v))
@@ -298,6 +304,7 @@ def testcase():
     
     print("Raw  :{}".format(M))
     e,_ = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
+    e,_ = stim2event(M, 'pr1,2', axis=-1);  print("pr1,2:{}".format(e[0, ...].T))
     e,_ = stim2event(M, ((0,1),(1,2)), axis=-1);  print("(0,1):{}".format(e[0, ...].T))
     e,_ = stim2event(M, oddeven_pattern_reversal, axis=-1);  print("pr:{}".format(e[0, ...].T))
     e,_ = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))

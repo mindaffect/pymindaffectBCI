@@ -10,12 +10,18 @@ def levelsCCA(X_TSd,Y_TSye,tau,offset=0,reg=1e-9,rank=1,CCA=True,rcond=(1e-8,1e-
     return levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, reg=reg, rank=rank, rcond=rcond, symetric=symetric)
 
 
-def levelsSummaryStatistics(X_TSd,Y_TSye,tau, offset:int=0, center:bool=True, unitnorm:bool=True, zeropadded:bool=True, badEpThresh:float=4):
+def levelsSummaryStatistics(X_TSd,Y_TSye, tau, Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, 
+                            offset:int=0, center:bool=True, unitnorm:bool=False, zeropadded:bool=True, badEpThresh:float=4):
     X_TSd, Y_TSye = zero_outliers(X_TSd, Y_TSye, badEpThresh)
     # get the summary statistics
-    Cxx_dd = updateCxx(None,X_TSd,None,tau=tau, offset=offset, center=center, unitnorm=unitnorm)
-    Cyx_yetd = updateCxy(None, X_TSd, Y_TSye, None, tau=tau, offset=offset, center=center, unitnorm=unitnorm)
-    Cyy_tyeye = compCyy_diag(Y_TSye, tau, zeropadded=zeropadded, unitnorm=unitnorm, perY=False)
+    nCxx_dd = updateCxx(None,X_TSd,None, tau=tau, offset=offset, center=center, unitnorm=unitnorm)
+    nCyx_yetd = updateCxy(None, X_TSd, Y_TSye, None, tau=tau, offset=offset, center=center, unitnorm=unitnorm)
+    nCyy_tyeye = compCyy_diag(Y_TSye, tau, zeropadded=zeropadded, unitnorm=unitnorm, perY=False)
+    # accmulate if wanted
+    Cxx_dd = nCxx_dd if Cxx_dd is None else nCxx_dd + Cxx_dd
+    Cyx_yetd = nCyx_yetd if Cyx_yetd is None else nCyx_yetd + Cyx_yetd
+    Cyy_tyeye = nCyy_tyeye if Cyy_tyeye is None else nCyy_tyeye + Cyy_tyeye
+    # return the updated info
     return Cxx_dd, Cyx_yetd, Cyy_tyeye
 
 
@@ -126,6 +132,9 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
         # TODO [] : norm-constrained optimization
         S_y = nonneglsopt(wCxxw, rCyxw_y, rCyyr_yy, S_y, syopt)
         S_y = S_y / np.sum(S_y) # maintain the norm
+        if np.any(np.isnan(S_y)) or np.any(np.isinf(S_y)):
+            print("Warning: nan or inf!")
+
         #print("{:3d}) S_y = {}".format(iter,np.array_str(S_y,precision=3)))
 
         # 5) Goodness of fit tracking
@@ -179,9 +188,15 @@ def Mtyeye2Myetyet(M_tyeye):
     return M_yetyet
 
 
-def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,verb:int=0):
+def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,ridge=1e-4,eps=1e-3, verb:int=0):
     if syopt is None:
         syopt = 'negridge'
+
+    if np.all(C_yy==0): # guard degenerate inputs
+        return s_y
+
+    # BODGE add a ridge to ensure is always invertable!
+    C_yy = C_yy.copy() + np.eye(C_yy.shape[0])*ridge
 
     J = C_xx - 2*C_yx@s_y + s_y.T@C_yy@s_y
     for iter in range(max_iter):
@@ -192,7 +207,7 @@ def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,verb:in
         elif syopt=='lspos': 
             s_y = np.linalg.pinv(C_yy, hermitian=True) @ C_yx
             s_y = np.maximum(s_y,0)
-        elif syopt=='expgrad': # exponiated gradient - maintain non-negative
+        elif syopt=='expgrad': # exponated gradient - maintain non-negative
             ds_y = C_yy @ s_y - C_yx
             eds_y = np.exp(-eta*ds_y)
             s_y = s_y * eds_y
@@ -209,7 +224,7 @@ def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,verb:in
             raise ValueError('unknown optimization type: {}'.format(syopt))
 
         # project onto the sum constraint
-        s_y = s_y / np.sum(s_y)
+        s_y = (s_y + eps) / np.sum(s_y + eps)
 
         # updated objective
         J = C_xx - 2*C_yx@s_y + s_y.T@C_yy@s_y
@@ -278,6 +293,18 @@ def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unit
     print("d W_kd {}".format(np.max(np.abs(W_kd0 - W_kd))))
     print("d R_ket {}".format(np.max(np.abs(R_ket0 - R_ket))))
 
+def plot_3factoredmodel(W_kd, R_ket, S_y, outputs:list=None, fs:float=None, ch_names:list=None, **kwargs):
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_factoredmodel
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plot_factoredmodel(W_kd,R_ket,fs=fs,ch_names=ch_names,ncol=3)
+    plt.subplot(1,3,3)
+    plt.plot(outputs,S_y)
+    plt.ylim((0,np.max(S_y)))
+    plt.grid()
+    plt.title('output weight') 
+
+
 
 def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank:int=1, syopt=None, label=None, outputs=None, fs:float=None, ch_names:list=None, **kwargs):
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_summary_statistics, plot_factoredmodel
@@ -293,13 +320,7 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank:int=1, syopt=None, lab
     print(f"S_y {S_y.shape} = {S_y}")
 
     # plot soln
-    plt.figure()
-    plot_factoredmodel(W_kd,R_ket,fs=fs,ch_names=ch_names,ncol=3)
-    plt.subplot(1,3,3)
-    plt.plot(outputs,S_y)
-    plt.ylim((0,np.max(S_y)))
-    plt.grid()
-    plt.title('output weight') 
+    plot_3factoredmodel(W_kd,R_ket,S_y,fs=fs,ch_names=ch_names,outputs=outputs)
     plt.suptitle('{} {} soln'.format(label,syopt)) 
 
     # plot SS
@@ -461,10 +482,12 @@ def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
 
     # set the ch_names dependng on the file type...
     if 'face' in savefile:
-        coords[2]['coords'] = ('P9','cp5','cp6','P10','O1','POz','O2','Oz') 
+        ch_names = ('P9','cp5','cp6','P10','O1','POz','O2','Oz') 
     elif 'central_cap' in savefile:
-        coords[2]['coords'] = ('Cp5','Cp1','Cp2','Cp6','P3','P2','P4','POz')
-
+        ch_names = ('Cp5','Cp1','Cp2','Cp6','P3','P2','P4','POz')
+    else:
+        ch_names = ('P7','PO7','PO8','P8','Oz','Iz','POz','Cz')
+    coords[2]['coords']=ch_names
 
     return X_TSd, Y_TSye, coords, outputs, label
 

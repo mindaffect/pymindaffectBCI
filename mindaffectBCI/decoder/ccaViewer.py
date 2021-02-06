@@ -26,9 +26,6 @@ from mindaffectBCI.decoder.devent2stimsequence import upsample_stimseq
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-def ccaViewer(*args, **kwargs):
-    run(*args, **kwargs)
-
 def run(ui: UtopiaDataInterface, maxruntime_ms: float=np.inf, timeout_ms:float = 500, tau_ms: float=500,
               offset_ms=(-15, 0), evtlabs=None, ch_names=None, ch_pos=None, topo_colorbar:bool=False, nstimulus_events: int=600, 
               rank:int=3, reg=.02, center:bool=True, host:str='-', stopband=None, out_fs=100, **kwargs):
@@ -364,4 +361,4 @@ if __name__=='__main__':
     except:
         pass
 
-    ccaViewer(ui, **vars(args))
+    run(ui, **vars(args))
