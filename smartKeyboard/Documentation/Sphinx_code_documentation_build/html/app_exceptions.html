@@ -1,0 +1,350 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>app_exceptions.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="bci_keyboard.py" href="bci_keyboard.html" />
+    <link rel="prev" title="General Modules" href="general_modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>app_exceptions.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/app_exceptions.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-app_exceptions">
+<span id="app-exceptions-py"></span><h1>app_exceptions.py<a class="headerlink" href="#module-app_exceptions" title="Permalink to this headline">¶</a></h1>
+<p>This module is for error and exception handling and logging. It serves as a an easy way to access log information
+for certain kind of procedures that might go wrong when running the program. Most stuff that can go wrong is on the
+side of user input when tinkering with the software. While all tinkering is encouraged as it is open source,
+the most likely errors to occur are when changing settings in the dedicated json files for configuration.
+Therefore these are caught, logged and handled when possible.</p>
+<dl class="simple">
+<dt>A <code class="docutils literal notranslate"><span class="pre">Logger</span></code> has the following functionality:</dt><dd><ul class="simple">
+<li><p>Functions that log for information and errors for individual exceptions in the code</p></li>
+</ul>
+</dd>
+<dt>A <code class="docutils literal notranslate"><span class="pre">Handler</span></code> has the following functionality:</dt><dd><ul class="simple">
+<li><p>Functions that handle errors and exceptions at certain points in the code to allow the program to
+continue running.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="app_exceptions.Logger">
+<em class="property">class </em><code class="sig-prename descclassname">app_exceptions.</code><code class="sig-name descname">Logger</code><a class="headerlink" href="#app_exceptions.Logger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_generic">
+<em class="property">static </em><code class="sig-name descname">log_generic</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_generic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Most generic function for logging some runtime error.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_layout_OS_error">
+<em class="property">static </em><code class="sig-name descname">log_layout_OS_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_layout_OS_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs an error whenever the loading of json files throws an OS Error, which often means that
+the file can’t be found.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_layout_generic_error">
+<em class="property">static </em><code class="sig-name descname">log_layout_generic_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_layout_generic_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when something unexpected went wrong when loading keyboard layout files.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_config_key_error">
+<em class="property">static </em><code class="sig-name descname">log_config_key_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_config_key_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when there is a key error for loading our config files, e.g.
+when there are typos in the config file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_config_error">
+<em class="property">static </em><code class="sig-name descname">log_config_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_config_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when something unexpected happened when loading in the config</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_threading_error">
+<em class="property">static </em><code class="sig-name descname">log_threading_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_threading_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs whenever an error occurs when creating a new Thread.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_google_auth_error">
+<em class="property">static </em><code class="sig-name descname">log_google_auth_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_google_auth_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when a google authentication error occurs in tts.py.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_gTTS_value_error">
+<em class="property">static </em><code class="sig-name descname">log_gTTS_value_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ve</span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_gTTS_value_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when a ValueError occurs in tts.py when using gTTS.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_open_file_error">
+<em class="property">static </em><code class="sig-name descname">log_open_file_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_open_file_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when a ValueError occurs when opening a file in tts.py when using paid services.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_write_file_error">
+<em class="property">static </em><code class="sig-name descname">log_write_file_error</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ioe</span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_write_file_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when an IOError occurs when writing to a file in key.py when saving text.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_download_frequency_list_error">
+<em class="property">static </em><code class="sig-name descname">log_download_frequency_list_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_download_frequency_list_error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logs when a ConnectionError occurs when trying to download a frequency list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_unknown_icon">
+<em class="property">static </em><code class="sig-name descname">log_unknown_icon</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_unknown_icon" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="app_exceptions.Logger.log_no_tts_input">
+<em class="property">static </em><code class="sig-name descname">log_no_tts_input</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Logger.log_no_tts_input" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="app_exceptions.Handler">
+<em class="property">class </em><code class="sig-prename descclassname">app_exceptions.</code><code class="sig-name descname">Handler</code><a class="headerlink" href="#app_exceptions.Handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="app_exceptions.Handler.mockup_keyboard">
+<em class="property">static </em><code class="sig-name descname">mockup_keyboard</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#app_exceptions.Handler.mockup_keyboard" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a mockup keyboard so the program can continue running.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="bci_keyboard.html" class="btn btn-neutral float-right" title="bci_keyboard.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="general_modules.html" class="btn btn-neutral float-left" title="General Modules" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,369 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>settings_manager.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="text_field.py" href="text_field.html" />
+    <link rel="prev" title="keyboard_loader.py" href="keyboard_loader.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>settings_manager.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/settings_manager.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-settings_manager">
+<span id="settings-manager-py"></span><span id="settings-manager"></span><h1>settings_manager.py<a class="headerlink" href="#module-settings_manager" title="Permalink to this headline">¶</a></h1>
+<p>This module manages settings provided by <code class="docutils literal notranslate"><span class="pre">user_config.json</span></code>.</p>
+<p>It contains a single class SettingsManager.</p>
+<p>A SettingsManager receives the already loaded in <code class="docutils literal notranslate"><span class="pre">user_config.json</span></code> and notifies
+every attached class when changes are made to the file.</p>
+<p>The class can be extended by any setting. In order to do so one must:
+* Add the setting to <code class="docutils literal notranslate"><span class="pre">user_config.json</span></code>.
+* Add an ‘attribute’ to this class.
+* Add a <code class="docutils literal notranslate"><span class="pre">get_'attribute'</span></code> and a <code class="docutils literal notranslate"><span class="pre">set_'attribute'</span></code> method to this class.
+* Add the <code class="docutils literal notranslate"><span class="pre">set_'attribute'</span></code> method to the <code class="docutils literal notranslate"><span class="pre">setting_to_function</span></code> attribute.
+* Pass the SettingsManager to the class that wants to be notified when changes are made to <code class="docutils literal notranslate"><span class="pre">user_config.json</span></code>.
+* Attach ‘that class’ to the SettingsManager by calling <code class="docutils literal notranslate"><span class="pre">SettingsManager.attach('that</span> <span class="pre">class')</span></code>.
+* Implement an ‘update’ method in ‘that class’ to be notified when (specific/used) settings are changed.
+* For an example see <code class="docutils literal notranslate"><span class="pre">text_to_speech.py</span></code>.</p>
+<dl class="py class">
+<dt id="settings_manager.SettingsManager">
+<em class="property">class </em><code class="sig-prename descclassname">settings_manager.</code><code class="sig-name descname">SettingsManager</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Manages the changes in user settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>dict</em>) – The already loaded in JSON file containing the user settings.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.get_instance">
+<em class="property">static </em><code class="sig-name descname">get_instance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.get_instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static access method.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes updates to the user_config file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.set_text_size">
+<code class="sig-name descname">set_text_size</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text_size</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.set_text_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets text size, writes to file and notifies observers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text_size</strong> (<em>int</em>) – The new text size.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.set_language">
+<code class="sig-name descname">set_language</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">language</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.set_language" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets language, writes to file and notifies observers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>language</strong> (<em>str</em>) – The new language as an IETF tag.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.set_word_prediction_correction">
+<code class="sig-name descname">set_word_prediction_correction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.set_word_prediction_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets word prediction and correction to mode, writes to file and notifies observers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>bool</em>) – The new mode of word prediction.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.get_language">
+<code class="sig-name descname">get_language</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lang_tag</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.get_language" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the language being used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Language being used.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>(str)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.get_text_size">
+<code class="sig-name descname">get_text_size</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.get_text_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the text size being used.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Return:</dt><dd><p>(int): Text size being used.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.get_word_prediction_correction">
+<code class="sig-name descname">get_word_prediction_correction</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.get_word_prediction_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current mode of word prediction and correction.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Return:</dt><dd><p>(bool): Mode of word prediction.</p>
+</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.notify_all_observers">
+<code class="sig-name descname">notify_all_observers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.notify_all_observers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies observers attached by calling their update methods.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.attach">
+<code class="sig-name descname">attach</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">observer</span></em><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.attach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attaches observer class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>observer</strong> (<em>Object</em>) – The class to attach.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="settings_manager.SettingsManager.set_default">
+<code class="sig-name descname">set_default</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#settings_manager.SettingsManager.set_default" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads default settings.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="text_field.html" class="btn btn-neutral float-right" title="text_field.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="keyboard_loader.html" class="btn btn-neutral float-left" title="keyboard_loader.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

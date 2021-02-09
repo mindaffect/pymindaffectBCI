@@ -1,0 +1,308 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>key.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="key_type.py" href="key_type.html" />
+    <link rel="prev" title="functional_provider.py" href="functional_provider.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>key.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/key.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-key">
+<span id="key-py"></span><h1>key.py<a class="headerlink" href="#module-key" title="Permalink to this headline">¶</a></h1>
+<p>This module contains a single class, Key.</p>
+<dl class="py class">
+<dt id="key.Key">
+<em class="property">class </em><code class="sig-prename descclassname">key.</code><code class="sig-name descname">Key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facade</span></em>, <em class="sig-param"><span class="n">key_type</span></em>, <em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">position</span></em>, <em class="sig-param"><span class="n">label_text</span></em>, <em class="sig-param"><span class="n">button_color</span></em>, <em class="sig-param"><span class="n">line_color</span></em>, <em class="sig-param"><span class="n">text_color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>This class represents a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>facade</strong> (<a class="reference internal" href="framework_facade.html#framework_facade.FrameworkFacade" title="framework_facade.FrameworkFacade"><em>framework_facade.FrameworkFacade</em></a>) – Provides this class with GUI specific functionality.</p></li>
+<li><p><strong>key_type</strong> (<a class="reference internal" href="key_type.html#key_type.KeyType" title="key_type.KeyType"><em>KeyType</em></a>) – The type of the key.</p></li>
+<li><p><strong>size</strong> (<em>tuple</em>) – The size of the key proportionally to the coordinate system.</p></li>
+<li><p><strong>position</strong> (<em>tuple</em>) – The position of the key in the coordinate system.</p></li>
+<li><p><strong>label_text</strong> (<em>str</em>) – The text to be displayed on the label or the path to the file used as an icon.</p></li>
+<li><p><strong>button_color</strong> (<em>tuple</em>) – The color of the button in the RGB format.</p></li>
+<li><p><strong>line_color</strong> (<em>tuple</em>) – The color of the line in the RGB format.</p></li>
+<li><p><strong>text_color</strong> (<em>tuple</em>) – The color of the label text in the RGB format.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="key.Key.build_key">
+<code class="sig-name descname">build_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">position</span></em>, <em class="sig-param"><span class="n">label_text</span></em>, <em class="sig-param"><span class="n">button_color</span></em>, <em class="sig-param"><span class="n">line_color</span></em>, <em class="sig-param"><span class="n">text_color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.build_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.toggle_render">
+<code class="sig-name descname">toggle_render</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.toggle_render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the rendering mode of the key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.handle_mouse_events">
+<code class="sig-name descname">handle_mouse_events</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.handle_mouse_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the selection event of the key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.set_label_text">
+<code class="sig-name descname">set_label_text</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_label_text</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.set_label_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the label text of the key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.change_color">
+<code class="sig-name descname">change_color</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_button_color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.change_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the color of a key’s button object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.set_line_color">
+<code class="sig-name descname">set_line_color</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">new_color</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.set_line_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the color of border line of the key to the given color</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.reset_color">
+<code class="sig-name descname">reset_color</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.reset_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Resets the color of a key’s button object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="key.Key.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#key.Key.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notifies the key with changes in settings.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="key_type.html" class="btn btn-neutral float-right" title="key_type.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="functional_provider.html" class="btn btn-neutral float-left" title="functional_provider.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,245 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Guide to adding new languages &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="License" href="license.html" />
+    <link rel="prev" title="additional_symbols_layout" href="additional_symbols_layout.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="general_modules.html">General Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Guide to adding new languages</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#buttons">Buttons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#correction">Correction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#prediction">Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Guide to adding new languages</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/new_languages_guide.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="guide-to-adding-new-languages">
+<span id="adding-new-languages-guide"></span><h1>Guide to adding new languages<a class="headerlink" href="#guide-to-adding-new-languages" title="Permalink to this headline">¶</a></h1>
+<p>New languages can be added to be used in the keyboard. For examples, you can refer to the pre-existing code.</p>
+<p>Replace LANGUAGE KEY with the code of your language e.g. ‘EN’ and LANGUAGE with the language e.g. ENGLISH</p>
+<div class="section" id="buttons">
+<h2>Buttons<a class="headerlink" href="#buttons" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>In <a class="reference internal" href="key_type.html#key-type"><span class="std std-ref">key_type.py</span></a> add a toggle key named  as <code class="docutils literal notranslate"><span class="pre">TOGGLE_ON_LANGUAGE_KEY</span> <span class="pre">=</span> <span class="pre">(ToggleFunction(link=&quot;language&quot;,</span> <span class="pre">mode=&quot;LANGUAGE</span> <span class="pre">KEY&quot;),</span> <span class="pre">False)</span></code></p></li>
+<li><p>In <cite>keyboard_config.json</cite> add the button under “Set language” as <code class="docutils literal notranslate"><span class="pre">[&quot;TOGGLE_ON_LANGUAGE_KEY&quot;,&quot;LANGUAGE</span> <span class="pre">KEY&quot;]</span></code></p></li>
+</ol>
+</div>
+<div class="section" id="correction">
+<h2>Correction<a class="headerlink" href="#correction" title="Permalink to this headline">¶</a></h2>
+<p>If there is an internet connection and online frequency list available for the chosen language, the program will automatically download it.</p>
+</div>
+<div class="section" id="prediction">
+<h2>Prediction<a class="headerlink" href="#prediction" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p>The program will make an n-gram file that builds prediction based on what the user has previously written.</p></li>
+<li><p>If you want to have prediction from the start you will need to train your own n-gram model. To do this you will have to download .txt files in your language that will be used to train on. A good source for this is the <a class="reference external" href="https://www.gutenberg.org">Gutenberg project</a>.</p></li>
+<li><p>When you have the files, put them in a folder and run <a class="reference internal" href="create_ngram_file.html#create-ngram"><span class="std std-ref">create_ngram_file.py</span></a> in your command line. Look at the documentation for the possible arguments.</p></li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="license.html" class="btn btn-neutral float-right" title="License" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="additional_symbols_layout.html" class="btn btn-neutral float-left" title="additional_symbols_layout" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,532 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>framework_facade.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="functional_provider.py" href="functional_provider.html" />
+    <link rel="prev" title="dictionary_retrieval.py" href="dictionary_retrieval.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>framework_facade.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/framework_facade.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-framework_facade">
+<span id="framework-facade-py"></span><h1>framework_facade.py<a class="headerlink" href="#module-framework_facade" title="Permalink to this headline">¶</a></h1>
+<p>This module serves as an interface between a selected GUI and the <code class="docutils literal notranslate"><span class="pre">Keyboard</span></code> class.</p>
+<p><strong>Usage</strong></p>
+<p>Set up a class which implements (inherits) this interface. Preferably name it <code class="docutils literal notranslate"><span class="pre">(some</span> <span class="pre">GUI)Facade</span></code>.
+The class must contain the methods below and must override them by providing the described
+GUI specific functionality.</p>
+<dl class="py class">
+<dt id="framework_facade.FrameworkFacade">
+<em class="property">class </em><code class="sig-prename descclassname">framework_facade.</code><code class="sig-name descname">FrameworkFacade</code><a class="headerlink" href="#framework_facade.FrameworkFacade" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.get_window">
+<code class="sig-name descname">get_window</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.get_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the window of the application.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The window.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.create_button">
+<code class="sig-name descname">create_button</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">line_col</span></em>, <em class="sig-param"><span class="n">label_col</span></em>, <em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">icon</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.create_button" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a button and a label on that button in the specific GUI.</p>
+<p>This method is called upon creation of a <code class="docutils literal notranslate"><span class="pre">Key</span></code> instance. It has to
+set up some form of a geometric shape and a textfield centered on it.
+For now, only those geometric shapes are supported whose size can be
+described by <code class="docutils literal notranslate"><span class="pre">size</span> <span class="pre">((float,</span> <span class="pre">float))</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Size of the button relative to the window size.</p></li>
+<li><p><strong>pos</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Position of the button in window with lower left corner (0,0), upper right corner (1,1).</p></li>
+<li><p><strong>col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – RGB value of the color used for filling.</p></li>
+<li><p><strong>line_col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – RGB value of the color used for surrounding line.</p></li>
+<li><p><strong>label_col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – RGB value of the color used for the label.</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – The label to be displayed on the button.</p></li>
+<li><p><strong>icon</strong> (<em>str</em>) – Path to a png file from which the icon is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The button</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.create_text">
+<code class="sig-name descname">create_text</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text</span></em>, <em class="sig-param"><span class="n">col</span></em>, <em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">align_hor</span></em>, <em class="sig-param"><span class="n">align_vert</span></em>, <em class="sig-param"><span class="n">wrap_width</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.create_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a text object in the specific GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<em>str</em>) – The text to be created.</p></li>
+<li><p><strong>col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – RGB value of the color used for filling.</p></li>
+<li><p><strong>pos</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Position of the text in window.</p></li>
+<li><p><strong>size</strong> (<em>int</em>) – Size of the text.</p></li>
+<li><p><strong>align_hor</strong> (<em>str</em>) – Horizontal alignment.</p></li>
+<li><p><strong>align_vert</strong> (<em>str</em>) – Vertical alignment.</p></li>
+<li><p><strong>wrap_width</strong> (<em>float</em>) – Width of the textbox.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.create_text_field">
+<code class="sig-name descname">create_text_field</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span></em>, <em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">text_size</span></em>, <em class="sig-param"><span class="n">text_col</span></em>, <em class="sig-param"><span class="n">align_text</span></em>, <em class="sig-param"><span class="n">anchor_vert</span></em>, <em class="sig-param"><span class="n">text</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.create_text_field" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a textfield in the specific GUI.</p>
+<p>This method is called upon creation of a <code class="docutils literal notranslate"><span class="pre">Key</span></code> instance. It has to
+set up the output textfield of the keyboard.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>size</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – The size of the textfield relative to the window size.</p></li>
+<li><p><strong>pos</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Position of the center of the textfield in window with lower left corner (0,0), upper right corner (1,1).</p></li>
+<li><p><strong>text_size</strong> (<em>int</em>) – The size of the text.</p></li>
+<li><p><strong>text_col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – Color of the text to be displayed in the textfield.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The textfield</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.create_icon">
+<code class="sig-name descname">create_icon</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em>, <em class="sig-param"><span class="n">label_col</span></em>, <em class="sig-param"><span class="n">pos</span></em>, <em class="sig-param"><span class="n">size</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.create_icon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an icon in the specific GUI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file</strong> (<em>string</em>) – Path to a png file from which the icon is created.</p></li>
+<li><p><strong>size</strong> (<em>float</em><em>, </em><em>float</em>) – Icon size fitted on the size of the shorter side of the key.</p></li>
+<li><p><strong>pos</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Position of the icon on the screen, expressed as two fractions relative to window dimensions.</p></li>
+<li><p><strong>label_col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – The color of the button label which is replaced by the icon, in RGB format.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The icon.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.create_line">
+<code class="sig-name descname">create_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">vertices</span></em>, <em class="sig-param"><span class="n">color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.create_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns a line object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vertices</strong> (<em>list</em>) – List of x and y coordinates.</p></li>
+<li><p><strong>color</strong> (<em>string</em>) – Color of the line.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A line.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.set_text">
+<code class="sig-name descname">set_text</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text_object</span></em>, <em class="sig-param"><span class="n">new_text</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.set_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accesses the textfield of the specific GUI and updates it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text_object</strong> (<em>object</em>) – The textfield to be accessed.</p></li>
+<li><p><strong>new_text</strong> (<em>str</em>) – The string to update the textfield.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.set_text_size">
+<code class="sig-name descname">set_text_size</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text_object</span></em>, <em class="sig-param"><span class="n">text_size</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.set_text_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the text size of the textfield.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text_object</strong> (<em>Object</em>) – A framework dependent reference to the to be changed text object</p></li>
+<li><p><strong>text_size</strong> (<em>int</em>) – The size of the text.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.set_line_color">
+<code class="sig-name descname">set_line_color</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shape</span></em>, <em class="sig-param"><span class="n">line_color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.set_line_color" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – A reference to the framework specific shape object to change the border color of</p></li>
+<li><p><strong>line_color</strong> – The color to set the border color to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.change_button_color">
+<code class="sig-name descname">change_button_color</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shape</span></em>, <em class="sig-param"><span class="n">new_color</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.change_button_color" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape</strong> – A reference to the framework specific shape object to change the color of</p></li>
+<li><p><strong>new_color</strong> – The to be used color</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.toggle_text_render">
+<code class="sig-name descname">toggle_text_render</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">text_object</span></em>, <em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.toggle_text_render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the rendering of a text_object of the specific GUI</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text_object</strong> (<em>object</em>) – The text object to be toggled</p></li>
+<li><p><strong>mode</strong> (<em>bool</em>) – The bool that determines if the text object will be rendered or not</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.toggle_shape_render">
+<code class="sig-name descname">toggle_shape_render</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">shape_object</span></em>, <em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.toggle_shape_render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Toggles the rendering of a shape_object of the specific GUI</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shape_object</strong> (<em>object</em>) – The text object to be toggled</p></li>
+<li><p><strong>mode</strong> (<em>bool</em>) – The bool that determines if the text object will be rendered or not</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.button_mouse_event">
+<code class="sig-name descname">button_mouse_event</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">button</span></em>, <em class="sig-param"><span class="n">mouse_buttons</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.button_mouse_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Listens for mouse clicks on a received button.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>button</strong> (<em>object</em>) – A button in the specific GUI.</p></li>
+<li><p><strong>mouse_buttons</strong> (<em>optional</em>) – The type of mouse clicks to listen for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if there is a click, False if there is no click</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.convert_pos">
+<code class="sig-name descname">convert_pos</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pos</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.convert_pos" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts general position into GUI specific position for buttons and textfields.</p>
+<p>Converts the position from a window with lower left corner (0,0), upper right corner (1,1) to the GUI
+specific position. The position provided marks the center of a textfield or button.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>pos</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Position of the center of the textfield in window with lower left corner (0,0), upper right corner (1,1).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Converted position</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.convert_size">
+<code class="sig-name descname">convert_size</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">size</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.convert_size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts general size into GUI specific size for buttons and textfields.</p>
+<p>The provided size represents the size of a button or textfield relative to the window
+(0.5,0.5) = (50%,50%).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>size</strong> (<em>(</em><em>float</em><em>, </em><em>float</em><em>)</em>) – Size relative to the window.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Converted size</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.convert_color">
+<code class="sig-name descname">convert_color</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">col</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.convert_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts RGB value into GUI specific color definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>col</strong> (<em>(</em><em>int</em><em>, </em><em>int</em><em>, </em><em>int</em><em>)</em>) – RGB value of a color.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Converted color</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.draw">
+<code class="sig-name descname">draw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">application</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the GUI specific window with new content.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.flip">
+<code class="sig-name descname">flip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.flip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draws the frame buffer to the screen</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.start">
+<code class="sig-name descname">start</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">application</span></em>, <em class="sig-param"><span class="n">exit_keys</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the GUI specific event loop.</p>
+<p>There should be an option for exiting the application (e.g. press ‘Q’(uit)).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="framework_facade.FrameworkFacade.quit">
+<code class="sig-name descname">quit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">keys</span></em><span class="sig-paren">)</span><a class="headerlink" href="#framework_facade.FrameworkFacade.quit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Called in start() to exit the application.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="functional_provider.html" class="btn btn-neutral float-right" title="functional_provider.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="dictionary_retrieval.html" class="btn btn-neutral float-left" title="dictionary_retrieval.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Complete BCI spelling system &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation &amp; Usage" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="general_modules.html">General Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Complete BCI spelling system</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="complete-bci-spelling-system">
+<h1>Complete BCI spelling system<a class="headerlink" href="#complete-bci-spelling-system" title="Permalink to this headline">¶</a></h1>
+<a class="reference internal image-reference" href="_images/keyboard.png"><img alt="A picture of our keyboard" src="_images/keyboard.png" style="width: 800px;" /></a>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>This module implements a keyboard for the BCI system developed by MindAffect.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The following features are supported:</p>
+<ul>
+<li><p>Adding a custom, configurable keyboard from a JSON file</p></li>
+<li><p>Multiple keyboards (sub-keyboards) can be used</p></li>
+<li><p>Cross-platform usage (Windows, MacOS, Linux)</p></li>
+<li><p>Predictive text</p></li>
+<li><p>Text-to-speech</p></li>
+<li><p>Word correction</p></li>
+<li><p>In-application BCI calibration</p></li>
+<li><p>Using almost any language</p></li>
+<li><p>Saving written text</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="adding-a-configurable-json-keyboard">
+<span id="configurable-keyboard"></span><h3>Adding a configurable JSON keyboard<a class="headerlink" href="#adding-a-configurable-json-keyboard" title="Permalink to this headline">¶</a></h3>
+<p>Using this <a class="reference external" href="http://www.keyboard-layout-editor.com/#/">keyboard editor</a> custom .json files can be generated that are read into the program. Unlike normal keyboards only one character per key is allowed, much like mobile keyboards, since the BCI has no “shift” key.</p>
+<p>More information on this can be found on the <a class="reference internal" href="custom_keyboard_guide.html#custom-keyboard-guide"><span class="std std-ref">Guide to creating custom JSON keyboards</span></a></p>
+</div>
+<div class="section" id="word-prediction-and-autocompletion">
+<h3>Word prediction and autocompletion<a class="headerlink" href="#word-prediction-and-autocompletion" title="Permalink to this headline">¶</a></h3>
+<p>The word prediction and autocompletion module uses n-gram frequency lists to predict what words the user is most likely to type next. Using this technique it is possible to easily create and use a custom frequency list for the user. This can enhance the user experience by suggesting for example the names of relatives whom the user wants to address.</p>
+<p>Read more about word prediction and autocompletion: <a class="reference internal" href="word_prediction.html#word-prediction"><span class="std std-ref">word_prediction.py</span></a></p>
+</div>
+<div class="section" id="word-correction">
+<h3>Word correction<a class="headerlink" href="#word-correction" title="Permalink to this headline">¶</a></h3>
+<p>The word correction module uses the <a class="reference external" href="https://pypi.org/project/symspellpy/">Symspellpy</a> module which is a Python port for the <a class="reference external" href="https://github.com/wolfgarbe/SymSpell">SymSpell</a> algorithm.</p>
+<p>Any language is supported if there is a frequency list for it. If a there is an internet connection, the right language frequency list is downloaded automatically. If not, the <cite>create_ngram_file’s</cite> -dictionary option can generate such a frequency list for a language.</p>
+<p>Read more about word correction: <a class="reference internal" href="word_correction.html#word-correction"><span class="std std-ref">word_correction.py</span></a></p>
+</div>
+<div class="section" id="text-to-speech">
+<h3>Text-to-speech<a class="headerlink" href="#text-to-speech" title="Permalink to this headline">¶</a></h3>
+<p>Our text-to-speech module supports multiple TTS suppliers.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>For offline use, the <a class="reference external" href="https://pypi.org/project/pyttsx3/">pyttsx3 library</a>.</p></li>
+<li><p>For online use, <a class="reference external" href="https://pypi.org/project/gTTS/">gTTs</a> can be used which uses Google Translate’s TTS api.</p></li>
+<li><p>For high quality paid online use, <a class="reference external" href="https://cloud.google.com/text-to-speech">Google WaveNet TTS</a> is supported. Only credentials need to be provided.</p></li>
+</ul>
+<p>For more details about text-to-speech:  <a class="reference internal" href="text_to_speech.html#text-to-speech"><span class="std std-ref">text_to_speech.py</span></a></p>
+</div></blockquote>
+<div class="toctree-wrapper compound">
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#problems">Problems</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general_modules.html">General Modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="calibration_reset_window.html">calibration_reset_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibration_window.html">calibration_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection_window.html">connection_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cued_prediction_window.html">cued_prediction_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="electrode_quality_window.html">electrode_quality_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="keyboard_window.html">keyboard_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="keypad_window.html">keypad_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="menu_window.html">menu_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="submenu_window.html">submenu_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="window.html">window.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="psychopy_facade.html">psychopy_facade.py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="custom_keyboard_guide.html#basic-structure">Basic structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="custom_keyboard_guide.html#keys">Keys</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="custom_keyboard_guide.html#special-keys">Special keys</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="custom_keyboard_guide.html#current-available-keyboards">Current available keyboards</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="lower_case_layout.html">lower_case_layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="upper_case_layout.html">upper_case_layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="symbols_layout.html">symbols_layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="additional_symbols_layout.html">additional_symbols_layout</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="new_languages_guide.html#buttons">Buttons</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new_languages_guide.html#correction">Correction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="new_languages_guide.html#prediction">Prediction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="install.html" class="btn btn-neutral float-right" title="Installation &amp; Usage" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

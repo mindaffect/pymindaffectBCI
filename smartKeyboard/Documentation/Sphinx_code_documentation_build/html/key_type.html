@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>key_type.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="keyboard_loader.py" href="keyboard_loader.html" />
+    <link rel="prev" title="key.py" href="key.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>key_type.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/key_type.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-key_type">
+<span id="key-type-py"></span><span id="key-type"></span><h1>key_type.py<a class="headerlink" href="#module-key_type" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="key_type.KeyType">
+<em class="property">class </em><code class="sig-prename descclassname">key_type.</code><code class="sig-name descname">KeyType</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#key_type.KeyType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
+<p>This class defines the key types currently used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func_provider</strong> (<a class="reference internal" href="functional_provider.html#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><em>FunctionalProvider</em></a>) – The functionality of a key type.</p></li>
+<li><p><strong>has_icon</strong> (<em>bool</em>) – Whether a key is loaded in with an icon instead of a label text.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="key_type.KeyType.BASIC_KEY">
+<code class="sig-name descname">BASIC_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.BasicFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.BASIC_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.ENTER_KEY">
+<code class="sig-name descname">ENTER_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.EnterFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.ENTER_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SPACE_BAR_KEY">
+<code class="sig-name descname">SPACE_BAR_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SpaceBarFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SPACE_BAR_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.BACKSPACE_KEY">
+<code class="sig-name descname">BACKSPACE_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.BackspaceFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.BACKSPACE_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TTS_KEY">
+<code class="sig-name descname">TTS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.TTSFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.TTS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.CLEAR_KEY">
+<code class="sig-name descname">CLEAR_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ClearFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.CLEAR_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SUGGESTION_KEY">
+<code class="sig-name descname">SUGGESTION_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SuggestionFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SUGGESTION_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_UPPER_KEY">
+<code class="sig-name descname">SWITCH_TO_UPPER_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_UPPER_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_LOWER_KEY">
+<code class="sig-name descname">SWITCH_TO_LOWER_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_LOWER_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_SYMBOLS_KEY">
+<code class="sig-name descname">SWITCH_TO_SYMBOLS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_SYMBOLS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_ADDITIONAL_SYMBOLS_KEY">
+<code class="sig-name descname">SWITCH_TO_ADDITIONAL_SYMBOLS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_ADDITIONAL_SYMBOLS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_MENU_KEY">
+<code class="sig-name descname">SWITCH_TO_MENU_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_MENU_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_KEYBOARD_KEY">
+<code class="sig-name descname">SWITCH_TO_KEYBOARD_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, True)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_KEYBOARD_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_CONFIGURATION_MENU_KEY">
+<code class="sig-name descname">SWITCH_TO_CONFIGURATION_MENU_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_CONFIGURATION_MENU_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_GENERAL_MENU_KEY">
+<code class="sig-name descname">SWITCH_TO_GENERAL_MENU_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_GENERAL_MENU_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_SAVE_LOAD_TEXT_MENU_KEY">
+<code class="sig-name descname">SWITCH_TO_SAVE_LOAD_TEXT_MENU_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_SAVE_LOAD_TEXT_MENU_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_ELECTRODE_QUALITY_KEY">
+<code class="sig-name descname">SWITCH_TO_ELECTRODE_QUALITY_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_ELECTRODE_QUALITY_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TOGGLE_ON_WORD_PREDICTION_CORRECTION_KEY">
+<code class="sig-name descname">TOGGLE_ON_WORD_PREDICTION_CORRECTION_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ToggleFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.TOGGLE_ON_WORD_PREDICTION_CORRECTION_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TOGGLE_OFF_WORD_PREDICTION_CORRECTION_KEY">
+<code class="sig-name descname">TOGGLE_OFF_WORD_PREDICTION_CORRECTION_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ToggleFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.TOGGLE_OFF_WORD_PREDICTION_CORRECTION_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TOGGLE_ON_GERMAN_KEY">
+<code class="sig-name descname">TOGGLE_ON_GERMAN_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ToggleFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.TOGGLE_ON_GERMAN_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TOGGLE_ON_ENGLISH_KEY">
+<code class="sig-name descname">TOGGLE_ON_ENGLISH_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ToggleFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.TOGGLE_ON_ENGLISH_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.TOGGLE_ON_DUTCH_KEY">
+<code class="sig-name descname">TOGGLE_ON_DUTCH_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.ToggleFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.TOGGLE_ON_DUTCH_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SAVE_TEXT_KEY">
+<code class="sig-name descname">SAVE_TEXT_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SaveTextFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SAVE_TEXT_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.PLUS_KEY">
+<code class="sig-name descname">PLUS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.PlusMinusFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.PLUS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.MINUS_KEY">
+<code class="sig-name descname">MINUS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.PlusMinusFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.MINUS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.DISPLAY_TEXT_SIZE_KEY">
+<code class="sig-name descname">DISPLAY_TEXT_SIZE_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.DisplayFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.DISPLAY_TEXT_SIZE_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.DEFAULT_SETTINGS_KEY">
+<code class="sig-name descname">DEFAULT_SETTINGS_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.DefaultSettingsFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.DEFAULT_SETTINGS_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_CALIBRATION_KEY">
+<code class="sig-name descname">SWITCH_TO_CALIBRATION_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_CALIBRATION_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.RESET_CALIBRATION">
+<code class="sig-name descname">RESET_CALIBRATION</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.RESET_CALIBRATION" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="key_type.KeyType.SWITCH_TO_CUED_PREDICTION_KEY">
+<code class="sig-name descname">SWITCH_TO_CUED_PREDICTION_KEY</code><em class="property"> = (&lt;keyboard.functional_provider.SwitchWindowFunction object&gt;, False)</em><a class="headerlink" href="#key_type.KeyType.SWITCH_TO_CUED_PREDICTION_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="keyboard_loader.html" class="btn btn-neutral float-right" title="keyboard_loader.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="key.html" class="btn btn-neutral float-left" title="key.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

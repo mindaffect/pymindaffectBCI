@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>menu_window.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="submenu_window.py" href="submenu_window.html" />
+    <link rel="prev" title="keypad_window.py" href="keypad_window.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="window_modules.html">Window Modules</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="calibration_reset_window.html">calibration_reset_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="calibration_window.html">calibration_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="connection_window.html">connection_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cued_prediction_window.html">cued_prediction_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="electrode_quality_window.html">electrode_quality_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="keyboard_window.html">keyboard_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="keypad_window.html">keypad_window.py</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">menu_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="submenu_window.html">submenu_window.py</a></li>
+<li class="toctree-l3"><a class="reference internal" href="window.html">window.py</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+          <li><a href="window_modules.html">Window Modules</a> &raquo;</li>
+        
+      <li>menu_window.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/menu_window.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-windows.menu_window">
+<span id="menu-window-py"></span><h1>menu_window.py<a class="headerlink" href="#module-windows.menu_window" title="Permalink to this headline">¶</a></h1>
+<p>This module contains a single class representing a menu.</p>
+<dl class="simple">
+<dt>It contains the following visual and functional elements:</dt><dd><ul class="simple">
+<li><p>four submenu windows</p></li>
+<li><p>navigation bar</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="windows.menu_window.MenuWindow">
+<em class="property">class </em><code class="sig-prename descclassname">windows.menu_window.</code><code class="sig-name descname">MenuWindow</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">parent</span></em>, <em class="sig-param"><span class="n">facade</span></em>, <em class="sig-param"><span class="n">style</span></em>, <em class="sig-param"><span class="n">menu_config</span></em>, <em class="sig-param"><span class="n">use_flickering</span></em>, <em class="sig-param"><span class="n">noisetag</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">keyboard.windows.window.Window</span></code></p>
+<p>A Window representing a menu.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> (<a class="reference internal" href="window.html#windows.window.Window" title="windows.window.Window"><em>windows.window.Window</em></a>) – The parent of this window.</p></li>
+<li><p><strong>facade</strong> (<a class="reference internal" href="framework_facade.html#framework_facade.FrameworkFacade" title="framework_facade.FrameworkFacade"><em>framework_facade.FrameworkFacade</em></a>) – Contains the GUI-specific functionality.</p></li>
+<li><p><strong>style</strong> (<em>dict</em>) – A dictionary containing configurable style settings.</p></li>
+<li><p><strong>menu_config</strong> (<em>dict</em>) – Configuration for the menu.</p></li>
+<li><p><strong>use_flickering</strong> (<em>bool</em>) – A boolean indicating whether or not to use flickering.</p></li>
+<li><p><strong>noisetag</strong> (<em>noisetag.Noisetag</em>) – Reference to the Noisetag module from MindAffect.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.get_keys">
+<code class="sig-name descname">get_keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.get_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the keys of this Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.activate">
+<code class="sig-name descname">activate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.activate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activates all visual and functional elements of this Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.deactivate">
+<code class="sig-name descname">deactivate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.deactivate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deactivates all visual and functional elements of this Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.switch_window">
+<code class="sig-name descname">switch_window</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">window_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.switch_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches to Window specified by window_name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>window_name</strong> (<em>str</em>) – The name of the Window to switch to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.handle_mouse_events">
+<code class="sig-name descname">handle_mouse_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.handle_mouse_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles mouse events within this Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.draw">
+<code class="sig-name descname">draw</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">noisetag</span></em>, <em class="sig-param"><span class="n">last_flip_time</span></em>, <em class="sig-param"><span class="n">target_idx</span><span class="o">=</span><span class="default_value">- 1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the state of the buttons/keys within this Window.
+It draws the display with the colors given by the Noisetag module if flickering is active.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>noisetag</strong> (<em>noisetag.Noisetag</em>) – Reference to the Noisetag module from MindAffect.</p></li>
+<li><p><strong>last_flip_time</strong> (<em>int</em>) – Timestamp of last screen update, i.e. buffer flip.</p></li>
+<li><p><strong>target_idx</strong> (<em>int</em>) – (Optional) index of the target stimulus.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.get_window">
+<code class="sig-name descname">get_window</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">window_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.get_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives access to Window specified by window_name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>window_name</strong> (<em>str</em>) – The name of the Window to get.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.select_key">
+<code class="sig-name descname">select_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objID</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.select_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cannot have functionality in Calibration mode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="windows.menu_window.MenuWindow.build_navigation_bar">
+<code class="sig-name descname">build_navigation_bar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">navigation_layout</span></em><span class="sig-paren">)</span><a class="headerlink" href="#windows.menu_window.MenuWindow.build_navigation_bar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds navigation keys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>navigation_layout</strong> (<em>list</em>) – Layout of the navigation keys.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="submenu_window.html" class="btn btn-neutral float-right" title="submenu_window.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="keypad_window.html" class="btn btn-neutral float-left" title="keypad_window.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

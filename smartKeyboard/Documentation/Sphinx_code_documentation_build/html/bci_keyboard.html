@@ -1,0 +1,467 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>bci_keyboard.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="create_ngram_file.py" href="create_ngram_file.html" />
+    <link rel="prev" title="app_exceptions.py" href="app_exceptions.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="functional_provider.html">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>bci_keyboard.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/bci_keyboard.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-bci_keyboard">
+<span id="bci-keyboard-py"></span><h1>bci_keyboard.py<a class="headerlink" href="#module-bci_keyboard" title="Permalink to this headline">¶</a></h1>
+<p>This module sets up a keyboard provided any GUI.</p>
+<p>It contains a single class <code class="docutils literal notranslate"><span class="pre">Application</span></code>.</p>
+<dl class="simple">
+<dt>An <code class="docutils literal notranslate"><span class="pre">Application</span></code> has the following functionality:</dt><dd><ul class="simple">
+<li><p>A clickable functional keyboard including textfield and prediction keys.</p></li>
+<li><p>A clickable menu.</p></li>
+</ul>
+</dd>
+<dt>An <code class="docutils literal notranslate"><span class="pre">Application</span></code> has the following two layouts:</dt><dd><ul class="simple">
+<li><p>A Keyboard which handles all keyboard functionality.</p></li>
+<li><p>A Menu which handles all settings and bci_calibration.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="bci_keyboard.Application">
+<em class="property">class </em><code class="sig-prename descclassname">bci_keyboard.</code><code class="sig-name descname">Application</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">facade</span></em>, <em class="sig-param"><span class="n">keyboard_config</span></em>, <em class="sig-param"><span class="n">user_config</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A container that handles switching between the different Keyboard and Menu Windows.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>facade</strong> – (framework_facade.FrameworkFacade): Contains the GUI specific functionality.</p></li>
+<li><p><strong>keyboard_config</strong> (<em>dict</em>) – Mapping of all configurable keyboard settings loaded from a JSON file.</p></li>
+<li><p><strong>user_config</strong> (<em>dict</em>) – Mapping of the user settings loaded from a JSON file.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.parent">
+<code class="sig-name descname">parent</code><a class="headerlink" href="#bci_keyboard.Application.parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>The parent of a window if existing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="window.html#windows.window.Window" title="windows.window.Window">windows.window.Window</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.facade">
+<code class="sig-name descname">facade</code><a class="headerlink" href="#bci_keyboard.Application.facade" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains the GUI specific functionality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="framework_facade.html#framework_facade.FrameworkFacade" title="framework_facade.FrameworkFacade">framework_facade.FrameworkFacade</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.keyboard_config">
+<code class="sig-name descname">keyboard_config</code><a class="headerlink" href="#bci_keyboard.Application.keyboard_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping of all configurable settings loaded from a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.user_config">
+<code class="sig-name descname">user_config</code><a class="headerlink" href="#bci_keyboard.Application.user_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping of the user settings loaded from a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.use_flickering">
+<code class="sig-name descname">use_flickering</code><a class="headerlink" href="#bci_keyboard.Application.use_flickering" title="Permalink to this definition">¶</a></dt>
+<dd><p>A boolean indicating whether or not to use flickering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.style">
+<code class="sig-name descname">style</code><a class="headerlink" href="#bci_keyboard.Application.style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Style configurations for the keyboard.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.noisetag">
+<code class="sig-name descname">noisetag</code><a class="headerlink" href="#bci_keyboard.Application.noisetag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reference to the Noisetag module from MindAffect.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>noisetag.Noisetag</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.last_flip_time">
+<code class="sig-name descname">last_flip_time</code><a class="headerlink" href="#bci_keyboard.Application.last_flip_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timestamp of last screen update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.switched_windows">
+<code class="sig-name descname">switched_windows</code><a class="headerlink" href="#bci_keyboard.Application.switched_windows" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.windows">
+<code class="sig-name descname">windows</code><a class="headerlink" href="#bci_keyboard.Application.windows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping from Window names to Window objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="bci_keyboard.Application.active_window">
+<code class="sig-name descname">active_window</code><a class="headerlink" href="#bci_keyboard.Application.active_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>The name of the currently active Window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.build_windows">
+<code class="sig-name descname">build_windows</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">connection_window</span></em>, <em class="sig-param"><span class="n">use_flickering</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.build_windows" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called from an instance of ConnectionWindow and builds all required windows for the application
+to run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>connection_window</strong> (<em>window.ConnectionWindow</em>) – A reference to the calling instance of ConnectionWindow.</p></li>
+<li><p><strong>use_flickering</strong> (<em>bool</em>) – The result of the connection attempt.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.setup_noisetag">
+<code class="sig-name descname">setup_noisetag</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.setup_noisetag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up a Noisetag object to communicate with the Utopia server.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.selection_handler">
+<code class="sig-name descname">selection_handler</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objID</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.selection_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Passes the predicted object id to the active Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.switch_window">
+<code class="sig-name descname">switch_window</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">window_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.switch_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches focus to the specified Window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>window_name</strong> (<em>str</em>) – The name of the Window to switch focus to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.handle_mouse_events">
+<code class="sig-name descname">handle_mouse_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.handle_mouse_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the handle_mouse_events function of the active Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.draw">
+<code class="sig-name descname">draw</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.draw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the draw method of the active Window.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.set_flip_time">
+<code class="sig-name descname">set_flip_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.set_flip_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the last flip time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="bci_keyboard.Application.get_window">
+<code class="sig-name descname">get_window</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">window_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.Application.get_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives access to Window specified by window_name.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt id="bci_keyboard.load_json">
+<code class="sig-prename descclassname">bci_keyboard.</code><code class="sig-name descname">load_json</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">file</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.load_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads JSON file and returns it as dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>file</strong> (<em>str</em>) – Path of JSON file to be loaded.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="bci_keyboard.run">
+<code class="sig-prename descclassname">bci_keyboard.</code><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">symbols</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">ncal</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">npred</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">stimfile</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">selectionThreshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">framesperbit</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">optosensor</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">fullscreen</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">windowed</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">fullscreen_stimulus</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">simple_calibration</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">calibration_symbols</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">bgFraction</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#bci_keyboard.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts the keyboard.</p>
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="create_ngram_file.html" class="btn btn-neutral float-right" title="create_ngram_file.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="app_exceptions.html" class="btn btn-neutral float-left" title="app_exceptions.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

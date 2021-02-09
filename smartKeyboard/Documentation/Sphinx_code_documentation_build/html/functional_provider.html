@@ -1,0 +1,540 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>functional_provider.py &mdash; team2021-mindaffect 0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="key.py" href="key.html" />
+    <link rel="prev" title="framework_facade.py" href="framework_facade.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> team2021-mindaffect
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Complete BCI spelling system</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation &amp; Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="general_modules.html">General Modules</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="app_exceptions.html">app_exceptions.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bci_keyboard.html">bci_keyboard.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="create_ngram_file.html">create_ngram_file.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dictionary_retrieval.html">dictionary_retrieval.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framework_facade.html">framework_facade.py</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">functional_provider.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key.html">key.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="key_type.html">key_type.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="keyboard_loader.html">keyboard_loader.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="settings_manager.html">settings_manager.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_field.html">text_field.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="text_to_speech.html">text_to_speech.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_correction.html">word_correction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="word_prediction.html">word_prediction.py</a></li>
+<li class="toctree-l2"><a class="reference internal" href="window_modules.html">Window Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="psychopy_modules.html">Psychopy-specific modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom_keyboard_guide.html">Guide to creating custom JSON keyboards</a></li>
+<li class="toctree-l1"><a class="reference internal" href="new_languages_guide.html">Guide to adding new languages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">team2021-mindaffect</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="general_modules.html">General Modules</a> &raquo;</li>
+        
+      <li>functional_provider.py</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/functional_provider.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-functional_provider">
+<span id="functional-provider-py"></span><h1>functional_provider.py<a class="headerlink" href="#module-functional_provider" title="Permalink to this headline">¶</a></h1>
+<p>This module defines the functionalities a key can be equipped with.</p>
+<dl class="py class">
+<dt id="functional_provider.FunctionalProvider">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">FunctionalProvider</code><a class="headerlink" href="#functional_provider.FunctionalProvider" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Interface to create a key functionality.</p>
+<dl class="py method">
+<dt id="functional_provider.FunctionalProvider.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.FunctionalProvider.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.FunctionalProvider.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.FunctionalProvider.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in update of Key and updates the equipped key
+with changes in settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.FunctionalProvider.retrieve">
+<code class="sig-name descname">retrieve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.FunctionalProvider.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called upon creation of a Key and provides the FunctionalProvider
+with necessary information.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.BasicFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">BasicFunction</code><a class="headerlink" href="#functional_provider.BasicFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to add its label text to the text field.</p>
+<dl class="py method">
+<dt id="functional_provider.BasicFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.BasicFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.BackspaceFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">BackspaceFunction</code><a class="headerlink" href="#functional_provider.BackspaceFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to delete the last character of the text field.</p>
+<dl class="py method">
+<dt id="functional_provider.BackspaceFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.BackspaceFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.SpaceBarFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">SpaceBarFunction</code><a class="headerlink" href="#functional_provider.SpaceBarFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to add an empty space to the text field.</p>
+<dl class="py method">
+<dt id="functional_provider.SpaceBarFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.SpaceBarFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.EnterFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">EnterFunction</code><a class="headerlink" href="#functional_provider.EnterFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to add a new line to the text field.</p>
+<dl class="py method">
+<dt id="functional_provider.EnterFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.EnterFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.SuggestionFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">SuggestionFunction</code><a class="headerlink" href="#functional_provider.SuggestionFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality
+to replace the last word in text field with its label text</p>
+<dl class="py method">
+<dt id="functional_provider.SuggestionFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.SuggestionFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.ClearFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">ClearFunction</code><a class="headerlink" href="#functional_provider.ClearFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to clear the text field.</p>
+<dl class="py method">
+<dt id="functional_provider.ClearFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.ClearFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.TTSFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">TTSFunction</code><a class="headerlink" href="#functional_provider.TTSFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to transform the text of text field into spoken output.</p>
+<dl class="py method">
+<dt id="functional_provider.TTSFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.TTSFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.SwitchWindowFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">SwitchWindowFunction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">link</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.SwitchWindowFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to activate the linked window.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>link</strong> (<em>str</em>) – The link to the to be activated window.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="functional_provider.SwitchWindowFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.SwitchWindowFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.PlusMinusFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">PlusMinusFunction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">link</span></em>, <em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.PlusMinusFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to add or subtract 1 from a numerical setting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> (<em>str</em>) – Link to the setting name used in settings_manager.py.</p></li>
+<li><p><strong>mode</strong> (<em>bool</em>) – Regulatory boolean to decide on subtraction or addition (True = ‘+’).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="functional_provider.PlusMinusFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.PlusMinusFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.PlusMinusFunction.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.PlusMinusFunction.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in update of Key and updates the equipped key
+with changes in settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.PlusMinusFunction.retrieve">
+<code class="sig-name descname">retrieve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.PlusMinusFunction.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called upon creation of a Key and provides the FunctionalProvider
+with necessary information.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.SaveTextFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">SaveTextFunction</code><a class="headerlink" href="#functional_provider.SaveTextFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to save the text of the text field to a file.</p>
+<dl class="py method">
+<dt id="functional_provider.SaveTextFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.SaveTextFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.DefaultSettingsFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">DefaultSettingsFunction</code><a class="headerlink" href="#functional_provider.DefaultSettingsFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to reset all settings to their default value.</p>
+<dl class="py method">
+<dt id="functional_provider.DefaultSettingsFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.DefaultSettingsFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.ToggleFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">ToggleFunction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">link</span></em>, <em class="sig-param"><span class="n">mode</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.ToggleFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with functionality to toggle a setting to the value specified by mode.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>link</strong> (<em>str</em>) – Link to the setting name used in settings_manager.py.</p></li>
+<li><p><strong>mode</strong> (<em>bool</em><em>, </em><em>str</em><em>, </em><em>int</em>) – The value to be toggled.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="functional_provider.ToggleFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.ToggleFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.ToggleFunction.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.ToggleFunction.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in update of Key and updates the equipped key
+with changes in settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.ToggleFunction.retrieve">
+<code class="sig-name descname">retrieve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.ToggleFunction.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called upon creation of a Key and provides the FunctionalProvider
+with necessary information.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="functional_provider.DisplayFunction">
+<em class="property">class </em><code class="sig-prename descclassname">functional_provider.</code><code class="sig-name descname">DisplayFunction</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">link</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.DisplayFunction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#functional_provider.FunctionalProvider" title="functional_provider.FunctionalProvider"><code class="xref py py-class docutils literal notranslate"><span class="pre">functional_provider.FunctionalProvider</span></code></a></p>
+<p>Provides the equipped key with the functionality to display a setting’s current value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>link</strong> (<em>str</em>) – Link to the setting name used in setting_manager.py.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="functional_provider.DisplayFunction.update">
+<code class="sig-name descname">update</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.DisplayFunction.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in update of Key and updates the equipped key
+with changes in settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.DisplayFunction.retrieve">
+<code class="sig-name descname">retrieve</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.DisplayFunction.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called upon creation of a Key and provides the FunctionalProvider
+with necessary information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="functional_provider.DisplayFunction.apply">
+<code class="sig-name descname">apply</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">key</span></em>, <em class="sig-param"><span class="n">window</span></em><span class="sig-paren">)</span><a class="headerlink" href="#functional_provider.DisplayFunction.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>To be overridden by classes inheriting this interface.</p>
+<p>Is called in handle_mouse_events of Key and applies this
+functionality when the equipped key is selected.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="key.html" class="btn btn-neutral float-right" title="key.py" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="framework_facade.html" class="btn btn-neutral float-left" title="framework_facade.py" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Thomas de Lange, Thomas Jurriaans, Damy Hillen, Joost Vossers, Jort Gutter, Florian Handke, Stijn Boosman
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
