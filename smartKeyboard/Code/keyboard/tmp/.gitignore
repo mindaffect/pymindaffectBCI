@@ -1,0 +1,5 @@
+# Ignore all files in this directory (temporary files should not be in the VCS)
+*
+
+# Except this file 
+!.gitignore
