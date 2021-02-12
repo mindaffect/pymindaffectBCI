@@ -55,7 +55,7 @@ If all is successfully installed then you should see a window like this open up.
 
 If you now press 2 you should see a flickering grid of "buttons" like below.  You should see a random one briefly flash green (it's the target) then rapidly flicker and eventually turn blue (to indicate it's selected.)
 
-<img src='docs/source/images/selectionMatrix.png' width=300>
+<img src='docs/source/images/selectionmatrix.png' width=300>
 
 If all this works then you have successfully installed the mindaffectBCI python software. You should now ensure your hardware (display, amplifier) is correctly configured before jumping into BCI control.
 
