@@ -386,9 +386,9 @@ def parse_args():
     parser.add_argument('--events2outputs',type=bool, help='set if we convert events to outputs before analysis',default=False)
     args = parser.parse_args()
     if args.evtypes: 
-        args.evtypes = [ e.strip() for e in args.evtypes.split(',') ]
+        args.evtypes = args.evtypes.split(',')
     if args.ch_names:
-        args.ch_names = [ c.strip() for c in args.ch_names.split(',') ]
+        args.ch_names = args.ch_names.split(',')
 
     return args
 

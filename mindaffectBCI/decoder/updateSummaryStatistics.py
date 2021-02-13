@@ -212,284 +212,22 @@ def updateCyy(Cyy, Y, stimTime=None, tau=None, wght=1, offset:float=0, zeropadde
             # accumulate into the running total
     return Cyy
 
-def Cyy_diag2full(Cyy_tyee):
+def Cyy_diag2full(MM):
     # BODGE: tau-diag Cyy entries to the 'correct' shape
     # (tau,nY,nE,nE) -> (nY,nE,tau,nE,tau)
-    if Cyy_tyee.ndim == 3: # (tau,nE,nE) -> (tau,1,nE,nE)
-        Cyy_tyee = np.reshape(Cyy_tyee,(Cyy_tyee.shape[0],1,Cyy_tyee.shape[1],Cyy_tyee.shape[2]))
-    Cyy_yetet = np.zeros((Cyy_tyee.shape[-3],Cyy_tyee.shape[-2],Cyy_tyee.shape[-4],Cyy_tyee.shape[-2],Cyy_tyee.shape[-4]),dtype=Cyy_tyee.dtype) # (nY,nE,tau,nE,tau)
+    if MM.ndim == 3: # (tau,nE,nE) -> (tau,1,nE,nE)
+        MM = np.reshape(MM,(MM.shape[0],1,MM.shape[1],MM.shape[2]))
+    MM2 = np.zeros((MM.shape[-3],MM.shape[-2],MM.shape[-4],MM.shape[-2],MM.shape[-4]),dtype=MM.dtype) # (nY,nE,tau,nE,tau)
     # fill in the block diagonal entries
-    for i in range(Cyy_tyee.shape[-4]):
-        Cyy_yetet[...,:,i,:,i] = Cyy_tyee[0,:,:,:]
-        for j in range(i+1,Cyy_tyee.shape[-4]):
-            Cyy_yetet[...,:,i,:,j] = Cyy_tyee[j-i,:,:,:]
-            Cyy_yetet[...,:,j,:,i] = Cyy_tyee[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
-    if Cyy_tyee.ndim==3: # ( 1,nE,tau,nE,tau) -> (nE,tau,nE,tau)
-        Cyy_yetet = Cyy_yetet[0,...]
-    return Cyy_yetet
-
-def Cyy_tyeye_diag2full(Cyy_tyeye):
-    t=Cyy_tyeye.shape[0]
-    y=Cyy_tyeye.shape[1]
-    e=Cyy_tyeye.shape[2]
-    
-    Cyy_yetyet = np.zeros((y,e,t,y,e,t),dtype=Cyy_tyeye.dtype)
-    # fill in the block diagonal entries
-    for i in range(t):
-        Cyy_yetyet[:,:,i,:,:,i] = Cyy_tyeye[0,:,:,:,:]
-        for j in range(i+1,t):
-            Cyy_yetyet[:,:,i,:,:,j] = Cyy_tyeye[j-i,:,:,:,:]
-            # lower diag, transpose the event types
-            Cyy_yetyet[:,:,j,:,:,i] = Cyy_tyeye[j-i,:,:,:,:].swapaxes(-3,-1).swapaxes(-4,-2)
-    return Cyy_yetyet
-
-
-def compCxx_diag(X_TSd, tau:float, offset:float=0, unitnorm:bool=True, center:bool=False):
-    '''
-    Compute the main tau diagonal entries of a Cyy tensor
-    Args:
-      X_TSd (nTrl, nEp/nSamp, d): the new stim info to be added
-               Indicator for which events occured for which outputs
-               nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
-      tau (int): number of time-shifts to compute over
-      unitnorm(bool) : flag if we normalize the Cyy with number epochs. Defaults to True.
-    Returns:
-      Cxx_tdd -- (tau, d, d)
-    '''
-    if X_TSd.ndim == 2:  # ensure is 3-d
-        X_TSd = X_TSd[np.newaxis, ...] 
-
-    # temporal embedding
-    X_TStd = window_axis(X_TSd, winsz=tau, axis=-2)
-    # shrink X w.r.t. the window and shift to align with the offset
-    X_TSd = X_TSd[:, :X_TStd.shape[-3], ...] # shift fowards and shrink
-    # compute the cross-covariance
-    MM = np.einsum("TStd, TSe->tde", X_TStd, X_TSd, casting='unsafe', dtype=X_TSd.dtype, optimize=True)
-
-    if center:
-        N = X_TSd.shape[0]*X_TSd.shape[1]
-        sX = np.sum(X_TSd.reshape((N,X.shape[-1])),axis=0)
-        muXX = np.einsum("i,j->ij",sX,sX) / N
-        MM = MM - muXX
-
-    if unitnorm:
-        # normalize so the resulting constraint on the estimated signal is that it have
-        # average unit norm
-        MM = MM / (X_TSd.shape[0]*X_TSd.shape[1]) # / nTrl*nEp
-    return MM
-
-def compCxx_full(X_TSd, tau:float, unitnorm:bool=False, center:bool=False):
-    assert unitnorm==False
-    assert center==False
-    # full manual computation
-    X_TStd = window_axis(X_TSd, winsz=tau, axis=-2) 
-    Cxx_tdtd = np.einsum('TStd,TSue->tdue',X_TStd,X_TStd)
-    return Cxx_tdtd
-
-def Cxx_diag2full(Cxx_tdd):
-    MM = np.zeros((Cxx_tdd.shape[0],Cxx_tdd.shape[1],Cxx_tdd.shape[0],Cxx_tdd.shape[2]), dtype=Cxx_tdd.dtype)
-    for t1 in range(Cxx_tdd.shape[0]):
-        for t2 in range(Cxx_tdd.shape[0]):
-            dt = t2 - t1
-            MM[t1,:,t2,:] = Cxx_tdd[abs(dt),:,:]
-    return MM
-
-def test_compCxx_diag():
-    from mindaffectBCI.decoder.utils import testSignal
-    import matplotlib.pyplot as plt
-
-    irf=(.5,0,0,0,0,0,0,0,0,1)
-    offset=0; # X->lag-by-10
-    X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=5,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
-    print("A={}\nB={}".format(A, B))
-    print("X{}={}".format(X.shape, X[:30, np.argmax(np.abs(A))]))
-    print("Y{}={}".format(Y.shape, Y[0, :30, 0]))
-
-    tau = 6
-
-    Cxx_tdtd0 = compCxx_full(X,tau,unitnorm=False)
-    #print(f"Cxx_tdtd0={Cxx_tdtd0}")
-    Cxx_tdd0 = Cxx_tdtd0[:,:,0,:]
-
-    print(f"Cxx_tdd0={Cxx_tdd0.shape}")
-
-    # diag computation
-    Cxx_tdd = compCxx_diag(X,tau,unitnorm=False)
-    print(f"Cxx_tdd={Cxx_tdd.shape}")
-
-    print('delta Cxx={}'.format(np.max(np.abs(Cxx_tdd-Cxx_tdd0))))
-
-    plt.figure()
-    plt.subplot(311)
-    plt.imshow(Cxx_tdd0.reshape((Cxx_tdd0.shape[0],-1)))
-    plt.colorbar()
-    plt.subplot(312)
-    plt.imshow(Cxx_tdd.reshape((Cxx_tdd.shape[0],-1)))
-    plt.colorbar()
-    plt.subplot(313)
-    plt.imshow((Cxx_tdd-Cxx_tdd0).reshape((Cxx_tdd.shape[0],-1)))
-    plt.colorbar()
-    plt.show()
-
-    Cxx_tdtd = Cxx_diag2full(Cxx_tdd)
-    print("N.B. can be approx because of the diagnonal copy in the up-sample")
-    print('delta Cxx_full={}'.format(np.max(np.abs(Cxx_tdtd-Cxx_tdtd0))))
-    #print(f"Cxx_tdtd0={Cxx_tdtd0}")
-    #print(f"Cxx_tdtd={Cxx_tdtd}")
-
-    plt.figure()
-    plt.subplot(311)
-    plt.imshow(Cxx_tdtd0.reshape((Cxx_tdtd0.shape[0]*Cxx_tdtd0.shape[1],-1)))
-    plt.colorbar()
-    plt.subplot(312)
-    plt.imshow(Cxx_tdtd.reshape((Cxx_tdtd.shape[0]*Cxx_tdtd.shape[1],-1)))
-    plt.colorbar()
-    plt.subplot(313)
-    plt.imshow((Cxx_tdtd-Cxx_tdtd0).reshape((Cxx_tdtd.shape[0]*Cxx_tdtd.shape[1],-1)))
-    plt.colorbar()
-    plt.show()
-
-
-def compCyx_diag(X_TSd, Y_TSye, tau=None, offset=0, center=False, verb=0, unitnorm=True):
-    '''
-    Args:
-    X_TSd (nTrl, nSamp, d):  raw response for the current stimulus event
-            d=#electrodes
-    Y_TSye (nTrl, nSamp, nY, nE): Indicator for which events occured for which outputs
-            nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
-    Returns:
-        Cyx_tyed (nY, nE, tau, d): cross covariance at different offsets
-        taus : relative offsets (t_y - t_x)
-    '''
-    if X_TSd.ndim == 2: 
-        X_TSd = X_TSd[np.newaxis, ...] 
-    if Y_TSye.ndim == 3:
-        Y_TSye = Y_TSye[np.newaxis, ...] 
-    if verb > 1: print("tau={}".format(tau))
-    if not hasattr(tau,'__iter__'): tau=(0,tau)
-    if offset is None : offset = 0
-    if not hasattr(offset,'__iter__'): offset=(0,offset)
-
-    # work out a single shift-length for shifting X
-    taus = list(range(-(offset[0] + tau[0]-1 - offset[1]), (offset[1] + tau[1]-1 - offset[0])+1))
-
-    MM = np.zeros((len(taus),Y_TSye.shape[-2],Y_TSye.shape[-1],X_TSd.shape[-1]),dtype=X_TSd.dtype)
-    for i,t in enumerate(taus):
-        if t < 0 : # shift Y backwards -> X preceeds Y
-            MM[i,...] = np.einsum('TSye,TSd->yed',Y_TSye[:,-t:,:,:],X_TSd[:,:t,:])
-
-        elif t == 0 : # aligned
-            MM[i,...] = np.einsum('TSye,TSd->yed',Y_TSye,X_TSd)
-
-        elif t > 0: # shift X backwards -> Y preceeds X
-            MM[i,...] = np.einsum('TSye,TSd->yed',Y_TSye[:,:-t,:,:],X_TSd[:,t:,:])
-
-    if center:
-        if verb > 1: print("center")
-        # N.B. (X-mu*1.T)@Y.T = X@Y.T - (mu*1.T)@Y.T = X@Y.T - mu*1.T@Y.T = X@Y.T - mu*\sum(Y)  
-        muX = np.mean(X_TSd,axis=(0,1)) 
-        muY = np.sum(Y_TSye,(0,1))
-        muXY_yed= np.einsum("ye,d->yed",muY,muX) 
-        MM = MM - muXY_yed[np.newaxis,...] #(nY,nE,tau,d)
-
-    if unitnorm:
-        # normalize so the resulting constraint on the estimated signal is that it have
-        # average unit norm
-        MM = MM / (Y_TSye.shape[0]*Y_TSye.shape[1]) # / nTrl*nEp
-    
-    return MM, taus
-
-def compCyx_full(X_TSd, Y_TSye, tau=None, offset=0, center=False, verb=0, unitnorm=True):
-    '''
-    Args:
-    X_TSd (nTrl, nSamp, d):  raw response for the current stimulus event
-            d=#electrodes
-    Y_TSye (nTrl, nSamp, nY, nE): Indicator for which events occured for which outputs
-            nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
-    Returns:
-        Cyx_tyetd (nY, nE, tau, d): cross covariance at different offsets
-    '''
-    if X_TSd.ndim == 2: 
-        X_TSd = X_TSd[np.newaxis, ...] 
-    if Y_TSye.ndim == 3:
-        Y_TSye = Y_TSye[np.newaxis, ...] 
-    if verb > 1: print("tau={}".format(tau))
-    if not hasattr(tau,'__iter__'): tau=(0,tau)
-    if offset is None : offset = 0
-    if not hasattr(offset,'__iter__'): offset=(0,offset)
-
-    X_TStd = window_axis(X_TSd, winsz=tau[0], axis=-2) 
-    Y_TStye = window_axis(Y_TSye, winsz=tau[1], axis=-3)
-    if tau[0] < tau[1]: # truncate X
-       Cyx_tyetd = np.einsum('TStye,TSud->tyeud',Y_TStye,X_TStd[:,tau[1]-tau[0]:,...])
-    else: # truncate Y
-       Cyx_tyetd = np.einsum('TStye,TSud->tyeud',Y_TStye[:,tau[0]-tau[1]:,...],X_TStd)
- 
-    return Cyx_tyetd
-
-def Cyx_diag2full(Cyx_tyed,tau,offset=None):
-    if not hasattr(tau,'__iter__'): tau=(0,tau)
-    assert offset is None or offset == 0 
-
-    i0 = tau[1]-1 # index of t_y - t_x == 0 in dtau list
-
-    Cyx_tyetd = np.zeros((tau[1],Cyx_tyed.shape[1],Cyx_tyed.shape[2],tau[0],Cyx_tyed.shape[3]),dtype=Cyx_tyed.dtype)
-    for tx in range(tau[0]):
-        for ty in range(tau[1]):
-            dt = ty - tx 
-            i = dt - i0
-            Cyx_tyetd[ty,:,:,tx,:] = Cyx_tyed[i,...]
-
-    return Cyx_tyetd
-
-def test_compCyx_diag():
-    from mindaffectBCI.decoder.utils import testSignal
-    import matplotlib.pyplot as plt
-
-    irf=(.5,0,0,0,0,0,0,0,0,1)
-    offset=0; # X->lag-by-10
-    X,Y,st,A,B = testSignal(nTrl=1,nSamp=500,d=4,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=irf,noise2signal=0)
-    print("A={}\nB={}".format(A, B))
-    print("X{}".format(X.shape))
-    print("Y{}".format(Y.shape))
-
-    tau = (3,5)
-
-    # full manual computation
-    Cyx_tyetd0 = compCyx_full(X,Y,tau,center=False,unitnorm=False)
-    print(f"Cyx_tyetd0={Cyx_tyetd0.shape}")
-    #print(f"Cyx_tyetd0={Cyx_tyetd0}")
-    Cyx_x_tyed =  np.moveaxis(Cyx_tyetd0[0,:,:,1:,:],-2,0)
-    Cyx_y_tyed =  Cyx_tyetd0[::-1,:,:,0,:]
-    Cyx_tyed0 = np.concatenate((Cyx_y_tyed,Cyx_x_tyed),0)
-
-    print(f"Cyx_tyed0={Cyx_tyed0.shape}")
-
-    # diag computation
-    Cyx_tyed, taus = compCyx_diag(X,Y,tau,unitnorm=False)
-    print(f"taus={taus}")
-    print(f"Cyx_tyed={Cyx_tyed.shape}")
-    #print(f"Cyx_tyed={Cyx_tyed}")
-
-    print('delta Cxy={}'.format(np.max(np.abs(Cyx_tyed-Cyx_tyed0))))
-
-    plt.figure()
-    plt.subplot(311)
-    plt.imshow(Cyx_tyed0.reshape((Cyx_tyed0.shape[0],-1)))
-    plt.colorbar()
-    plt.subplot(312)
-    plt.imshow(Cyx_tyed.reshape((Cyx_tyed.shape[0],-1)))
-    plt.colorbar()
-    plt.subplot(313)
-    plt.imshow((Cyx_tyed-Cyx_tyed0).reshape((Cyx_tyed.shape[0],-1)))
-    plt.colorbar()
-    plt.show()
-
-    Cyx_tyetd = Cyx_diag2full(Cyx_tyed,tau)
-    print("N.B. can be approx because of the diagnonal copy in the up-sample")
-    print('delta Cxy_full={}'.format(np.max(np.abs(Cyx_tyetd-Cyx_tyetd0))))
-    #print(f"Cyx_tyetd0={Cyx_tyetd0}")
-    #print(f"Cyx_tyetd={Cyx_tyetd}")
+    for i in range(MM.shape[-4]):
+        MM2[...,:,i,:,i] = MM[0,:,:,:]
+        for j in range(i+1,MM.shape[-4]):
+            MM2[...,:,i,:,j] = MM[j-i,:,:,:]
+            MM2[...,:,j,:,i] = MM[j-i,:,:,:].swapaxes(-2,-1) # transpose the event types
+    if MM.ndim==3: # ( 1,nE,tau,nE,tau) -> (nE,tau,nE,tau)
+        MM2 = MM2[0,...]
+    MM = MM2
+    return MM2
 
 
 def compCyy_diag(Y, tau:float, wght:float=1, zeropadded:bool=True, unitnorm:bool=True, perY:bool=True):
@@ -715,16 +453,16 @@ def crossautocov(X, Y, tau, offset=0):
         
     return Ctdtd
 
-def plot_summary_statistics(Cxx_dd, Cyx_yetd, Cyy_yetet, evtlabs=None, times=None, ch_names=None, fs=None):
-    """Visualize the summary statistics (Cxx_dd, Cyx_yetd, Cyy) of a dataset
+def plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs=None, times=None, ch_names=None, fs=None):
+    """Visualize the summary statistics (Cxx, Cxy, Cyy) of a dataset
 
     It is assumed the data has 'd' channels, with 'nE' different types of
     trigger event, and a response length of 'tau' for each trigger.
 
     Args:
-        Cxx_dd (d,d): spatial covariance
-        Cxy_yetd (nY, nE, tau, d): per-output event related potentials (ERPs)
-        Cyy_yetet (nY, nE, tau, nE, tau): updated response covariance for each output
+        Cxx (d,d): spatial covariance
+        Cxy (nY, nE, tau, d): per-output event related potentials (ERPs)
+        Cyy (nY, nE, tau, nE, tau): updated response covariance for each output
         evtlabs ([type], optional): the labels for the event types. Defaults to None.
         times ([type], optional): values for the time-points along tau. Defaults to None.
         ch_names ([type], optional): textual names for the channels. Defaults to None.
@@ -732,28 +470,28 @@ def plot_summary_statistics(Cxx_dd, Cyx_yetd, Cyy_yetet, evtlabs=None, times=Non
     """    
     import matplotlib.pyplot as plt
     if times is None:
-        times = np.arange(Cyx_yetd.shape[-2])
+        times = np.arange(Cxy.shape[-2])
         if fs is not None:
             times = times / fs
     if ch_names is None:
-        ch_names = ["{}".format(i) for i in range(Cyx_yetd.shape[-1])]
+        ch_names = ["{}".format(i) for i in range(Cxy.shape[-1])]
     if evtlabs is None:
-        evtlabs = ["{}".format(i) for i in range(Cyx_yetd.shape[-3])]
+        evtlabs = ["{}".format(i) for i in range(Cxy.shape[-3])]
 
     plt.clf()
-    # Cxx_dd
+    # Cxx
     plt.subplot(311)
-    plt.imshow(Cxx_dd, origin='lower', extent=[0, Cxx_dd.shape[0], 0, Cxx_dd.shape[1]])
+    plt.imshow(Cxx, origin='lower', extent=[0, Cxx.shape[0], 0, Cxx.shape[1]])
     plt.colorbar()
     # TODO []: use the ch_names to add lables to the  axes
-    plt.title('Cxx_dd')
+    plt.title('Cxx')
 
     # Cxy
-    if Cyx_yetd.ndim > 3:
-        if Cyx_yetd.shape[0] > 1:
+    if Cxy.ndim > 3:
+        if Cxy.shape[0] > 1:
             print("Warning: only the 1st set ERPs is plotted")
-        Cyx_yetd = np.mean(Cyx_yetd,0)
-    nevt = Cyx_yetd.shape[-3]
+        Cxy = np.mean(Cxy,0)
+    nevt = Cxy.shape[-3]
     for ei in range(nevt):
         if ei==0:
             ax = plt.subplot(3,nevt,nevt+ei+1) # N.B. subplot indexs from 1!
@@ -762,34 +500,34 @@ def plot_summary_statistics(Cxx_dd, Cyx_yetd, Cyy_yetet, evtlabs=None, times=Non
         else: # no axis on other sub-plots
             plt.subplot(3, nevt, nevt+ei+1, sharey=ax, sharex=ax)
             plt.tick_params(labelbottom=False, labelleft=False)
-        plt.imshow(Cyx_yetd[ei, :, :].T, aspect='auto', origin='lower', extent=(times[0], times[-1], 0, Cyx_yetd.shape[-1]))
+        plt.imshow(Cxy[ei, :, :].T, aspect='auto', origin='lower', extent=(times[0], times[-1], 0, Cxy.shape[-1]))
         # TODO []: use the ch_names to add lables to the  axes
         plt.title('{}'.format(evtlabs[min(len(evtlabs),ei)]))
     # only last one has colorbar
     plt.colorbar()
 
-    # Cyy_yetet
-    if Cyy_yetet.ndim > 4:
-        if Cyy_yetet.shape[0] > 1:
+    # Cyy
+    if Cyy.ndim > 4:
+        if Cyy.shape[0] > 1:
             print("Warning: only the 1st set ERPs is plotted")
-        Cyy_yetet = np.mean(Cyy_yetet,0)
-    Cyy2d = np.reshape(Cyy_yetet, (Cyy_yetet.shape[0]*Cyy_yetet.shape[1], Cyy_yetet.shape[2]*Cyy_yetet.shape[3]))
+        Cyy = np.mean(Cyy,0)
+    Cyy2d = np.reshape(Cyy, (Cyy.shape[0]*Cyy.shape[1], Cyy.shape[2]*Cyy.shape[3]))
     plt.subplot(313)
     plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
     plt.colorbar()
     plt.title('Cyy')
 
-def plotCxy(Cyx_yetd,evtlabs=None,fs=None):
+def plotCxy(Cxy,evtlabs=None,fs=None):
     import matplotlib.pyplot as plt
-    times = np.arange(Cyx_yetd.shape[-2])
+    times = np.arange(Cxy.shape[-2])
     if fs is not None: times = times/fs
-    ncols = Cyx_yetd.shape[1] if Cyx_yetd.shape[1]<10 else Cyx_yetd.shape[1]//10
-    nrows = Cyx_yetd.shape[1]//ncols + (1 if Cyx_yetd.shape[1]%ncols>0 else 0)
-    clim = (np.min(Cyx_yetd), np.max(Cyx_yetd))
+    ncols = Cxy.shape[1] if Cxy.shape[1]<10 else Cxy.shape[1]//10
+    nrows = Cxy.shape[1]//ncols + (1 if Cxy.shape[1]%ncols>0 else 0)
+    clim = (np.min(Cxy), np.max(Cxy))
     fit,ax = plt.subplots(nrows=nrows,ncols=ncols,sharey='row',sharex='col')
-    for ei in range(Cyx_yetd.shape[1]):
+    for ei in range(Cxy.shape[1]):
         plt.sca(ax.flat[ei])
-        plt.imshow(Cyx_yetd[0,ei,:,:].T,aspect='auto',extent=[times[0],times[-1],0,Cyx_yetd.shape[-1]])
+        plt.imshow(Cxy[0,ei,:,:].T,aspect='auto',extent=[times[0],times[-1],0,Cxy.shape[-1]])
         plt.clim(clim)
         if evtlabs is not None: plt.title(evtlabs[ei])
 
@@ -989,9 +727,9 @@ def testSlicedvsContinuous():
     Ye_true = Ye[..., 0:1, :]
     print('Xe{}={}\nYe{}={}\nst{}={}'.format(Xe.shape, Xe[:5, :, 0], Ye.shape, Ye[:5, 0, 0], stimTimes.shape, stimTimes[:5]))
     Cxx, Cxy, Cyy = updateSummaryStatistics(Xe, Ye_true, stimTimes, tau=Xe.shape[-2])
-    print("Cxx_dd={} Cxy={} Cyy={}".format(Cxx_dd.shape, Cxy.shape, Cyy.shape))
+    print("Cxx={} Cxy={} Cyy={}".format(Cxx.shape, Cxy.shape, Cyy.shape))
 
-    plot_summary_statistics(Cxx_dd, Cxy, Cyy)
+    plot_summary_statistics(Cxx, Cxy, Cyy)
 
     plotCxy(Cxy)
     
@@ -1089,9 +827,7 @@ def testComputationMethods():
     Cxy = updateCxy(None,X,Y,None,tau=3,center=True)
     cCxy= updateCxy(None,cX,Y,None,tau=3,center=False)
     print("Cxy(center) - cCxy={}".format(np.max(np.abs(Cxy-cCxy).ravel())))
-
-
-
+    
     
 def testCases():
     import numpy as np
