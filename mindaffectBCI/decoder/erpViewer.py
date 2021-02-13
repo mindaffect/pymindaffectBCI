@@ -272,9 +272,9 @@ def parse_args():
    
     args = parser.parse_args()
     if args.evtlabs: 
-        args.evtlabs = args.evtlabs.split(',')
+        args.evtlabs = [ e.strip() for e in args.evtypes.split(',') ]
     if args.ch_names:
-        args.ch_names = args.ch_names.split(',')
+        args.ch_names = [ c.strip() for c in args.ch_names.split(',') ]
         
     return args
 

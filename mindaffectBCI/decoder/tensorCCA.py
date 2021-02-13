@@ -1,32 +1,17 @@
-from mindaffectBCI.decoder.updateSummaryStatistics import Cyy_tyeye_diag2full
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
-from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx, updateCxy, compCyy_diag, Cyy_tyeye_diag2full
+from mindaffectBCI.decoder.levelCCA import levelsSummaryStatistics
+from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx, updateCxy, compCyy_diag
 from mindaffectBCI.decoder.utils import zero_outliers
 import numpy as np
 
 
-def levelsCCA(X_TSd,Y_TSye,tau,offset=0,reg=1e-9,rank=1,CCA=True,rcond=(1e-8,1e-8), symetric=False, center=True, unitnorm=True, zeropadded=True):
+def tensorCCA(X_TSd,Y_TSye,tau,offset=0,reg=1e-9,rank=1,CCA=True,rcond=(1e-8,1e-8), symetric=False, center=True, unitnorm=True, zeropadded=True):
     Cxx_dd, Cyx_yetd, Cyy_tyeye = levelsSummaryStatistics(X_TSd, Y_TSye, tau, offset, center, unitnorm, zeropadded)
     
-    return levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, reg=reg, rank=rank, rcond=rcond, symetric=symetric)
+    return tensorCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, reg=reg, rank=rank, rcond=rcond, symetric=symetric)
 
 
-def levelsSummaryStatistics(X_TSd,Y_TSye, tau, Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, 
-                            offset:int=0, center:bool=True, unitnorm:bool=False, zeropadded:bool=True, badEpThresh:float=4):
-    X_TSd, Y_TSye = zero_outliers(X_TSd, Y_TSye, badEpThresh)
-    # get the summary statistics
-    nCxx_dd = updateCxx(None,X_TSd,None, tau=tau, offset=offset, center=center, unitnorm=unitnorm)
-    nCyx_yetd = updateCxy(None, X_TSd, Y_TSye, None, tau=tau, offset=offset, center=center, unitnorm=unitnorm)
-    nCyy_tyeye = compCyy_diag(Y_TSye, tau, zeropadded=zeropadded, unitnorm=unitnorm, perY=False)
-    # accmulate if wanted
-    Cxx_dd = nCxx_dd if Cxx_dd is None else nCxx_dd + Cxx_dd
-    Cyx_yetd = nCyx_yetd if Cyx_yetd is None else nCyx_yetd + Cyx_yetd
-    Cyy_tyeye = nCyy_tyeye if Cyy_tyeye is None else nCyy_tyeye + Cyy_tyeye
-    # return the updated info
-    return Cxx_dd, Cyx_yetd, Cyy_tyeye
-
-
-def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
+def tensorCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
                   reg:float=1e-9, rank:int=1, CCA:bool=True, rcond:float=(1e-8,1e-8), 
                   symetric:bool=False, tol:float=1e-3, 
                   max_iter:int=100, eta:float=.5, syopt:str=None, showplots:bool=False):
@@ -70,7 +55,7 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
 
     # pre-expand Cyy
     # TODO[]: remove the need to actually do this -- as it's a ram/compute hog
-    Cyy_yetyet = Cyy_tyeye_diag2full(Cyy_tyeye)
+    Cyy_yetyet = Mtyeye2Myetyet(Cyy_tyeye)
     
     # pre-compute the spatial whitener part.
     isqrtCxx_dd, _ = robust_whitener(Cxx_dd,reg[0],rcond[0],symetric=True)
@@ -171,6 +156,22 @@ def levelsCCA_cov(Cxx_dd=None, Cyx_yetd=None, Cyy_tyeye=None, S_y=None,
     R_ket = R_ket * np.sqrt(nl_k[:,np.newaxis, np.newaxis]) 
 
     return J, W_kd, R_ket, S_y
+
+
+def Mtyeye2Myetyet(M_tyeye):
+    t=M_tyeye.shape[0]
+    y=M_tyeye.shape[1]
+    e=M_tyeye.shape[2]
+    
+    M_yetyet = np.zeros((y,e,t,y,e,t),dtype=M_tyeye.dtype)
+    # fill in the block diagonal entries
+    for i in range(t):
+        M_yetyet[:,:,i,:,:,i] = M_tyeye[0,:,:,:,:]
+        for j in range(i+1,t):
+            M_yetyet[:,:,i,:,:,j] = M_tyeye[j-i,:,:,:,:]
+            # lower diag, transpose the event types
+            M_yetyet[:,:,j,:,:,i] = M_tyeye[j-i,:,:,:,:].swapaxes(-3,-1).swapaxes(-4,-2)
+    return M_yetyet
 
 
 def nonneglsopt(C_xx,C_yx,C_yy,s_y,syopt='negridge',max_iter=30,tol=1e-4,ridge=1e-4,eps=1e-3, verb:int=0):
@@ -284,11 +285,8 @@ def plot_3factoredmodel(W_kd, R_ket, S_y, outputs:list=None, fs:float=None, ch_n
     plt.figure()
     plot_factoredmodel(W_kd,R_ket,fs=fs,ch_names=ch_names,ncol=3)
     ax=plt.subplot(1,3,3)
-    if outputs is None:
-        plt.plot(S_y)
-    else:
-        plt.plot(outputs,S_y)
-        ax.tick_params(axis='x', rotation=90)
+    plt.plot(outputs,S_y)
+    ax.tick_params(axis='x', rotation=90)
     plt.ylim((0,np.max(S_y)))
     plt.grid()
     plt.title('output weight') 
@@ -313,7 +311,7 @@ def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank:int=1, syopt=None, lab
 
     # plot SS
     # pre-expand Cyy
-    Cyy_yetyet = Cyy_tyeye_diag2full(Cyy_tyeye)
+    Cyy_yetyet = Mtyeye2Myetyet(Cyy_tyeye)
     sCyys_etet = np.einsum("y,yetzfu,z->etfu",S_y,Cyy_yetyet,S_y) 
     sCyx_etd = np.einsum('yetd,y->etd',Cyx_yetd,S_y)
     plt.figure()
@@ -381,6 +379,19 @@ def testcase_levelsCCA(X_TSd,Y_TSye,tau=15,offset=0,rank:int=1,
 
     plt.show()
     return W_kd, R_ket, S_y
+
+
+def simdata(nTrl=10, nSamp=1000, nY:int=30, tau:int=10, offset:int=0, noise2signal=5):
+    from mindaffectBCI.decoder.utils import testNoSignal, testSignal
+    import matplotlib.pyplot as plt
+
+    #from multipleCCA import *
+    if False:
+        X_TSd, Y_TSye, st = testNoSignal()
+    elif True:
+        X_TSd, Y_TSye, st, A, B = testSignal(nTrl=nTrl, nSamp=nSamp, nY=nY, tau=tau, noise2signal=noise2signal)
+
+    return X_TSd, Y_TSye, None
 
 
 def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
@@ -466,19 +477,11 @@ def loaddata(stopband=((45,65),(5,25,'bandpass')),evtlabs=('re','fe')):
 
     return X_TSd, Y_TSye, coords, outputs, label
 
-def simdata(nTrl=10, nSamp=500, nY=10, tau=10, noise2signal=2, irf=None):
-    from mindaffectBCI.decoder.utils import testSignal
-    if irf=='sin':
-        irf = np.sin(np.linspace(0,2*np.pi,tau))
-    X_TSd, Y_TSye, st, A, B = testSignal(nTrl=nTrl, nSamp=nSamp, nY=nY, tau=tau, irf=irf, noise2signal=noise2signal)
-    coords = None
-    outputs=None
-    label = None
-    return X_TSd, Y_TSye, coords, outputs, label
 
 def testcase(tau_ms:float=650, offset_ms:float=0, rank:int=2):
-    if True:
+    if False:
         X_TSd, Y_TSye, coords, outputs, label = simdata()
+
     else:
         X_TSd, Y_TSye, coords, outputs, label = loaddata()
 
