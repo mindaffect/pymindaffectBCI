@@ -303,7 +303,44 @@ def mkRowCol(width=5,height=5, repeats=10):
         #array[:,-1]=0
     return StimSeq(None,array.tolist(),None)
 
+def mkSingleBeep(width=1,height=1, repeats=100):
+    """Make a row-column stimulus sequence
 
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((repeats,width+height,width,height))
+    for ri in range(repeats):
+        ei=0
+        for r in np.random.permutation(width):
+            array[ri,ei,r,:]=1
+            ei=ei+1
+        for c in np.random.permutation(height):
+            array[ri,ei,:,c]=1
+            ei=ei+1
+    array = array.reshape((repeats*(width+height),width*height)) # (e,(w*h)) = (nEvent,nStim)
+    shape=array.shape
+    print("array shape is :",shape)
+    for i in range (shape[0]):
+        array[i,:]=array[i,0]
+    for j in range (shape[1]):
+	    array[:,j]=array[:,j]/(pow(j+1,3))
+    ei=0
+    for j in range (shape[1]):
+        for i in range (shape[0]):
+           array[0:(ei*(width*height)),j]=0
+           array[(ei*(width*height)):((ei+10)*(width*height)),j] = array[(ei*(width*height)):((ei+10)*(width*height)),j]
+           array[((ei+10)*(width*height)):shape[0],j]=0
+        ei=ei+10
+        #array[:,-1]=0
+    return StimSeq(None,array.tolist(),None)
+	
 def mkRandLevel(ncodes=36, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlevels=10):
     """make a random levels stimulus -- where rand level every soa frames
 
@@ -322,6 +359,42 @@ def mkRandLevel(ncodes=36, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlev
     a = (maxval-minval)/(nlevels-1)
     nStim = len(range(0,nEvent,soa))
     e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
+    if jitter is None or jitter==0:
+        array[::soa,:] = e
+    else: # jitter the soa
+        idx = list(range(0,nEvent,soa))
+        for ei in range(ncodes):
+            jit_idx = idx + np.random.randint(0,jitter+1,size=(nStim,)) - jitter//2
+            jit_idx = np.maximum(0,np.minimum(jit_idx,array.shape[0]-1))
+            array[jit_idx,ei] = e[:,ei]
+    return StimSeq(None,array.tolist(),None)
+
+def mkRandLevelAudio(ncodes=36, nEvent=400, soa=10, jitter=1, minval=0, maxval=1, nlevels=10):
+    """make a random levels stimulus -- where rand level every soa frames
+
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=float)
+
+    b = minval
+    a = (maxval-minval)/(nlevels-1)
+    nStim = len(range(0,nEvent,soa))
+    e = np.random.randint(0,nlevels,size=(nStim,ncodes))/(nlevels-1)
+	
+    for i in range (ncodes):
+        for j in range (nStim):
+            e[j,i] = e[j,i] * (pow(e[j,i],3))
+	
+    #print(e)
+    #e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
+    e = e +b
     if jitter is None or jitter==0:
         array[::soa,:] = e
     else: # jitter the soa
@@ -363,9 +436,9 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkRowCol(width=8,height=1, repeats=100)
-    rc.toFile('Beep.png')
-    rc.toFile('Beep.txt')
+    rc=mkRandLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=10, minval=0, maxval=1, nlevels=8)
+    rc.toFile('Beep1.png')
+    rc.toFile('Beep1.txt')
 
 # testcase code
 if __name__ == "__main__":
