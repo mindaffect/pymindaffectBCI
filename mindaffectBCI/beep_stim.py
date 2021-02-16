@@ -292,7 +292,7 @@ def mkRowCol(width=5,height=5, repeats=10):
     for i in range (shape[0]):
         array[i,:]=array[i,0]
     for j in range (shape[1]):
-	    array[:,j]=array[:,j]/((j+1))
+	    array[:,j]=array[:,j]/((j+1)*(j+1))
     ei=0
     for j in range (shape[1]):
         for i in range (shape[0]):
@@ -362,7 +362,7 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkRowCol(width=9,height=1, repeats=100)
+    rc=mkRowCol(width=8,height=1, repeats=100)
     rc.toFile('Beep.png')
     rc.toFile('Beep.txt')
 
