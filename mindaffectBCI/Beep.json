@@ -24,7 +24,7 @@
         "symbols":[["speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav","speaker.jpg|yesno\\beep.wav"]],
         "stimfile":"beep.png",
         "prediction_args":{"permute":false},
-        "framesperbit":2,
+        "framesperbit":4,
         "fullscreen":false,
         "fullscreen_stimulus":false,
 		"simple_calibration":false,
