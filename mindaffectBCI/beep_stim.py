@@ -292,7 +292,7 @@ def mkRowCol(width=5,height=5, repeats=10):
     for i in range (shape[0]):
         array[i,:]=array[i,0]
     for j in range (shape[1]):
-	    array[:,j]=array[:,j]/((j+1)*(j+1))
+	    array[:,j]=array[:,j]/(pow(j+1,3))
     ei=0
     for j in range (shape[1]):
         for i in range (shape[0]):
@@ -300,6 +300,7 @@ def mkRowCol(width=5,height=5, repeats=10):
            array[(ei*(width*height)):((ei+10)*(width*height)),j] = array[(ei*(width*height)):((ei+10)*(width*height)),j]
            array[((ei+10)*(width*height)):shape[0],j]=0
         ei=ei+10
+        #array[:,-1]=0
     return StimSeq(None,array.tolist(),None)
 
 
