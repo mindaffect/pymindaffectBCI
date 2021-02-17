@@ -4,6 +4,10 @@ import glob
 with open("README.rst", encoding='utf-8') as fh:
     long_description = fh.read()
 
+with open("requirements.txt", encoding='utf-8') as fh:
+    install_requires = fh.read()
+install_requires = install_requires.splitlines()
+
 setup(name='mindaffectBCI',
       version='0.9.24',
       description='The MindAffect BCI python SDK',
@@ -33,7 +37,6 @@ setup(name='mindaffectBCI',
         "Operating System :: OS Independent",
       ],
       python_requires='>=3.5',
-      install_requires=['numpy>=1.0.2', 'pyglet>=1.2', 'scipy>=1.0', 'brainflow>=3.0',
-'matplotlib>=3.0'],
+      install_requires=install_requires,
       #entry_points={ 'console_scripts':['online_bci=mindaffectBCI.online_bci']},
       zip_safe=False)
