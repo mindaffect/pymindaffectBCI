@@ -339,6 +339,7 @@ def mkSingleBeep(width=1,height=1, repeats=100):
            array[((ei+10)*(width*height)):shape[0],j]=0
         ei=ei+10
         #array[:,-1]=0
+        array=random.shuffle(array)
     return StimSeq(None,array.tolist(),None)
 	
 def mkRandLevel(ncodes=36, nEvent=400, soa=3, jitter=1, minval=0, maxval=1, nlevels=10):
@@ -395,6 +396,7 @@ def mkRandLevelAudio(ncodes=36, nEvent=400, soa=10, jitter=1, minval=0, maxval=1
     #print(e)
     #e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
     e = e +b
+    print(e)
     if jitter is None or jitter==0:
         array[::soa,:] = e
     else: # jitter the soa
@@ -437,6 +439,7 @@ def mkCodes():
     """    
     # test generators
     rc=mkRandLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=10, minval=0, maxval=1, nlevels=8)
+	#rc mkSingleBeep()
     rc.toFile('Beep1.png')
     rc.toFile('Beep1.txt')
 
