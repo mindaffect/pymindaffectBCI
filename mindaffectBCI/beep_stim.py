@@ -438,7 +438,7 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkRandLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=10, minval=0, maxval=1, nlevels=8)
+    rc=mkRandLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=4, minval=0.1, maxval=1, nlevels=8)
 	#rc mkSingleBeep()
     rc.toFile('Beep1.png')
     rc.toFile('Beep1.txt')
