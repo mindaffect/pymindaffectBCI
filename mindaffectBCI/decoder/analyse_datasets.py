@@ -395,11 +395,17 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
 
+    plot_trial(X_TSd[0:1,...],Y_TSy[0:1,...],fs=fs,ch_names=ch_names)
+
     print("Plot summary stats")
     if Y.ndim == 4: # already transformed
         Yevt = Y
     else: # convert to event
         Yevt, evtlabs = stim2event(Y, axis=-2, evtypes=evtlabs)
+
+    # plot all Y-true & encoded version
+    plot_stim_encoding(Y[...,0],Yevt[...,0,:],evtlabs,fs)
+
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Yevt[..., 0:1, :], tau=tau, offset=offset)
     plt.figure(); plt.clf()
     plot_summary_statistics(Cxx, Cxy, Cyy, evtlabs, times, ch_names)
@@ -417,9 +423,6 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.show(block=False)
     plt.pause(.5)
     plt.savefig("{}_ERP".format(label)+".pdf",format='pdf')
-    
-    # plot all Y-true & encoded version
-    plot_stim_encoding(Y[...,0],Yevt[...,0,:],evtlabs,fs)
 
     # fit the model
     #clsfr_args['retrain_on_all']=False # respect the folding, don't retrain on all at the end
@@ -660,25 +663,35 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
     fig.set_tight_layout(True)
     plt.show(block=False)
 
+def plot_stimseq(Y_TSy,fs=None):
+    if fs is not None:
+        plt.plot(np.arange(Y_TSy.shape[1])/fs, Y_TSy[0,...]+np.arange(Y_TSy.shape[-1])[np.newaxis,:]*np.max(Y_TSy),'.-')
+        plt.xlabel('time (s)')
+    else:
+        plt.plot(Y_TSy[0,...]+np.arange(Y_TSy.shape[-1])[np.newaxis,:]*np.max(Y_TSy),'.-')
+        plt.xlabel('time (samp)')
+    plt.title('Y_TSy')
+    plt.show(block=False)
 
-def plot_stim_encoding(Ytrue,Ytrueevt,evtlabs,fs):
-    if evtlabs is None : evtlabs = np.arange(Ytrueevt.shape[-1]) if Ytrueevt is not None else [0]
-    yscale = np.max(np.abs(Ytrue.ravel()))
-    ncols = 2 if Ytrueevt is not None else 1
+
+def plot_stim_encoding(Y_TSy,Y_TSye,evtlabs,fs):
+    if evtlabs is None : evtlabs = np.arange(Y_TSye.shape[-1]) if Y_TSye is not None else [0]
+    yscale = np.max(np.abs(Y_TSy.ravel()))
+    ncols = 2 if Y_TSye is not None else 1
     fig,ax=plt.subplots(nrows=1,ncols=ncols, sharex=True, sharey=True)
     if ncols==1 : ax=[ax]
     plt.sca(ax[0])
-    plt.plot(np.arange(Ytrue.shape[-1])/fs, Ytrue.T/len(evtlabs)/yscale + np.arange(Ytrue.shape[0])[np.newaxis,:],'.-')
+    plt.plot(np.arange(Y_TSy.shape[-1])/fs, Y_TSy.T/len(evtlabs)/yscale + np.arange(Y_TSy.shape[0])[np.newaxis,:],'.-')
     plt.grid(True)
     plt.title('Y-raw')
     plt.xlabel('time (seconds)')
     plt.ylabel('Trial#')
-    if Ytrueevt is not None:
+    if Y_TSye is not None:
         plt.sca(ax[1])
-        Ytrueevt = np.moveaxis(Ytrueevt,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
-        Ytrueevt = Ytrueevt.reshape((-1,Ytrueevt.shape[-1])) #(nTr*nE, nSamp)
-        yscale = np.max(np.abs(Ytrueevt.ravel()))
-        plt.plot(np.arange(Ytrueevt.shape[-1])/fs, Ytrueevt.T/2/yscale + np.arange(Ytrueevt.shape[0])[np.newaxis,:]/2,'.-')
+        Y_TSye = np.moveaxis(Y_TSye,(0,1,2),(0,2,1)) #(nTr,nE,nSamp)
+        Y_TSye = Y_TSye.reshape((-1,Y_TSye.shape[-1])) #(nTr*nE, nSamp)
+        yscale = np.max(np.abs(Y_TSye.ravel()))
+        plt.plot(np.arange(Y_TSye.shape[-1])/fs, Y_TSye.T/2/yscale + np.arange(Y_TSye.shape[0])[np.newaxis,:]/2,'.-')
         plt.grid(True)
         plt.title('Yevt {}'.format(evtlabs))
         plt.xlabel('time (seconds)')

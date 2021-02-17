@@ -20,11 +20,12 @@ from mindaffectBCI.decoder.offline.load_mindaffectBCI  import load_mindaffectBCI
 from mindaffectBCI.utopiaclient import  DataPacket
 from mindaffectBCI.decoder.model_fitting import MultiCCA
 from mindaffectBCI.decoder.utils import window_axis
+from mindaffectBCI.decoder.updateSummaryStatistics import plot_trial
 import matplotlib.pyplot as plt
 import glob
 
 
-def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(.1,45,'bandpass'), fs_out=250, trntrl=slice(10), trnsamp=6000, max_samp=6000, plot_model=True, plot_trial=True, plot_epoch_lines=False, **kwargs):
+def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25, stopband=(.1,45,'bandpass'), fs_out=250, trntrl=slice(10), trnsamp=6000, max_samp=6000, plot_model=True, plot_trials=True, plot_epoch_lines=False, **kwargs):
     """make a set of visualizations of the stimulus->measurement time-lock
 
     Args:
@@ -86,27 +87,10 @@ def trigger_check(filename=None, evtlabs=('re','fe'), tau_ms=125, offset_ms=-25,
     # allow full re-draw
     plt.pause(.5)
 
-    if plot_trial:
+    if plot_trials:
         plt.figure(2)
         plt.clf()
-        for i in range(min(X.shape[0],3)):
-            plt.subplot(3,1,i+1)
-            #plt.imshow(X[0,...].T,aspect='auto',label='X',extent=[0,X.shape[-2],0,X.shape[-1]]);
-            for c in range(X.shape[-1]):
-                tmp = X[i,...,c]
-                tmp = (tmp - np.mean(tmp.ravel())) / max(1,np.std(tmp.ravel()))
-                plt.plot(tmp+2*c,label='X{}'.format(c))
-
-            tmp = wX[i,...]
-            tmp = (tmp - np.mean(tmp.ravel())) / max(.01,np.std(tmp.ravel()))
-            plt.plot(tmp+2*(X.shape[-1]+1),label='wX')
-
-            plt.plot(Y[i,...,0],'k',label='Y')
-
-            plt.title('Trl {}'.format(i))
-        plt.legend()
-        plt.suptitle('{}\nFirst trials data vs. stimulus'.format(filename))
-        plt.show(block=False)
+        plot_trial(X[0,...],Y[0,...],fs)
         plt.pause(.1) # allow full redraw
 
     if plot_model:
