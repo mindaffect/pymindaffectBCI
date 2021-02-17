@@ -21,7 +21,7 @@
         "npred":10,
         "calibrationScreen":"mindaffectBCI.examples.presentation.Beep_vol.SoundFlashScreen",
         "selectionThreshold":0.01,
-        "symbols":[["speaker.jpg|yesno\\tone60_2.wav"]],
+        "symbols":[["speaker.jpg|yesno\\chirp60.wav"]],
         "stimfile":"beep1.png",
         "prediction_args":{"permute":false},
         "framesperbit":1,
