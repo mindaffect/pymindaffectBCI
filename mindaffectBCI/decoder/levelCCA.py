@@ -293,6 +293,7 @@ def testcase_levelsCCA_vs_multiCCA(X_TSd,Y_TSye,tau=15,offset=0,center=True,unit
     print("d W_kd {}".format(np.max(np.abs(W_kd0 - W_kd))))
     print("d R_ket {}".format(np.max(np.abs(R_ket0 - R_ket))))
 
+
 def plot_3factoredmodel(W_kd, R_ket, S_y, outputs:list=None, fs:float=None, ch_names:list=None, **kwargs):
     from mindaffectBCI.decoder.updateSummaryStatistics import plot_factoredmodel
     import matplotlib.pyplot as plt
@@ -304,6 +305,21 @@ def plot_3factoredmodel(W_kd, R_ket, S_y, outputs:list=None, fs:float=None, ch_n
     plt.grid()
     plt.title('output weight') 
 
+
+def plot_4factoredmodel(W_kd, R_ket, S_y, f_f, outputs:list=None, fs:float=None, ch_names:list=None, **kwargs):
+    from mindaffectBCI.decoder.updateSummaryStatistics import plot_factoredmodel
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plot_factoredmodel(W_kd,R_ket,fs=fs,ch_names=ch_names,ncol=3)
+    plt.subplot(2,3,3)
+    plt.plot(outputs,S_y)
+    plt.ylim((0,np.max(S_y)))
+    plt.grid()
+    plt.title('output weight') 
+    plt.subplot(2,3,6)
+    plt.plot(outputs,f_f)
+    plt.grid()
+    plt.title('fir') 
 
 
 def debug_levelsCCA_cov(Cxx_dd, Cyx_yetd, Cyy_tyeye, rank:int=1, syopt=None, label=None, outputs=None, fs:float=None, ch_names:list=None, **kwargs):
