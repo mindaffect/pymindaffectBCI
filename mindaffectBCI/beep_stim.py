@@ -471,7 +471,7 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
     e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
     print(e.shape)
     elin = np.linspace(0,255,60)
-    elog = np.logspace(np.log2(1),np.log2(256),num=8,endpoint=True, base =2)
+    elog = np.logspace(np.log2(1),np.log2(128),num=8,endpoint=True, base =2)
     print(elog)
     probs = np.ones(elog.shape)
     probs=100*probs/(len(elog))
@@ -532,7 +532,7 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=60)
+    rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=8)
 	#rc mkSingleBeep()
     rc.toFile('BeepLog8Levels.png')
     rc.toFile('BeepLog8Levels.txt')
