@@ -237,6 +237,42 @@ class StimSeq :
                     self.stimTime_ms = list(range(len(self.stimSeq)))
                 f.write(str(self))
 
+from random import randrange
+ 
+ 
+# Function to generate random input from a list according to
+# given probabilities
+def randomprob(input, probability):
+ 
+    n = len(input)
+    if n != len(probability):
+        return -1                   # error
+ 
+    # construct a sum list from given probabilities
+    prob_sum = [None] * n
+ 
+    # prob_sum[i] holds sum of all probability[j] for 0 <= j <=i
+    prob_sum[0] = probability[0]
+    for i in range(1, n):
+        prob_sum[i] = prob_sum[i - 1] + probability[i]
+ 
+    # generate a random integer from 1 to 100
+    # and check where it lies in prob_sum
+    r = randrange(1, 100)
+ 
+    # based on the comparison result, return corresponding
+    # element from the input list
+ 
+    if r <= prob_sum[0]:  # handle 0'th index separately
+        return input[0]
+ 
+    for i in range(1, n):
+        if prob_sum[i - 1] < r <= prob_sum[i]:
+            return input[i]
+ 
+    return -1
+ 
+
 def transpose(M):
     """[summary]
 
@@ -407,6 +443,63 @@ def mkRandLevelAudio(ncodes=36, nEvent=400, soa=10, jitter=1, minval=0, maxval=1
             array[jit_idx,ei] = e[:,ei]
     return StimSeq(None,array.tolist(),None)
 
+def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, nlevels=60):
+    """make a random levels stimulus -- where rand level every soa frames
+
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=float)
+
+    b = minval
+    a = (maxval-minval)/(nlevels-1)
+    #print(a)
+    nStim = len(range(0,nEvent,soa))
+    #e = np.random.randint(0,nlevels,size=(nStim,ncodes))/(nlevels-1)
+	
+    #for i in range (ncodes):
+        #for j in range (nStim):
+            #e[j,i] = e[j,i] * (pow(e[j,i],3))
+	
+    #print(e)
+    e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
+    print(e.shape)
+    elin = np.linspace(0,255,60)
+    elog = np.geomspace(1,256,60)
+    probs = np.ones(elin.shape)
+    probs=100*probs/(len(elin))
+    print(probs)
+    for j in range (ncodes):
+        for i in range (nStim):		
+            e[i,j] = randomprob(elin,probs)/255
+            print(randomprob(elin,probs))
+    #print(e)
+    import matplotlib.pyplot as plt 
+    #plt.plot(e)
+    #plt.plot(elog)
+    #plt.show()	
+    #print(elin/255)
+    #e = e +b
+    #print(e)
+    if jitter is None or jitter==0:
+        array[::soa,:] = e
+    else: # jitter the soa
+        idx = list(range(0,nEvent,soa))
+        for ei in range(ncodes):
+            jit_idx = idx + np.random.randint(0,jitter+1,size=(nStim,)) - jitter//2
+            jit_idx = np.maximum(0,np.minimum(jit_idx,array.shape[0]-1))
+            array[jit_idx,ei] = e[:,ei]
+    print(array)
+    plt.plot(array)
+    plt.show()
+    return StimSeq(None,array.tolist(),None)
+
 
 def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1),(7,1),(8,1),(3,2),(4,2),(5,2),(6,2),(7,2),(8,2),(4,3),(5,3),(6,3),(7,3),(8,3),(5,4),(6,4),(7,4),(8,4),(6,5),(7,5),(8,5),(7,6),(8,6),(8,7)),nEvent=840, isbinary=True):
     """Generate a frequency tagging stimulus sequence
@@ -438,10 +531,10 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkRandLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=4, minval=0.1, maxval=1, nlevels=8)
+    rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=60)
 	#rc mkSingleBeep()
-    rc.toFile('Beep1.png')
-    rc.toFile('Beep1.txt')
+    rc.toFile('BeepLinear.png')
+    rc.toFile('BeepLinear.txt')
 
 # testcase code
 if __name__ == "__main__":
