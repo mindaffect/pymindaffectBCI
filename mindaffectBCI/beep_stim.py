@@ -478,7 +478,7 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
     print(probs)
     for j in range (ncodes):
         for i in range (nStim):		
-            e[i,j] = randomprob(elog,probs)/256
+            e[i,j] = randomprob(elin,probs)/255
             #print(randomprob(elin,probs))
     #print(e)
     import matplotlib.pyplot as plt 
@@ -534,8 +534,8 @@ def mkCodes():
     # test generators
     rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=60)
 	#rc mkSingleBeep()
-    rc.toFile('BeepLog2.png')
-    rc.toFile('BeepLog2.txt')
+    rc.toFile('BeepLinear.png')
+    rc.toFile('BeepLinear.txt')
 
 # testcase code
 if __name__ == "__main__":
