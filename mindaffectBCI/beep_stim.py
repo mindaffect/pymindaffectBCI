@@ -444,8 +444,8 @@ def mkRandLevelAudio(ncodes=36, nEvent=400, soa=10, jitter=1, minval=0, maxval=1
     return StimSeq(None,array.tolist(),None)
 
 import matplotlib.pyplot as plt 
-def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, nlevels=60):
-    """make a random levels stimulus -- where rand level every soa frames
+def mkLogLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, nlevels=60):
+    """make a random levels stimulus with log2 spacing-- where rand level every soa frames
 
     Args:
         width (int, optional): width of the matrix. Defaults to 5.
@@ -460,36 +460,14 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
 
     b = minval
     a = (maxval-minval)/(nlevels-1)
-    #print(a)
     nStim = len(range(0,nEvent,soa))
-    #e = np.random.randint(0,nlevels,size=(nStim,ncodes))/(nlevels-1)
-	
-    #for i in range (ncodes):
-        #for j in range (nStim):
-            #e[j,i] = e[j,i] * (pow(e[j,i],3))
-	
-    #print(e)
     e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
-    print(e.shape)
-    elin = np.linspace(0,255,60)
-    elog = np.logspace(np.log2(1),np.log2(128),num=8,endpoint=True, base =2)
-    print(elog)
-    plt.plot(elog/256,'_')
-    plt.show()
+    elog = np.logspace(np.log2(minval),np.log2(maxval),num=nlevels,endpoint=True, base =2)
     probs = np.ones(elog.shape)
     probs=100*probs/(len(elog))
-    print(probs)
     for j in range (ncodes):
         for i in range (nStim):		
             e[i,j] = randomprob(elog,probs)/256
-            #print(randomprob(elin,probs))
-    #print(e)
-    #plt.plot(e)
-    #plt.plot(elog)
-    #plt.show()	
-    #print(elin/255)
-    #e = e +b
-    #print(e)
     if jitter is None or jitter==0:
         array[::soa,:] = e
     else: # jitter the soa
@@ -498,9 +476,40 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
             jit_idx = idx + np.random.randint(0,jitter+1,size=(nStim,)) - jitter//2
             jit_idx = np.maximum(0,np.minimum(jit_idx,array.shape[0]-1))
             array[jit_idx,ei] = e[:,ei]
-    #print(array)
-    plt.plot(array)
-    plt.show()
+    return StimSeq(None,array.tolist(),None)
+
+def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, nlevels=60):
+    """make a linear levels stimulus  -- where rand level every soa frames
+
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    array = np.zeros((nEvent,ncodes),dtype=float)
+    b = minval
+    a = (maxval-minval)/(nlevels-1)
+    nStim = len(range(0,nEvent,soa))
+    e = np.random.randint(0,nlevels,size=(nStim,ncodes)) * a + b
+    elin = np.linspace(minval,maxval,nlevels)
+    probs = np.ones(elin.shape)
+    probs=100*probs/(len(elin))
+    print(probs)
+    for j in range (ncodes):
+        for i in range (nStim):		
+            e[i,j] = randomprob(elin,probs)/255
+    if jitter is None or jitter==0:
+        array[::soa,:] = e
+    else: # jitter the soa
+        idx = list(range(0,nEvent,soa))
+        for ei in range(ncodes):
+            jit_idx = idx + np.random.randint(0,jitter+1,size=(nStim,)) - jitter//2
+            jit_idx = np.maximum(0,np.minimum(jit_idx,array.shape[0]-1))
+            array[jit_idx,ei] = e[:,ei]
     return StimSeq(None,array.tolist(),None)
 
 
