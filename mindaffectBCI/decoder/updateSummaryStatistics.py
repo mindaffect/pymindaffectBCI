@@ -796,8 +796,8 @@ def plot_summary_statistics(Cxx_dd, Cyx_yetd, Cyy_yetet, evtlabs=None, times=Non
     # Cxy
     if Cyx_yetd.ndim > 3:
         if Cyx_yetd.shape[0] > 1:
-            print("Warning: only the 1st set ERPs is plotted")
-        Cyx_yetd = np.mean(Cyx_yetd,0)
+            print("Warning: Y's merged into event types")
+        Cyx_yetd = Cyx_yetd.reshape((-1,Cyx_yetd.shape[-2],Cyx_yetd.shape[-1]))
     nevt = Cyx_yetd.shape[-3]
     for ei in range(nevt):
         if ei==0:
@@ -809,18 +809,16 @@ def plot_summary_statistics(Cxx_dd, Cyx_yetd, Cyy_yetet, evtlabs=None, times=Non
             plt.tick_params(labelbottom=False, labelleft=False)
         plt.imshow(Cyx_yetd[ei, :, :].T, aspect='auto', origin='lower', extent=(times[0], times[-1], 0, Cyx_yetd.shape[-1]))
         # TODO []: use the ch_names to add lables to the  axes
-        plt.title('{}'.format(evtlabs[min(len(evtlabs),ei)]))
+        plt.title('{}:{}'.format(ei,evtlabs[min(len(evtlabs)-1,ei)]))
     # only last one has colorbar
     plt.colorbar()
 
     # Cyy_yetet
-    if Cyy_yetet.ndim > 4:
-        if Cyy_yetet.shape[0] > 1:
-            print("Warning: only the 1st set ERPs is plotted")
-        Cyy_yetet = np.mean(Cyy_yetet,0)
-    Cyy2d = np.reshape(Cyy_yetet, (Cyy_yetet.shape[0]*Cyy_yetet.shape[1], Cyy_yetet.shape[2]*Cyy_yetet.shape[3]))
+    if Cyy_yetet.ndim > 4 and Cyy_yetet.shape[0] > 1:
+            print("Warning: Y's merged into event types")
+    Cyy2d = np.reshape(Cyy_yetet, (-1, Cyy_yetet.shape[-2]*Cyy_yetet.shape[-1]))
     plt.subplot(313)
-    plt.imshow(Cyy2d, origin='lower', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
+    plt.imshow(Cyy2d, origin='lower', aspect='auto', extent=[0, Cyy2d.shape[0], 0, Cyy2d.shape[1]])
     plt.colorbar()
     plt.title('Cyy')
 
@@ -869,8 +867,8 @@ def plot_erp(erp, evtlabs=None, times=None, fs=None, ch_names=None, axis=-1, plo
     '''
     if erp.ndim > 3:
         if erp.shape[0]>1 :
-            print("Warning: only the 1st set ERPs is plotted")
-        erp = erp[0, ...]
+            print("Multiple Y's merged!")
+        erp = erp.reshape((-1,erp.shape[-2],erp.shape[-1]))
     elif erp.ndim == 2:
         erp = erp[np.newaxis,...]
     icoords = evtlabs if not evtlabs is None else list(range(erp.shape[-3]))
@@ -1006,7 +1004,7 @@ def plot_factoredmodel(A, R, S=None, evtlabs=None, times=None, ch_names=None, ch
             pR.grid(True)
 
         # make the spatial plot
-        sign = np.sign(A[ci,np.argmax(np.abs(A[ci,:]))]) # normalize directions
+        sign = np.sign(R[ci,...].flat[np.argmax(np.abs(R[ci,...]))]) # normalize directions
         if not ch_pos is None: # make as topoplot
             cRng= np.max(np.abs(A.reshape((-1))))
             levels = np.linspace(-cRng,cRng,20)
