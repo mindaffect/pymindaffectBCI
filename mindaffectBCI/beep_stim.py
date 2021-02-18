@@ -443,6 +443,7 @@ def mkRandLevelAudio(ncodes=36, nEvent=400, soa=10, jitter=1, minval=0, maxval=1
             array[jit_idx,ei] = e[:,ei]
     return StimSeq(None,array.tolist(),None)
 
+import matplotlib.pyplot as plt 
 def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, nlevels=60):
     """make a random levels stimulus -- where rand level every soa frames
 
@@ -473,6 +474,8 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
     elin = np.linspace(0,255,60)
     elog = np.logspace(np.log2(1),np.log2(128),num=8,endpoint=True, base =2)
     print(elog)
+    plt.plot(elog/256,'_')
+    plt.show()
     probs = np.ones(elog.shape)
     probs=100*probs/(len(elog))
     print(probs)
@@ -481,7 +484,6 @@ def mkLinLevelAudio(ncodes=36, nEvent=400, soa=2, jitter=2, minval=0, maxval=1, 
             e[i,j] = randomprob(elog,probs)/256
             #print(randomprob(elin,probs))
     #print(e)
-    import matplotlib.pyplot as plt 
     #plt.plot(e)
     #plt.plot(elog)
     #plt.show()	
@@ -534,8 +536,8 @@ def mkCodes():
     # test generators
     rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=8)
 	#rc mkSingleBeep()
-    rc.toFile('BeepLog8Levels.png')
-    rc.toFile('BeepLog8Levels.txt')
+  #  rc.toFile('BeepLog8Levels.png')
+  #  rc.toFile('BeepLog8Levels.txt')
 
 # testcase code
 if __name__ == "__main__":
