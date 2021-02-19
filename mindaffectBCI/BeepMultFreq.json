@@ -21,12 +21,12 @@
         "npred":10,
         "calibrationScreen":"mindaffectBCI.examples.presentation.Beep_vol.SoundFlashScreen",
         "selectionThreshold":0.01,
-        "symbols":[["speaker.jpg|yesno\\tone60_3.wav"]],
-        "stimfile":"BeepLog8Levels.png",
+        "symbols":[["speaker.jpg|yesno\\tone60_3_2000hz.wav","speaker.jpg|yesno\\tone60_3.wav","speaker.jpg|yesno\\tone60_3_4000hz.wav","speaker.jpg|yesno\\tone60_3_1000hz.wav"]],
+        "stimfile":"AudioMultFreqGold.txt",
         "prediction_args":{"permute":false},
         "framesperbit":1,
-        "fullscreen":false,
-        "fullscreen_stimulus":false,
+        "fullscreen":true,
+        "fullscreen_stimulus":true,
 		"simple_calibration":false,
         "host":"-"
     }

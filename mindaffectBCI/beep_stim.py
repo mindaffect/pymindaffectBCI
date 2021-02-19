@@ -339,6 +339,39 @@ def mkRowCol(width=5,height=5, repeats=10):
         #array[:,-1]=0
     return StimSeq(None,array.tolist(),None)
 
+def mkGoldAudio(width=5,height=5, repeats=10):
+    """Make a row-column stimulus sequence
+
+    Args:
+        width (int, optional): width of the matrix. Defaults to 5.
+        height (int, optional): height of the matrix. Defaults to 5.
+        repeats (int, optional): number of random row->col repeats. Defaults to 10.
+
+    Returns:
+        [StimSeq]: The generated stimulus sequence
+    """    
+    import numpy as np
+    #array = np.zeros((repeats,width+height,width,height))
+    array=np.array(StimSeq.fromFile('level8_gold_01.txt'))
+    print(array)
+    #array = array.reshape((repeats*(width+height),width*height)) # (e,(w*h)) = (nEvent,nStim)
+    shape=array.shape
+    print("array shape is :",shape)
+#    for i in range (shape[0]):
+#        array[i,:]=array[i,0]
+#    for j in range (shape[1]):#
+#	    array[:,j]=array[:,j]/(pow(j+1,3))
+#    ei=0
+#    for j in range (shape[1]):
+#        for i in range (shape[0]):
+#           array[0:(ei*(width*height)),j]=0
+#           array[(ei*(width*height)):((ei+10)*(width*height)),j] = array[(ei*(width*height)):((ei+10)*(width*height)),j]
+#           array[((ei+10)*(width*height)):shape[0],j]=0
+#        ei=ei+10
+        #array[:,-1]=0
+    return StimSeq(None,array.tolist(),None)
+
+
 def mkSingleBeep(width=1,height=1, repeats=100):
     """Make a row-column stimulus sequence
 
@@ -543,7 +576,9 @@ def mkCodes():
     """[summary]
     """    
     # test generators
-    rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=8)
+    #rc=mkLinLevelAudio(ncodes=1, nEvent=400, soa=3, jitter=3, minval=0, maxval=1, nlevels=8)
+    mkGoldAudio()
+    #array=StimSeq.fromFile('level8_gold_01.txt')
 	#rc mkSingleBeep()
   #  rc.toFile('BeepLog8Levels.png')
   #  rc.toFile('BeepLog8Levels.txt')
