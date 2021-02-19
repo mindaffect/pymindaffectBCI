@@ -1,0 +1,33 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":-1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[1,12,"bandpass"]],
+        "out_fs" : 110,
+        "evtlabs" : ["re","ntre"],
+        "tau_ms" : 650,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":20,
+        "npred":10,
+        "calibrationScreen":"mindaffectBCI.examples.presentation.Beep_vol.SoundFlashScreen",
+        "selectionThreshold":0.01,
+        "symbols":[["speaker.jpg|yesno\\tone60_3_2000hz.wav","speaker.jpg|yesno\\tone60_3.wav","speaker.jpg|yesno\\tone60_3_4000hz.wav","speaker.jpg|yesno\\tone60_3_1000hz.wav"]],
+        "stimfile":"AudioMultFreqinterleaved.txt",
+        "prediction_args":{"permute":false},
+        "framesperbit":1,
+        "fullscreen":true,
+        "fullscreen_stimulus":true,
+		"simple_calibration":false,
+        "host":"-"
+    }
+}
