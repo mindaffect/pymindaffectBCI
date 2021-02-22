@@ -1,0 +1,38 @@
+{
+    "logdir":"~/Desktop/logs",
+
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":0,
+        "serial_port":"com4"
+    },
+
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[4,25,"bandpass"]],
+        "out_fs" : 100,
+        "evtlabs" : ["re","fe"],
+        "ftype":"butter",
+        "order":6,
+        "cv":5,
+        "label":"decoder",
+        "prior_dataset": "calibration_dataset_*.pk",
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    
+    "presentation":"smart_keyboard.bci_keyboard",
+    "presentation_args":{
+        "ncal":10,
+        "npred":10,
+        "selectionThreshold":0.1,
+        "framesperbit":1,
+        "optosensor":false,
+        "bgFraction":0.1,
+        "fullscreen":false,
+        "simple_calibration":true
+    }
+}

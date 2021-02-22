@@ -74,16 +74,16 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
     # Using brainflow for the acquisition driver.  
     #  the brainflowargs are kwargs passed to BrainFlowInputParams
     #  so change the board_id and other args to use other boards
-    if acquisition == 'none':
+    if acquisition.lower() == 'none':
         # don't run acq driver here, user will start it manually
-        acquisition = None
-    elif acquisition == 'fakedata':
+        acquisition = NoneProc()
+    elif acquisition.lower() == 'fakedata':
         print('Starting fakedata')
         from mindaffectBCI.examples.acquisition import utopia_fakedata
         acq_args=dict(host='localhost', nch=4, fs=200)
         acquisition = Process(target=utopia_fakedata.run, kwargs=acq_args, daemon=True)
         acquisition.start()
-    elif acquisition == 'brainflow':
+    elif acquisition.lower() == 'brainflow':
         from mindaffectBCI.examples.acquisition import utopia_brainflow
         if acq_args is None:
             acq_args = dict(board_id=1, serial_port='com3', log=1) # connect to the ganglion
@@ -92,32 +92,32 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
 
         # give it some time to startup successfully
         sleep(5)
-    elif acquisition == 'ganglion': # pyOpenBCI ganglion driver
+    elif acquisition.lower() == 'ganglion': # pyOpenBCI ganglion driver
         from mindaffectBCI.examples.acquisition import utopia_ganglion
         acquisition = Process(target=utopia_ganglion.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'cyton': # pyOpenBCI ganglion driver
+    elif acquisition.lower() == 'cyton': # pyOpenBCI ganglion driver
         from mindaffectBCI.examples.acquisition import utopia_cyton
         acquisition = Process(target=utopia_cyton.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'javacyton': # java cyton driver
+    elif acquisition.lower() == 'javacyton': # java cyton driver
         from mindaffectBCI.examples.acquisition import startJavaCyton
         acquisition = Process(target=startJavaCyton.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'eego': # ANT-neuro EEGO
+    elif acquisition.lower() == 'eego': # ANT-neuro EEGO
         from mindaffectBCI.examples.acquisition import utopia_eego
         acquisition = Process(target=utopia_eego.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'lsl': # lsl eeg input stream
+    elif acquisition.lower() == 'lsl': # lsl eeg input stream
         from mindaffectBCI.examples.acquisition import utopia_lsl
         acquisition = Process(target=utopia_lsl.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
-    elif acquisition == 'brainproducts' or acquisition == 'liveamp': # brainproducts eeg input stream
+    elif acquisition.lower() == 'brainproducts' or acquisition.lower()=='liveamp': # brainproducts eeg input stream
         from mindaffectBCI.examples.acquisition import utopia_brainproducts
         acquisition = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
         acquisition.start()
@@ -144,7 +144,7 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
     Returns:
         Process: sub-process for managing the started decoder
     """    
-    if decoder == 'decoder' or decoder == 'mindaffectBCI.decoder.decoder':
+    if decoder.lower() == 'decoder' or decoder.lower() == 'mindaffectBCI.decoder.decoder'.lower():
         from mindaffectBCI.decoder import decoder
         if decoder_args is None:
             decoder_args = dict(calplots=True)
@@ -155,11 +155,56 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
         decoder.start()
         # allow time for the decoder to startup
         sleep(4)
-    elif decoder == 'none':
+    elif decoder.lower() == 'none':
         decoder = NoneProc()
     return decoder
 
-def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
+def startPresentationProcess(presentation,presentation_args):
+    target=None
+    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.examples.presentation.selectionMatrix'.lower():
+        if presentation_args is None:
+            presentation_args = dict(symbols= [['Hello', 'Good bye'], 
+                                               ['Yes',   'No']])
+        from mindaffectBCI.examples.presentation import selectionMatrix
+        target = selectionMatrix.run
+
+    elif presentation.lower() == 'sigviewer':
+        from mindaffectBCI.decoder.sigViewer import sigViewer
+        target=sigViewer.run
+
+    elif presentation =='fakepresentation':
+        import mindaffectBCI.noisetag
+        target=mindaffectBCI.noisetag.run
+
+    elif presentation.lower() == 'hue' or presentation.lower() == "colorwheel":
+        from mindaffectBCI.examples.presentation import colorwheel
+        target=colorwheel.run
+
+    elif presentation.lower() == 'rpigpio':
+        from mindaffectBCI.examples.presentation import rpigpio
+        target = rpigpio.run
+
+    elif isinstance(presentation,str) and not presentation == 'none':
+        try:
+            import importlib
+            pres = importlib.import_module(presentation)
+            target = pres.run
+        except:
+            print("Error: could not run the presentation method")
+            traceback.print_exc()
+    
+    elif presentation is None or presentation is False:
+        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
+        return None
+
+    if not target is None:
+        presentation = Process(target=target, kwargs=presentation_args, daemon=True)
+        presentation.start()
+        return presentation
+    else:
+        return None
+
+def run(label='', logdir=None, block=True, acquisition=None, acq_args=None, decoder='decoder', decoder_args=None, presentation='selectionMatrix', presentation_args=None):
     """[summary]
 
     Args:
@@ -171,6 +216,7 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
         presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
         presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.
+        block (bool, optional): return immeadiately or wait for presentation to finish and then terminate all processes.  Default to True
 
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
@@ -241,50 +287,17 @@ def run(label='', logdir=None, acquisition=None, acq_args=None, decoder='decoder
         raise ValueError("Decoder didn't start correctly!")
 
     #--------------------------- PRESENTATION ------------------------------
-    # run the stimulus, with our matrix and default parameters for a noise tag
-    #  Make a custom matrix to show:
-    if presentation == 'selectionMatrix' or presentation == 'mindaffectBCI.examples.presentation.selectionMatrix':
-        if presentation_args is None:
-            presentation_args = dict(symbols= [['Hello', 'Good bye'], 
-                                               ['Yes',   'No']])
-        try:
-            from mindaffectBCI.examples.presentation import selectionMatrix
-            selectionMatrix.run(**presentation_args)
-        except:
-            traceback.print_exc()
+    # run the stimulus, in a background processwith our matrix and default parameters for a noise tag
+    presentation_process = startPresentationProcess(presentation, presentation_args)
 
-    elif presentation == 'sigviewer' or presentation=='none':
-        try:
-            from mindaffectBCI.decoder.sigViewer import sigViewer
-            sigViewer()
-        except:
-            traceback.print_exc()
-
-    elif presentation == 'hue' or presentation == "colorwheel":
-        try:
-            from mindaffectBCI.examples.presentation import colorwheel
-            colorwheel.run(**presentation_args)
-        except:
-            traceback.print_exc()
-    elif presentation == 'rpigpio':
-        try:
-            from mindaffectBCI.examples.presentation import rpigpio
-            rpigpio.run(**presentation_args)
-        except:
-            traceback.print_exc()
-
-    elif isinstance(presentation,str) and not presentation == 'none':
-        try:
-            import importlib
-            pres = importlib.import_module(presentation)
-            pres.run(**presentation_args)
-        except:
-            print("Error: could not run the presentation method")
-            traceback.print_exc()
-    
-    elif presentation is None or presentation is False:
-        print('No presentation specified.  Running in background!  Be sure to terminate with `mindaffectBCI.online_bci.shutdown()` or <ctrl-c>')
-        return
+    if block == True:
+        if presentation_process is not None:
+            # wait for presentation to terminate
+            presentation_process.join()
+        else:
+            hub_process.wait()
+    else:
+        return False
 
     # TODO []: pop-up a monitoring object / dashboard!
 
@@ -359,6 +372,7 @@ def shutdown(hub=None, acquisition=None, decoder=None):
     except:
         pass
     
+
     hub.wait()
 #    if os.name == 'nt': # hard kill
 #        subprocess.Popen("TASKKILL /F /PID {pid} /T".format(pid=hub_process.pid))
@@ -414,7 +428,6 @@ def parse_args():
     parser.add_argument('--logdir', type=str, help='directory where the BCI output files will be saved. Uses $installdir$/logs if None.', default=None)
 
     args = parser.parse_args()
-
     if args.config_file is None:
         try:
             from tkinter import Tk
@@ -422,12 +435,14 @@ def parse_args():
             root = Tk()
             root.withdraw()
             filename = askopenfilename(initialdir=os.path.dirname(os.path.abspath(__file__)),
-                                       title='Chose mindaffectBCI Config File',
-                                       filetypes=(('JSON','*.json'),('All','*.*')))
+                                        title='Chose mindaffectBCI Config File',
+                                        filetypes=(('JSON','*.json'),('All','*.*')))
             setattr(args,'config_file',filename)
         except:
             print("Can't make file-chooser dialog, and no config file specified!  Aborting")
             raise ValueError("No config file specified")
+
+
 
     # load config-file
     if args.config_file is not None:
