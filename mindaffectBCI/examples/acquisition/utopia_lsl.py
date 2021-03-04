@@ -31,12 +31,17 @@ def parse_args():
 
 inlet = None
 client = None
-def run (host=None, streamtype=None, **kwargs):
+def run (host=None, streamtype='EEG', **kwargs):
     global inlet, client
+
+    # connect to the utopia client
+    client = utopiaclient.UtopiaClient()
+    client.disableHeartbeats() # disable heartbeats as we're a datapacket source
+    client.autoconnect(host)
 
     # first resolve an EEG stream on the lab network
     print("looking for an EEG stream...")
-    streams = resolve_stream('type', 'EEG')
+    streams = resolve_stream('type', streamtype)
 
     # create a new inlet to read from the stream
     inlet = StreamInlet(streams[0])
@@ -44,6 +49,7 @@ def run (host=None, streamtype=None, **kwargs):
     # get meta-info about this stream
     info = inlet.info()
     print("stream info: {}".format(info.as_xml()))
+    fSample = info.nominal_srate()
     nch = info.channel_count()
     labels=[]
     try:
@@ -53,28 +59,21 @@ def run (host=None, streamtype=None, **kwargs):
             ch = ch.next_sibling()
     except:
         pass
-    fSample = info.nominal_srate()
     print("board with {} ch @ {} hz".format(nch, fSample))
 
-    # connect to the utopia client
-    client = utopiaclient.UtopiaClient()
-    client.disableHeartbeats() # disable heartbeats as we're a datapacket source
-    client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
     print("Putting header.")
-    client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
+    client.sendMessage(utopiaclient.DataHeader(None, fSample, nch, labels))
 
-    maxpacketsamples = int(32000 / 4 / len(eeg_channels))
+    maxpacketsamples = int(32000 / 4 / nch)
     nSamp=0
     nBlock=0
-    data=None
-    ots = None
     while True:
 
         # grab all the new data + time-stamp
-        samples, timestamps = inlet.pull_chunk(timeout=1/PACKETRATE_HZ)
-        if len(samples) == 0:
+        samples, timestamps = inlet.pull_chunk(timeout=1/PACKETRATE_HZ, max_samples=maxpacketsamples)
+        if len(timestamps) == 0:
             sleep(.001)
             continue
 
@@ -92,11 +91,4 @@ def run (host=None, streamtype=None, **kwargs):
         printLog(nSamp,nBlock)        
 
 if __name__ == "__main__":
-    #run(board_id=1,serial_port='com3') # ganglion
     run()
-
-    args=parse_args()    
-    try:
-        run(**vars(args))
-    except:
-        traceback.print_exc()
