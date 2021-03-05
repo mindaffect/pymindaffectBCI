@@ -48,6 +48,7 @@ If your amplifier supports streaming with the `Lab-Streaming-Layer <https://labs
 You can specify the configuration for your amplifer in the `acq_args` section of the configuration file.  For example to use connect to the 1st LSL device with the EEG datatype use:
 
 .. code-block:: JSON
+
    "acquisition": "lsl",
    "acq_args":{ "streamtype":"EEG"}
 
@@ -63,6 +64,7 @@ Note: To use this amplifier you must:
 You can specify the configuration for the LiveAmp in the `acq_args` section of the configuration file.  For example to use this amp with default configuration use:
 
 .. code-block:: JSON
+
    "acquisition": "bp"
 
 AntNeuro eego
@@ -76,6 +78,7 @@ Note: To use this amplifier you must *first* install the amplifier driver, which
 You can specify the configuration for the eego in the `acq_args` section of the configuration file.  To use this driver with default config use
 
 .. code-block:: JSON
+
    "acquisition": "eego"
 
 
