@@ -16,9 +16,6 @@ Internally, we have most experience with:
 
 .. _alternativeAmpRef:
 
-Alternative Amplifiers
-----------------------
-
 Brainflow supported
 +++++++++++++++++++
 
@@ -51,6 +48,7 @@ You can specify the configuration for your amplifer in the `acq_args` section of
 
    "acquisition": "lsl",
    "acq_args":{ "streamtype":"EEG"}
+
 
 BrainProducts LiveAmp
 +++++++++++++++++++++
@@ -88,9 +86,9 @@ Other Amplifiers
 Alternatively, thanks to valuable support from their developers, we support some non-brainflow amplifiers 'out-of-the-box', specifically;
  * TMSi `Mobita <https://shop.tmsi.com/product-tag/mobita>`_: using `--acquisition mobita`, see `examples\\acquisition\\utopia_mobita.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_mobita.py>`_ for the configuration options.
 
-We are also happy to add support for additional amplifiers if EEG makers request it and are willing to provide open-source SDKs and test hardware.
-
 Add your own AMP support
 ++++++++++++++++++++++++
 
 If you have an amp which is not currently supported, and you have a way of getting raw samples out of it, then you can easily (7 lines of Python!) add support for your device as described in the `Add a new Amplifier <https://mindaffect-bci.readthedocs.io/en/latest/add_a_new_amplifier.html>`_ tutorial.
+
+_Hardware Makers_: We are also happy to add support for additional amplifiers if EEG makers request it and are willing to provide open-source SDKs and test hardware.
