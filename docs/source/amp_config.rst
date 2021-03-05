@@ -1,6 +1,6 @@
 .. _ampref:
 
-Amplifier Configuration: openBCI Cyton and Ganglion
+Amplifier Setup: openBCI Cyton and Ganglion
 ===================================================
 
 .. _COMref:
