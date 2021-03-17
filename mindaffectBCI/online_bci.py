@@ -122,6 +122,16 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
         acquisition = Process(target=utopia_brainproducts.run, kwargs=acq_args, daemon=True)
         acquisition.start()
 
+    elif acquisition.lower() == 'tmsi' : # tmsi porti
+        from mindaffectBCI.examples.acquisition import utopia_tmsi
+        acquisition = Process(target=utopia_tmsi.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
+
+    elif acquisition.lower() == 'ft' : # tmsi porti
+        from mindaffectBCI.examples.acquisition import utopia_ft
+        acquisition = Process(target=utopia_ft.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
+
     else:
         raise ValueError("Unrecognised acquisition driver! {}".format(acquisition))
     

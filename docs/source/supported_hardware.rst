@@ -47,7 +47,23 @@ You can specify the configuration for your amplifer in the `acq_args` section of
 .. code-block:: JSON
 
    "acquisition": "lsl",
-   "acq_args":{ "streamtype":"EEG"}
+   "acq_args":{ "streamtype":"EEG" }
+
+Note: This does *not* actually start the amplifier stream.  You will need to separately do that by separately running the appropriate amplifier-lsl driver.   For example using the `openBCI_LSL <https://docs.openbci.com/docs/06Software/02-CompatibleThirdPartySoftware/LSL>`_ drivers to configure and start an LSL stream for a Cyton.
+
+
+FieldTrip Realtime supported
+++++++++++++++++++++++++++++
+
+`FieldTrip <https://www.fieldtriptoolbox.org/>`_ is a toolbox for analysis of neuroimaging data.  As part of it's `fieldtrip realtime <https://www.fieldtriptoolbox.org/development/realtime/>`_ support it provides drivers for a range of EEG/MEG/fMRI amplifiers.  If your amplifier is supported in this way, you can use the FieldTrip acquisition driver to forward data from the fieldtrip amplifier driver to pymindaffectBCI.  
+
+You can specify the configuration for your amplifer in the `acq_args` section of the configuration file.  For example to forward from FieldTrip buffer to pymimdaffectBCI use:
+
+.. code-block:: JSON
+
+   "acquisition": "ft"
+
+Note: This does *not* actually start the amplifier stream.  You will need to separately do that by separately running the appropriate amplifier-ft driver, see the `list of implementations <https://www.fieldtriptoolbox.org/development/realtime/implementation/>`_.
 
 
 BrainProducts LiveAmp
