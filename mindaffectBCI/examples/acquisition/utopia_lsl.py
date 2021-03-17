@@ -31,13 +31,15 @@ def parse_args():
 
 inlet = None
 client = None
-def run (host=None, streamtype='EEG', **kwargs):
-    global inlet, client
+def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
+    """[summary]
 
-    # connect to the utopia client
-    client = utopiaclient.UtopiaClient()
-    client.disableHeartbeats() # disable heartbeats as we're a datapacket source
-    client.autoconnect(host)
+    Args:
+        host ([type], optional): ip-address of the minaffectBCI Hub, auto-discover if None. Defaults to None.
+        streamtype (str, optional): the type of stream to forward to the hub. Defaults to 'EEG'.
+        channels (list, optional): list-of-int, channel indices to forward, list-of-str list of channel names to forward. Defaults to None.
+    """    
+    global inlet, client
 
     # first resolve an EEG stream on the lab network
     print("looking for an EEG stream...")
@@ -51,20 +53,44 @@ def run (host=None, streamtype='EEG', **kwargs):
     print("stream info: {}".format(info.as_xml()))
     fSample = info.nominal_srate()
     nch = info.channel_count()
-    labels=[]
+    ch_names=[]
     try:
         ch = info.desc().child("channels").child("channel")
         for k in range(nch):
-            labels.append(ch.child_value("label"))
+            ch_names.append(ch.child_value("label"))
             ch = ch.next_sibling()
     except:
         pass
     print("board with {} ch @ {} hz".format(nch, fSample))
 
+    # get subset of channels to stream -- if wanted
+    if channels is not None:
+        ch_idx = [False for _ in range(nch)]
+        if isinstance(channels,str):
+            channels = [c.trim() for c in channels.split(',')]
+        for c in channels:
+            if isinstance(c,int):
+                ch_idx[c]=True
+            elif isinstance(c,str):
+                try:
+                    ch_idx[[n.lower() for n in ch_names].index(c.lower())]=True
+                except ValueError:
+                    pass
+
+    nstream = sum(ch_idx)
+    ch_stream = [ c for i,c in enumerate(ch_names) if ch_idx[i] ]
+
+    print("Streaming {}ch = {}".format(nstream,ch_stream))
+
+    # connect to the utopia client
+    client = utopiaclient.UtopiaClient()
+    client.disableHeartbeats() # disable heartbeats as we're a datapacket source
+    client.autoconnect(host)
+
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
     print("Putting header.")
-    client.sendMessage(utopiaclient.DataHeader(None, fSample, nch, labels))
+    client.sendMessage(utopiaclient.DataHeader(None, fSample, nstream, ch_stream))
 
     maxpacketsamples = int(32000 / 4 / nch)
     nSamp=0
@@ -80,6 +106,12 @@ def run (host=None, streamtype='EEG', **kwargs):
         # forward the *EEG* data to the utopia client
         nSamp = nSamp +len(samples)
 
+        # get the subset...
+        if nstream < nch:
+            tmp = []
+            for s in samples:
+                tmp.append([c for i,c in enumerate(s) if ch_idx[i]])
+
         # fit time-stamp into 32-bit int (with potential wrap-around)
         ts = timestamps[-1]
         ts = (int(ts*1000))%(1<<31) 
@@ -91,4 +123,4 @@ def run (host=None, streamtype='EEG', **kwargs):
         printLog(nSamp,nBlock)        
 
 if __name__ == "__main__":
-    run()
+    run(channels=['Cz' ,'C3'])

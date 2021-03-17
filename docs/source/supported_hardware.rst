@@ -42,12 +42,12 @@ LSL supported
 
 If your amplifier supports streaming with the `Lab-Streaming-Layer <https://labstreaminglayer.readthedocs.io/index.html>`_ then directly use this as an acquisition device.  Specificially the file in `examples\\acquisition\\utopia_lsl.py <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/acquisition/utopia_lsl.py>`_ is used to setup the LSL connection.  You can check in this file for detailed (and up-to-date) information on what options are available for the LSL connection.  
 
-You can specify the configuration for your amplifer in the `acq_args` section of the configuration file.  For example to use connect to the 1st LSL device with the EEG datatype use:
+You can specify the configuration for your amplifer in the `acq_args` section of the configuration file.  For example to use connect to the 1st LSL device with the EEG datatype, and only stream channels named Cz,C3,C4 use:
 
 .. code-block:: JSON
 
    "acquisition": "lsl",
-   "acq_args":{ "streamtype":"EEG" }
+   "acq_args":{ "streamtype":"EEG", "channels":["Cz","C3","C4"] }
 
 Note: This does *not* actually start the amplifier stream.  You will need to separately do that by separately running the appropriate amplifier-lsl driver.   For example using the `openBCI_LSL <https://docs.openbci.com/docs/06Software/02-CompatibleThirdPartySoftware/LSL>`_ drivers to configure and start an LSL stream for a Cyton.
 
