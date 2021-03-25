@@ -26,11 +26,15 @@ def run(label='', logdir=None):
     # make the logs directory if not already there
     if logdir is None:
         logdir=os.path.join(bindir,'../../logs')
+    logdir = os.path.expanduser(logdir)
     if not os.path.exists(logdir):
         try:
             os.makedirs(logdir)
         except:
-            print("Error making the log directory {}.... ignoring".format(logdir))
+            print("Error making the log directory {}".format(logdir))
+    if not os.path.exists(logdir):
+            logdir=pydir
+    print("Saving to {}".format(logdir))
 
     # command to run the java hub
     cmd = ("java","-jar","UtopiaServer.jar")
@@ -39,7 +43,7 @@ def run(label='', logdir=None):
         logfile = "mindaffectBCI_{}.txt".format(label)
     else:
         logfile = "mindaffectBCI.txt"
-    args = ("8400","0",os.path.join(os.path.expanduser(logdir),logfile))
+    args = ("8400","0",os.path.join(logdir,logfile))
 
     # run the command, waiting until it has finished
     print("Running command: {}".format(cmd+args))
@@ -49,4 +53,4 @@ def run(label='', logdir=None):
     return utopiaHub
 
 if __name__=="__main__":
-    run()
+    run(logdir='~/Desktop/logs')
