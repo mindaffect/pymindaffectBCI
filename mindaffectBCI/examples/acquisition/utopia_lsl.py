@@ -53,17 +53,18 @@ def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
     print("stream info: {}".format(info.as_xml()))
     fSample = info.nominal_srate()
     nch = info.channel_count()
-    ch_names=[]
+    ch_names= [ "{}".format(i) for i in range(nch) ]
     try:
         ch = info.desc().child("channels").child("channel")
         for k in range(nch):
-            ch_names.append(ch.child_value("label"))
+            ch_names[k] = ch.child_value("label")
             ch = ch.next_sibling()
     except:
         pass
     print("board with {} ch @ {} hz".format(nch, fSample))
 
     # get subset of channels to stream -- if wanted
+    ch_idx = [True for _ in range(nch)]
     if channels is not None:
         ch_idx = [False for _ in range(nch)]
         if isinstance(channels,str):
@@ -108,9 +109,11 @@ def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
 
         # get the subset...
         if nstream < nch:
-            tmp = []
-            for s in samples:
-                tmp.append([c for i,c in enumerate(s) if ch_idx[i]])
+            tmp = samples
+            samples = []
+            for s in tmp:
+                samples.append([c for i,c in enumerate(s) if ch_idx[i]])
+            del tmp
 
         # fit time-stamp into 32-bit int (with potential wrap-around)
         ts = timestamps[-1]
@@ -123,4 +126,6 @@ def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
         printLog(nSamp,nBlock)        
 
 if __name__ == "__main__":
-    run(channels=['Cz' ,'C3'])
+    channels=['Cz' ,'C3']
+    channels=[0,1,2,5,6]
+    run(channels=channels)
