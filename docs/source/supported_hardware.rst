@@ -108,3 +108,43 @@ Add your own AMP support
 If you have an amp which is not currently supported, and you have a way of getting raw samples out of it, then you can easily (7 lines of Python!) add support for your device as described in the `Add a new Amplifier <https://mindaffect-bci.readthedocs.io/en/latest/add_a_new_amplifier.html>`_ tutorial.
 
 _Hardware Makers_: We are also happy to add support for additional amplifiers if EEG makers request it and are willing to provide open-source SDKs and test hardware.
+
+
+Running on a Raspberry Pi
+=========================
+
+The mindaffectBCI can run directly on a `raspberry pi <raspberrypi.org>`_.  However, your milage may vary depending on which model of pi you have, we recommend;
+
+ * To run the complete BCI stack, with *screen-based* presentation, acquisition, decoder, etc., a `pi model 4 <https://www.raspberrypi.org/products/raspberry-pi-4-model-b/>`_
+ * To run just the decoder or decoder with LED based presentation, a `pi model 3 <https://www.raspberrypi.org/products/raspberry-pi-3-model-a-plus/>`_ or higher.
+ * To run just LED presentation, then a `pi zero <https://www.raspberrypi.org/products/raspberry-pi-zero-w/>`_
+
+Depending on which part of the BCI you want to run, you will need to install some additional packages.  For the full-system deployment on a Pi-4 you will need:
+ * Java: 
+
+ .. code-block::
+
+    sudo apt-get install default-jdk
+
+ * BLAS:
+
+.. code-block:
+
+    sudo apt-get install libatlas-base-dev
+
+ * open-GL utilities:
+
+.. code-block::
+
+    sudo apt-get install freeglut3-dev
+
+In additon to enable openGL in the desktop you should enable the KMS (or fake-KMS) GL driver support by.
+
+ * open raspi-config
+
+ .. code-block:
+
+    sudo raspi-config
+
+ * Go to Advanced Options ->  GL Driver -> GL (Fake KMS)
+ * reboot your Pi for the settings to take effect
