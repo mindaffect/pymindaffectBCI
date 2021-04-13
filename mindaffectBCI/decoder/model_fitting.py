@@ -83,8 +83,6 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         """
         self.evtlabs = evtlabs if evtlabs is not None else ('re','fe')
         self.tau, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets, self.verb, self.minDecisLen, self.bwdAccumulate = (tau, offset, priorweight, startup_correction, prediction_offsets, verb, minDecisLen, bwdAccumulate)
-        if self.offset>0 or self.offset<-tau:
-            raise NotImplementedError("Offsets of more than a negative window are not supported yet!")
         
     def stim2event(self, Y, prevY=None):
         '''transform Stimulus-encoded to brain-encoded, if needed'''

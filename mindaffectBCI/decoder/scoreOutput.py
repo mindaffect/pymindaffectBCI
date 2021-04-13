@@ -18,67 +18,67 @@
 import numpy as np
 from mindaffectBCI.decoder.utils import window_axis
 #@function
-def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
+def scoreOutput(Fe_mTSe, Y_TSye, dedup0=None, R=None, offset=None, outputscore='ip'):
     '''
     score each output given information on which stim-sequences corrospend to which inputs
 
     Args
 
-      Fe (nM,nTrl,nSamp,nE): similarity score for each event type for each stimulus
-      Ye (nTrl,nSamp,nY,nE): Indicator for which events occured for which outputs
+      Fe_mTSe (nM,nTrl,nSamp,nE): similarity score for each event type for each stimulus
+      Y_TSye (nTrl,nSamp,nY,nE): Indicator for which events occured for which outputs
                nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
-      R (nM,nfilt,nE,tau): FWD-model (impulse response) for each of the event types, used to correct the 
+      R_mket (nM,nfilt,nE,tau): FWD-model (impulse response) for each of the event types, used to correct the 
             scores for correlated responses.
       offset (int): A (set of) offsets to try when decoding.  Defaults to None.
-      dedup0 (int): remove duplicate copies of output O.  >0 -> remove the copy, <0 -> remove objID==0 (used when cross validating calibration data)
+      dedup0 (int): remove duplicate copies of output O, >0 remove the copy, <0 remove objID==0 (used when cross validating calibration data)
       outputscore (str): type of score to compute. one-of: 'ip', 'sse'.  Defaults to 'ip' 
 
     Returns
-      Fy  (nM,nTrl,nSamp,nY): similarity score for each input epoch for each output
+      Fy_mTSy  (nM,nTrl,nSamp,nY): similarity score for each input epoch for each output
     
     Copyright (c) MindAffect B.V. 2018
     '''
-    if Fe.size == 0:
-        Fy = np.zeros(Fe.shape[:-1] + (Ye.shape[-2],),dtype=np.float32)
-        return Fy
-    if Ye.ndim < 4: # ensure 4-d
-        Ye = Ye.reshape((1,)*(4-Ye.ndim)+Ye.shape)    
-    if Fe.ndim < 4: # ensure 4-d
-        Fe = Fe.reshape((1,)*(4-Fe.ndim)+Fe.shape)    
+    if Fe_mTSe.size == 0:
+        Fy_mTSy = np.zeros(Fe_mTSe.shape[:-1] + (Y_TSye.shape[-2],),dtype=np.float32)
+        return Fy_mTSy
+    if Y_TSye.ndim < 4: # ensure 4-d
+        Y_TSye = Y_TSye.reshape((1,)*(4-Y_TSye.ndim)+Y_TSye.shape)    
+    if Fe_mTSe.ndim < 4: # ensure 4-d
+        Fe_mTSe = Fe_mTSe.reshape((1,)*(4-Fe_mTSe.ndim)+Fe_mTSe.shape)    
     if dedup0 is not None and dedup0 is not False: # remove duplicate copies output=0
-        Ye = dedupY0(Ye, zerodup=dedup0>0)
-    # ensure Ye has same type of Fe
-    Ye = Ye.astype(Fe.dtype)
+        Y_TSye = dedupY0(Y_TSye, zerodup=dedup0>0)
+    # ensure Y_TSye has same type of Fe_mTSe
+    Y_TSye = Y_TSye.astype(Fe_mTSe.dtype)
 
     # inner-product score
     if offset is None:
-        Fy = np.einsum("mTEe,TEYe->mTEY", Fe, Ye, dtype=Fe.dtype)
-        Fy = Fy.astype(Fe.dtype)
+        Fy_mTSy = np.einsum("mTEe,TEYe->mTEY", Fe_mTSe, Y_TSye, dtype=Fe_mTSe.dtype)
+        Fy_mTSy = Fy_mTSy.astype(Fe_mTSe.dtype)
 
     else:
-        assert Fe.ndim<4 or Fe.shape[0]==1, "Offsets only for single models!"
+        assert Fe_mTSe.ndim<4 or Fe_mTSe.shape[0]==1, "Offsets only for single models!"
         if not hasattr(offset,'__iter__'): 
             offset=[offset]
         # list of possible offsets to try
-        Fy= np.zeros((len(offset), Fe.shape[1], Fe.shape[2], Ye.shape[-2]), dtype=Fe.dtype)
+        Fy_mTSy= np.zeros((len(offset), Fe_mTSe.shape[1], Fe_mTSe.shape[2], Y_TSye.shape[-2]), dtype=Fe_mTSe.dtype)
         for i,o in enumerate(offset):
             # +offset -> Y is later than it 'should' be
             if o == 0:
-                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe, Ye, dtype=Fe.dtype)
-                Fy[i,...] = Fyi.astype(Fe.dtype)
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe_mTSe, Y_TSye, dtype=Fe_mTSe.dtype)
+                Fy_mTSy[i,...] = Fyi.astype(Fe_mTSe.dtype)
 
             elif o > 0:
-                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe[..., o: ,: ], Ye[..., :-o , :, :], dtype=Fe.dtype)
-                Fy[i, ..., o:, :] = Fyi.astype(Fe.dtype)
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe_mTSe[..., o: ,: ], Y_TSye[..., :-o , :, :], dtype=Fe_mTSe.dtype)
+                Fy_mTSy[i, ..., o:, :] = Fyi.astype(Fe_mTSe.dtype)
 
             else:
-                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe[..., :o ,:], Ye[..., -o: , :, :], dtype=Fe.dtype)
-                Fy[i, ..., :o, :] = Fyi.astype(Fe.dtype)
+                Fyi = np.einsum("mTEe,TEYe->mTEY", Fe_mTSe[..., :o ,:], Y_TSye[..., -o: , :, :], dtype=Fe_mTSe.dtype)
+                Fy_mTSy[i, ..., :o, :] = Fyi.astype(Fe_mTSe.dtype)
 
 
     # add correction for other measures
     if outputscore == 'sse':
-        YR = convYR(Ye,R,offset) # (nM,nTrl,nSamp,nY,nFilt)
+        YR = convYR(Y_TSye,R,offset) # (nM,nTrl,nSamp,nY,nFilt)
         # Apply the correction:
         #  SSE = (wX-Yr).^2
         #      = wX**2 - 2 wXYr + Yr**2
@@ -86,17 +86,20 @@ def scoreOutput(Fe, Ye, dedup0=None, R=None, offset=None, outputscore='ip'):
         #      = wX**2 - 2Fy + Yr**2
         #  take negative, so big (i.e. 0) is good, and drop constant over Y and divide by 2 ->
         #  -SSE = fY  = Fe*Y - .5* Yr**2
-        Fy = Fy - np.sum(YR**2,-1) / 2
+        Fy_mTSy = Fy_mTSy - np.sum(YR**2,-1) / 2
 
     elif outputscore == 'corr': # correlation based scoring...
         raise NotImplementedError()
     
-    elif not outputscore == 'ip':
+    elif outputscore == 'ip':
+        pass
+    
+    else:
         raise NotImplementedError("output scoring with {} isn't supported".format(outputscore))
     
-    return Fy
+    return Fy_mTSy
 
-def dedupY0(Y, zerodup=True, yfeatdim=True):
+def dedupY0(Y, zerodup=True, yfeatdim=True, verb=0):
     ''' remove outputs which are duplicates of the first (objID==0) output
     Inputs:
       Y=(tr,ep,Y,e)
@@ -125,11 +128,13 @@ def dedupY0(Y, zerodup=True, yfeatdim=True):
         #print("sim={}".format(sim))
         mi = np.argmax(sim)
         if sim[mi] > .95:
-            #print("{}) dup {}={}".format(ti,0,mi+1))
+            if verb>0 : print("{}) dup {}={} ".format(ti,0,mi+1),end='')
             if zerodup: # zero out the duplicate of objId=0
                 Y[ti, :, mi+1, :] = 0
+                if verb>0 : print(" {} removed".format(mi+1))
             else: # zero out the objId==0 line
                 Y[ti, :, 0, :] = 0
+                if verb>0: print(" {} removed".format(0))
                 
     # reshape back to input shape
     Y = np.reshape(Y, Yshape)
@@ -142,7 +147,7 @@ def convWX(X,W):
         W=W.reshape((1,)*(3-W.ndim)+W.shape)
     if X.ndim < 3:
         X=X.reshape((1,)*(3-X.ndim)+X.shape)
-    WX = np.einsum("TSd,mfd->mTSf",X,W)
+    WX = np.einsum("TSd,mfd->mTSf",X, W, dtype=W.dtype)
     return WX #(nM,nTrl,nSamp,nfilt)
 
 def convYR(Y,R,offset=None):

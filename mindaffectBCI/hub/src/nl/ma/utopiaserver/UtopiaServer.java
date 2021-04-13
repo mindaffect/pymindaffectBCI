@@ -63,7 +63,7 @@ public class UtopiaServer implements Runnable {
         return TAG;
     }
 
-    final static int MAXBUFFERSIZE = 1024 * 1024;
+    final static int MAXBUFFERSIZE = 1024 * 1024 * 4; // 4Mb buffer per client
     ByteBuffer msgbuffer;
     ByteBuffer tmpbuffer;
     DatagramChannel udpChannel = null; // for recieving/sending UDP messages

@@ -19,7 +19,7 @@ import numpy as np
 from mindaffectBCI.decoder.utils import window_axis
 
 #@function
-def scoreStimulus(X, W, R=None, b=None, offset=0, isepoched=None):
+def scoreStimulus(X, W, R=None, b=None, offset=0, f=None, isepoched=None):
     '''
     Apply spatio-temporal (possibly factored) model to data 
     Inputs:
@@ -78,13 +78,10 @@ def scoreStimulusEpoch_factored(X, W, R, b=None):
       Fe= (nM x nTrl x nEpoch x nE) similarity score for each input epoch for each output
     '''
 
-    # ensure all inputs have the  right  shape
-    if X.ndim < 4:
-        X = X.reshape((1,)*(4-X.ndim)+X.shape)
-    if W.ndim < 3:
-        W = W.reshape(((1,)*(3-W.ndim))+W.shape)
-    if R.ndim < 4:
-        R = R.reshape(((1,)*(4-R.ndim))+R.shape)
+    # ensure all inputs have the  right  shape, by addig leading singlenton dims
+    X = X.reshape((1,)*(4-X.ndim)+X.shape) # (nTrl,nEp,tau,d)
+    W = W.reshape(((1,)*(3-W.ndim))+W.shape) # (nM,nfilt,d)
+    R = R.reshape(((1,)*(4-R.ndim))+R.shape) # (nM,nfile,nE,tau)
 
     # apply the factored model, complex product to optimize the path
     Fe = np.einsum("Mkd,TEtd,Mket->MTEe", W, X, R, optimize='optimal') 
@@ -106,10 +103,8 @@ def scoreStimulusEpoch_full(X, W, b=None):
     '''
 
     # ensure inputs have the  right  shape
-    if X.ndim < 4:
-        X = X.reshape((1,)*(4-X.ndim)+X.shape)
-    if W.ndim < 4:
-        W = W.reshape((1,)*(4-W.ndim)+W.shape)
+    X = X.reshape((1,)*(4-X.ndim)+X.shape)
+    W = W.reshape((1,)*(4-W.ndim)+W.shape)
 
     # apply the model
     Fe = np.einsum("TEtd, metd->mTEe", X, W, optimize='optimal')
@@ -123,34 +118,43 @@ def factored2full(W, R):
     Output:
        W (nM,e,tau,d) spatio-temporal filter (BWD model) '''
     if R is not None:
-        if W.ndim < 3:
-            W = W.reshape(((1,)*(3-W.ndim))+W.shape)
-        if R.ndim < 4:
-            R = R.reshape(((1,)*(4-R.ndim))+R.shape)
+        W = W.reshape(((1,)*(3-W.ndim))+W.shape)
+        R = R.reshape(((1,)*(4-R.ndim))+R.shape)
         # get to single spatio-temporal filter
         W = np.einsum("mfd, mfet->metd", W, R)
     return W
 
 def scoreStimulusCont(X, W, R=None, b=None, offset=0):
-    '''
-    Apply spatio-tempoal (possibly factored) model to raw (non epoched) data
-    '''
-    W = factored2full(W, R) # (metd)
-    tau = W.shape[-2]
-    if X.shape[-2] > tau:
-        Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
-        Fe = scoreStimulusEpoch(Xe, W, None, b) # (nM, nTrl, nSamp-tau, nE)
-    else: # X isn't big enough to apply... => zero score
+    """ Apply spatio-tempoal (possibly factored) model to raw (non epoched) data
+
+    Args:
+        X (np.ndarray (nTr,nSamp,d)): raw per-trial data 
+        W (np.ndarray (nM,nfilt,d)): spatial filters for each factor 
+        R (np.ndarray (nM,nfilt,nE,tau): responses for each stimulus event for each output
+        b (np.ndarray (nE,1)): offset for each stimulus type
+    Returns:
+        np.ndarray (nM,nTrl,nSamp,nE): similarity score for each input epoch for each output
+    """   
+    tau = W.shape[-2] if R is None else R.shape[-1] # get response length
+    if X.shape[-2] < tau: # X isn't big enough to apply... => zero score
         Fe = np.zeros((W.shape[0],X.shape[0],1,W.shape[1]),dtype=X.dtype)
     
-    # zero pad to keep the output size
-    # TODO[]: pad with the *actual* values...
-    tmp = np.zeros(Fe.shape[:-2]+(X.shape[-2], Fe.shape[-1]),dtype=X.dtype)
-    # padd after the result = accumulate information *backwards* in time to
-    # start of the window -> Fe causes X
-    # also shift by the desired offset to compensate for shifted windows
-    tmp[..., -offset:Fe.shape[-2]-offset, :] = Fe
-    Fe = tmp
+    # slice and apply
+    Xe = window_axis(X, winsz=tau, axis=-2) # (nTrl, nSamp-tau, tau, d)
+    Fe = scoreStimulusEpoch(Xe, W, R, b) # (nM, nTrl, nSamp-tau, nE)
+
+    # shift for the offset and zero-pad to the input X size
+    # N.B. as we are offsetting from X->Y we move in the **OPPOSITTE** direction to
+    # how Y is shifted! 
+    Feoffset=-offset
+    if Feoffset<=0:
+        tmp = Fe[..., -Feoffset:, :] # shift-back and shrink
+        Fe = np.zeros(Fe.shape[:-2]+(X.shape[-2],)+Fe.shape[-1:],dtype=Fe.dtype)
+        Fe[...,:tmp.shape[-2],:] = tmp # insert
+    else :
+        tmp =  Fe[..., :X.shape[-2]-Feoffset, :] # shrink
+        Fe = np.zeros(Fe.shape[:-2]+(X.shape[-2],)+Fe.shape[-1:],dtype=Fe.dtype)
+        Fe[...,Feoffset:Feoffset+tmp.shape[-2],:] = tmp # shift + insert
 
     return Fe
 

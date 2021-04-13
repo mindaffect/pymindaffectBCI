@@ -9,10 +9,11 @@
 
     "decoder":"mindaffectBCI.decoder.decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[5.5,25,"bandpass"]],
-        "out_fs" : 100,
+        "stopband" : [[45,65],[4,45,"bandpass"]],
+        "out_fs" : 250,
         "evtlabs" : ["re","fe"],
         "tau_ms" : 450,
+        "offset_ms": -400,
         "prediction_offsets" : [0],
         "prior_dataset": "calibration_dataset_*.pk",
         "calplots" : true,

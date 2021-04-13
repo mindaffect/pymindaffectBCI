@@ -37,7 +37,8 @@ def getPosInfo(chnames=None,capFile='1010',overridechnms=0,prefixMatch=False,ver
       xyz -- (nCh,2):float the 3d position of the channels
       iseeg - (nCh,):bool flag if this is an eeg channel, i.e. if it's name matched
     """
-    cfnames,latlong,xy,xyz,cfile=readCapInf(capFile,capDir)
+    if isinstance(chnames,tuple) : chnames = list(chnames)
+    cfnames, latlong, xy, xyz, cfile = readCapInf(capFile,capDir)
     
     if overridechnms  or (isinstance(cfnames,np.ndarray) and np.issubdtype(cfnames.dtype,np.number)) :
         if chnames is None:

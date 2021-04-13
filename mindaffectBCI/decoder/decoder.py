@@ -398,7 +398,7 @@ def doModelFitting(clsfr: BaseSequence2Sequence, dataset,
                 plt.figure(3) # plot the CCA info
                 Y_true = clsfr.stim2event(Y)
                 Y_true = Y_true[...,0:1,:]
-                Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau)
+                Cxx, Cxy, Cyy = updateSummaryStatistics(X,Y_true,tau=clsfr.tau,offset=clsfr.offset)
                 plot_summary_statistics(Cxx,Cxy,Cyy,clsfr.evtlabs,fs=fs)
                 plt.suptitle("Summary Statistics")
                 try:

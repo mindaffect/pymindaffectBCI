@@ -38,7 +38,7 @@ public class UtopiaClient implements Runnable {
     Selector sel = null; // hold the list of all currently open sockets
     DatagramChannel     udpChannel=null; // for UDP messages
     SocketChannel       tcpChannel=null; // for TCP messages
-    private static int MAXBUFFERSIZE = 1024*64;
+    private static int MAXBUFFERSIZE = UtopiaServer.MAXBUFFERSIZE;
     ByteBuffer inbuffer;
     ByteBuffer outbuffer;
     ByteBuffer tcpbuffer;
