@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import re
-from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
+from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection, DataHeader
 from mindaffectBCI.decoder.utils import unwrap
 
 # named reg-exp to parse the different messages types log lines
@@ -12,6 +12,7 @@ clientip_re = re.compile(r'.*<-\W(?P<ip>[0-9.:]*)$')
 stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-.*$')
 datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<samples>.*) <-.*$')
 modechange_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*mode:(?P<newmode>.*) <-.*$')
+dataheader_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*fs(?P<fs>[-0-9]*)\W.*ch\[(?P<nch>[-0-9]*)\]:(?P<labels>.*) <-.*$')
 
 def read_StimulusEvent(line:str):
     ''' read a stimulus event message from a line of a mindaffectBCI offline save file '''
@@ -50,7 +51,28 @@ def read_DataPacket(line:str ):
     samples = np.fromstring(res['samples'].replace(']','').replace('[',''),sep=',',dtype=np.float32)
     samples = samples[:np.prod(shape)].reshape(shape) # guard too many samples?
     return DataPacket(ts,samples)
-    
+
+def read_DataHeader(line:str ):
+    """read a data-header line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        DataPacket: a mindaffectBCI.utopiaclient.messages.DataPacket object containing (nsamp,d) EEG data
+    """   
+    # named reg-ex to extract the bits we need
+    res = dataheader_re.match(line)
+    if res is None:
+        return None
+    ts = int(res['ts'])
+    # parse sample into numpy array
+    fs = float(res['fs'])
+    nch = int(res['nch'])
+    labels = [c.strip() for c in res['labels'].split(",")]
+    return DataHeader(ts,fs,nch,labels)
+
+
 def read_ModeChange(line:str):
     """read a mode-change line from a mindaffectBCI offline save file
 
@@ -169,6 +191,8 @@ def read_mindaffectBCI_message(line:str):
         msg = read_NewTarget(line)
     elif Selection.msgName in line:
         msg = read_Selection(line)
+    elif DataHeader.msgName in line:
+        msg = read_DataHeader(line)
     else:
         msg = None
     # add the server time-stamp
@@ -383,10 +407,19 @@ def testcase(fn=None):
     
 if __name__=="__main__":
     # default to last log file if not given
-    import glob
-    import os
     fileregexp = '../../../logs/mindaffectBCI*.txt'
     #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
-    testcase(fn)
+
+    import glob
+    import os
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    import os
+    root = Tk()
+    root.withdraw()
+    savefile = askopenfilename(initialdir=os.getcwd(),
+                                title='Chose mindaffectBCI save File',
+                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
+    testcase(savefile)
