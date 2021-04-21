@@ -183,7 +183,8 @@ class UtopiaDataInterface:
         nsamp = [len(m.samples) for m in databuf]
         data_ts = [ m.timestamp for m in databuf]
         if self.raw_fs is None:
-            self.raw_fs = np.median( np.array(nsamp[1:])  / np.diff(data_ts) * 1000.0)
+            slopes = self.local_slope(nsamp,data_ts)
+            self.raw_fs = np.median( slopes ) * 1000.0
         print('Estimated sample rate {} samp in {} s ={}'.format(sum(nsamp),(data_ts[-1]-data_ts[0])/1000.0,self.raw_fs))
 
         # init the pre-processor (if one)
@@ -198,7 +199,8 @@ class UtopiaDataInterface:
         # estimate the sample rate of the pre-processed data
         pp_nsamp = [m.shape[0] for m in tmpdatabuf]
         pp_ts = [ m[-1,-1] for m in tmpdatabuf]
-        self.fs = np.median( np.array(pp_nsamp[1:])  / np.diff(pp_ts) * 1000.0)# fs = nSamp/time
+        slopes = self.local_slope(pp_nsamp, pp_ts)
+        self.fs = np.median( slopes ) * 1000.0# fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
 
         # create the ring buffer, big enough to store the pre-processed data
@@ -225,6 +227,21 @@ class UtopiaDataInterface:
             nsamp = nsamp + d.shape[0]
 
         return (nsamp, nmsg)
+
+    def local_slope(self,nsamp,data_ts):
+        """compute a robust local slope estimate
+
+        Args:
+            nsamp ([type]): [description]
+            data_ts ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """        
+        snsamp = np.cumsum(nsamp)
+        step = max(1,len(snsamp)//10)
+        local_slope = [ (snsamp[i+step] - snsamp[i]) / (data_ts[i+step]-data_ts[i]) for i in range(0,len(snsamp)-step,step//2) ]
+        return local_slope
 
     def initStimulusRingBuffer(self):
         '''initialize the data ring buffer, by getting some seed messages and datapackets to get the data sizes etc.'''
@@ -372,8 +389,8 @@ class UtopiaDataInterface:
         raw_power, preproc_power = self.update_electrode_powers(d_raw, d_preproc)
 
         # convert to average amplitude
-        raw_amp = np.sqrt(raw_power)
-        preproc_amp = np.sqrt(preproc_power)
+        raw_amp = np.sqrt(np.maximum(float(1e-8),raw_power)) # guard negatives
+        preproc_amp = np.sqrt(np.maximum(float(1e-8),preproc_power)) # guard negatives
 
         # noise2signal estimated as removed raw amplitude (assumed=noise) to preprocessed amplitude (assumed=signal)
         noise2sig = np.maximum(float(1e-6), np.abs(raw_amp - preproc_amp)) /  np.maximum(float(1e-8),preproc_amp)
@@ -393,7 +410,6 @@ class UtopiaDataInterface:
                    raw_amp,d_raw.shape[0],
                    preproc_amp,d_preproc.shape[0],
                    noise2sig))
-            print("Q",end='')
             # N.B. use *our* time-stamp for outgoing messages!
             self.sendMessage(SignalQuality(None, noise2sig))
             self.last_sigquality_ts = ts
@@ -411,7 +427,7 @@ class UtopiaDataInterface:
                     plt.show(block=False)
 
     def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
-        """[track exp-weighted-moving average centered power for 2 input streams]
+        """track exp-weighted-moving average centered power for 2 input streams -- the raw and the preprocessed
 
         Args:
             d_raw (np.ndarray): [description]
@@ -733,14 +749,14 @@ class butterfilt_and_downsample(TransformerMixin):
                 resamp_start = self.resamprate_ - resamp_start
             
             # allow non-integer resample rates
-            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_)
+            idx =  np.arange(resamp_start,X.shape[self.axis],self.resamprate_,dtype=X.dtype)
 
             if self.resamprate_%1 > 0 and idx.size>0 : # non-integer re-sample, interpolate
                 idx_l = np.floor(idx).astype(int) # sample above
                 idx_u = np.ceil(idx).astype(int) # sample below
                 # BODGE: guard for packet ending at sample boundary.
                 idx_u[-1] = idx_u[-1] if idx_u[-1]<X.shape[self.axis] else X.shape[self.axis]-1
-                w_u   = idx - idx_l # linear weight of the upper sample
+                w_u   = (idx - idx_l).astype(X.dtype) # linear weight of the upper sample
                 X = X[...,idx_u,:] * w_u[:,np.newaxis] + X[...,idx_l,:] * (1-w_u[:,np.newaxis]) # linear interpolation
                 if Y is not None:
                     Y = Y[...,idx_u,:] * w_u[:,np.newaxis] + Y[...,idx_l,:] * (1-w_u[:,np.newaxis])
@@ -926,7 +942,7 @@ class power_tracker(TransformerMixin):
 
         Returns:
             [type]: [description]
-        """        
+        """
         self.sX_N = X.shape[0]
         if self.car and X.shape[-1]>4:
             X = X.copy() - np.mean(X,-1,keepdims=True)
@@ -936,16 +952,16 @@ class power_tracker(TransformerMixin):
         return self.power()
 
     def transform(self, X: np.ndarray):
-        """[compute the exponientially weighted centered power of X]
+        """compute the exponientially weighted centered power of X
 
         Args:
-            X (np.ndarray): [description]
+            X (np.ndarray): samples x channels data
 
         Returns:
-            [type]: [description]
+            np.ndarray: the updated per-channel power
         """        
         
-        if self.sX is None: # not fitted yet!
+        if self.sX is None or np.any(np.isnan(self.sX)) or self.sXX is None or np.any(np.isnan(self.sXX)): # not fitted yet!
             return self.fit(X)
         if self.car and X.shape[-1]>4:
             ch_power = self.power()
@@ -959,7 +975,7 @@ class power_tracker(TransformerMixin):
         # center and compute updated power
         alpha_pow  = self.alpha_power ** X.shape[0]
         self.sXX_N = self.sXX_N*alpha_pow + X.shape[0]
-        self.sXX   = self.sXX*alpha_pow + np.sum((X-(self.sX/self.sX_N))**2, axis=0)       
+        self.sXX   = self.sXX*alpha_pow + np.sum((X-(self.sX/self.sX_N))**2, axis=0)
         return self.power()
     
     def mean(self):
@@ -977,11 +993,14 @@ class power_tracker(TransformerMixin):
         """        
         return self.sXX / self.sXX_N
     
-    def testcase(self):
+    @staticmethod
+    def testcase():
         """[summary]
         """        
         import matplotlib.pyplot as plt
         X = np.random.randn(10000,2)
+        X[:500,:] = 0 # start with 0 to induce invalid values
+        X[5000:50050,:] = 0 # flatline later to induce invalid values
         #X = np.cumsum(X,axis=0)
         pt = power_tracker(100,100,100)
         print("All at once: power={}".format(pt.transform(X)))  # all at once
@@ -999,6 +1018,7 @@ class power_tracker(TransformerMixin):
             plt.plot(X[:,d])
             plt.plot(idxs,mus[:,d])
             plt.plot(idxs,powers[:,d])
+        plt.show(block=True)
 
 
 
@@ -1374,12 +1394,15 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
         t = pkti*pktsize
         Xi = X[t:t+pktsize,:]
         Xip = ppfn.transform(Xi)
-        raw_power, preproc_power = UtopiaDataInterface.update_electrode_powers(Xi,Xip)
+        raw_power, preproc_power = update_electrode_powers(Xi,Xip)
         noise2sig[pkti,:] = np.maximum(float(1e-6), (raw_power - preproc_power)) /  np.maximum(float(1e-8),preproc_power)
     return noise2sig
 
     
 if __name__ == "__main__":
+    power_tracker.testcase()
+    quit()
+
     #timestamp_interpolation().testcase()
     #butterfilt_and_downsample.testcase()
     #testRaw()
