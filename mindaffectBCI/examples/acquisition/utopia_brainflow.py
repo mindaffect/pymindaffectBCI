@@ -73,8 +73,10 @@ def parse_args():
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0,samplingFrequency=0):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0, streamer_params='',config_params=None, log=1,triggerCheck=0,samplingFrequency=0):
     global board, client
+    # log the config
+    configmsg = "{}".format(dict(component=__file__, args=locals()))
 
     # init the board params
     params = BrainFlowInputParams ()
@@ -98,13 +100,25 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.prepare_session ()
     if samplingFrequency > 0 and board_id ==5 :
 	    board.config_board (SampFreq2WiFiCommands[samplingFrequency])
-    if triggerCheck:
-        print('trigger is enabled, trigger channel: 8')
+    if triggerCheck and board_id in (0,5): # cyton boards
+        print('trigger is enabled, on cyton trigger channel: 8')
         board.config_board('x8020000X')
     sleep(1)
-    if board_id==0 or board_id==5:
+    if board_id in (0,5):
         print("Enabling AMP time-stamps on cyton")
         board.config_board ('<')
+
+    # do any user-specified config
+    if config_params is not None:
+        if isinstance(config_params,str):
+            config_params=[config_params]
+        print('Setting board config:')
+        for c in config_params:
+            print(c)
+            board.config_board(c)
+            sleep(.1)
+        print('done')
+
     sleep(1)
     eeg_channels = BoardShim.get_eeg_channels (board_id)
     timestamp_channel = BoardShim.get_timestamp_channel(board_id)
@@ -118,6 +132,8 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
+    # log the config
+    client.sendMessage(utopiaclient.Log(None, configmsg))
     print("Putting header.")
     client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
 
