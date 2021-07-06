@@ -210,7 +210,7 @@ def analyse_datasets(dataset:str, model:str='cca', dataset_args:dict=None, loade
 
 
 
-def analyse_train_test(X:np.ndarray, Y:np.ndarray, coords, splits=1, label:str='', model:str='cca', tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, preprocess_args=None, clsfr_args=dict(),  **kwargs):    
+def analyse_train_test(X:np.ndarray, Y:np.ndarray, coords, splits=1, label:str='', model:str='cca', tau_ms:float=300, fs:float=None,  rank:int=1, evtlabs=None, preprocess_args=None, clsfr_args:dict=None,  **kwargs):    
     """analyse effect of different train/test splits on performance and generate a summary decoding plot.
 
     Args:
@@ -312,7 +312,7 @@ def flatten_decoding_curves(decoding_curves):
     return il,pe,pee,se,st
 
 
-def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args=dict(), plotnormFy=False, triggerPlot=False, **kwargs):
+def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offset_ms=0, evtlabs=None, rank=1, model='cca', preprocess_args:dict=None, clsfr_args:dict=None, plotnormFy=False, triggerPlot=False, **kwargs):
     """Debug a data set, by pre-processing, model-fitting and generating various visualizations
 
     Args:
@@ -327,7 +327,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
         rank (int, optional): the rank of the model to fit. Defaults to 1.
         model (str, optional): the type of model to fit. Defaults to 'cca'.
         preprocess_args (dict, optional): additional arguments to send to the data pre-processor. Defaults to None.
-        clsfr_args (dict, optional): additional arguments to pass to the model fitting. Defaults to dict().
+        clsfr_args (dict, optional): additional arguments to pass to the model fitting. Defaults to None.
 
     Returns:
         score (float): the cv score for this dataset
@@ -406,6 +406,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     
     # fit the model
     # override with direct keyword arguments
+    if clsfr_args is None: clsfr_args=dict()
     clsfr_args['evtlabs']=evtlabs
     clsfr_args['tau_ms']=tau_ms
     clsfr_args['fs']=fs
