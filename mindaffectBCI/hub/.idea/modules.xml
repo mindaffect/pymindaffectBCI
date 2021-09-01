@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/messagelib.iml" filepath="$PROJECT_DIR$/messagelib.iml" group="messagelib" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/hub.iml" filepath="$PROJECT_DIR$/.idea/modules/hub.iml" group="hub" />
     </modules>
   </component>
 </project>

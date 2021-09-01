@@ -25,7 +25,7 @@ def run(label='', logdir=None):
 
     # make the logs directory if not already there
     if logdir is None:
-        logdir=os.path.join(bindir,'../../logs')
+        logdir=os.path.join(pydir,'../../logs')
     logdir = os.path.expanduser(logdir)
     if not os.path.exists(logdir):
         try:

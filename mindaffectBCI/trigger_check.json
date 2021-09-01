@@ -2,7 +2,7 @@
 
     "acquisition":"brainflow",
     "acq_args":{
-        "board_id":1,
+        "board_id":0,
         "serial_port":"com3",
         "trigger_check":true
     },
@@ -26,13 +26,13 @@
     "presentation":"selectionMatrix",
     "presentation_args":{
         "ncal":10,
-        "npred":10,
+        "npred":100,
         "selectionThreshold":0.1,
         "symbols":"symbols.txt",
         "calibration_symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
         "stimfile":"mgold_65_6532_psk_60hz.png",
         "framesperbit":1,
-        "fullscreen":false,
+        "fullscreen":true,
         "fullscreen_stimulus":true,
         "simple_calibration":true,
         "optosensor":true,

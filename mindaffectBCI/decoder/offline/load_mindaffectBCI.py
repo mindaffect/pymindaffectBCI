@@ -1,18 +1,12 @@
 import os
 import glob
-from mindaffectBCI.utopiaclient import DataHeader
 import numpy as np
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_data_messages
 from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis, unwrap
 from mindaffectBCI.decoder.UtopiaDataInterface import butterfilt_and_downsample
-from mindaffectBCI.decoder.preprocess import fft_ola_filter
 
-def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, 
-                        fs_out:float=100, stopband=((45,65),(5.5,25,'bandpass')), order:int=6, ftype:str='butter',  
-                        iti_ms:float=1000, trlen_ms:float=None, offset_ms:float=(-500,500),
-                        zero_before_stimevents:bool=False, 
-                        ch_names=None, verb:int=0, **kwargs):
+def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, fs_out:float=100, stopband=((45,65),(5.5,25,'bandpass')), order:int=6, ftype:str='butter', verb:int=0, iti_ms:float=1000, trlen_ms:float=None, offset_ms:float=(-500,500), ch_names=None, **kwargs):
     """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
 
     Args:
@@ -51,14 +45,9 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None,
     X, messages = read_mindaffectBCI_data_messages(source, **kwargs)
 
     # TODO[]: get the header if there is one?
-    header = [m for m in messages if m.msgID==DataHeader.msgID]
-    if header:
-        header=header[-1]
-        ch_names = header.labels
-        print("Ch: {}".format(ch_names))
 
-    #import pickle
-    #pickle.dump(dict(data=X),open('raw_lmbci.pk','wb'))
+    import pickle
+    pickle.dump(dict(data=X),open('raw_lmbci.pk','wb'))
 
     # strip the data time-stamp channel
     data_ts = X[...,-1].astype(np.float64) # (nsamp,)
@@ -103,27 +92,14 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None,
 
     # extract the stimulus sequence
     Me, stim_ts, objIDs, _ = devent2stimSequence(messages)
-    stim_ts = unwrap(stim_ts.astype(np.float64)) if len(stim_ts)>0 else stim_ts
+    stim_ts = unwrap(stim_ts.astype(np.float64))
 
     import pickle
     pickle.dump(dict(data=np.append(X,data_ts[:,np.newaxis],-1),stim=np.append(Me,stim_ts[:,np.newaxis],-1)),open('pp_lmbci.pk','wb'))
 
-    if zero_before_stimevents:
-        # insert an all-zero stimEvent in the *sample* before each current stim-event
-        sampdur_ms = int(np.round(1000/fs))
-        Me0 = Me
-        stim_ts0 = stim_ts
-        Me = np.zeros( (Me.shape[0]*2,Me.shape[1]), dtype=Me.dtype)
-        stim_ts = np.zeros( (stim_ts.shape[0]*2,), dtype=stim_ts.dtype)
-        for ei in range(stim_ts0.shape[0]):
-            Me[ei*2, :]=0
-            stim_ts[ei*2] = stim_ts0[ei]-sampdur_ms
-            Me[ei*2+1, :] = Me0[ei, :]
-            stim_ts[ei*2+1]=stim_ts0[ei]
-
     # up-sample to stim rate
     Y, stim_samp = upsample_stimseq(data_ts, Me, stim_ts, objIDs)
-    Y_ts = np.zeros((Y.shape[0],),dtype=int) 
+    Y_ts = np.zeros((Y.shape[0],),dtype=int); 
     Y_ts[stim_samp]=stim_ts
     if verb >= 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
 
@@ -136,14 +112,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None,
     # N.B. this is the index in stim_ts of the *start* of the new trial
     trl_stim_idx = np.flatnonzero(isi > iti_ms)
     # get duration of stimulus in each trial, in milliseconds (rather than number of stimulus events)
-    # last-stim in each trial minus first stim in each trial
-    # N.B. breaks if trail has only a single stimulus!
-    if len(stim_ts) > len(trl_stim_idx)*3:
-        trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
-    else:
-        trl_dur = stim_ts[trl_stim_idx[1:]] - stim_ts[trl_stim_idx[:-1]]
-    print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
-    print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
+    trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
+    print('{} trl_dur (ms) : {}'.format(len(trl_dur),np.diff(trl_dur)))
     # estimate the best trial-length to use
     if trlen_ms is None:
         trlen_ms = np.percentile(trl_dur,90)
@@ -222,17 +192,13 @@ def testcase():
         files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),fileregexp)) # * means all if need specific format then *.csv
         sessfn = max(files, key=os.path.getctime)
  
-    sessfn = "C:\\Users\\Developer\\Downloads\\mindaffectBCI_*.txt"
+    #sessfn = "C:\\Users\\Developer\\Downloads\\mark\\mindaffectBCI_brainflow_200911_1229_90cal.txt"
     from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
-    from mindaffectBCI.decoder.analyse_datasets import plot_trial
     print("Loading: {}".format(sessfn))
-    X, Y, coords = load_mindaffectBCI(sessfn, fs_out=100, regress=False, zero_before_stimevents=True)
+    X, Y, coords = load_mindaffectBCI(sessfn, fs_out=100, regress=False)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
-
-    plot_trial(X,Y,fs,ch_names,block=True)
-
 
     print("X({}){}".format([c['name'] for c in coords],X.shape))
     print("Y={}".format(Y.shape))

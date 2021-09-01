@@ -126,6 +126,7 @@ def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
         printLog(nSamp,nBlock)        
 
 if __name__ == "__main__":
+    print("To start a debug data stream use in console: python -m pylsl.examples.SendData")
     channels=['Cz' ,'C3']
     channels=[0,1,2,5,6]
     run(channels=channels)

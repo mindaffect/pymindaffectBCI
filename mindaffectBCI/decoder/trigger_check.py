@@ -220,8 +220,8 @@ def triggerPlot(X,Y,fs, clsfr=None, fig=None, evtlabs=('re','fe'), tau_ms=125, o
 def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
     """online continuously updating trigger check plot
     """
-    from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, stim2eventfilt, butterfilt_and_downsample
-    from mindaffectBCI.decoder.devent2stimsequence import devent2stimSequence, upsample_stimseq
+    from mindaffectBCI.decoder.UtopiaDataInterface import UtopiaDataInterface, butterfilt_and_downsample
+    from mindaffectBCI.decoder.devent2stimsequence import upsample_stimseq
     data_preprocessor = butterfilt_and_downsample(order=6, stopband=stopband, fs_out=fs_out)
     ui=UtopiaDataInterface(data_preprocessor=data_preprocessor, send_signalquality=False)
     ui.connect(hostname)
@@ -277,7 +277,7 @@ def run(hostname='-', stopband=(.1,45,'bandpass'), fs_out=250, **kwargs):
         stim_ts = stimulus[:,-1]
         # up-sample to the data rate by matching time-stamps
         usstimulus, _ = upsample_stimseq(data_ts, stimulus, stim_ts)
-        ax, _, _, _ = triggerPlot(data[...,:-1],usstimulus[...,:-1],ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
+        ax, _, _, _, _ = triggerPlot(data[...,:-1],usstimulus[...,:-1],ui.fs, new_fig=False, plot_model=False, plot_trial=False, ax=ax, **kwargs)
 
 
 if __name__=="__main__":

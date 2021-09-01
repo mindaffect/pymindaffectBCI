@@ -73,7 +73,8 @@ def parse_args():
 board = None
 client = None
 def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0, streamer_params='',config_params=None, log=1,triggerCheck=0,samplingFrequency=0):
+         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,
+         trigger_check=0, samplingFrequency=0):
     global board, client
     # log the config
     configmsg = "{}".format(dict(component=__file__, args=locals()))
@@ -100,7 +101,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.prepare_session ()
     if samplingFrequency > 0 and board_id ==5 :
 	    board.config_board (SampFreq2WiFiCommands[samplingFrequency])
-    if triggerCheck and board_id in (0,5): # cyton boards
+    if trigger_check and board_id in (0,5): # cyton boards
         print('trigger is enabled, on cyton trigger channel: 8')
         board.config_board('x8020000X')
     sleep(1)
@@ -150,6 +151,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     while True:
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
+        stamps=[]
         if board_id==0 or board_id==5:
             stamps=[]
             for i in range(len(data[15])):
@@ -176,7 +178,7 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
         # format for sending to MA
         eeg = eeg.T # MA uses (samples,channels)
 
-        # TODO[]: send as smaller packets if too much data
+        # TODO[x]: send as smaller packets if too much data
         if eeg.shape[0] < maxpacketsamples:
             # fit time-stamp into 32-bit int (with potential wrap-around)
             ts = timestamps[-1]

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/UtopiaServer/UtopiaServer.iml" filepath="$PROJECT_DIR$/.idea/modules/UtopiaServer/UtopiaServer.iml" group="ftbuffer/UtopiaServer" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/core.iml" filepath="$PROJECT_DIR$/.idea/modules/core/core.iml" group="ftbuffer/core" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ftbuffer.iml" filepath="$PROJECT_DIR$/.idea/ftbuffer.iml" group="ftbuffer" />
+    </modules>
+  </component>
+</project>
