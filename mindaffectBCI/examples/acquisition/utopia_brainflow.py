@@ -72,9 +72,30 @@ def parse_args():
 
 board = None
 client = None
-def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,
-         trigger_check=0, samplingFrequency=0):
+def run (host:str=None,board_id:int=1,ip_port:int=0,serial_port:str='',mac_address:str='',other_info='',
+         serial_number='',ip_address='',ip_protocol=0,timeout:float=0,streamer_params='',log:int=1,
+         config_params:list=None, trigger_check:bool=0, samplingFrequency:float=0):
+    """use the brainflow library to connect to a biosensing board and stream the data to mindaffectBCI
+
+    Basically, this is a thin wrapper round the brainflow <https://brainflow.readthedocs.io> python library to forward to the mindaffectBCI utopia-hub
+
+    Args:
+        host (str, optional): hostname or IP for the utopiahub. Defaults to None.
+        board_id (int, optional): brainflow board id, see <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html> 0=cyton, 1=ganglyon. Defaults to 1.
+        ip_port (int, optional): brainflow ip-port. Defaults to 0.
+        serial_port (str, optional): brainflow serial-port for the board. Defaults to ''.
+        mac_address (str, optional): brainflow mac-address. Defaults to ''.
+        other_info (str, optional): other info to send to brainflow. Defaults to ''.
+        serial_number (str, optional): board serial number. Optional. Defaults to ''.
+        ip_address (str, optional): brainflow ip_address. Defaults to ''.
+        ip_protocol (int, optional): brainflow ip protocol. Defaults to 0.
+        timeout (float, optional): brainflow timeout. Defaults to 0.
+        streamer_params (str, optional): brainflow streamer params. Defaults to ''.
+        log (int, optional): brainflow log level. Defaults to 1.
+        config_params (list, optional): additional configuration parameters to send to the board after startup. Defaults to None.
+        trigger_check (bool, optional): flag to configure channel-8 on cyton as trigger input, e.g. for timing tests. Defaults to 0.
+        samplingFrequency (float, optional): desired sampling rate to set the board to. Defaults to 0.
+    """
     global board, client
     # log the config
     configmsg = "{}".format(dict(component=__file__, args=locals()))
