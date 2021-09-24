@@ -1,6 +1,5 @@
 #!/bin/bash
 cd `dirname ${BASH_SOURCE[0]}`
-cd ../mindaffectBCI/hub
 
 spawnhub=1
 verb=1
