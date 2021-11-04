@@ -28,7 +28,7 @@ On Mac
     /dev/cu.Bluetooth-PDA-Sync   /dev/cu.usbserial
     /dev/cu.usbmodem1
            	
-Then, in the online_bci configuration file (mindaffectBCI/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`.
+Then, in the online_bci configuration file (mindaffectBCI/config/online_bci.json) you should define as  :code:`"serial_port":"dev/cu.your_com_name"`.
 Also make sure to set :code:`"board_id":0` to the value that corresponds with your amplifier as specified in the `BrainFlow Docs <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html>`_. 
  
  
