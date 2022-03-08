@@ -115,7 +115,7 @@ class lower_bound_tracker():
         a = a0
         b = b0
         # TODO[]: convergence criteria, to stop early
-        for i in range(3):
+        for _ in range(3):
             y_est = x[:,0]*a + b
             err = y - y_est # server > true, clip positive errors
             mu_err = np.mean(err)

@@ -15,7 +15,33 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
+from subprocess import CalledProcessError
 import numpy as np
+
+class InfoArray(np.ndarray):
+    def __new__(cls, input_array, info=None):
+        # Input array is an already formed ndarray instance
+        # We first cast to be our class type
+        obj = np.asarray(input_array).view(cls)
+        # add the new attribute to the created instance
+        obj.info = info
+        # Finally, we must return the newly created object:
+        return obj
+
+    def __array_finalize__(self, obj): # mostly for slices
+        # see InfoArray.__array_finalize__ for comments
+        if obj is None: return
+        self.info = getattr(obj, 'info', None)
+        if self.info is not None:
+            self.info = self.info.copy()
+
+    # TODO[]: override to add the info to the reduced/setstate version
+    def __reduce__(self):
+        return super().__reduce__()
+
+    def __setstate__(self,state):
+        return super().__setstate__(state)
+
 
 # time-series tests
 def window_axis(a, winsz, axis=0, step=1, prependwindowdim=False):
@@ -57,7 +83,18 @@ def equals_subarray(a, pat, axis=-1, match=-1):
     return F
 
 
-def pad_dim(A,axis,pad,prepend=False):
+def pad_dim(A,axis:int,pad,prepend=False):
+    """pad axis with value along given axis
+
+    Args:
+        A ([type]): np.ndarray
+        axis (int): the axis to pad along
+        pad (A.dtype): the padding value
+        prepend (bool, optional): pre or post-pend along axis. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """    
     padsize=list(A.shape)
     padsize[axis]=pad
     pad = np.zeros(padsize,dtype=A.dtype)
@@ -66,6 +103,55 @@ def pad_dim(A,axis,pad,prepend=False):
     else:
         A = np.append(A,pad,axis=axis)
     return A
+
+
+def index_along_axis(indices,axis:int):
+    """generate an index expression to take indices along axis of the input M
+
+    Args:
+        M ([type]): nd-array
+        indices (list-of-int|slice): indices to extract, either list of ints, or slice
+        axis (int): axis of M to apply indices along
+
+    Returns:
+        tuple: index tuple to extract the desired part of M
+    
+    Examples:
+        M[index_along_axis(M,slice(10),0)] = 10
+        M[index_along_axis(M,[1,3],1)] = 1
+    """        
+    if axis < 0:
+        idx = (Ellipsis,)+(indices,)+(slice(None),)*(-axis-1)
+    else:
+        idx = (slice(None),)*axis + (indices,) + (Ellipsis,)
+    return idx
+
+def pool_axis(A,pool_type:str,axis:int,keepdims=False):
+    """summarize a dimension of the input by pooling it's entries
+
+    Args:
+        A (ndarray): the array to summarize
+        pool_type (str): type of pooling to use; one-of: max, mean, median
+        axis (int): the axis of A to summarize
+
+    Raises:
+        ValueError: if unknown pooling type
+
+    Returns:
+        ndarray: A with axis reduced to a single value
+    """    
+    if pool_type == 'max':
+        pool = np.max(A, axis, keepdims=keepdims)
+    elif pool_type == 'mean':
+        pool = np.mean(A, axis, keepdims=keepdims)
+    elif pool_type == 'median' or pool_type==True: 
+        pool = np.median(A, axis, keepdims=keepdims)
+    elif pool_type is None:
+        # first element
+        pool = A[tuple(slice(None) if not d==axis else [0] for d in range(A.ndim))]
+    else:
+        raise ValueError
+    return pool
 
 
 class RingBuffer:
@@ -152,7 +238,7 @@ def extract_ringbuffer_segment(rb, bgn_ts, end_ts=None):
 def unwrap(x,range=None):
     ''' unwrap a list of numbers to correct for truncation due to limited bit-resolution, e.g. time-stamps stored in 24bit integers'''
     if range is None: 
-        range = 1<< int(np.ceil(np.log2(max(x))))
+        range = 1<< int(np.ceil(np.log2(max(np.abs(x)))))
     wrap_ind = np.diff(x) < -range/2
     unwrap = np.zeros(x.shape)
     unwrap[np.flatnonzero(wrap_ind)+1]=range
@@ -169,6 +255,21 @@ def unwrap_test():
     plt.plot(xw,label='x (wrapped)')
     plt.plot(xuw,label='x (unwrapped')
     plt.legend()
+
+def robust_local_slope(nsamp,data_ts):
+    """compute a robust local slope estimate
+
+    Args:
+        nsamp ([type]): [description]
+        data_ts ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """        
+    snsamp = np.cumsum(nsamp)
+    step = max(1,len(snsamp)//10)
+    local_slope = [ (snsamp[i+step] - snsamp[i]) / (data_ts[i+step]-data_ts[i]) for i in range(0,len(snsamp)-step,max(1,step//2)) ]
+    return local_slope
 
 
 def search_directories_for_file(f,*args):
@@ -188,11 +289,98 @@ def search_directories_for_file(f,*args):
         return f
     for d in args:
         #print('Searching dir: {}'.format(d))
-        df = os.path.join(d,f)
+        df = os.path.join(os.path.expanduser(d),f)
         if os.path.exists(df) or len(glob.glob(df))>0:
             f = df
             break
     return f
+
+
+def askloadsavefile(initialdir:str=None,
+                    filetypes:tuple=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')),
+                    title:str='Choose mindaffectBCI save file', multiple:bool=False):
+    """make (and destroy) a tkinter gui window to ask for a save file to load
+
+    Args:
+        initialdir ([type], optional): starting directory for the file browser. Defaults to None.
+        filetypes (tuple, optional): types of files to allow to load. Defaults to (('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')).
+        title (str, optional): window title. Defaults to 'Choose mindaffectBCI save file'.
+
+    Returns:
+        str: path to the choosen file
+    """    
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename, askdirectory
+    import os
+    if initialdir is None:
+        initialdir = os.getcwd()
+    root = Tk()
+    root.withdraw()
+    root.call('wm', 'attributes', '.', '-topmost', True)   # Raise the root to the top of all windows.
+    if filetypes is None or filetypes=='dir':
+        savefile = askdirectory(initialdir=initialdir,
+                                title=title)
+    else:
+        savefile = askopenfilename(initialdir=initialdir,
+                                    title=title,
+                                    filetypes=filetypes, multiple=multiple)
+    del root
+    return savefile
+
+
+def import_and_make_class(s:str,**kwargs):
+    """utility function to make a class instance from a string module.class name
+
+    Args:
+        s (str): module.class name
+
+    Returns:
+        s: created class instance
+    """
+    import importlib
+    module = ".".join(s.split(".")[:-1])
+    cls = s.split(".")[-1]
+    if not module is None and not module == '':
+        module = importlib.import_module(module)
+    cls = getattr(module, cls)
+    return cls(**kwargs) # make instance
+
+
+def intstr2intkey(d:dict):
+    """convert string representation of integer keys to integer keys in the input dict
+
+    Args:
+        d (dict): [description]
+
+    Returns:
+        [dict]: [description]
+    """
+    intd = dict()    
+    for k,v in d.items():
+        try:
+            intd[int(k)]=v
+        except ValueError:
+            pass
+    d.update(intd)
+    return d
+
+
+def get_version_info():
+    """get the git version info
+
+    Returns:
+        [type]: [description]
+    """    
+    import subprocess
+    import os
+    try:
+        scriptdir = os.path.dirname(os.path.realpath(__file__))
+        res = subprocess.check_output(["git", "describe", "--all", "--tags", "--long"],
+                                        cwd=scriptdir)
+        res = res.decode("utf8")
+    except:  # all exceptions are OK!
+       res = "couldn't get version info"
+    return res
 
 # toy data generation
 
@@ -216,7 +404,9 @@ def testNoSignal(d=10, nE=2, nY=1, isi=5, tau=None, nSamp=10000, nTrl=1):
     Y[:, stimTimes_samp, :, :] = Me
     return (X, Y, stimTimes_samp)
 
-def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, stimthresh=.6, noise2signal=1, irf=None):
+def testSignal(nTrl=1, d=5, nE=1, nY=30, isi=5, A=True, tau=None, offset=0, nSamp=1000, 
+               classification:bool=True, stimthresh:float=.6, balanceY:bool=True,
+               noise2signal=1, irf=None, seed=None, induced:bool=False):
     '''
     Args:
        nTrl (int): number trials
@@ -231,7 +421,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, 
        noise2sig (float): relative noise strength
        irf (list): the actual impulse reponse function to use
     Returns:
-       X (nTrk,nSamp,d): data
+       X (nTrl,nSamp,d): data
        Y (nTrl,nSamp,nY,nE): stimulus
        stimTimes_samp (nEp): sample times
        A (nE,d): source spatial pattern
@@ -239,21 +429,38 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, 
     '''
     #simple test problem, with overlapping response
     import numpy as np
-    if tau is None:
-        tau = 10 if irf is None else len(irf)
-    nEp = int((nSamp-tau)/isi)
-    cb = np.random.standard_normal((nEp, nY, nE)) > stimthresh # codebook = per-epoch stimulus activity
+    if seed is not None:
+        np.random.seed(seed)
+    if irf is not None:
+        tau = len(irf)
+    stimTimes_samp = np.arange(0, nSamp-tau, max(1,isi)) # (nEp)
+    nEp = len(stimTimes_samp) # int((nSamp-tau)/max(1,isi))
+    cb = np.random.uniform(size=(nEp, nY, nE)) # codebook = per-epoch stimulus activity
+    if classification: # binarize to make classification problem
+       cb = cb > stimthresh 
+    if balanceY: # normalize the codebook entries
+        nf = np.sum(np.abs(cb),0,keepdims=True) if classification else  np.sqrt(np.sum(cb**2,0,keepdims=True))
+        cb = cb * nEp / nf 
+    
     E  = cb # (nEp, nY, nE) # per-epoch stimulus activity
     # up-sample to sample rate
-    stimTimes_samp = np.arange(0, nSamp-tau, isi) # (nEp)
     Y = np.zeros((nSamp, nY, E.shape[-1]))
     Y[stimTimes_samp, :, :] = E[:len(stimTimes_samp), :, :] #per-sample stimulus activity (nSamp, nY, nE)
+
     Y = np.tile(Y,(nTrl,1,1,1)) # replicate for the trials
     # generate the brain source
-    A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
+    if A is None or A == 'random':
+        A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
+    elif A == 1 or A == True:
+        A  = np.random.standard_normal((nE, d)) # spatial-pattern for the source signal
+        A[0,:]=0; A[0,0]=1; # 1st source is in channel 1
+
     if irf is None:
-        B  = np.zeros((tau), dtype=np.float32)
-        B[-3] = 1;         # true response filter (shift by 10 samples)
+        B  = np.zeros((tau,), dtype=np.float32)
+        if B.shape[0]>3: 
+            B[-3] = 1 
+        else: 
+            B[-1] = 1
     else:
         B = np.array(irf, dtype=np.float32)
     Ytrue = Y[..., 0, :] # (nTrl, nSamp, nE)
@@ -261,7 +468,7 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, 
     if True:
         # convolve with the impulse response - manually using window_axis
         # zero pad before for the sliding window
-        Ys = np.zeros(Ytrue.shape[:-2]+(Ytrue.shape[-2]+tau-1,)+Ytrue.shape[-1:])
+        Ys = np.zeros(Ytrue.shape[:-2]+(Ytrue.shape[-2]+len(B)-1,)+Ytrue.shape[-1:])
         Ys[..., tau-1+offset:Ytrue.shape[-2]+tau-1+offset, :] = Ytrue # zero-pad at front + include the offset.
         Yse = window_axis(Ys, winsz=len(B), axis=-2) # (nTr,nSamp,tau,nE)
         YtruecB = np.einsum("Tste,t->Tse", Yse, B[::-1]) # N.B. time-reverse irf (nTr,nSamp,nE)
@@ -276,6 +483,8 @@ def testSignal(nTrl=1, d=5, nE=2, nY=30, isi=5, tau=None, offset=0, nSamp=1000, 
     #print("Ytrue={}".format(Ytrue.shape))
     #print("YtruecB={}".format(YtruecB.shape))
     S  = YtruecB # (nTr, nSamp, nE) true response, i.e. filtered Y 
+    if induced: # Y is amplitude modulation of noise process
+        S = np.ones(S.shape) * (S if induced>0 else 1.0-S)
     N  = np.random.standard_normal(S.shape[:-1]+(d,)) # EEG noise (nTr, nSamp, d)
     X  = np.einsum("tse,ed->tsd", S, A) + noise2signal*N       # simulated data.. true source mapped through spatial pattern (nSamp, d)
     return (X.astype(np.float32), Y.astype(np.float32), stimTimes_samp, A.astype(np.float32), B.astype(np.float32))
@@ -297,7 +506,33 @@ def testtestSignal():
     offset=-9
     X,Y,st,W,R = testSignal(nTrl=1,nSamp=500,d=1,nE=1,nY=1,isi=10,tau=10,offset=offset,irf=(0,0,0,0,0,1,0,0,0,0),noise2signal=0)
     plt.subplot(313);plt.plot(X[0,:,0],label='X');plt.plot(Y[0,:,0,0],label='Y');plt.title("offset={}, irf={}".format(offset,irf));plt.legend()
-    
+
+def simdata(d=5, nTrl=10, nSamp=500, nY=10, tau=10, noise2signal=2, irf=None, seed=None):
+    """[summary]
+
+    Args:
+        nTrl (int, optional): [description]. Defaults to 10.
+        nSamp (int, optional): [description]. Defaults to 500.
+        nY (int, optional): [description]. Defaults to 10.
+        tau (int, optional): [description]. Defaults to 10.
+        noise2signal (int, optional): [description]. Defaults to 2.
+        irf ([type], optional): [description]. Defaults to None.
+        seed ([type], optional): [description]. Defaults to None.
+
+    Returns:
+        (X_TSd, Y_TSye, coords, outputs, evtlabs, label): [description]
+    """    
+    if irf=='sin':
+        irf = np.sin(np.linspace(0,2*np.pi,tau))
+    X_TSd, Y_TSye, st, A, B = testSignal(d=d, nTrl=nTrl, nSamp=nSamp, nY=nY, tau=tau, irf=irf, noise2signal=noise2signal, seed=seed)
+    coords = [dict(name='trial',coords=X_TSd.shape[0]),
+              dict(name='sample',coords=X_TSd.shape[1],fs=100),
+              dict(name='channel',coords=np.arange(X_TSd.shape[0]))]
+    outputs = None
+    evtlabs = None
+    label = None
+    return X_TSd, Y_TSye, coords, outputs, evtlabs, label
+
 
 def sliceData(X, stimTimes_samp, tau=10):
     # make a sliced version
@@ -333,7 +568,7 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
         n ([type]): the number of new outputs to generate. 
                     if n<0 then total number of outputs in f+perm = -n
         axis (int, optional): the axis along which the new permutations will be appended, i.e. the output axis. Defaults to -1.
-        perm_axis ([type], optional): the axis along which to permute, i.e. the time axis. Defaults to axis-1.
+        perm_axis (int, optional): the axis along which to permute, i.e. the time axis. Defaults to None.
         nblk (int, optional): number of block to cut the permuted axis into for block permutation. Defaults to 10.
 
     Returns:
@@ -381,9 +616,13 @@ def block_permute(f, n, axis=-1, perm_axis=None, nblk=10):
     perm_blks = [] # list of permutable blocks
     for i,bi in enumerate(blkIdx):
         src_idx[perm_axis] = slice(bi[0],bi[1])
-        is_fixed = np.max(np.sum(f[tuple(src_idx)]!=0,axis=(axis,perm_axis))) < f.shape[axis]*(bi[1]-bi[0])*.05
-        if not is_fixed: 
+        fblk = f[tuple(src_idx)]
+        nz=np.max(np.sum(fblk!=0,axis=(axis,perm_axis)))
+        #print("blk: {} nz={}".format(src_idx[perm_axis],nz))
+        if nz > fblk.shape[axis]*.01: # has info if more than 1% non-zero
             perm_blks.append(i)
+
+    #print("perm_blks= {}".format(perm_blks))
 
     for ni in range(n): # gen for rand for each output
         blk_perm = perm_blks.copy()
@@ -421,7 +660,7 @@ def block_randomize(true_target, npermute, axis=-3, block_size=None):
     axis = true_target.ndim+axis if axis<0 else axis  # positive axis
     if true_target.ndim < 3:
         raise ValueError("true target info must be at least 3d")
-    if not axis in (true_target.ndim-2, true_target.ndim-1):
+    if not axis in (true_target.ndim-3, true_target.ndim-2):
         raise NotImplementedError("Only implementated for axis=-2 currently")
     
     # estimate the number of blocks to use
@@ -506,7 +745,7 @@ def lab2ind(lab,lab2class=None):
     return (Y,lab2class)
 
 
-def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
+def zero_outliers(X, Y, badEpThresh=4,  badWinThresh=3, badEpChThresh=None,winsz=50, verb=0):
     '''identify and zero-out bad/outlying data
 
     Inputs:
@@ -515,10 +754,10 @@ def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
                nE=#event-types  nY=#possible-outputs  nEpoch=#stimulus events to process
     '''
     # remove whole bad epochs first
-    if badEpThresh > 0:
+    if badEpThresh is not None and badEpThresh > 0:
         bad_ep, _ = idOutliers(X, badEpThresh, axis=(-2, -1)) # ave over time,ch
         if np.any(bad_ep):
-            if verbosity > 0:
+            if verb > 0:
                 print("{} badEp".format(np.sum(bad_ep.ravel())))
             # copy X,Y so don't modify in place!
             X = X.copy()
@@ -527,14 +766,34 @@ def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
             #print("Y={}, Ybad={}".format(Y.shape, Y[bad_ep[..., 0, 0], ...].shape))
             # zero out Y also, so don't try to 'fit' the bad zeroed data
             Y[bad_ep[..., 0, 0], ...] = 0
-            
+
+    # remove whole bad windows
+    if badWinThresh is not None and badWinThresh > 0:
+        # identify windows which contain excessive power
+        step = max(1,int(winsz/4))
+        Art_Twtd = window_axis(X, winsz=winsz, axis=-2, step=step)
+        # ID outlying windows
+        nidx_Tw, pow = idOutliers(Art_Twtd, badWinThresh, axis=(-1,-2))
+        #import matplotlib.pyplot as plt;plt.imshow(pow.squeeze(),aspect='auto');plt.show()
+        #import matplotlib.pyplot as plt;plt.imshow(nidx_Tw.squeeze(),aspect='auto');plt.show()
+        if np.any(nidx_Tw):
+            if  verb > 0: 
+                print("{}/{} artifacts".format(np.sum(nidx_Tw),nidx_Tw.size))
+            # convert to logical sample idx
+            nidx_Tw = nidx_Tw.squeeze((-1,-2))
+            noise_idx = np.zeros(X.shape[:2],dtype=bool)
+            tmp_idx = np.arange(0,nidx_Tw.shape[1],dtype=int)*step
+            for tau in range(winsz):
+                noise_idx[:,tau+tmp_idx] = nidx_Tw
+            # zero out this data
+            X[noise_idx,...]=0
+            Y[noise_idx,...]=0
             
     # Remove bad individual channels next
-    if badEpChThresh is None: badEpChThresh = badEpThresh*2 
-    if badEpChThresh > 0:
+    if badEpChThresh is not None and badEpChThresh > 0:
         bad_epch, _ = idOutliers(X, badEpChThresh, axis=-2) # ave over time
         if np.any(bad_epch):
-            if verbosity > 0:
+            if verb > 0:
                 print("{} badEpCh".format(np.sum(bad_epch.ravel())))
             # make index expression to zero out the bad entries
             badidx = list(np.nonzero(bad_epch)) # convert to linear indices
@@ -546,32 +805,73 @@ def zero_outliers(X, Y, badEpThresh=4, badEpChThresh=None, verbosity=0):
     return (X, Y)
 
 
-def idOutliers(X, thresh=4, axis=-2, verbosity=0):
+def idOutliers(X, thresh=3.5, axis=-2, minthresh=None, center:bool=True, verbosity=0):
     ''' identify outliers with excessively high power in the input data
     Inputs:
       X:float the data to identify outliers in
       axis:int (-2)  axis of X to sum to get power
-      thresh(float): threshold standard deviation for outlier detection
+      thresh(float): threshold standard deviation for outlier detection above this value
+      minthresh(float): threshold standard deviation for outlier detection below this value
       verbosity(int): verbosity level
     Returns:
       badEp:bool (X.shape axis==1) indicator for outlying elements
       epPower:float (X.shape axis==1) power used to identify bad
     '''
     #print("X={} ax={}".format(X.shape,axis))
-    power = np.sqrt(np.sum(X**2, axis=axis, keepdims=True))  
+    if axis is not None:
+        N = np.prod([X.shape[a] for a in axis]) if hasattr(axis,'__iter__') else X.shape[axis]
+        power = np.sum(X**2, axis=axis, keepdims=True)/N
+        if center:
+            power = power - (np.sum(X,axis=axis,keepdims=True)/N)
+    else: 
+        power = X
     #print("power={}".format(power.shape))
     good = np.ones(power.shape, dtype=bool)
     for _ in range(4):
         mu = np.mean(power[good])
-        sigma = np.sqrt(np.mean((power[good] - mu) ** 2))
+        mudiff = np.minimum( power[good]-mu, 1e10) # guard overflow
+        sigma = np.sqrt(np.mean(mudiff ** 2))
         badThresh = mu + thresh*sigma
         good[power > badThresh] = False
+        good[np.isinf(sigma)] = False
+        good[np.isnan(sigma)] = False
+        if minthresh is not None:
+            good[power < mu - minthresh*sigma ] = False
     good = good.reshape(power.shape) # (nTrl, nEp)
     #print("good={}".format(good.shape))
     bad = ~good
     if verbosity > 1:
         print("%d bad" % (np.sum(bad.ravel())))
     return (bad, power)
+
+
+def idOutliers_win(X,thresh=3.5, axis=-2, minthresh=None, center:bool=True, winaxis:int=None, winsz:int=-30, winstep:int=None, verbosity=0):
+    if not hasattr(axis,'__iter__'): axis=(axis,)
+    axis = tuple(X.ndim+a if a<0 else a for a in axis) # ensure positive axis
+    if winaxis is None: 
+        winaxis = axis[0]
+        axis = axis[1:]
+    if winsz < 0 : winsz = int(X.shape[winaxis]//-winsz)
+    if winstep is None: winstep = int(winsz//2)
+    # ensure winaxis isn't in axis
+    axis = [a for a in axis if not a==winaxis]
+    # cut into overlapping windows, N.B. this adds and extra dim before winaxis for the windows
+    Xwin = window_axis(X,winsz=winsz,axis=winaxis,step=winstep)
+
+    # update axis to reflect the new dim
+    axis=[a+1 if a>=winaxis else a for a in axis]
+    bad_win, power_win = idOutliers(Xwin, thresh=thresh, axis=axis+(winaxis+1,), center=center, verbosity=verbosity)
+
+    # up-sample the bad indicator
+    raise NotImplementedError("Not finished yet!")
+    shape = X.shape; shape[axis]=1
+    bad = np.zeros(shape,dtype=bool)
+    ii = np.arange(0,bad_Tw.shape[winaxis],dtype=int)*step
+    bad_win=bad_win.squeeze(axis+(winaxis+1,))
+    for tau in range(winsz):
+        bad[:,tau+ii] = bad_Tw
+    return bad, power
+
 
 def robust_mean(X,thresh=(3,3)):
     """Compute robust mean of values in X, using gaussian outlier criteria
@@ -629,6 +929,8 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # zi => (order,...,2,...)
+    if zi is None and sos is not None:
+        zi = sosfilt_zi(sos)
     zi = np.reshape(zi, (zi.shape[0],) + (1,)*(axis) + (zi.shape[1],) + (1,)*(X.ndim-axis-1))
 
     # make a programattic index expression to support arbitary axis
@@ -647,22 +949,27 @@ def sosfilt_zi_warmup(zi, X, axis=-1, sos=None):
         
     return zi
 
-def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0):
+def iir_sosfilt_sos(filterband, fs, order=4, ftype='butter', passband=None, verb=0):
     ''' given a set of filter cutoffs return butterworth or bessel sos coefficients '''
 
     # convert to normalized frequency, Note: not to close to 0/1
-    if stopband is None:
+    if filterband is None:
         return np.array(())
 
-    if not hasattr(stopband[0],'__iter__'):
-        stopband=(stopband,)
+    if not hasattr(filterband[0],'__iter__'):
+        filterband=(filterband,)
 
     sos=[]
-    for sb in stopband:
+    for sb in filterband:
         btype = None
         if type(sb[-1]) is str:
             btype = sb[-1]
             sb = sb[:-1]
+
+        if len(sb)==3: # 1/2 bandwidth edge
+            sb=[(sb[0]+sb[1])/2, (sb[1]+sb[2])/2]
+        elif len(sb)==4:
+            sb=sb[1:2]
 
         # convert to normalize frequency
         sb = np.array(sb,dtype=np.float32)
@@ -695,15 +1002,15 @@ def iir_sosfilt_sos(stopband, fs, order=4, ftype='butter', passband=None, verb=0
         sos.append(sosi)
 
     # single big filter cascade
-    sos = np.concatenate(sos,axis=0)
+    sos = np.concatenate(sos,axis=0) if len(sos)>0 else None
     return sos
 
-def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, verb=True, ftype='butter'):
+def butter_sosfilt(X, filterband, fs:float, order:int=6, axis:int=-2, zi=None, verb=True, ftype='butter'):
     """use a (cascade of) butterworth SOS filter(s) filter X along axis
 
     Args:
         X (np.ndarray): the data to be filtered
-        stopband ([type]): the filter band specifications in Hz, as a list of lists of stopbands (given as (low-pass,high-pass)) or pass bands (given as (low-cut,high-cut,'bandpass'))
+        filterband ([type]): the filter band specifications in Hz, as a list of lists of filterbands (given as (low-pass,high-pass)) or pass bands (given as (low-cut,high-cut,'bandpass'))
         fs (float): the sampling rate of X
         order (int, optional): the desired filter order. Defaults to 6.
         axis (int, optional): the axis of X to filter along. Defaults to -2.
@@ -717,21 +1024,25 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
         zi (np.ndarray): the filter state for propogation between calls
 
     """    '''  '''
-    if stopband is None: # deal with no filter case
+    if filterband is None or len(filterband)==0: # deal with no filter case
         return (X,None,None)
     if axis < 0: # no neg axis
         axis = X.ndim+axis
     # TODO []: auto-order determination?
-    sos = iir_sosfilt_sos(stopband, fs, order, ftype=ftype)
+    sos = iir_sosfilt_sos(filterband, fs, order, ftype=ftype)
+
+    # filter is not needed..
+    if sos is None:
+        return (X, None, None)
+
     sos = sos.astype(X.dtype) # keep as single precision
 
-    if axis == X.ndim-2 and zi is None:
+    if zi is None:
         zi = sosfilt_zi(sos) # (order,2)
         zi = zi.astype(X.dtype)
         zi = sosfilt_zi_warmup(zi, X, axis, sos)
 
     else:
-        zi = None
         print("Warning: not warming up...")
 
     # Apply the warmed up filter to the input data
@@ -740,20 +1051,32 @@ def butter_sosfilt(X, stopband, fs:float, order:int=6, axis:int=-2, zi=None, ver
         #print("filt:zi X{} axis={}".format(X.shape,axis))
         X, zi  = sosfilt(sos, X, axis=axis, zi=zi)
     else:
-        print("filt:no-zi")
         X  = sosfilt(sos, X, axis=axis) # zi=zi)
 
     # return filtered data, filter-coefficients, filter-state
     return (X, sos, zi)
 
-def save_butter_sosfilt_coeff(filename=None, stopband=((45,65),(5.5,25,'bandpass')), fs=200, order=6, ftype='butter'):
+
+def butter_sosfiltfilt(X, filterband, fs:float, order:int=6, axis:int=-2, zi=None, verb=True, ftype='butter'):
+    ## N.B. half the order as we apply the filter 2x
+    X, sos, zi = butter_sosfilt(X,filterband,fs,order//2,axis=axis,zi=zi,verb=verb,ftype=ftype)
+    # apply backwards to remove filter phase shift
+    bwd_idx = index_along_axis(slice(None,None,-1),axis)
+    # time-reverse and apply filter again
+    X, zi = sosfilt(sos, X[bwd_idx], axis=axis, zi=zi)
+    # reverse back again
+    X = X[bwd_idx] 
+    return X, sos, zi
+
+
+def save_butter_sosfilt_coeff(filename=None, filterband=((45,65),(5.5,25,'bandpass')), fs=200, order=6, ftype='butter'):
     ''' design a butterworth sos filter cascade and save the coefficients '''
     import pickle
-    sos = iir_sosfilt_sos(stopband, fs, order, passband=None, ftype=ftype)
+    sos = iir_sosfilt_sos(filterband, fs, order, passband=None, ftype=ftype)
     zi = sosfilt_zi(sos)
     if filename is None:
         # auto-generate descriptive filename
-        filename = "{}_stopband{}_fs{}.pk".format(ftype,stopband,fs)
+        filename = "{}_filterband{}_fs{}.pk".format(ftype,filterband,fs)
     print("Saving to: {}\n".format(filename))
     with open(filename,'wb') as f:
         pickle.dump(sos,f)
@@ -898,7 +1221,7 @@ def sosfilt_zi_py(sos):
 
 def test_sosfilt_py():
     import pickle
-    with open('butter_stopband((0, 5), (25, -1))_fs200.pk','rb') as f:
+    with open('butter_filterband((0, 5), (25, -1))_fs200.pk','rb') as f:
         sos = pickle.load(f)
         zi = pickle.load(f)
 

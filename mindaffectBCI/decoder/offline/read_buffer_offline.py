@@ -81,8 +81,9 @@ def read_buffer_offline_header(f):
     nch,nsamp,nevts,fs,data_type,bufsize=struct.unpack_from("IIIfII",buf,0)
     # TODO []: extract the channel labels
     labbuf = buf[struct.calcsize("IIIfII"):]
+    labels = labbuf[8:].decode('utf8').split('\x00')
     # TODO []: read the channel names...
-    return ftheader(nch,nsamp,nevts,fs,data_type,None)
+    return ftheader(nch,nsamp,nevts,fs,data_type,labels)
 
 def read_buffer_offline_data(f,hdr):
     fmtstr = hdr.data_type if isinstance(hdr.data_type,str) else typedict[hdr.data_type][2]

@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
-from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, UtopiaMessage, SignalQuality
+from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, StimulusEvent, NewTarget, Selection, DataPacket, DataHeader, UtopiaMessage, SignalQuality
 from collections import deque
-from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment
+from mindaffectBCI.decoder.utils import RingBuffer, extract_ringbuffer_segment, robust_local_slope
 from mindaffectBCI.decoder.lower_bound_tracker import lower_bound_tracker
 from mindaffectBCI.decoder.linear_trend_tracker import linear_trend_tracker
 from time import sleep
@@ -40,7 +40,7 @@ class UtopiaDataInterface:
     # TODO [X] : rate limit waiting to reduce computational load
     VERBOSITY = 1
 
-    def __init__(self, datawindow_ms=60000, msgwindow_ms=60000,
+    def __init__(self, datawindow_ms=180000, msgwindow_ms=180000,
                  data_preprocessor=None, stimulus_preprocessor=None, send_signalquality=True, 
                  timeout_ms=100, mintime_ms=50, fs=None, U=None, sample2timestamp='lower_bound_tracker',
                  clientid=None):
@@ -66,6 +66,7 @@ class UtopiaDataInterface:
         self.data_timestamp = None # ts of last data packet seen
         self.sample2timestamp = sample2timestamp # sample tracker to de-jitter time-stamp information
         self.data_preprocessor = data_preprocessor # function to pre-process the incomming data
+        self.data_header = None # data stream header info
 
         # StimulusEvents
         self.stimulus_ringbuffer = None # init later...
@@ -107,8 +108,8 @@ class UtopiaDataInterface:
             self.port = port
         self.U.autoconnect(self.host, self.port, timeout_ms=5000, queryifhostnotfound=queryifhostnotfound)
         if self.U.isConnected:
-            # subscribe to messages: data, stim, mode, selection
-            self.U.sendMessage(Subscribe(None, "DEMSN"))
+            # subscribe to messages: data, stim, mode, selection, header
+            self.U.sendMessage(Subscribe(None, "DEMSNH"))
         return self.U.isConnected
     
     def isConnected(self):
@@ -177,13 +178,16 @@ class UtopiaDataInterface:
                     else:
                         print("Huh? got empty data packet: {}".format(m))
                 else:
+                    if m.msgID == DataHeader.msgID : # header is special in that we cache it
+                        self.data_header = m
                     self.msg_ringbuffer.append(m)
                     self.msg_timestamp = m.timestamp
                     nmsg = nmsg+1
         nsamp = [len(m.samples) for m in databuf]
         data_ts = [ m.timestamp for m in databuf]
         if self.raw_fs is None:
-            self.raw_fs = np.median( np.array(nsamp[1:])  / np.diff(data_ts) * 1000.0)
+            slopes = robust_local_slope(nsamp,data_ts)
+            self.raw_fs = np.median( slopes ) * 1000.0
         print('Estimated sample rate {} samp in {} s ={}'.format(sum(nsamp),(data_ts[-1]-data_ts[0])/1000.0,self.raw_fs))
 
         # init the pre-processor (if one)
@@ -198,7 +202,8 @@ class UtopiaDataInterface:
         # estimate the sample rate of the pre-processed data
         pp_nsamp = [m.shape[0] for m in tmpdatabuf]
         pp_ts = [ m[-1,-1] for m in tmpdatabuf]
-        self.fs = np.median( np.array(pp_nsamp[1:])  / np.diff(pp_ts) * 1000.0)# fs = nSamp/time
+        slopes = robust_local_slope(pp_nsamp, pp_ts)
+        self.fs = np.median( slopes ) * 1000.0# fs = nSamp/time
         print('Estimated pre-processed sample rate={}'.format(self.fs))
 
         # create the ring buffer, big enough to store the pre-processed data
@@ -211,7 +216,7 @@ class UtopiaDataInterface:
         # insert the warmup data into the ring buffer
         self.data_timestamp=None # reset last seen data
         nsamp=0
-        # re-init the preprocessor for consistency with off-line
+        # re-init the preprocessor to clear filter states for consistency with off-line
         if self.data_preprocessor:
             self.data_preprocessor.fit(np.array(databuf[0].samples)[0:1,:], fs=self.raw_fs)
         # use linear trend tracker to de-jitter the sample timestamps
@@ -324,7 +329,7 @@ class UtopiaDataInterface:
         self.rawringbuffer.extend(d_raw)
         if self.last_sigquality_ts is None or ts > self.last_sigquality_ts + self.send_sigquality_interval:
             import matplotlib.pyplot as plt
-            plt.figure(10);plt.clf();
+            plt.figure(10);plt.clf()
             idx = np.flatnonzero(self.rawringbuffer[:,-1])[0]
             plt.subplot(211); plt.cla(); plt.plot(self.rawringbuffer[idx:,-1],self.rawringbuffer[idx:,:-1])
             idx = np.flatnonzero(self.preprocringbuffer[:,-1])[0]
@@ -372,8 +377,8 @@ class UtopiaDataInterface:
         raw_power, preproc_power = self.update_electrode_powers(d_raw, d_preproc)
 
         # convert to average amplitude
-        raw_amp = np.sqrt(raw_power)
-        preproc_amp = np.sqrt(preproc_power)
+        raw_amp = np.sqrt(np.maximum(float(1e-8),raw_power)) # guard negatives
+        preproc_amp = np.sqrt(np.maximum(float(1e-8),preproc_power)) # guard negatives
 
         # noise2signal estimated as removed raw amplitude (assumed=noise) to preprocessed amplitude (assumed=signal)
         noise2sig = np.maximum(float(1e-6), np.abs(raw_amp - preproc_amp)) /  np.maximum(float(1e-8),preproc_amp)
@@ -393,7 +398,6 @@ class UtopiaDataInterface:
                    raw_amp,d_raw.shape[0],
                    preproc_amp,d_preproc.shape[0],
                    noise2sig))
-            print("Q",end='')
             # N.B. use *our* time-stamp for outgoing messages!
             self.sendMessage(SignalQuality(None, noise2sig))
             self.last_sigquality_ts = ts
@@ -411,7 +415,7 @@ class UtopiaDataInterface:
                     plt.show(block=False)
 
     def update_electrode_powers(self, d_raw: np.ndarray, d_preproc:np.ndarray):
-        """[track exp-weighted-moving average centered power for 2 input streams]
+        """track exp-weighted-moving average centered power for 2 input streams -- the raw and the preprocessed
 
         Args:
             d_raw (np.ndarray): [description]
@@ -516,6 +520,8 @@ class UtopiaDataInterface:
                                                                     np.zeros(255,dtype=np.int8)))
                         self.stimulus_ringbuffer.append(d)
                         self.stimulus_timestamp= m.timestamp
+                    elif m.msgID == DataHeader.msgID : # header is special in that we cache it
+                        self.data_header = m
                     
                     if len(self.msg_ringbuffer)>0 and m.timestamp > self.msg_ringbuffer[0].timestamp + self.msgwindow_ms: # slide msg buffer
                         self.msg_ringbuffer.popleft()
@@ -548,8 +554,6 @@ class UtopiaDataInterface:
         self.newmsgs.extend(oldmsgs)
 
 
-
-
     def extract_data_segment(self, bgn_ts, end_ts=None):
         """extract a segment of data based on a start and end time-stamp
 
@@ -560,7 +564,7 @@ class UtopiaDataInterface:
         Returns:
             (np.ndarray): the data between these time-stamps, or None if timestamps invalid
         """        
-        return extract_ringbuffer_segment(self.data_ringbuffer,bgn_ts,end_ts)
+        return extract_ringbuffer_segment(self.data_ringbuffer, bgn_ts, end_ts)
     
     def extract_stimulus_segment(self, bgn_ts, end_ts=None):
         """extract a segment of the stimulus stream based on a start and end time-stamp
@@ -572,7 +576,7 @@ class UtopiaDataInterface:
         Returns:
             (np.ndarray): the stimulus events between these time-stamps, or None if timestamps invalid
         """        
-        return extract_ringbuffer_segment(self.stimulus_ringbuffer,bgn_ts,end_ts)
+        return extract_ringbuffer_segment(self.stimulus_ringbuffer, bgn_ts, end_ts)
     
     def extract_msgs_segment(self, bgn_ts, end_ts=None):
         """[extract the messages between start/end time stamps]
@@ -622,20 +626,15 @@ class UtopiaDataInterface:
 
 
 try:
-    from sklearn.base import TransformerMixin
+    from sklearn.base import TransformerMixin, BaseEstimator
 except:
     # fake the class if sklearn is not available, e.g. Android/iOS
     class TransformerMixin:
-        def __init__():
-            pass
-        def fit(self,X):
-            pass
-        def transform(self,X):
+        def transform(self,X,y=None):
             pass
 
-
-
-
+    class BaseEstimator:
+        pass
 
 
 #--------------------------------------------------------------------------
@@ -643,16 +642,16 @@ except:
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
 from mindaffectBCI.decoder.utils import sosfilt, butter_sosfilt, sosfilt_zi_warmup
-class butterfilt_and_downsample(TransformerMixin):
+class butterfilt_and_downsample(BaseEstimator, TransformerMixin):
     """Incremental streaming transformer to provide filtering and downsampling data transformations
 
     Args:
         TransformerMixin ([type]): sklearn compatible transformer
-    """    
-    def __init__(self, stopband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
-        self.stopband = stopband
+    """
+    def __init__(self, filterband=((0,5),(5,-1)), order:int=6, fs:float =250, fs_out:float =60, ftype='butter'):
+        self.filterband = filterband if filterband is not None else filterband
         self.fs = fs
-        self.fs_out = fs_out if fs_out is not None and fs_out < fs else fs
+        self.fs_out = fs_out
         self.order = order
         self.axis = -2
         if not self.axis == -2:
@@ -675,14 +674,14 @@ class butterfilt_and_downsample(TransformerMixin):
             self.fs = fs
 
         # preprocess -> spectral filter
-        if isinstance(self.stopband, str):
+        if isinstance(self.filterband, str):
             import pickle
             import os
             # load coefficients from file -- when scipy isn't available
-            if os.path.isfile(self.stopband):
-                fn = self.stopband 
+            if os.path.isfile(self.filterband):
+                fn = self.filterband 
             else: # try relative to our py file
-                fn = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.stopband)
+                fn = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.filterband)
             with open(fn,'rb') as f:
                 self.sos_ = pickle.load(f)
                 self.zi_ = pickle.load(f)
@@ -693,7 +692,7 @@ class butterfilt_and_downsample(TransformerMixin):
 
         else:
             # estimate them from the given information
-            X, self.sos_, self.zi_ = butter_sosfilt(X, self.stopband, self.fs, order=self.order, axis=self.axis, zi=zi, ftype=self.ftype)
+            X, self.sos_, self.zi_ = butter_sosfilt(X, self.filterband, self.fs, order=self.order, axis=self.axis, zi=zi, ftype=self.ftype)
             
         # preprocess -> downsample
         self.nsamp = 0
@@ -703,7 +702,11 @@ class butterfilt_and_downsample(TransformerMixin):
 
         return self
 
-    def transform(self, X, Y=None):
+    def transform(self, X, y=None):
+        X, Y = self.modify(X,y)
+        return X
+
+    def modify(self, X, Y=None):
         """[summary]
 
         Args:
@@ -715,7 +718,7 @@ class butterfilt_and_downsample(TransformerMixin):
         """        
         # propogate the filter coefficients between calls
         if not hasattr(self,'sos_'):
-            self.fit(X[0:1,:])
+            self.fit(X[...,0:1,:])
 
         if self.sos_ is not None:
             X, self.zi_ = sosfilt(self.sos_, X, axis=self.axis, zi=self.zi_)
@@ -751,7 +754,7 @@ class butterfilt_and_downsample(TransformerMixin):
                 if Y is not None:
                     Y = Y[..., idx, :] # decimate Y (trl, samp, y)
         
-        return X if Y is None else (X, Y)
+        return X, Y
 
     @staticmethod
     def testcase():
@@ -763,7 +766,7 @@ class butterfilt_and_downsample(TransformerMixin):
         bands = ((0,20,'bandpass'))
         fs = 200
         fs_out = 130
-        fds = butterfilt_and_downsample(stopband=bands,fs=fs,fs_out=fs_out)
+        fds = butterfilt_and_downsample(filterband=bands,fs=fs,fs_out=fs_out)
 
         
         print("single step")
@@ -792,97 +795,6 @@ class butterfilt_and_downsample(TransformerMixin):
         plt.plot(xs1,m1,'*-',label='{} {}->{}Hz incremental'.format(bands,fs,fs_out))
         plt.legend()
         plt.show()
-
-
-
-
-
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-from mindaffectBCI.decoder.stim2event import stim2event
-class stim2eventfilt(TransformerMixin):
-    ''' Incremental streaming transformer to transform a sequence of stimulus states to a brain event sequence
-    
-    For example by transforming a sequence of stimulus intensities, to rising and falling edge events.
-    '''
-    def __init__(self, evtlabs=None, histlen=20):
-        self.evtlabs = evtlabs
-        self.histlen = histlen
-        self.prevX = None
-
-    def fit(self, X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
-        return self
-
-    def transform(self, X):
-        """[transform Stimulus-encoded to brain-encoded]
-
-        Args:
-            X ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """        
-        
-        if X is None:
-            return None
-        
-        # keep old fitler state for the later transformation call
-        prevX = self.prevX
-
-        # grab the new filter state (if wanted)
-        if self.histlen>0:
-            #print('prevX={}'.format(prevX))
-            #print("X={}".format(X))
-            if X.shape[0] >= self.histlen or prevX is None:
-                self.prevX = X
-            else:
-                self.prevX = np.append(prevX, X, 0)
-            # only keep the last bit -- copy in case gets changed in-place
-            self.prevX = self.prevX[-self.histlen:,:].copy()
-            #print('new_prevX={}'.format(self.prevX))
-
-        # convert from stimulus coding to brain response coding, with old state
-        X = stim2event(X, self.evtlabs, axis=-2, oM=prevX)
-        return X
-
-    def testcase():
-        ''' test the stimulus transformation filter by incremental calling '''
-        M=np.array([0,0,0,1,0,0,1,1,0,1])[:,np.newaxis] # samp,nY
-        s2ef = stim2eventfilt(evtlabs=('re','fe'),histlen=3)
-
-        print("single step")
-        m0=s2ef.transform(M) # (samp,ny,ne)
-        print("{} -> {}".format(M,m0))
-
-        print("Step size = 1")
-        m1=np.zeros(m0.shape,m0.dtype)
-        for i in range(len(M)):
-            idx=slice(i,i+1)
-            mm=s2ef.transform(M[idx,:])
-            m1[idx,...]=mm
-            print("{} {} -> {}".format(i,M[idx,...],mm))
-
-        print("Step size=4")
-        m4=np.zeros(m0.shape,m0.dtype)
-        for i in range(0,len(M),4):
-            idx=slice(i,i+4)
-            mm=s2ef.transform(M[idx,:])
-            m4[idx,...]=mm
-            print("{} {} -> {}".format(i,M[idx,...],mm))
-
-        print("m0={}\nm1={}\n,m4={}\n".format(m0,m1,m4))
-            
-
 
 
 
@@ -926,7 +838,7 @@ class power_tracker(TransformerMixin):
 
         Returns:
             [type]: [description]
-        """        
+        """
         self.sX_N = X.shape[0]
         if self.car and X.shape[-1]>4:
             X = X.copy() - np.mean(X,-1,keepdims=True)
@@ -936,16 +848,16 @@ class power_tracker(TransformerMixin):
         return self.power()
 
     def transform(self, X: np.ndarray):
-        """[compute the exponientially weighted centered power of X]
+        """compute the exponientially weighted centered power of X
 
         Args:
-            X (np.ndarray): [description]
+            X (np.ndarray): samples x channels data
 
         Returns:
-            [type]: [description]
+            np.ndarray: the updated per-channel power
         """        
         
-        if self.sX is None: # not fitted yet!
+        if self.sX is None or np.any(np.isnan(self.sX)) or self.sXX is None or np.any(np.isnan(self.sXX)): # not fitted yet!
             return self.fit(X)
         if self.car and X.shape[-1]>4:
             ch_power = self.power()
@@ -959,7 +871,7 @@ class power_tracker(TransformerMixin):
         # center and compute updated power
         alpha_pow  = self.alpha_power ** X.shape[0]
         self.sXX_N = self.sXX_N*alpha_pow + X.shape[0]
-        self.sXX   = self.sXX*alpha_pow + np.sum((X-(self.sX/self.sX_N))**2, axis=0)       
+        self.sXX   = self.sXX*alpha_pow + np.sum((X-(self.sX/self.sX_N))**2, axis=0)
         return self.power()
     
     def mean(self):
@@ -977,11 +889,14 @@ class power_tracker(TransformerMixin):
         """        
         return self.sXX / self.sXX_N
     
-    def testcase(self):
+    @staticmethod
+    def testcase():
         """[summary]
         """        
         import matplotlib.pyplot as plt
         X = np.random.randn(10000,2)
+        X[:500,:] = 0 # start with 0 to induce invalid values
+        X[5000:50050,:] = 0 # flatline later to induce invalid values
         #X = np.cumsum(X,axis=0)
         pt = power_tracker(100,100,100)
         print("All at once: power={}".format(pt.transform(X)))  # all at once
@@ -999,6 +914,7 @@ class power_tracker(TransformerMixin):
             plt.plot(X[:,d])
             plt.plot(idxs,mus[:,d])
             plt.plot(idxs,powers[:,d])
+        plt.show(block=True)
 
 
 
@@ -1009,17 +925,17 @@ class power_tracker(TransformerMixin):
 #--------------------------------------------------------------------------
 class timestamp_interpolation(TransformerMixin):
     """Incremental streaming tranformer to transform from per-packet time-stamps to per-sample timestamps 
-    with time-stamp smoothing, de-jittering, and dropped-sample detection.
+    with time-stamp smoothing, de-jittering, wrap-around detection and dropped-sample detection.
     """
 
-    def __init__(self,fs=None,sample2timestamp=None, max_delta=200):
+    def __init__(self,fs:float=None,sample2timestamp=None, max_delta:int=200, wraparound:int=(1<<20)):
         """tranform from per-packet (i.e. multiple-samples) to per-sample timestamps
 
         Args:
             fs (float): default sample rate, used when no other timing info is available
             sample2timestamp (transformer, optional): class to de-jitter timestamps based on sample-count. Defaults to None.
         """        
-        self.fs=fs
+        self.fs, self.max_delta, self.wraparound = (fs, max_delta, wraparound)
         a0 = 1000/self.fs if self.fs is not None else 1
          # BODGE: special cases for particular mapping functions so can include the prior slope
         if sample2timestamp=='lower_bound_tracker':
@@ -1028,7 +944,6 @@ class timestamp_interpolation(TransformerMixin):
             self.sample2timestamp = linear_trend_tracker(a0=a0)
         else:
             self.sample2timestamp = sample2timestamp
-        self.max_delta = max_delta
 
     def fit(self,ts,nsamp=1):
         """[summary]
@@ -1037,7 +952,7 @@ class timestamp_interpolation(TransformerMixin):
             ts ([type]): [description]
             nsamp (int, optional): [description]. Defaults to 1.
         """        
-        self.last_sample_timestamp_ = ts
+        self.last_sample_timestamp_ = ts if np.isscalar(ts) else ts[-1]
         self.n_ = 0
 
     def transform(self,timestamp:float,nsamp:int=1):
@@ -1050,34 +965,39 @@ class timestamp_interpolation(TransformerMixin):
         Returns:
             np.ndarray: (nsamp) the interpolated time-stamps
         """
+        if not np.isscalar(timestamp):
+            timestamp = timestamp[-1]
+            nsamp = np.sum(nsamp)
         if not hasattr(self,'last_sample_timestamp_'):
             self.fit(timestamp,nsamp)
 
         # update tracking number samples processed
-        self.n_ = self.n_ + nsamp
+        cumsamp = self.n_ + nsamp
 
         if self.last_sample_timestamp_ < timestamp or self.sample2timestamp is not None:
             # update the tracker for the sample-number to sample timestamp mapping
             if self.sample2timestamp is not None:
                 #print("n={} ts={}".format(n,timestamp))
-                newtimestamp = self.sample2timestamp.transform(self.n_, timestamp)
+                newtimestamp = self.sample2timestamp.transform(cumsamp, timestamp)
                 #print("ts={} newts={} diff={}".format(timestamp,newtimestamp,timestamp-newtimestamp))
                 # use the corrected de-jittered time-stamp -- if it's not tooo different
-                if abs(timestamp-newtimestamp) < self.max_delta:
+                if np.max(np.abs(timestamp-newtimestamp)) < self.max_delta:
                     timestamp = int(newtimestamp)
 
-            # simple linear interpolation for the sample time-stamps
+        # simple linear interpolation for the sample time-stamps -- if not wrapp-around
+        if self.last_sample_timestamp_ - self.wraparound < np.max(timestamp): 
             samples_ts = np.linspace(self.last_sample_timestamp_, timestamp, nsamp+1, endpoint=True, dtype=int)
+            # remove the last_ts as it's the 1st one
             samples_ts = samples_ts[1:]
+        elif self.fs:
+            # interpolate based on current time-stamp
+            samples_ts = timestamp + np.arange(-nsamp+1,1,dtype=int)*(1000/self.fs)
         else:
-            if self.fs :
-                # interpolate with the estimated sample rate                    
-                samples_ts = np.arange(-nsamp+1,1,dtype=int)*(1000/self.fs) + timestamp
-            else:
-                # give all same timestamp
-                samples_ts = np.ones(nsamp,dtype=int)*timestamp
+            # use fixed ts for all samples
+            samples_ts = timestamp + np.zeros(nsamp,dtype=int) 
 
         # update the tracking info
+        self.n_ = self.n_ + nsamp
         self.last_sample_timestamp_ = timestamp
 
         return samples_ts
@@ -1111,158 +1031,6 @@ class timestamp_interpolation(TransformerMixin):
         plt.show()
 
 
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-from mindaffectBCI.decoder.preprocess import temporally_decorrelate
-class temporal_decorrelator(TransformerMixin):
-    """Incremental streaming tranformer to decorrelate temporally channels in an input stream
-    """
-
-    def __init__(self, order=10, reg=1e-4, eta=1e-5, axis=-2):
-        self.reg=reg
-        self.eta=eta
-        self.axis=axis
-
-    def fit(self,X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-        """        
-        self.W_ = np.zeros((self.order,X.shape[-1]),dtype=X.dtype)
-        self.W_[-1,:]=1
-        _, self.W_ = self.transform(X[1:,:])
-
-    def transform(self,X):
-        """add per-sample timestamp information to the data matrix
-
-        Args:
-            X (float): the data to decorrelate
-            nsamp(int): number of samples to interpolate
-
-        Returns:
-            np.ndarray: the decorrelated data
-        """
-        if not hasattr(self,'W_'):
-            self.fit(X)
-
-        X, self.W_ = temporally_decorrelate(X, W=self.W_, reg=self.reg, eta=self.eta, axis=self.axis)
-
-        return X
-
-    def testcase(self, dur=3, fs=100, blksize=10):
-        """[summary]
-
-        Args:
-            dur (int, optional): [description]. Defaults to 3.
-            fs (int, optional): [description]. Defaults to 100.
-            blksize (int, optional): [description]. Defaults to 10.
-        """        
-        import numpy as np
-        import matplotlib.pyplot as plt
-        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
-        fs=100
-        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
-        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
-        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
-
-        #X = np.cumsum(X,-2) # 1/f spectrum
-        print("X={}".format(X.shape))
-        plt.figure(1)
-        plot_grand_average_spectrum(X, fs)
-        plt.suptitle('Raw')
-        plt.show(block=False)
-
-        tdc = temporal_decorrelator()
-        wX = np.zeros(X.shape,X.dtype)
-        for i in range(0,X.shape[-1],blksize):
-            idx = range(i,i+blksize)
-            wX[idx,:] = tdc.transform(X[idx,:])
-        
-        # compare raw vs summed filterbank
-        plt.figure(2)
-        plot_grand_average_spectrum(wX,fs)
-        plt.suptitle('Decorrelated')
-        plt.show()
-
-
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-#--------------------------------------------------------------------------
-from mindaffectBCI.decoder.preprocess import standardize_channel_power
-class channel_power_standardizer(TransformerMixin):
-    """Incremental streaming tranformer to channel power normalization in an input stream
-    """
-
-    def __init__(self, reg=1e-4, axis=-2):
-        self.reg=reg
-        self.axis=axis
-
-    def fit(self,X):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
-        """        
-        self.sigma2_ = np.zeros((X.shape[-1],), dtype=X.dtype)
-        self.sigma2_ = X[0,:]*X[0,:] # warmup with 1st sample power
-        self.transform(X[1:,:])
-
-    def transform(self,X):
-        """add per-sample timestamp information to the data matrix
-
-        Args:
-            X (float): the data to decorrelate
-
-        Returns:
-            np.ndarray: the decorrelated data
-        """
-        if not hasattr(self,'sigma2_'):
-            self.fit(X)
-
-        X, self.W_ = standardize_channel_power(X, sigma2=self.sigma2_, reg=self.reg, axis=self.axis)
-
-        return X
-
-    def testcase(self, dur=3, fs=100, blksize=10):
-        """[summary]
-
-        Args:
-            dur (int, optional): [description]. Defaults to 3.
-            fs (int, optional): [description]. Defaults to 100.
-            blksize (int, optional): [description]. Defaults to 10.
-        """        
-        import numpy as np
-        import matplotlib.pyplot as plt
-        from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum
-        fs=100
-        X = np.random.standard_normal((2,fs*dur,2)) # flat spectrum
-        #X = X + np.sin(np.arange(X.shape[-2])*2*np.pi/10)[:,np.newaxis]
-        X = X[:,:-1,:]+X[:,1:,:] # weak low-pass
-
-            #X = np.cumsum(X,-2) # 1/f spectrum
-        print("X={}".format(X.shape))
-        plt.figure(1)
-        plot_grand_average_spectrum(X, fs)
-        plt.suptitle('Raw')
-        plt.show(block=False)
-
-        cps = channel_power_standardizer()
-        wX = np.zeros(X.shape,X.dtype)
-        for i in range(0,X.shape[-1],blksize):
-            idx = range(i,i+blksize)
-            wX[idx,:] = cps.transform(X[idx,:])
-        
-        # compare raw vs summed filterbank
-        plt.figure(2)
-        plot_grand_average_spectrum(wX,fs)
-        plt.suptitle('Decorrelated')
-        plt.show()
-
-
 def testRaw():
     """[summary]
     """    
@@ -1276,8 +1044,8 @@ def testPP():
     """    
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((0,1),(25,-1)), fs_out=100)
-    #ppfn= butterfilt_and_downsample(order=4, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=80)     
+    ppfn= butterfilt_and_downsample(order=4, filterband=((0,1),(25,-1)), fs_out=100)
+    #ppfn= butterfilt_and_downsample(order=4, filterband='butter_filterband((0, 5), (25, -1))_fs200.pk', fs_out=80)     
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None)
     ui.connect()
     sigViewer(ui)
@@ -1293,8 +1061,8 @@ def testFileProxy(filename,fs_out=999):
     U = FileProxyHub(filename)
     from sigViewer import sigViewer
     # test with a filter + downsampler
-    #ppfn= butterfilt_and_downsample(order=4, stopband=((0,3),(25,-1)), fs_out=fs_out)
-    ppfn= butterfilt_and_downsample(order=4, stopband=(1,15,'bandpass'), fs_out=fs_out)
+    #ppfn= butterfilt_and_downsample(order=4, filterband=((0,3),(25,-1)), fs_out=fs_out)
+    ppfn= butterfilt_and_downsample(order=4, filterband=(1,15,'bandpass'), fs_out=fs_out)
     #ppfn = None
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U)
     ui.connect()
@@ -1311,7 +1079,7 @@ def testFileProxy2(filename):
     fs = 200
     fs_out = 200
     # test with a filter + downsampler
-    ppfn= butterfilt_and_downsample(order=4, stopband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=fs_out)
+    ppfn= butterfilt_and_downsample(order=4, filterband=((45,65),(0,3),(25,-1)), fs=fs, fs_out=fs_out)
     ui = UtopiaDataInterface(data_preprocessor=ppfn, stimulus_preprocessor=None, mintime_ms=0, U=U, fs=fs)
     ui.connect()
     # run in bits..
@@ -1367,19 +1135,22 @@ def testElectrodeQualities(X,fs=200,pktsize=20):
         sigq=np.concatenate(sigq,0)
         return sigq
     
-    ppfn= butterfilt_and_downsample(order=6, stopband='butter_stopband((0, 5), (25, -1))_fs200.pk', fs_out=100)
+    ppfn= butterfilt_and_downsample(order=6, filterband='butter_filterband((0, 5), (25, -1))_fs200.pk', fs_out=100)
     ppfn.fit(X[:10,:],fs=200)
     noise2sig = np.zeros((int(X.shape[0]/pktsize),X.shape[-1]),dtype=np.float32)
     for pkti in range(noise2sig.shape[0]):
         t = pkti*pktsize
         Xi = X[t:t+pktsize,:]
         Xip = ppfn.transform(Xi)
-        raw_power, preproc_power = UtopiaDataInterface.update_electrode_powers(Xi,Xip)
+        raw_power, preproc_power = update_electrode_powers(Xi,Xip)
         noise2sig[pkti,:] = np.maximum(float(1e-6), (raw_power - preproc_power)) /  np.maximum(float(1e-8),preproc_power)
     return noise2sig
 
     
 if __name__ == "__main__":
+    power_tracker.testcase()
+    quit()
+
     #timestamp_interpolation().testcase()
     #butterfilt_and_downsample.testcase()
     #testRaw()

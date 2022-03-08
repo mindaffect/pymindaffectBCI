@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
+from urllib.request import DataHandler
 from mindaffectBCI.decoder.offline.read_mindaffectBCI import read_mindaffectBCI_message
 from mindaffectBCI.utopiaclient import DataPacket
+from mindaffectBCI.decoder.utils import askloadsavefile
 from time import sleep, perf_counter
 
 class FileProxyHub:
@@ -24,11 +26,11 @@ class FileProxyHub:
     def __init__(self, filename:str=None, speedup:float=None, use_server_ts:bool=True):
         import glob
         import os
-        if filename is None or filename == '-':
+        if filename == 'lastsavefile':
             # default to last log file if not given
             files = glob.glob(os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../logs/mindaffectBCI*.txt')) # * means all if need specific format then *.csv
-            self.filename = max(files, key=os.path.getctime)
-        elif filename == 'askloadsavefile':
+            filename = max(files, key=os.path.getctime)
+        elif filename == 'askloadsavefile' or filename is None:
             filename = askloadsavefile()
         else:
             files = glob.glob(os.path.expanduser(filename))
@@ -112,28 +114,40 @@ class FileProxyHub:
         return msgs
 
 
-def askloadsavefile(initialdir=None):
-    from tkinter import Tk
-    from tkinter.filedialog import askopenfilename
-    import os
-    if initialdir is None:
-        initialdir = os.getcwd()
-    root = Tk()
-    root.withdraw()
-    savefile = askopenfilename(initialdir=initialdir,
-                                title='Chose mindaffectBCI save File',
-                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
-    return savefile
+def run(filename:str=None, speedup:float=1, timeout_ms:float=1000, host:str=None, only_data_messages:bool=True):
+    """stream data from file to a live utopia hub
+
+    Args:
+        filename (str): save file name to playback
+        speedup (float, optional): run this multiple of real-time. Defaults to 1.
+        timeout_ms (float, optional): send data in blocks of this size. Defaults to 100.
+        host (str, optional): utopia-hub name to connect to.  Auto-detect if None. Defaults to None.
+    """
+    from mindaffectBCI.utopiaclient import UtopiaClient, Subscribe, DataPacket, DataHeader
+    acq = FileProxyHub(filename,speedup=speedup)
+
+    # connect to the utopia client
+    client = UtopiaClient()
+    client.disableHeartbeats() # disable heartbeats as we're a datapacket source, with given time-stamps
+    client.autoconnect(host)
+    # don't subscribe to anything
+    client.sendMessage(Subscribe(None, ""))
+
+    while acq.isConnected and client.isConnected:
+        msgs = acq.getNewMessages(timeout_ms)
+        if only_data_messages: # filter only data messages are forwarded
+            msgs = [m for m in msgs if m.msgID in (DataPacket.msgID, DataHeader.msgID)]
+        client.sendMessages(msgs)
 
 
-def testcase(filename, speedup=None, fs=200, fs_out=200, stopband=((45,65),(0,3),(25,-1)), order=4):
+def testcase(filename, speedup=None, fs=200, fs_out=200, filterband=((45,65),(0,3),(25,-1)), order=4):
     """[summary]
 
     Args:
         filename ([type]): [description]
         fs (int, optional): [description]. Defaults to 200.
         fs_out (int, optional): [description]. Defaults to 200.
-        stopband (tuple, optional): [description]. Defaults to ((45,65),(0,3),(25,-1)).
+        filterband (tuple, optional): [description]. Defaults to ((45,65),(0,3),(25,-1)).
         order (int, optional): [description]. Defaults to 4.
     """    
     import numpy as np
@@ -142,8 +156,8 @@ def testcase(filename, speedup=None, fs=200, fs_out=200, stopband=((45,65),(0,3)
     U = FileProxyHub(filename,speedup=speedup)
     tsfilt = timestamp_interpolation(fs=fs,sample2timestamp=linear_trend_tracker(500))
 
-    if stopband is not None:
-        ppfn = butterfilt_and_downsample(stopband=stopband, order=order, fs=fs, fs_out=fs_out)
+    if filterband is not None:
+        ppfn = butterfilt_and_downsample(filterband=filterband, order=order, fs=fs, fs_out=fs_out)
     else:
         ppfn = None
     

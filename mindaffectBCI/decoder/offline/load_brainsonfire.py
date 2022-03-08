@@ -1,11 +1,11 @@
 import os
 import numpy as np
-from .read_buffer_offline import read_buffer_offline_data, read_buffer_offline_events, read_buffer_offline_header
+from mindaffectBCI.decoder.offline.read_buffer_offline import read_buffer_offline_data, read_buffer_offline_events, read_buffer_offline_header
 from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsample_codebook, lab2ind, window_axis
 
 trigger_event='stimulus.note.play' # the actual times the user hit the button
 
-def load_brainsonfire(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, chIdx=slice(64), verb=2):
+def load_brainsonfire(datadir, sessdir=None, sessfn=None, fs_out=60, filterband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, chIdx=slice(64), verb=2):
     
     # load the data file
     Xfn = datadir
@@ -17,6 +17,7 @@ def load_brainsonfire(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((
 
     if verb > 1: print("Loading header")
     hdr=read_buffer_offline_header(Xfn)
+    print('ch_names: {}'.format(hdr.labels))
     if verb > 1: print("Loading data")
     X = read_buffer_offline_data(Xfn,hdr) # (nsamp,nch)
     if verb > 1: print("Loading events")
@@ -62,10 +63,10 @@ def load_brainsonfire(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((
         if verb > 0: print("Y={}".format(Y.shape))
 
     # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X,stopband,fs)
+            print("preFilter: {}Hz".format(filterband))
+        X, _, _ = butter_sosfilt(X,filterband,fs)
     
     # preprocess -> downsample
     resamprate = int(fs/fs_out)
@@ -126,7 +127,7 @@ def testcase():
     X=oX.copy()
     Y=oY.copy()
 
-    print("X({}){}".format([c['name'] for c in coords],X.shape))
+    print("X({}){} = []".format([c['name'] for c in coords],X.shape,ch_names))
     print("Y={}".format(Y.shape))
     print("fs={}".format(fs))
 
@@ -136,8 +137,8 @@ def testcase():
     rank=10
 
     # visualize the dataset
-    from stim2event import stim2event
-    from updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
+    from mindaffectBCI.decoder.stim2event import stim2event
+    from mindaffectBCI.decoder.updateSummaryStatistics import updateSummaryStatistics, plot_erp, plot_summary_statistics, idOutliers
     import matplotlib.pyplot as plt
     
     Cxx, Cxy, Cyy = updateSummaryStatistics(X, Y[...,0:1,:], tau=tau)
@@ -150,8 +151,8 @@ def testcase():
     print("ERP")
     plot_erp(Cxy, ch_names=ch_names, evtlabs=evtlabs, times=times, plottype='plot', axis=-1)
 
-    from model_fitting import MultiCCA
-    from decodingCurveSupervised import decodingCurveSupervised
+    from mindaffectBCI.decoder.model_fitting import MultiCCA
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
     cca = MultiCCA(tau=tau, evtlabs=evtlabs, rank=rank)
     scores = cca.cv_fit(X, Y)
     Fy = scores['estimator']
@@ -159,7 +160,7 @@ def testcase():
     (_)=decodingCurveSupervised(Fy)
 
     # plot the solution
-    from scoreStimulus import factored2full
+    from mindaffectBCI.decoder.scoreStimulus import factored2full
     print("Plot Model")
     plt.figure(3)
     plot_erp(factored2full(cca.W_, cca.R_), ch_names=ch_names, evtlabs=evtlabs, times=times)

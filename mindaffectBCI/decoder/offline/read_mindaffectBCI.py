@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import re
-from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection
+from mindaffectBCI.utopiaclient import StimulusEvent, DataPacket, ModeChange, NewTarget, Selection, DataHeader, Log
 from mindaffectBCI.decoder.utils import unwrap
 
 # named reg-exp to parse the different messages types log lines
@@ -12,6 +12,8 @@ clientip_re = re.compile(r'.*<-\W(?P<ip>[0-9.:]*)$')
 stimevent_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<stimstate>.*) <-.*$')
 datapacket_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W*v\[(?P<shape>[0-9x]*)\]:(?P<samples>.*) <-.*$')
 modechange_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*mode:(?P<newmode>.*) <-.*$')
+dataheader_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*fs(?P<fs>[-0-9]*)\W.*ch\[(?P<nch>[-0-9]*)\]:(?P<labels>.*) <-.*$')
+log_re = re.compile(r'^.*\Wts:(?P<ts>[-0-9]*)\W.*msg:(?P<msg>.*) <-.*$')
 
 def read_StimulusEvent(line:str):
     ''' read a stimulus event message from a line of a mindaffectBCI offline save file '''
@@ -50,7 +52,28 @@ def read_DataPacket(line:str ):
     samples = np.fromstring(res['samples'].replace(']','').replace('[',''),sep=',',dtype=np.float32)
     samples = samples[:np.prod(shape)].reshape(shape) # guard too many samples?
     return DataPacket(ts,samples)
-    
+
+def read_DataHeader(line:str ):
+    """read a data-header line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        DataPacket: a mindaffectBCI.utopiaclient.messages.DataPacket object containing (nsamp,d) EEG data
+    """   
+    # named reg-ex to extract the bits we need
+    res = dataheader_re.match(line)
+    if res is None:
+        return None
+    ts = int(res['ts'])
+    # parse sample into numpy array
+    fs = float(res['fs'])
+    nch = int(res['nch'])
+    labels = [c.strip() for c in res['labels'].split(",")]
+    return DataHeader(ts,fs,nch,labels)
+
+
 def read_ModeChange(line:str):
     """read a mode-change line from a mindaffectBCI offline save file
 
@@ -66,6 +89,23 @@ def read_ModeChange(line:str):
     ts = int(res['ts'])
     newmode = res['newmode']
     return ModeChange(ts,newmode)
+
+def read_Log(line:str):
+    """read a Log line from a mindaffectBCI offline save file
+
+    Args:
+        line (str): the line to read
+
+    Returns:
+        Log: a Log object, with the log message
+    """
+    res = log_re.match(line)
+    if res is None:
+        return None
+
+    ts = int(res['ts'])
+    msg = res['msg']
+    return Log(ts,msg)    
 
 def read_NewTarget(line:str):
     """read a newtarget message line from a mindaffectBCI offline save file
@@ -169,6 +209,10 @@ def read_mindaffectBCI_message(line:str):
         msg = read_NewTarget(line)
     elif Selection.msgName in line:
         msg = read_Selection(line)
+    elif DataHeader.msgName in line:
+        msg = read_DataHeader(line)
+    elif Log.msgName in line:
+        msg = read_Log(line)
     else:
         msg = None
     # add the server time-stamp
@@ -178,7 +222,7 @@ def read_mindaffectBCI_message(line:str):
         msg.clientip = read_clientip(line) # client ip-address
     return msg
 
-def datapackets2array(msgs, sample2timestamp='lower_bound_tracker', timestamp_ch=None):
+def datapackets2array(msgs, sample2timestamp='lower_bound_tracker', timestamp_ch=None, ts_stride:int=30):
     """Convert a set of datapacket messages to a 2-d numpy array (with timestamp channel)
 
     Args:
@@ -189,8 +233,7 @@ def datapackets2array(msgs, sample2timestamp='lower_bound_tracker', timestamp_ch
     Returns:
         X( (t,d) np.ndarray): the extracted samples in a numpy array
     """
-    data=[]
-    from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
+    if sample2timestamp is None: sample2timestamp='lower_bound_tracker'
 
     # extract the time-stamp channel and map to server time-stamps
     # and insert as the packet time-stamp
@@ -208,19 +251,32 @@ def datapackets2array(msgs, sample2timestamp='lower_bound_tracker', timestamp_ch
                 m.unwrapped_timestamp = m.timestamp
                 # BODGE: fixed wrapping size!
                 m.timestamp = m.timestamp % (1<<24)
-            
-    tsfilt = timestamp_interpolation(sample2timestamp=sample2timestamp)
-    for m in msgs:
-        samples = m.samples
-        ts   = m.timestamp
-        # TODO[]: look at using the time-stamps non-filtered?
-        samples_ts = tsfilt.transform(ts,len(samples))
-        samples = np.append(samples, samples_ts[:,np.newaxis], -1).astype(samples.dtype)
-        data.append(samples)
-        #last_ts = ts
-        
-    # convert data into single np array
-    data = np. concatenate(data,0)
+    
+    ts = np.array([ m.timestamp for m in msgs])
+    nsamp = np.array([len(m.samples) for m in msgs])
+    if sample2timestamp == 'robust_timestamp_regression':
+        cumsum_nsamp = np.cumsum(nsamp)
+        ab = robust_timestamp_regression(cumsum_nsamp,ts)
+        sample_ts = np.arange(cumsum_nsamp[-1],dtype=np.float32)*ab[0]+ab[1]
+
+    else:
+        from mindaffectBCI.decoder.UtopiaDataInterface import timestamp_interpolation, linear_trend_tracker
+        tsfilt = timestamp_interpolation(sample2timestamp=sample2timestamp)
+        # TODO[]: for loading time, process the time-stamp info in blocks?
+        sample_ts = []
+        for i in range(0,len(ts),ts_stride):
+            idx=slice(i,i+ts_stride)
+            t, n = (ts[idx], nsamp[idx])
+        #for t,n in zip(ts,nsamp):
+            # TODO[]: look at using the time-stamps non-filtered?
+            timestamps = tsfilt.transform(t,n)
+            sample_ts.append(timestamps)
+    
+        sample_ts = np.concatenate(sample_ts,0).astype(np.float32)
+    
+    samples = np.concatenate([m.samples for m in msgs],0)
+    data = np.concatenate((samples,sample_ts[:,np.newaxis]),-1)
+
     return data    
 
 
@@ -265,8 +321,9 @@ def rewrite_timestamps2servertimestamps(msgs):
     ''' rewrite message client-timestamps  to best-fit server time-stamps '''
     # get the client-timestamp, server-timestamp pairs
     x = np.array([msg.timestamp for msg in msgs]) #  from: client timestamp
-    y = np.array([msg.sts for msg in msgs]) # to: server timestamp
+    y = np.array([msg.rts for msg in msgs]) # to: server timestamp
     ab = robust_timestamp_regression(x,y)
+    print('a={} b={}'.format(ab[0],ab[1]))
 
     #print("ab={}".format(ab))
     # now rewrite the client time-stamps
@@ -297,7 +354,7 @@ def read_mindaffectBCI_messages( source, regress:bool=False ):
             stream = open(source,'r')
         else: # assume it's already a string with the messages in
             import io
-            stream = io.StringIO(fn)
+            stream = io.StringIO(source)
 
     msgs=[]
     for line in stream:
@@ -328,7 +385,7 @@ def read_mindaffectBCI_messages( source, regress:bool=False ):
         
     return msgs
 
-def read_mindaffectBCI_data_messages( source, regress=False, timestamp_wrap_size=(1<<24), **kwargs ):
+def read_mindaffectBCI_data_messages( source:str, regress:bool=False, timestamp_wrap_size:int=(1<<24), unwrap_timestamps:bool=True, **kwargs ):
     """read an offline mindaffectBCI save file, and return raw-data (as a np.ndarray) and messages. 
 
     Args:
@@ -341,21 +398,25 @@ def read_mindaffectBCI_data_messages( source, regress=False, timestamp_wrap_size
         messages (list messages): the (non-datapacket) messages in the file
     """
     rawmsgs = read_mindaffectBCI_messages(source, regress)
-    # split into datapacket messages and others
-    data=[]
-    msgs=[]
-    for m in rawmsgs:
+
+    if timestamp_wrap_size is not None:
+        for m in rawmsgs:
         #  WARNING BODGE: fit time-stamp in 24bits for float32 ring buffer
         #  Note: this leads to wrap-arroung in (1<<24)/1000/3600 = 4.6 hours
         #        but that shouldn't matter.....
-        if timestamp_wrap_size is not None:
             m.unwrapped_timestamp = m.timestamp
             m.timestamp = m.timestamp % timestamp_wrap_size
+    if unwrap_timestamps:
+        # unwrap the server time-stamps
+        # N.B. do it here to ensure all messages remain on the same clock
+        ts = np.array([m.timestamp for m in rawmsgs]).astype(np.float64)
+        ts = unwrap(ts)
+        for m,mts in zip(rawmsgs,ts):
+            m.timestamp=mts
 
-        if isinstance(m,DataPacket):
-            data.append(m)
-        else:
-            msgs.append(m)
+    # split into datapacket messages and rest
+    data = [m for m in rawmsgs if isinstance(m,DataPacket)]
+    msgs = [m for m in rawmsgs if not isinstance(m,DataPacket)]
 
     # convert the data messages into a single numpy array,
     # with (interpolated) time-stamps in the final 'channel'
@@ -383,10 +444,19 @@ def testcase(fn=None):
     
 if __name__=="__main__":
     # default to last log file if not given
-    import glob
-    import os
     fileregexp = '../../../logs/mindaffectBCI*.txt'
     #fileregexp = '../../../../utopia/java/utopia2ft/UtopiaMessages*.log'
     #if len(sys.argv) > 0:
     #    fn = sys.argv[1]
-    testcase(fn)
+
+    import glob
+    import os
+    from tkinter import Tk
+    from tkinter.filedialog import askopenfilename
+    import os
+    root = Tk()
+    root.withdraw()
+    savefile = askopenfilename(initialdir=os.getcwd(),
+                                title='Chose mindaffectBCI save File',
+                                filetypes=(('mindaffectBCI','mindaffectBCI*.txt'),('All','*.*')))
+    testcase(savefile)

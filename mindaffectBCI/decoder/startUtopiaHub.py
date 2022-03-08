@@ -1,4 +1,4 @@
-#  Copyright (c) 2019 MindAffect B.V. 
+#  Copyright (c) 2019 MindAffect B.V.
 #  Author: Jason Farquhar <jason@mindaffect.nl>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
@@ -18,35 +18,64 @@
 import subprocess
 import os
 from time import sleep
+import signal
 
-def run(label='', logdir=None):
-    pydir = os.path.dirname(os.path.abspath(__file__)) # mindaffectBCI/decoder/startUtopiaHub.py
-    bindir = os.path.join(pydir,'..','hub') 
+# set this to use a specific java exec location if available
+javaexedir = '../../../../OpenJDKJRE64/bin'
+
+
+def run(label='', logdir=None, port: int = 8400, verb: int = -1):
+    pydir = os.path.dirname(
+        os.path.abspath(__file__))  # mindaffectBCI/decoder/startUtopiaHub.py
+    jardir = os.path.join(pydir, '..', 'hub')
+    javaexe = os.path.join(
+        pydir, javaexedir,
+        'java') if javaexedir and os.path.exists(javaexedir) else 'java'
 
     # make the logs directory if not already there
     if logdir is None:
-        logdir=os.path.join(bindir,'../../logs')
+        logdir = os.path.join(pydir, '../../logs')
+    logdir = os.path.expanduser(logdir)
     if not os.path.exists(logdir):
         try:
             os.makedirs(logdir)
         except:
-            print("Error making the log directory {}.... ignoring".format(logdir))
+            print("Error making the log directory {}".format(logdir))
+    if not os.path.exists(logdir):
+        logdir = pydir
+    print("Saving to {}".format(logdir))
 
     # command to run the java hub
-    cmd = ("java","-jar","UtopiaServer.jar")
+    cmd = (javaexe, "-jar", "UtopiaServer.jar")
     # args to pass to the java hub
     if label is not None:
         logfile = "mindaffectBCI_{}.txt".format(label)
     else:
         logfile = "mindaffectBCI.txt"
-    args = ("8400","0",os.path.join(os.path.expanduser(logdir),logfile))
+    args = ("{:d}".format(port), "{:d}".format(verb),
+            os.path.join(logdir, logfile))
 
     # run the command, waiting until it has finished
-    print("Running command: {}".format(cmd+args))
-    utopiaHub = subprocess.Popen(cmd + args, cwd=bindir, shell=False)#,
-                               #stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print("Running command: {} in dir {}".format(cmd + args, jardir))
+    utopiaHub = subprocess.Popen(
+        cmd + args, cwd=jardir, shell=False, stdin=subprocess.DEVNULL
+    )  #, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     sleep(1)
     return utopiaHub
 
-if __name__=="__main__":
-    run()
+
+# setup signal handler to forward to child processes
+signal.signal(signal.SIGINT, lambda signum, frame: shutdown())
+signal.signal(signal.SIGTERM, lambda signum, frame: shutdown())
+
+
+def shutdown():
+    print('shutdown')
+    hub.send_signal(signal.SIGTERM)
+    exit(0)
+
+
+if __name__ == "__main__":
+    hub = run(logdir='~/Desktop/logs')
+    while True:
+        sleep(1)

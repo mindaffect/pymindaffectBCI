@@ -25,7 +25,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
                        marginalizedecis=False,
                        prior=None,
                        nocontrolamplitude=None,
-                       tiebreaking_noise=1e-3, nvirt_out=-10, **kwargs):
+                       tiebreaking_noise=1e-3, nvirt_out=None, **kwargs):
   """    true-target estimator and error-probility estimator for each trial
 
    Args:
@@ -64,7 +64,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   if Fy is None:
       return -1, 1, None, None, None
   
-  if nvirt_out is not None:
+  if nvirt_out is not None and not nvirt_out == 0:
     # generate virtual outputs for testing -- not from the 'true' target though
     virt_Fy = block_permute(Fy[...,1:], nvirt_out, axis=-1, perm_axis=-2)
     nvirt_out = virt_Fy.shape[-1]
@@ -112,7 +112,7 @@ def decodingSupervised(Fy, softmaxscale=3.5, marginalizemodels=True,
   Yest = Yestidx
 
   # remove the virtual outputs and replace the idx with -1
-  if nvirt_out>0:
+  if nvirt_out is not None and not nvirt_out == 0:
     nreal_out = Ptgt.shape[-1]-nvirt_out
     Ptgt = Ptgt[...,:-nvirt_out]
     Yest[Yest>=nreal_out] = -1

@@ -81,14 +81,14 @@ def normalizeOutputScores(Fy, validTgt=None, badFyThresh=4,
         # exp-distributed decision points
         nstep = int(np.ceil(np.log((maxnEp-1) / minDecisLen) / np.log(2)))
         decisIdx = [(2**i)*minDecisLen for i in range(nstep+1)]
-        decisIdx = np.minimum(np.maximum(decisIdx, minDecisLen), maxnEp-1)
+        decisIdx = np.minimum(np.maximum(decisIdx, minDecisLen), maxnEp)
     elif minDecisLen < 0:
         # linearly distributed decision points
-        decisIdx = np.arange(-minDecisLen-1, maxnEp-1, -minDecisLen)
-        decisIdx = np.append(decisIdx, maxnEp-1)
+        decisIdx = np.arange(-minDecisLen-1, maxnEp, -minDecisLen)
+        decisIdx = np.append(decisIdx, maxnEp)
     else :
         # default to single decision at max-length
-        decisIdx = np.array([maxnEp-1], dtype=int) 
+        decisIdx = np.array([maxnEp], dtype=int) 
     #print("decisIdx={}".format(decisIdx))
 
     # compute the summed scores

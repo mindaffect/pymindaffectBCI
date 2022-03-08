@@ -25,7 +25,7 @@ subids_20000=[3, 6, 7, 8, 9, 10, 13, 15, 17, 18, 19, 21, 24, 25, 27, 31, 32]
 # 128ch biosemi+10-10
 ch_names=('Cz','a2','CPz','a4','a5','a6','a7','a8','a9','PO7','a11','a12','a13','a14','O1','a16','a17','a18','Pz','a20','POz','a22','Oz','a24','Iz','a26','a27','O2','a29','a30','a31','a32','b1','b2','b3','b4','b5','b6','PO8','b8','b9','b10','P8','b12','b13','TP8','b15','b16','b17','b18','b19','C2','b2','C4','b23','C6','b25','T8','FT8','b28','b29','b30','b31','b32','c1','c2','c3','c4','c5','c6','F8','AF8','c9','c10','c11','c12','c13','c14','c15','Fp2','Fpz','c18','AFz','c20','Fz','c22','FCz','c24','c25','c26','c27','c28','Fp1','AF7','c31','c32','d1','d2','d3','d4','d5','d6','F7','FT7','d9','d10','d11','d12','d13','C1','d15','d16','d17','d18','C3','d20','C5','d22','T7','TP7','d25','d26','d27','d28','d29','d30','P7','d32')
 
-def load_cocktail(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,5),(25,-1)), verb=0, trlen_ms=None, subtriallen=10):
+def load_cocktail(datadir, sessdir=None, sessfn=None, fs_out=60, filterband=((45,65),(0,5),(25,-1)), verb=0, trlen_ms=None, subtriallen=10):
 
     # load the data file
     Xfn = os.path.expanduser(datadir)
@@ -82,10 +82,10 @@ def load_cocktail(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,6
     print("X={}".format(X.shape), flush=True)
 
     # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X,stopband,fs)
+            print("preFilter: {}Hz".format(filterband))
+        X, _, _ = butter_sosfilt(X,filterband,fs)
 
     # preprocess -> downsample
     resamprate = int(fs/fs_out)

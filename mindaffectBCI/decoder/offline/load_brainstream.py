@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import butter_sosfilt
 
-def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr=None, stopband=((45,65),(5,25,'bandpass')), verb=0, ch_names=None):
+def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=None, ifs=None, fr=None, filterband=None, verb=0, ch_names=None, offset_ms=None):
     """Load and pre-process a brainstream offline save-file and return the EEG data, and stimulus information
 
     Args:
@@ -13,7 +13,7 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr
         fs_out (float, optional): [description]. Defaults to 100.
         ifs (float, optional): the input data sample rate.
         fr (float, optional): the input stimulus frame rate.
-        stopband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
+        filterband (tuple, optional): Specification for a (cascade of) temporal (IIR) filters, in the format used by `mindaffectBCI.decoder.utils.butter_sosfilt`. Defaults to ((45,65),(5.5,25,'bandpass')).
         ch_names (tuple, optional): Names for the channels of the EEG data.
 
     Returns:
@@ -22,6 +22,9 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr
         coords (list-of-dicts (3,)): dictionary with meta-info for each dimension of X & Y.  As a minimum this contains
                           "name"- name of the dimension, "unit" - the unit of measurment, "coords" - the 'value' of each element along this dimension
     """    
+
+    if offset_ms is not None:
+        print("Warning: offset ignored for brain-steam data")
 
     # load the data file
     Xfn = datadir
@@ -76,7 +79,7 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr
                 hdr = hdr['v']
                 ifs = hdr['Fs'][0]
         except:
-            print('Warning: Couldnt load the header file');
+            print('Warning: Couldnt load the header file')
 
         # load per-trial labels
         if trainmode:
@@ -117,12 +120,12 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=60, ifs=None, fr
         Y[ti, :, 1:] = cb # copy in other outputs
 
     # preprocess -> spectral filter
-    if stopband is not None or passband is not None:
-        # BODGE: pre-center X
-        X = X - X[...,0:1,:]
+    # BODGE: pre-center X
+    #X = X - X[...,0:1,:]
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X, stopband, fs)
+            print("preFilter: {}Hz".format(filterband))
+        X, _, _ = butter_sosfilt(X, filterband, fs)
     
     # preprocess -> downsample
     resamprate = round(2*fs/fs_out)/2 # round to nearest .5
@@ -148,14 +151,14 @@ def testcase():
     import sys
 
     # plos_one
-    #datadir = '/home/jadref/removable/SD Card/data/bci/own_experiments/noisetagging_v3'
-    #sessdir = 's01'
-    #sessfn = 'traindata.mat'
+    datadir = 'D:\\\\own_experiments\\noisetagging_v3'
+    sessdir = 's01'
+    sessfn = 'traindata.mat'
 
-    # lowlands
-    datadir = '/home/jadref/removable/SD Card/data/bci/own_experiments/lowlands'
-    sessdir = ''
-    sessfn = 'LL_ENG_39_20170820_tr_train_1.mat' # should perform 100%
+    # # lowlands
+    # datadir = '/home/jadref/removable/SD Card/data/bci/own_experiments/lowlands'
+    # sessdir = ''
+    # sessfn = 'LL_ENG_39_20170820_tr_train_1.mat' # should perform 100%
 
     # command-line, for testing
     if len(sys.argv) > 1:
@@ -165,13 +168,13 @@ def testcase():
     if len(sys.argv) > 3:
         fn = sys.argv[3]
 
-    from load_brainstream import load_brainstream
-    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, fs_out=60, stopband=((0,5.5),(24,-1)))
+    from mindaffectBCI.decoder.offline.load_brainstream import load_brainstream
+    X, Y, coords = load_brainstream(datadir, sessdir, sessfn, fs_out=60, filterband=((0,5.5),(24,-1)))
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
     
-    from model_fitting import MultiCCA
-    from decodingCurveSupervised import decodingCurveSupervised
+    from mindaffectBCI.decoder.model_fitting import MultiCCA
+    from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised
     cca = MultiCCA(tau=18)
     cca.fit(X, Y)
     print('cca = {}'.format(cca))
@@ -181,7 +184,7 @@ def testcase():
 
     # test w.r.t. matlab
     from scipy.io import loadmat
-    from utils import window_axis
+    from mindaffectBCI.decoder.utils import window_axis
     import numpy as np
     Xe = window_axis(X, axis=-2, winsz=18)
     Ye = window_axis(Y, axis=-2, winsz=1)

@@ -30,187 +30,281 @@ from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
 from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
-def plos_one(regexp:str=None):
+dataroot = '~/data/bci'
+def get_dataroot(dataroots=None):
+    global dataroot
+    if dataroots is None:
+        dataroots = ['~/data/bci',
+                    'G://Shared drives/Data/experiments',
+                    '/content/drive/Shareddrives/Data',
+                     '/home/shared/drive/',
+                    'D://',
+                    '.'
+                    ]
+    if dataroots is not None:
+        # check whith dataroots are available
+        for dr in dataroots:
+            if os.path.exists(os.path.expanduser(dr)):
+                dataroot = os.path.expanduser(dr)
+                break
+    return dataroot
+
+
+def load_plos_one(datadir, **kwargs):
+    plos_ch_names = ['Fp1',
+        'AF7','AF3','F1','F3','F5','F7','FT7','FC5','FC3','FC1','C1','C3','C5',
+        'T7','TP7','CP5','CP3','CP1','P1','P3','P5','P7',
+        'P9','PO7','PO3','O1','Iz','Oz','POz','Pz','CPz','Fpz','Fp2','AF8','AF4','AFz',
+        'Fz','F2','F4','F6','F8','FT8','FC6','FC4','FC2','FCz',
+        'Cz','C2','C4','C6','T8','TP8','CP6','CP4','CP2','P2','P4','P6','P8','P10','PO8','PO4','O2']
+    fs_out=180
+    return load_brainstream(datadir, ch_names=plos_ch_names, fs_out=fs_out, **kwargs)
+
+def plos_one():
     '''generate the directory+filename info for the plos_one noisetagging dataset'''
-    loader = load_brainstream # function to call to load the dataset
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/own_experiments/noisetagging_v3')
-    else:
-        dataroot = 'D:/own_experiments/noisetagging_v3/'
-    sessdir = glob(os.path.join(dataroot, 's[0-9]*'))
+    loader = load_plos_one # function to call to load the dataset
+    datadir = get_dataroot()
+    datadir = os.path.join(os.path.expanduser(datadir),'own_experiments/noisetagging_v3/')
+    sessdir = glob(os.path.join(datadir, 's[0-9]*'))
     #sessdir = ['s{:d}'.format(i) for i in range(1, 12)]
     sessfn = 'traindata.mat'
-    filenames = [os.path.join(dataroot, d, sessfn) for d in sessdir]
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    filenames = [os.path.join(datadir, d, sessfn) for d in sessdir]
+    return (loader, filenames, datadir)
 
-def lowlands(regexp:str=None):
+def lowlands():
     '''generate the directory+filename info for the lowlands noisetagging dataset'''
     loader = load_brainstream
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-    	dataroot = os.path.expanduser('~/data/bci/own_experiments/lowlands')
-    else:
-        dataroot = 'D:/own_experiments/lowlands/'
-    filenames = glob(os.path.join(dataroot, '*_tr_train_1.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    datadir = get_dataroot()
+    datadir = os.path.join(datadir,'own_experiments/lowlands')
+    filenames = glob(os.path.join(datadir, '*_tr_train_1.mat'))
+    return (loader, filenames, datadir)
 
 def p300_prn(label:str=None):
     '''generate dataset+filename for p300-prn2'''
     loader = load_p300_prn # function to call to load the dataset
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot = 'D:/'
+    datadir = get_dataroot()
     expt = 'own_experiments/visual/p300_prn_2'
-    filenames = glob(os.path.join(dataroot, expt, '*/*/jf_prep/*flash.mat')) + \
-                glob(os.path.join(dataroot, expt, '*/*/jf_prep/*flip.mat'))
+    filenames = glob(os.path.join(datadir, expt, '*/*/jf_prep/*flash.mat')) + \
+                glob(os.path.join(datadir, expt, '*/*/jf_prep/*flip.mat'))
     if label is not None:
         filenames = [f for f in filenames if re.search(label,f)]
-    return (loader, filenames, dataroot)
+    return (loader, filenames, datadir)
 
-def tactileP3(regexp:str=None):
+def tactileP3():
     '''generate dataset+filename for tactile P3'''
     loader = load_p300_prn # function to call to load the dataset
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot = 'D:/'
-    expt = 'own_experiments/tactile/P3speller'
-    filenames = glob(os.path.join(dataroot, expt, '*/*/jf_prep/*offline.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    datadir = get_dataroot()
+    expt = 'own_experiments/tactile/selective_parallel_attention/P3speller/Speller'
+    filenames = glob(os.path.join(datadir, expt, '*/*/jf_prep/*offline.mat'))
+    return (loader, filenames, datadir)
 
-def tactile_PatientStudy(regexp:str=None):
+def tactile_PatientStudy():
     '''generate dataset+filename for p300-prn2'''
     loader = load_p300_prn # function to call to load the dataset
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot = 'D:/'
+    datadir = get_dataroot()
     expt = 'own_experiments/tactile/PatientStudy'
-    filenames = glob(os.path.join(dataroot, expt, '*/*/jf_prep/*offline.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    filenames = glob(os.path.join(datadir, expt, '*/*/jf_prep/*offline.mat'))
+    return (loader, filenames, datadir)
 
-def openBMI(dstype="SSVEP",regexp:str=None):
+def openBMI(dstype="SSVEP"):
     loader = load_openBMI
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/external_data/gigadb/openBMI')
-    else:
-        dataroot= os.path.expanduser('D:/external_data/gigadb/openBMI')
-    filenames = glob(os.path.join(dataroot, 'sess*/s*/sml_*'+ dstype + '.mat')) + \
-                glob(os.path.join(dataroot, 'sml_*'+ dstype + '.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    datadir = get_dataroot()
+    datadir = os.path.join(datadir,'external_data/gigadb/openBMI')
+    filenames = glob(os.path.join(datadir, 'sess*/s*/sml_*'+ dstype + '.mat')) + \
+                glob(os.path.join(datadir, 'sml_*'+ dstype + '.mat'))
+    return (loader, filenames, datadir)
 
-def twofinger(regexp:str=None):
+def twofinger():
     loader = load_twofinger
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot= os.path.expanduser('D:/')
+    datadir = get_dataroot()
     exptdir = 'external_data/twente/twofinger'
-    filenames =  glob(os.path.join(dataroot, exptdir, 'S??.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    filenames =  glob(os.path.join(datadir, exptdir, 'S??.mat'))
+    return (loader, filenames, datadir)
 
-def brains_on_fire_online(regexp:str=None):
+def brains_on_fire_online():
     loader = load_brainsonfire
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot= os.path.expanduser('D:/')
+    datadir = get_dataroot()
     exptdir = 'own_experiments/motor_imagery/brainsonfire/brains_on_fire_online'
-    filenames =  glob(os.path.join(dataroot, exptdir, 'subject*/raw_buffer/0001'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    filenames =  glob(os.path.join(datadir, exptdir, 'subject*/raw_buffer/0001'))
+    return (loader, filenames, datadir)
 
+def brains_on_fire():
+    loader = load_brainsonfire
+    datadir = get_dataroot()
+    exptdir = 'own_experiments/motor_imagery/brainsonfire/brains_on_fire'
+    filenames =  glob(os.path.join(datadir, exptdir, 'Subject*/raw_buffer/0001'))
+    return (loader, filenames, datadir)
 
-def mTRF_audio(regexp:str=None):
+def mTRF_audio():
     loader = load_mTRF_audio
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot= os.path.expanduser('~/data/bci/external_data/mTRF')
-    else:
-        dataroot= os.path.expanduser('D:/external_data/mTRF')
-    filenames = [os.path.join(dataroot, 'speech_data.mat')]
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    datadir = get_dataroot()
+    filenames = [os.path.join(datadir, 'speech_data.mat')]
+    return (loader, filenames, datadir)
 
-def ninapro_db2(regexp:str=None):
+def ninapro_db2():
     loader = load_ninapro_db2
-    if os.path.isdir(os.path.expanduser("~/data")):
-        dataroot = os.path.expanduser('~/data/bci/')
-    else:
-        dataroot = "D:/"
+    datadir = get_dataroot()
     exptdir="external_data/ninapro"
-    filenames = glob(os.path.join(dataroot, exptdir, 's*', '*E1*.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader, filenames, dataroot)
+    filenames = glob(os.path.join(datadir, exptdir, 's*', '*E1*.mat'))
+    return (loader, filenames, datadir)
 
-def cocktail(regexp:str=None):
+def cocktail():
     loader = load_cocktail
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot= os.path.expanduser('~/data/bci/')
-    else:
-        dataroot= os.path.expanduser('D:/')
+    datadir = get_dataroot()
     exptdir="external_data/dryad/Cocktail Party"
-    filenames = glob(os.path.join(dataroot, exptdir, 'EEG', 'Subject*'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader,filenames,dataroot)
+    filenames = glob(os.path.join(datadir, exptdir, 'EEG', 'Subject*'))
+    return (loader,filenames,datadir)
 
-def mark_EMG(regexp:str=None):
+
+def mark_EMG():
     loader = load_mark_EMG
-    if os.path.isdir(os.path.expanduser('~/data/bci')):
-        dataroot= os.path.expanduser('~/data/bci/')
-    else:
-        dataroot= os.path.expanduser('D:/')
+    datadir = get_dataroot()
     exptdir="own_experiments/emg/facial"
-    filenames = glob(os.path.join(dataroot, exptdir, 'training_data_SV_*.mat'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader,filenames,dataroot)    
+    filenames = glob(os.path.join(datadir, exptdir, 'training_data_SV_*.mat'))
+    return (loader,filenames,datadir)    
 
-def testdataset(fn, **args):
-    '''  a conforming toy dataset loader'''
-    fs=10
-    X,Y,st,A,B=testSignal(**args)
+
+import mne
+import numpy as np
+def mne_annotation2stimseq(data, event_id=None, regexp=None):
+    fs = data.info['sfreq']
+    # event per sample, N.B. may be overlapping?
+    events, event_id = mne.events_from_annotations(data, regexp=regexp, chunk_duration=1/fs)
+    stimSeq_Sy = np.zeros((len(data.times),1), dtype=int)
+    stimSeq_Sy[events[:,0]] = events[:,-1:]
+    return stimSeq_Sy, event_id
+
+def mne_stimch2stimseq(data):
+    raise NotImplementedError
+
+def mne_eegbci2mindaffectBCI(raw):
+    """convert mne raw dataset to a mindaffectBCI dataset
+
+    Args:
+        raw ([type]): [description]
+    """
+    X_Sd = raw.get_data().T
+    Y_Sy, level_dict = mne_annotation2stimseq(raw)
+
+    X_TSd = X_Sd[np.newaxis, ...]
+    Y_TSy = Y_Sy[np.newaxis, ...]
+
+    ch_names = raw.info['ch_names']
+    fs       = raw.info['sfreq']
     # make coords array for the meta-info about the dimensions of X
-    coords = [None]*X.ndim
+    coords = [None]*X_TSd.ndim
     coords[0] = {'name':'trial'}
     coords[1] = {'name':'time','unit':'ms', \
-                 'coords':[i*1000/fs for i in range(X.shape[1])], \
+                 'coords':[i*1000/fs for i in range(X_TSd.shape[1])], \
+                 'fs':fs}
+    coords[2] = {'name':'channel','coords':raw.info['ch_names'],'level_dict':level_dict, 'info':raw.info}
+    return X_TSd, Y_TSy, coords
+
+
+def mne_eegbci_runlabels2labels(raw):
+    # update the annotation description to reflect the run labels
+    runclass2class = dict()
+    for r in (1,):
+        runclass2class[f"{r:x}0"]='eyes_open'
+    for r in (2,):
+        runclass2class[f"{r:x}0"]='eyes_closed'
+    for r in (3,7,11):
+        runclass2class[f"{r:x}0"]='rest'
+        runclass2class[f"{r:x}1"]='left.ex'
+        runclass2class[f"{r:x}2"]='right.ex'
+    for r in (4,8,12):
+        runclass2class[f"{r:x}0"]='rest'
+        runclass2class[f"{r:x}1"]='left.im'
+        runclass2class[f"{r:x}2"]='right.im'
+    for r in (5,9,13):
+        runclass2class[f"{r:x}0"]='rest'
+        runclass2class[f"{r:x}1"]='both.ex'
+        runclass2class[f"{r:x}2"]='feet.ex'
+    for r in (6,10,14):
+        runclass2class[f"{r:x}0"]='rest'
+        runclass2class[f"{r:x}1"]='both.im'
+        runclass2class[f"{r:x}2"]='feet.im'
+
+    for di,d in enumerate(raw.annotations.description):
+        raw.annotations.description[di] = runclass2class.get(d,d)
+    return raw
+
+def load_mne_eegbci(run_files):
+    if isinstance(run_files,str): run_files=[run_files]
+    raws = []
+    for f in run_files:
+        r = mne.io.read_raw_edf(f)
+        run = int(f[-6:-4])
+        for di,d in enumerate(r.annotations.description):
+            r.annotations.description[di] = { f"T{e:d}":f"{run:x}{e:d}" for e in range(3)}.get(d,d)
+        raws.append(r)
+    raw = mne.concatenate_raws(raws)
+    mne_eegbci_runlabels2labels(raw)
+    mne.datasets.eegbci.standardize(raw)  # set channel names
+    montage = mne.channels.make_standard_montage('standard_1005')
+    raw.set_montage(montage)
+
+    # strip channel names of "." characters
+    raw.rename_channels(lambda x: x.strip('.'))
+
+    # convert to mindaffectBCI format
+    X, Y, coords = mne_eegbci2mindaffectBCI(raw)
+    return X,Y,coords
+
+
+def mne_eegbci():
+    from mne.io import concatenate_raws, read_raw_edf
+    from mne.datasets import eegbci
+    # N.B. subjects/runs index from 1
+    filenames = []
+    for si in range(1,110):
+        try:
+            raw_fnames = eegbci.load_data(si,runs=[i for i in range(1,15)])
+            filenames.append(raw_fnames)
+        except:
+            print("Error with subject: {}".format(si))
+    loader = load_mne_eegbci
+    return loader, filenames, eegbci.data_path
+
+def mindaffectBCI(exptdir, regexp:str=None, exregexp:str=None, **args):
+    loader = load_mindaffectBCI
+    if not os.path.exists(exptdir):
+        exptdir = os.path.join(get_dataroot(),exptdir)
+    filenames = glob(os.path.join(os.path.expanduser(exptdir), '**', 'mindaffectBCI*.txt'),recursive=True)
+    return loader,filenames,exptdir
+
+
+def testdataset(fn, **kwargs):
+    '''  a conforming toy dataset loader'''
+    fs=100
+    X_TSd,Y_TSye,st,A,B=testSignal(**kwargs)
+    if Y_TSye.ndim==4: # re-code event idicators into a class coding
+        Y_TSy = Y_TSye.argmax(axis=-1)+1  # 1,2,... for event type
+        Y_TSy[~Y_TSye.any(axis=-1)]=0 # 0 for no events at all
+
+    else:
+        Y_TSy = Y_TSye
+
+    # make coords array for the meta-info about the dimensions of X
+    coords = [None]*X_TSd.ndim
+    coords[0] = {'name':'trial'}
+    coords[1] = {'name':'time','unit':'ms', \
+                 'coords':[i*1000/fs for i in range(X_TSd.shape[1])], \
                  'fs':fs}
     coords[2] = {'name':'channel','coords':None}
-    return (X, Y, coords)
-
-def mindaffectBCI(exptdir, regexp:str=None, **args):
-    loader = load_mindaffectBCI
-    filenames = glob(os.path.join(os.path.expanduser(exptdir), 'mindaffectBCI*.txt'))
-    if regexp is not None:
-        filenames = [f for f in filenames if re.search(regexp,f)]    
-    return (loader,filenames,exptdir)
+    return X_TSd, Y_TSy, coords
 
 def toy():
     ''' make a toy dataset for testing '''
     loader = testdataset
     filenames = [None]
-    dataroot = None
-    return (loader,filenames,dataroot)
+    datadir = None
+    return (loader,filenames,datadir)
+
 
 def dataset_generator(dataset, **kwargs):
     ''' generator for individual datasets from the given set of datasets '''
-    loadfn,  filenames, dataroot = get_dataset(dataset)
+    loadfn,  filenames, datadir = get_dataset(dataset)
     for fn in filenames:
         X, Y, coords = loadfn(fn, **kwargs)
         yield (X, Y, coords, fn)
@@ -223,27 +317,42 @@ def test_loader(loadfn, filenames, dataroot, **kwargs):
         except Exception as ex:
             print("ds={}\nFAILED\n{}".format(fn, ex))
 
-def get_dataset(dsname,*args, **kwargs):
+
+
+def get_dataset(dsname, regexp:str=None, exregexp:str=None, dataroots:list=None, *args, **kwargs):
+    dataroot = get_dataroot(dataroots)
+
     if dsname == 'openBMI_SSVEP':
-        return openBMI("SSVEP")
+        loader, filenames, root =  openBMI("SSVEP")
     elif dsname == 'openBMI_ERP':
-        return openBMI("ERP")
+        loader, filenames, root =  openBMI("ERP")
     elif dsname == 'openBMI_MI':
-        return openBMI("MI")
+        loader, filenames, root =  openBMI("MI")
+    elif dsname == 'askloadsavefile':
+        loader = load_mindaffectBCI
+        filenames = ['askloadsavefile']
+        root = None
     else:
         try:
-            return eval(dsname)(*args,**kwargs)
+            loader, filenames, root =  eval(dsname)(*args,**kwargs)
         except Exception as ex:
             print("Loader error : {}".format(ex))
             raise NotImplementedError("don't know dataset {}".format(dsname))
+    if regexp is not None:
+        filenames = [f for f in filenames if re.search(regexp,f)]
+    if exregexp is not None:
+        filenames = [f for f in filenames if not re.search(exregexp,f)]
+    return loader, filenames, root
+
 
 def testcase():
-    datasets=["openBMI_MI","tactileP3","toy","mark_EMG","brainsonfire","twofinger","ninapro_db2","openBMI_MI","openBMI_ERP","openBMI_SSVEP","cocktail","lowlands","plos_one",'p300_prn',"mTRF_audio"]
+    datasets=["openBMI_MI","tactileP3","toy","mark_EMG","brains_on_fire","twofinger","ninapro_db2","openBMI_MI","openBMI_ERP","openBMI_SSVEP","cocktail","lowlands","plos_one",'p300_prn',"mTRF_audio"]
     for d in datasets:
-        print(d)
+        #print(d)
         #try:
         loadfn, filenames,  dataroot = get_dataset(d)
-        test_loader(loadfn, filenames, dataroot)
+        print("{}) {} Files: \n".format(d,len(filenames)))
+        #test_loader(loadfn, filenames, dataroot)
         #except:
         #    print("Error with dataset {}".format(d))
 

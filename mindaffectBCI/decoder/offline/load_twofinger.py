@@ -5,7 +5,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 
 marker2stim=dict(lh=(1,3),rh=(2,4))
 
-def load_twofinger(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, verb=0, ch_idx=slice(32)):
+def load_twofinger(datadir, sessdir=None, sessfn=None, fs_out=60, filterband=((45,65),(0,1),(25,-1)), subtriallen=10, nvirt=20, verb=0, ch_idx=slice(32)):
     
     # load the data file
     Xfn = datadir
@@ -36,10 +36,10 @@ def load_twofinger(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,
     lab = squeeze(data['Y']).astype(int).ravel() # (samp,)
 
     # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X,stopband,fs)
+            print("preFilter: {}Hz".format(filterband))
+        X, _, _ = butter_sosfilt(X,filterband,fs)
     
     # make the targets, for the events we care about
     Y, lab2class = lab2ind(lab,marker2stim.values()) # (nTrl, e) # feature dim per class
@@ -91,7 +91,7 @@ def testcase():
     import sys
 
     if os.path.isdir('D:\external_data'):
-        sessfn = 'D:\\external_data\twente\twofinger\S00.mat'
+        sessfn = 'D:\\\\external_data\\twente\\twofinger\\S00.mat'
     else:
         sessfn = '/home/jadref/data/bci/external_data/twente/twofinger/S00.mat'
     # command-line, for testing
@@ -99,7 +99,7 @@ def testcase():
         sessfn = sys.argv[1]
  
     from load_twofinger import load_twofinger
-    oX, oY, coords = load_twofinger(sessfn, fs_out=60, nsubtrials=40)
+    oX, oY, coords = load_twofinger(sessfn, fs_out=60)
     times = coords[1]['coords']
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']

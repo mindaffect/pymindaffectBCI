@@ -14,9 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
-
-from mindaffectBCI.decoder.normalizeOutputScores import mktestFy
-from mindaffectBCI.decoder.utils import block_permute
 import numpy as np
 
 def zscore2Ptgt_softmax(f, softmaxscale:float=2, prior:np.ndarray=None, validTgt=None, marginalizemodels:bool=True, marginalizedecis:bool=False, peroutputmodel:bool=False):
@@ -188,6 +185,8 @@ def calibrate_softmaxscale(f, validTgt=None,
     keep = np.any(f!=0,axis=axis) # nY
     if not np.all(keep):
         f = f[..., keep]
+    if f.size==0: # guard against no data to calibrate on
+        return None
 
     validTgt = np.any(f != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
 
@@ -200,7 +199,7 @@ def calibrate_softmaxscale(f, validTgt=None,
     if nocontrol_condn and f.shape[-1]>5:
         f_nc = f[..., 1:]
         vtgt_nc = np.any(f_nc != 0, axis=(-4,-2) if f.ndim>3 else -2) # (nTrl,nY)
-        print('No-control amplitude {} on {} nc-outputs'.format(nocontrol_condn,f_nc.shape[-1]))
+        if verb>0: print('No-control amplitude {} on {} nc-outputs'.format(nocontrol_condn,f_nc.shape[-1]))
 
     # include the nout correction on a per-trial basis
     noutcorr = softmax_nout_corr(np.sum(validTgt,1)) # (nTrl,)
@@ -230,27 +229,8 @@ def calibrate_softmaxscale(f, validTgt=None,
     # use the max-entropy scale
     mini = np.argmin(Ed)
     softmaxscale = scales[mini]
-    print("softmaxscale={}".format(softmaxscale))
+    if verb>0: print("softmaxscale={}".format(softmaxscale))
     return softmaxscale
-
-def mkTestFy(nY,nM,nEp,nTrl,sigstr,startup_lag):
-    np.random.seed(0)
-    noise = np.random.standard_normal((nM,nTrl,nEp,nY))
-    noise = noise - np.mean(noise.ravel())
-    noise = noise / np.std(noise.ravel())
-
-    sigamp=sigstr*np.ones(noise.shape[-2]) # [ nEp ]
-
-
-    # no signal ast the start of the trial
-    startuplag_samp=int(nEp*startup_lag)
-    sigamp[:startuplag_samp]=0
-    Fy = np.copy(noise)
-    # add the signal
-    Fy[0, :, :, 0] = Fy[0, :, :, 0] + sigamp
-    #print("Fy={}".format(Fy))
-
-    return Fy, noise, sigamp
 
 def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
             marginalizemodels, marginalizedecis, 
@@ -362,6 +342,7 @@ def visPtgt(Fy, normSum, centFy, detrendFy, bwdAccumulate,
 
 if __name__=="__main__":
     if True:
+        from mindaffectBCI.decoder.normalizeOutputScores import mktestFy
         Fy, noise, sigamp = mkTestFy(nY=10, nM=1, nEp=800, nTrl=100, sigstr=.25, startup_lag=.20)
     else:
         import pickle

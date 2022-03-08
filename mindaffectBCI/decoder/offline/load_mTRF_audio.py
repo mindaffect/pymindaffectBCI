@@ -1,7 +1,7 @@
 from scipy.io import loadmat
 from mindaffectBCI.decoder.utils import window_axis, block_randomize, butter_sosfilt
 import numpy as np
-def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, stopband=((45,65),(0,.5),(15,-1)), fs_out=60, nvirt_out=30, verb=1):
+def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, filterband=((45,65),(0,.5),(15,-1)), fs_out=60, nvirt_out=30, verb=1):
     d = loadmat(datadir)
     X = d['EEG'] # (nSamp,d)
     Y = d[regressor] # (nSamp,e)
@@ -11,10 +11,10 @@ def load_mTRF_audio(datadir, regressor='envelope', ntrl=15, stopband=((45,65),(0
         fs_out = fs
 
     # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X,_,_ = butter_sosfilt(X, stopband, fs, axis=-2)
+            print("preFilter: {}Hz".format(filterband))
+        X,_,_ = butter_sosfilt(X, filterband, fs, axis=-2)
     
     # generate artificial other stimulus streams, for testing
     Y_test = block_randomize(Y, nvirt_out, axis=-3, block_size=Y.shape[0]//ntrl//2)

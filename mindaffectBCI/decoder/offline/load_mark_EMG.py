@@ -6,7 +6,7 @@ from mindaffectBCI.decoder.utils import block_randomize, butter_sosfilt, upsampl
 from mindaffectBCI.decoder.multipleCCA import robust_whitener
 from mindaffectBCI.decoder.updateSummaryStatistics import updateCxx
 
-def load_mark_EMG(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,65),(0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
+def load_mark_EMG(datadir, sessdir=None, sessfn=None, fs_out=60, filterband=((45,65),(0,10),(45,55),(95,105),(145,-1)), filterbank=None, verb=0, log=True, whiten=True, plot=False):
 
     fs=1000
     ch_names=None
@@ -36,10 +36,10 @@ def load_mark_EMG(datadir, sessdir=None, sessfn=None, fs_out=60, stopband=((45,6
     if plot: plt.figure(100);plt.plot(X[0,:,:]);plt.title("raw")
 
     # preprocess -> spectral filter, in continuous time!
-    if stopband is not None:
+    if filterband is not None:
         if verb > 0:
-            print("preFilter: {}Hz".format(stopband))
-        X, _, _ = butter_sosfilt(X,stopband,fs)
+            print("preFilter: {}Hz".format(filterband))
+        X, _, _ = butter_sosfilt(X,filterband,fs)
         if plot:plt.figure(101);plt.plot(X[0,:,:]);plt.title("hp+notch+lp")
         # preprocess -> spatial whiten
         # TODO[] : make this  fit->transform method
@@ -107,7 +107,7 @@ def testcase():
         sessfn = sys.argv[1]
  
     #from offline.load_mark_EMG import load_mark_EMG
-    oX, oY, coords = load_mark_EMG(sessfn, fs_out=125, stopband=((0,10),(45,55),(95,105),(145,-1)), plot=False)
+    oX, oY, coords = load_mark_EMG(sessfn, fs_out=125, filterband=((0,10),(45,55),(95,105),(145,-1)), plot=False)
     fs = coords[1]['fs']
     ch_names = coords[2]['coords']
     X=oX.copy()
