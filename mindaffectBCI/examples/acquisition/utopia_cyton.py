@@ -1,4 +1,4 @@
-from mindaffectBCI.examples.acquisation.cyton import OpenBCICyton
+from mindaffectBCI.examples.acquisition.cyton import OpenBCICyton
 import asyncore # needed for the openBCI server
 import numpy as np
 from time import time, sleep

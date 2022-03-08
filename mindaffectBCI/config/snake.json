@@ -1,0 +1,32 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[5,25,"bandpass"]],
+        "out_fs" : 110,
+        "evtlabs" : ["re","fe"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":10,
+        "npred":500,
+        "calibration_symbols":"3x3.txt",
+        "symbols":null,
+        "predictionScreen":"mindaffectBCI.examples.presentation.snake_game.SnakeGameScreen",
+        "predscreen_args":{"grid_height":10, "grid_width":10, "framespermove":240},
+        "selectionThreshold":0.1,
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":false,
+        "host":"-"
+    }
+}

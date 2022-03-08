@@ -42,6 +42,9 @@ class UtopiaController:
         # call back list for new predictions
         self.lastPrediction = None
         self.predictionHandlers = []
+        # call back list for new prediction distributions
+        self.lastPredictionDistribution = None
+        self.predictionDistributionHandlers = []
         # selection stuff
         self.selectionHandlers = []
         self.selectionThreshold = .1
@@ -51,7 +54,8 @@ class UtopiaController:
         # new target
         self.newTargetHandlers = []
         # our set message subscriptions
-        self.subscriptions = "PSNMEQ"
+        # P=Target Prediction F=Target Dist S=selection N=new-target M=mode-change E=stimulus-event Q=signal-quality
+        self.subscriptions = "PFSNMEQ"
 
     def addMessageHandler(self, cb):
         """[summary]
@@ -67,6 +71,13 @@ class UtopiaController:
             cb (function): [description]
         """        
         self.predictionHandlers.append(cb)
+    def addPredictionDistributionHandler(self, cb):
+        """[summary]
+
+        Args:
+            cb (function): [description]
+        """        
+        self.predictionDistributionHandlers.append(cb)
     def addNewTargetHandler(self, cb):
         """[summary]
 
@@ -131,9 +142,9 @@ class UtopiaController:
     def isConnected(self):  return self.client.isConnected
     def gethostport(self):  return self.client.gethostport()
     def gethost(self): return self.client.gethost()
-                
-    def sendStimulusEvent(self, stimulusState, timestamp=None, 
-                          targetState=None, objIDs=None):
+
+    def sendStimulusEvent(self, stimulusState, timestamp=None,
+                          targetState=None, objIDs=None, injectSignal:float=None):
         """
         Send a message to the Utopia-HUB informing of the current stimulus state
 
@@ -142,30 +153,37 @@ class UtopiaController:
             timestamp ([type], optional): [description]. Defaults to None.
             targetState ([type], optional): [description]. Defaults to None.
             objIDs ([type], optional): [description]. Defaults to None.
-
+            injectSignal (int,optional): inject a signal with this amplitude to fake data, should be 0-255 integer. If None then use the target state information. Defautls to None.
         Returns:
             [type]: [description]
-        """                          
-        
+        """
         stimEvent = self.mkStimulusEvent(stimulusState, timestamp, targetState, objIDs)
         if self.client: self.client.sendMessage(stimEvent)
         # erp injection for debugging with fakedata
-        if targetState >=0 and targetState <= 1: # TODO []: inject to the same host as the utopia connection
-            injectERP(int(targetState*255),self.gethost())
-        elif targetState > 3:
-            injectERP(int(targetState),self.gethost())
+        if injectSignal is None:
+            if targetState is not None and targetState >= 0:
+                if 0 <= targetState and targetState <= 1:
+                    # re-scale to 0-255
+                    injectSignal = int(targetState*255)
+                elif targetState > 3:
+                    injectSignal = int(targetState)
+            else: # simple super-position of stimulus activity
+                injectSignal = int(sum(stimulusState))
+        if injectSignal is not None:
+            injectERP(int(injectSignal), self.gethost())
         return stimEvent
-        
+
+
     def mkStimulusEvent(self, stimulusState, timestamp=None, 
                         targetState=None, objIDs=None):
         """
         make a valid stimulus event for the given stimulus state
 
         Args:
-            stimulusState ([type]): [description]
-            timestamp ([type], optional): [description]. Defaults to None.
-            targetState ([type], optional): [description]. Defaults to None.
-            objIDs ([type], optional): [description]. Defaults to None.
+            stimulusState (list-of-int): the stimulus state of each object in objIDs
+            timestamp (int, optional): timestamp for this stimulus change in milliseconds. Defaults to None.
+            targetState ([type], optional): state of the current cued target. Defaults to None.
+            objIDs (list-of-int, optional): the object Identifiers for the objects in stimulus state. Defaults to None.
 
         Raises:
             ValueError: [description]
@@ -173,9 +191,10 @@ class UtopiaController:
         Returns:
             [type]: [description]
         """                        
-        
+        if not hasattr(stimulusState,'__iter__'): stimulusState=[stimulusState]
         if timestamp is None:
             timestamp = self.getTimeStamp()
+        if not hasattr(objIDs,'__iter__'): objIDs=[objIDs]
         if objIDs is None:
             objIDs = list(range(1, len(stimulusState)+1))
         elif len(objIDs) != len(stimulusState):
@@ -212,6 +231,7 @@ class UtopiaController:
             print("NewSubscriptions: {}".format(self.subscriptions))
             self.client.sendMessage(
                 Subscribe(self.getTimeStamp(), self.subscriptions))
+
     def addSubscription(self, msgs):
         """[summary]
 
@@ -281,19 +301,24 @@ class UtopiaController:
         if len(self.msgs) > 0:
             for h in self.messageHandlers:
                 h(self.msgs)
-            newPrediction = None
             for m in self.msgs:
    
                 if m.msgID == PredictedTargetProb.msgID:
+                    print("UtopiaController::getNewMessages::Pred:{}".format(m))
+                    # record as last prediction
+                    self.lastPrediction = m
                     # process new prediction callbacks
                     for h in self.predictionHandlers:
-                        h(m)
+                        h(self.lastPrediction)
+
+                elif m.msgID == PredictedTargetDist.msgID:
+                    print("UtopiaController::getNewMessages::PredDist:{}".format(len(m.pTgt)))
                     # record as last prediction
-                    #if m.Yest < 0:
-                    #    m.Perr = 1
-                    self.lastPrediction = m
-                    print("Pred:{}".format(m))
-                        
+                    self.lastPredictionDistribution = m
+                    # process new prediction callbacks
+                    for h in self.predictionDistributionHandlers:
+                        h(self.lastPredictionDistribution)
+
                 elif m.msgID == Selection.msgID:
                     # process selection callbacks
                     for h in self.selectionHandlers:
@@ -360,14 +385,16 @@ def injectERP(amp, host="localhost", port=8300):
     Inject an erp into a simulated data-stream, sliently ignore if failed, e.g. because not simulated
 
     Args:
-        amp ([type]): [description]
+        amp (int|float): amplitude of the injected signal, in the range 0-256
         host (str, optional): [description]. Defaults to "localhost".
         port (int, optional): [description]. Defaults to 8300.
     """    
     
     import socket
     try:
-        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes([amp]), (host, port))
+        socket.socket(socket.AF_INET, socket.SOCK_DGRAM, 0).sendto(bytes([min(amp,255)]), (host, port))
+    except ValueError: 
+        print("Error: ERP amplitude should be between 0 and 256")
     except: # sliently igore any errors
         pass
 

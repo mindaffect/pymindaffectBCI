@@ -1,0 +1,4 @@
+# simple emoji set keyboard
+yes, no, mabye
+images/emojis/smiling.png, images/emojis/wink.png, images/emojis/crying.png
+images/emojis/angel.png, images/emojis/worried.png, images/emojis/money.png

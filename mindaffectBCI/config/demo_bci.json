@@ -1,0 +1,44 @@
+{
+    "logdir":"~/Desktop/logs",
+
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":0,
+        "serial_port":"com4"
+    },
+
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[5.5,25,"bandpass"]],
+        "out_fs" : 100,
+        "evtlabs" : ["re","fe"],
+        "ftype":"butter",
+        "order":6,
+        "cv":5,
+        "label":"decoder",
+        "prior_dataset": "calibration_dataset_*.pk",
+        "tau_ms" : 450,
+        "prediction_offsets" : [0],
+        "calplots" : true,
+        "predplots" : true
+    },
+
+    
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":10,
+        "npred":10,
+        "selectionThreshold":0.1,
+        "symbols":"keyboard.txt",
+        "calibration_symbols": "3x3.txt",
+        "extra_symbols": ["iconic.txt","robot_control.txt"],
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":false,
+        "simple_calibration":true,
+        "optosensor":false,
+        "host":"-"
+    }
+}

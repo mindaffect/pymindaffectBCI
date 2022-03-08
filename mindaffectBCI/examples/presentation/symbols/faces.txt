@@ -1,0 +1,4 @@
+# faces / non-faces grid
+# for each cell | separates image to use for each different stimulus state
++|faces/0.jpg, +|faces/1.jpg, +|faces/2.jpg
++|faces/3.jpg, +|faces/4.jpg, +|faces/5.jpg

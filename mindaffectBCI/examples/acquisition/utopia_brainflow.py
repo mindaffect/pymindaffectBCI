@@ -1,3 +1,29 @@
+# Copyright (c) 2020 MindAffect B.V. 
+#  Author: Khashayar Sharif <khash@mindaffect.nl>
+#  Build on top of brainflow and MindAffect's original brainflow based EEG
+#  driver written by Jason Farquhar. 
+#  Extra features added by this code:
+#  1.local openbci cyton timestamps are used instead of host timestamps.
+#  2.The user has the option of choosing/changinh the sampling frequency of the eeg frontened.
+#  3.The user has the option to set the board to bipolar mode to perform a triggercheck.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import argparse
 from brainflow.board_shim import BoardShim, BrainFlowInputParams
 from mindaffectBCI import utopiaclient 
@@ -46,11 +72,31 @@ def parse_args():
 
 board = None
 client = None
-def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info='',
-         serial_number='',ip_address='',ip_protocol=0,timeout=0,streamer_params='',log=1,triggerCheck=0,samplingFrequency=0):
+def run (host:str=None,board_id:int=1,ip_port:int=0,serial_port:str='',mac_address:str='',other_info='',
+         serial_number='',ip_address='',ip_protocol=0,timeout:float=0,streamer_params='',log:int=1,
+         config_params:list=None, trigger_check:bool=0, samplingFrequency:float=0):
+    """use the brainflow library to connect to a biosensing board and stream the data to mindaffectBCI
+
+    Basically, this is a thin wrapper round the brainflow <https://brainflow.readthedocs.io> python library to forward to the mindaffectBCI utopia-hub
+
+    Args:
+        host (str, optional): hostname or IP for the utopiahub. Defaults to None.
+        board_id (int, optional): brainflow board id, see <https://brainflow.readthedocs.io/en/stable/SupportedBoards.html> 0=cyton, 1=ganglyon. Defaults to 1.
+        ip_port (int, optional): brainflow ip-port. Defaults to 0.
+        serial_port (str, optional): brainflow serial-port for the board. Defaults to ''.
+        mac_address (str, optional): brainflow mac-address. Defaults to ''.
+        other_info (str, optional): other info to send to brainflow. Defaults to ''.
+        serial_number (str, optional): board serial number. Optional. Defaults to ''.
+        ip_address (str, optional): brainflow ip_address. Defaults to ''.
+        ip_protocol (int, optional): brainflow ip protocol. Defaults to 0.
+        timeout (float, optional): brainflow timeout. Defaults to 0.
+        streamer_params (str, optional): brainflow streamer params. Defaults to ''.
+        log (int, optional): brainflow log level. Defaults to 1.
+        config_params (list, optional): additional configuration parameters to send to the board after startup. Defaults to None.
+        trigger_check (bool, optional): flag to configure channel-8 on cyton as trigger input, e.g. for timing tests. Defaults to 0.
+        samplingFrequency (float, optional): desired sampling rate to set the board to. Defaults to 0.
+    """
     global board, client
-    # log the config
-    configmsg = "{}".format(dict(component=__file__, args=locals()))
 
     # init the board params
     params = BrainFlowInputParams ()
@@ -74,13 +120,25 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     board.prepare_session ()
     if samplingFrequency > 0 and board_id ==5 :
 	    board.config_board (SampFreq2WiFiCommands[samplingFrequency])
-    if triggerCheck:
-        print('trigger is enabled, trigger channel: 8')
+    if trigger_check and board_id in (0,5): # cyton boards
+        print('trigger is enabled, on cyton trigger channel: 8')
         board.config_board('x8020000X')
     sleep(1)
-    if board_id==0 or board_id==5:
+    if board_id in (0,5):
         print("Enabling AMP time-stamps on cyton")
         board.config_board ('<')
+
+    # do any user-specified config
+    if config_params is not None:
+        if isinstance(config_params,str):
+            config_params=[config_params]
+        print('Setting board config:')
+        for c in config_params:
+            print(c)
+            board.config_board(c)
+            sleep(.1)
+        print('done')
+
     sleep(1)
     eeg_channels = BoardShim.get_eeg_channels (board_id)
     timestamp_channel = BoardShim.get_timestamp_channel(board_id)
@@ -94,8 +152,17 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     client.autoconnect(host)
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
+
     # log the config
+    import json
+    configmsg = json.dumps(dict(component=__file__, args=dict(host=host,board_id=board_id,ip_port=ip_port,serial_port=serial_port,mac_address=mac_address,
+    other_info=other_info,
+         serial_number=serial_number,ip_address=ip_address,ip_protocol=ip_protocol,timeout=timeout,streamer_params=streamer_params,
+         log=log,
+         config_params=config_params, trigger_check=trigger_check, samplingFrequency=samplingFrequency)))
     client.sendMessage(utopiaclient.Log(None, configmsg))
+
+    # log the header info -- i.e. cap-layout?
     print("Putting header.")
     client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
 
@@ -112,8 +179,9 @@ def run (host=None,board_id=1,ip_port=0,serial_port='',mac_address='',other_info
     while True:
 
         data = board.get_board_data () # (channels,samples) get all data and remove it from internal buffer
+        stamps=[]
         if board_id==0 or board_id==5:
-            stamps=[]
+
             for i in range(len(data[15])):
                 array=numpy.array([data[15][i],data[16][i],data[17][i],data[18][i]] , dtype=numpy.uint8)
                 stamps.append(unpack('>L',bytearray(array)))		

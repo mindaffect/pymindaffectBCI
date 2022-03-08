@@ -1,0 +1,45 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[5,25,"bandpass"]],
+        "out_fs" : 100,
+        "evtlabs" : ["re","fe"],
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":10,
+        "npred":20,
+        "selectionThreshold":0.1,
+        "calibration_screen": "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+        "calibration_screen_args": {"font_size":10},
+        "symbols":"prva.txt",
+        "stimfile":"6blk_rand_pr.txt",
+        "framesperbit":6,
+        "calibration_trialduration":4.2,  
+        "prediction_trialduration":100, 
+        "extra_labels": ["rand pr", "sweep pr", "rand"],
+        "extra_screens": ["mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
+                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen"],
+        "extra_stimseqs":["6blk_rand_pr.txt","6blk_sweep_pr.txt","6blk_rand.txt"],
+        "extra_screen_args":[{"font_size":10, "scale_to_fit":false, "color_labels":false}],
+        "prediction_args":{"permute":false},
+        "feedbackduration":1,
+        "bgFraction":0.1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "simple_calibration":true,
+        "optosensor":true, 
+        "host":"-"
+    }
+}

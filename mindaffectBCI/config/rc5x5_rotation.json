@@ -1,0 +1,34 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[1,12,"bandpass"]],
+        "out_fs" : 110,
+        "evtlabs" : ["re","ntre"],
+        "tau_ms" : 650,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":20,
+        "npred":30,
+        "selectionThreshold":0.1,
+        "symbols":"symbols.txt",
+        "stimfile":"rc5x5.png",
+        "calibration_screen":"mindaffectBCI.examples.presentation.visual_acuity.VisualAcuityScreen",
+        "calscreen_args":{"transform":"rotation"},
+        "bgFraction":0.3,
+        "prediction_args":{"permute":true},
+        "framesperbit":3,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "host":"-"
+    }
+}

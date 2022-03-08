@@ -1,0 +1,41 @@
+{
+
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3",
+        "trigger_check":true
+    },
+
+
+    "decoder":"decoder",
+    "decoder_args":{
+        "stopband" : [[45,65],[5.5,25,"bandpass"]],
+        "out_fs" : 100,
+        "evtlabs" : ["re","fe"],
+        "ftype":"butter",
+        "order":6,
+        "cv":5,
+        "label":"decoder",
+        "tau_ms" : 450,
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    
+    "presentation":"selectionMatrix",
+    "presentation_args":{
+        "ncal":10,
+        "npred":10,
+        "selectionThreshold":0.1,
+        "symbols":"symbols.txt",
+        "calibration_symbols":"3x3.txt",
+        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "simple_calibration":true,
+        "optosensor":false,
+        "host":"-"
+    }
+}

@@ -1,0 +1,32 @@
+{
+    "acquisation":"brainflow",
+    "acq_args":{
+        "board_id":1,
+        "serial_port":"com3"
+    },
+
+    "decoder":"none",
+
+    "presentation":"mindaffectBCI.examples.presentation.visual_acuity",
+    "presentation_args":{
+        "ncal":10,
+        "npred":50,
+        "selectionThreshold":0.0,
+        "symbols":[" "],
+        "calibration_stimseq":"rc5x5.txt",
+        "stimseq":"level11_cont.txt",
+        "calibration_trialduration":4,
+        "prediction_trialduration":10,
+        "calibration_args":{"permute":true},
+        "prediction_args":{"permute":true},
+        "bgFraction":0,
+        "gridfraction":0.2,
+        "fixation":true,
+        "transform":"color",
+        "framesperbit":1,
+        "fullscreen":false,
+        "fullscreen_stimulus":true,
+        "optosensor":false,
+        "host":"-"
+    }
+}

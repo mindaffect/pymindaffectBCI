@@ -31,12 +31,19 @@ def parse_args():
 
 inlet = None
 client = None
-def run (host=None, streamtype=None, **kwargs):
+def run (host=None, streamtype:str='EEG', channels:list=None, **kwargs):
+    """[summary]
+
+    Args:
+        host ([type], optional): ip-address of the minaffectBCI Hub, auto-discover if None. Defaults to None.
+        streamtype (str, optional): the type of stream to forward to the hub. Defaults to 'EEG'.
+        channels (list, optional): list-of-int, channel indices to forward, list-of-str list of channel names to forward. Defaults to None.
+    """    
     global inlet, client
 
     # first resolve an EEG stream on the lab network
     print("looking for an EEG stream...")
-    streams = resolve_stream('type', 'EEG')
+    streams = resolve_stream('type', streamtype)
 
     # create a new inlet to read from the stream
     inlet = StreamInlet(streams[0])
@@ -44,42 +51,74 @@ def run (host=None, streamtype=None, **kwargs):
     # get meta-info about this stream
     info = inlet.info()
     print("stream info: {}".format(info.as_xml()))
+    fSample = info.nominal_srate()
     nch = info.channel_count()
-    labels=[]
+    ch_names= [ "{}".format(i) for i in range(nch) ]
     try:
         ch = info.desc().child("channels").child("channel")
         for k in range(nch):
-            labels.append(ch.child_value("label"))
+            ch_names[k] = ch.child_value("label")
             ch = ch.next_sibling()
     except:
         pass
-    fSample = info.nominal_srate()
     print("board with {} ch @ {} hz".format(nch, fSample))
+
+    # get subset of channels to stream -- if wanted
+    ch_idx = [True for _ in range(nch)]
+    if channels is not None:
+        ch_idx = [False for _ in range(nch)]
+        if isinstance(channels,str):
+            channels = [c.trim() for c in channels.split(',')]
+        for c in channels:
+            if isinstance(c,int):
+                ch_idx[c]=True
+            elif isinstance(c,str):
+                try:
+                    ch_idx[[n.lower() for n in ch_names].index(c.lower())]=True
+                except ValueError:
+                    pass
+
+    nstream = sum(ch_idx)
+    ch_stream = [ c for i,c in enumerate(ch_names) if ch_idx[i] ]
+
+    print("Streaming {}ch = {}".format(nstream,ch_stream))
 
     # connect to the utopia client
     client = utopiaclient.UtopiaClient()
     client.disableHeartbeats() # disable heartbeats as we're a datapacket source
     client.autoconnect(host)
+
     # don't subscribe to anything
     client.sendMessage(utopiaclient.Subscribe(None, ""))
     print("Putting header.")
-    client.sendMessage(utopiaclient.DataHeader(None, len(eeg_channels), fSample, ""))
+    client.sendMessage(utopiaclient.DataHeader(None, fSample, nstream, ch_stream))
 
-    maxpacketsamples = int(32000 / 4 / len(eeg_channels))
+    # log the config
+    import json
+    configmsg = json.dumps(dict(component=__file__, args=dict(host=host, streamtype=streamtype, channels=channels, **kwargs)))
+    client.sendMessage(utopiaclient.Log(None, configmsg))
+
+    maxpacketsamples = int(32000 / 4 / nch)
     nSamp=0
     nBlock=0
-    data=None
-    ots = None
     while True:
 
         # grab all the new data + time-stamp
-        samples, timestamps = inlet.pull_chunk(timeout=1/PACKETRATE_HZ)
-        if len(samples) == 0:
+        samples, timestamps = inlet.pull_chunk(timeout=1/PACKETRATE_HZ, max_samples=maxpacketsamples)
+        if len(timestamps) == 0:
             sleep(.001)
             continue
 
         # forward the *EEG* data to the utopia client
         nSamp = nSamp +len(samples)
+
+        # get the subset...
+        if nstream < nch:
+            tmp = samples
+            samples = []
+            for s in tmp:
+                samples.append([c for i,c in enumerate(s) if ch_idx[i]])
+            del tmp
 
         # fit time-stamp into 32-bit int (with potential wrap-around)
         ts = timestamps[-1]
@@ -92,11 +131,8 @@ def run (host=None, streamtype=None, **kwargs):
         printLog(nSamp,nBlock)        
 
 if __name__ == "__main__":
-    #run(board_id=1,serial_port='com3') # ganglion
-    run()
+    print("Note: to start a test-lsl stream use: python -m pylsl.examples.SendDataAdvanced")
 
-    args=parse_args()    
-    try:
-        run(**vars(args))
-    except:
-        traceback.print_exc()
+    channels=['Cz' ,'C3']
+    channels=[0,1,2,5,6]
+    run(channels=channels)
