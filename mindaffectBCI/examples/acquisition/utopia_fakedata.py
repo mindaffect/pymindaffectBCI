@@ -31,7 +31,7 @@ def parse_args():
 
 
 client = None
-def run(host=None, nch: int=4, fs: float=200, packet_size: int=10):
+def run(host=None, nch: int=4, fs: float=200, packet_size: int=10, **kwargs):
     """run a simple fake-data stream with gaussian noise channels
 
     Args:
@@ -39,7 +39,7 @@ def run(host=None, nch: int=4, fs: float=200, packet_size: int=10):
         nch (int, optional): number of simulated channels. Defaults to 4.
         fs (int, optional): simulated data sample rate. Defaults to 200.
         packet_size (int, optional): number channels to put in each utopia-hub datapacket. Defaults to 10.
-    """    
+    """
     global client
     # connect to the utopia client
     client = utopiaclient.UtopiaClient()

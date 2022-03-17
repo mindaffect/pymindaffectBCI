@@ -1,0 +1,19 @@
+{
+  "platform": "windows64",
+  "jdk": "jre/OpenJDK11U-jre_x64_windows_hotspot_11.0.12_7.zip",
+  "executable": "UtopiaServer",
+  "classpath": [
+    "UtopiaServer.jar"
+  ],
+  "removelibs": [
+  ],
+  "mainclass": "nl.ma.utopiaserver.UtopiaServer",
+  "vmargs": [
+    "Xmx1G"
+  ],
+  "resources": [
+  ],
+  "minimizejre": "hard",
+  "output": "build/packr2",
+  "verbose": true
+}

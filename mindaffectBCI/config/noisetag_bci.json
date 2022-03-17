@@ -1,4 +1,5 @@
 {
+    // Note: We support this type of comment...
     "logdir":"~/Desktop/logs",
 
     "acquisation":"brainflow",
@@ -10,17 +11,22 @@
 
     "decoder":"decoder",
     "decoder_args":{
-        "stopband" : [[45,65],[4,25,"bandpass"]],
-        "out_fs" : 100,
-        "evtlabs" : ["re","fe"],
+        "label":"decoder", // text label for this module
+        "stopband" : [[45,65],[2,25,"bandpass"]], // pre-filter to apply to the incomming EEG
+        "out_fs" : 120, // pre-downsample to apply to the incomming eeg
         "ftype":"butter",
         "order":6,
         "cv":5,
-        "label":"decoder",
+        // prior dataset to load to fit the model -- so don't need to calibrate if wanted
         "prior_dataset": "calibration_dataset_*.pk",
-        "tau_ms" : 300,
-        "offset_ms": 125,
-        "prediction_offsets" : [0],
+        // additional arguments to pass to the classifier
+        "clsfr_args":{
+            "tau_ms" : 450, // stimulus response duration in milliseconds
+            "offset_ms": 0, // offset from stimulus time -- N.B. Not tested, YMMV
+            "prediction_offsets" : [0], // set of different offsets to test at prediction time to allow for clock/drift timing jitter
+            "evtlabs" : ["re","fe"], // the types of event to fit the model to
+            "temporal_basis":"fourier2,15" // feature basis to use when fitting the temporal (impulse-response) model
+        },
         "calplots" : true,
         "predplots" : false
     },

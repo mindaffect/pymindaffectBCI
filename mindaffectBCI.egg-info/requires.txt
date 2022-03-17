@@ -1,5 +1,6 @@
+brainflow>=3.0.0
+matplotlib>=3.0.1
 numpy>=1.0.2
-pyglet>=1.2
-scipy>=1.0
-brainflow>=3.0
-matplotlib>=3.0
+pyglet>=1.0.7
+scikit-learn>=0.22.2.post1
+scipy>=1.0.1
