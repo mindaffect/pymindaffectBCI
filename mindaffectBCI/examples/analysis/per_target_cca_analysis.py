@@ -6,7 +6,6 @@ from mindaffectBCI.decoder.utils import askloadsavefile
 from mindaffectBCI.decoder.preprocess_transforms import make_preprocess_pipeline
 from mindaffectBCI.decoder.preprocess import plot_grand_average_spectrum, plot_trial
 from mindaffectBCI.decoder.analyse_datasets import plot_stimseq
-from mindaffectBCI.examples.presentation.staircase_log_readers import get_thresholds
 from mindaffectBCI.decoder.stim2event import event2output, output2event
 from mindaffectBCI.decoder.updateSummaryStatistics import plot_temporal_components, plot_spatial_components, plot_per_output_temporal_components, plot_factoredmodel
 import matplotlib.pyplot as plt
@@ -109,7 +108,7 @@ def expand_pipeline_template(fs, ch_names,
 
 
 def run_pipeline(X_TSd, Y_TSy, label:str, sessdir:str,  plot_pattern:bool=True, npre:int=2, npost:int=2,
-                 fs=250, fs_out=100, ch_names=None, thresholds=None, cv=5, per_output_irf:bool=False, **kwargs):
+                 fs=250, fs_out=100, ch_names=None, cv=5, per_output_irf:bool=False, **kwargs):
 
     if npre is not None or npost is not None:
         Y_TSy = intrial_only(Y_TSy, npre=npre, npost=npost)
@@ -151,15 +150,9 @@ def run_pipeline(X_TSd, Y_TSy, label:str, sessdir:str,  plot_pattern:bool=True, 
         #     plot_3factoredmodel_AM(A_kd if plot_pattern else W_kd, R_ket, S_y, outputs_levels, fs=fs_out, ch_names=ch_names, evtlabs=evtlabs,thresholds=thresholds,n_tones=int(len(thresholds)),n_volumes=int(len(outputs_levels)//len(thresholds)))
         clf.plot_model(fs=fs, ch_names=ch_names, plot_pattern=plot_pattern, colorbar=False)
 
-    if thresholds is not None and per_output_irf:
-        from mindaffectBCI.examples.analysis.per_target_levelscca_analysis import parse_thresholds
-        plt.subplot(1,2,2)
-        output_thresh=parse_thresholds(thresholds)
-        plt.plot(output_thresh[:, 1], output_thresh[:, 0], 'k*-', linewidth=2, markersize=12)
-
     plt.suptitle("{} {} (N={})\n Score={:5.3f}".format(label, 'pattern' if plot_pattern else 'filter', X_TSd.shape[0], score))
 
-    fname = os.path.join(sessdir, label +'.png')
+    fname = os.path.join(sessdir, 'model_' + label +'.png')
     print("Saving fig to: {}".format(fname))
     plt.gcf().set_size_inches(16,8)
     plt.savefig(fname, dpi=360)
@@ -167,7 +160,7 @@ def run_pipeline(X_TSd, Y_TSy, label:str, sessdir:str,  plot_pattern:bool=True, 
 
 
 def run_pipeline_per_target_object_and_level_set(X_TSd, Y_TSy, targets_levels:list, label:str, sessdir,
-                    outputs:list=None, thresholds=None, **kwargs):
+                    outputs:list=None, **kwargs):
     if outputs is None:
         outputs =  [ "{}".format(o) for o in range(Y_TSy.shape[-1])]
     levels = np.unique(Y_TSy)
@@ -319,7 +312,6 @@ def run(exptdir:str=None, label:str='cca', filematch:str='mindaffectBCI*.txt',
         filterband=[3,35,'bandpass'], fs_out=100,
         evtlabs=("re","fe"),tau_ms=650,rank=3, temporal_basis:str=None, cv:int=10, clsfr_args:dict=dict(),
         plot_pattern:bool=True, per_output_irf=False,
-        show_thresholds:bool=True,
         **kwargs
         ):
 
@@ -369,9 +361,6 @@ def run(exptdir:str=None, label:str='cca', filematch:str='mindaffectBCI*.txt',
             traceback.print_exc()
             continue
 
-        #get user response & thresholds
-        thresholds = get_thresholds(coords[0].get('messages',filename)) if show_thresholds else None
-
         # training subset
         if trn_idx is not None: 
             X = X[trn_idx,...]
@@ -391,7 +380,7 @@ def run(exptdir:str=None, label:str='cca', filematch:str='mindaffectBCI*.txt',
                     filterband=filterband,
                     evtlabs=evtlabs, fs_out=fs_out, tau_ms=tau_ms, rank=rank, temporal_basis=temporal_basis,
                     clsfr_args=clsfr_args, cv=cv, 
-                    thresholds=thresholds, per_output_irf=per_output_irf,
+                    per_output_irf=per_output_irf,
                     **kwargs)
 
         # now run with per-target set sub-groups
@@ -400,7 +389,7 @@ def run(exptdir:str=None, label:str='cca', filematch:str='mindaffectBCI*.txt',
                     filterband=filterband,
                     evtlabs=evtlabs, fs_out=fs_out, tau_ms=tau_ms, rank=rank, temporal_basis=temporal_basis,
                     clsfr_args=clsfr_args, cv=cv, 
-                    thresholds=thresholds, per_output_irf=per_output_irf,
+                    per_output_irf=per_output_irf,
                     **kwargs)
 
         plt.close('all')
@@ -413,11 +402,11 @@ def parse_args():
     parser=argparse.ArgumentParser()
     parser.add_argument('--exptdir', type=str, default=None)
     parser.add_argument('--n_jobs', type=int, default=1)
-    parser.add_argument('--tau_ms', type=int, help='duration of the analysis window in milliseconds.', default=850)
+    parser.add_argument('--tau_ms', type=int, help='duration of the analysis window in milliseconds.', default=650)
     parser.add_argument('--offset_ms', type=int, help='offset w.r.t. trigger of analysis window.', default=0)
     parser.add_argument('--evtlabs', type=str, help='comma separated list of stimulus even types to use. Default re,fe', default="hoton_re")
     parser.add_argument('--per_output_irf',type=lambda a:a.lower()=='1',default=True)
-    parser.add_argument('--temporal_basis', type=str, default="none")#"4drbf2,4,9,-1,.5,.5,1,1"
+    parser.add_argument('--temporal_basis', type=str, default="f2,10")#"4drbf2,4,9,-1,.5,.5,1,1"
     parser.add_argument('--fs_out', type=float, default=None)
     parser.add_argument('--fs', type=float, default=62.5)
     parser.add_argument('--rank', type=int, default=1)
@@ -493,8 +482,7 @@ if __name__=='__main__':
         badWinThresh=args.badWinThresh,
         badEpThresh=args.badEpThresh,
         reg=args.reg, rcond=args.rcond, 
-        plot_pattern=True,
-        show_thresholds=True)
+        plot_pattern=True)
 
     # # c-VEP settings
     # run(exptdir=exptdir, label='cca', #trn_idx=slice(0,10),
@@ -517,5 +505,4 @@ if __name__=='__main__':
     #     filterband=None, fs_out=None,
     #     evtlabs=("re1,2"),
     #     tau_ms=300, rank=1, temporal_basis='winfourier10',
-    #     plot_pattern=True,
-    #     show_thresholds=True)
+    #     plot_pattern=True)

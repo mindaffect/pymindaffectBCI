@@ -29,7 +29,6 @@ from mindaffectBCI.decoder.scoreStimulus import factored2full, plot_Fe
 from mindaffectBCI.decoder.decodingCurveSupervised import decodingCurveSupervised, print_decoding_curve, plot_decoding_curve, flatten_decoding_curves
 from mindaffectBCI.decoder.scoreOutput import plot_Fy
 from mindaffectBCI.decoder.preprocess import preprocess, plot_grand_average_spectrum
-from mindaffectBCI.decoder.trigger_check import triggerPlot
 from mindaffectBCI.decoder.utils import block_permute
 import matplotlib.pyplot as plt
 import gc
@@ -470,6 +469,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.show(block=False)
 
     if triggerPlot:
+        from mindaffectBCI.decoder.trigger_check import triggerPlot
         plt.figure()
         triggerPlot(X,Y,fs, clsfr=clsfr, evtlabs=clsfr.evtlabs_, tau_ms=tau_ms, offset_ms=offset_ms, max_samp=10000, trntrl=None, plot_model=False, plot_trial=True)
         plt.show(block=False)
@@ -520,7 +520,7 @@ def debug_test_dataset(X, Y, coords=None, label=None, tau_ms=300, fs=None, offse
     plt.show()
     return score, res, Fy, clsfr, rawFy
 
-def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None):
+def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=None, centerx=True, xspacing=10, sumFy=True, Yerr=None, show=None):
     """generate a plot summarizing the inputs (X,Y) and outputs (Fe,Fe) for every trial in a dataset for debugging purposes
 
     Args:
@@ -661,9 +661,9 @@ def plot_trial_summary(X, Y, Fy, Fe=None, Py=None, fs=None, label=None, evtlabs=
         else:
             plt.suptitle("{}".format(label))
     fig.set_tight_layout(True)
-    plt.show(block=False)
+    if show is not None: plt.show(block=show)
 
-def plot_stimseq(Y_TSy,fs=None):
+def plot_stimseq(Y_TSy,fs=None,show:bool=True):
     if fs is not None:
         plt.plot(np.arange(Y_TSy.shape[1])/fs, Y_TSy[0,...]+np.arange(Y_TSy.shape[-1])[np.newaxis,:]*np.max(Y_TSy),'.-')
         plt.xlabel('time (s)')
@@ -671,7 +671,7 @@ def plot_stimseq(Y_TSy,fs=None):
         plt.plot(Y_TSy[0,...]+np.arange(Y_TSy.shape[-1])[np.newaxis,:]*np.max(Y_TSy),'.-')
         plt.xlabel('time (samp)')
     plt.title('Y_TSy')
-    plt.show(block=False)
+    if show is not None: plt.show(block=show)
 
 
 def plot_stim_encoding(Y_TSy,Y_TSye,evtlabs,fs):
