@@ -581,7 +581,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
 
 
     def cv_fit(self, X, y, cv:int=5, fs=None, fit_params:dict=dict(), verbose:bool=0, return_estimator:bool=True, 
-               calibrate_softmax:bool=True, retrain_on_all:bool=True, score=None):
+               calibrate_softmax:bool=True, retrain_on_all:bool=True, score_fn=None):
         """Cross-validated fit the model for generalization performance estimation
 
         N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.
@@ -632,22 +632,21 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             
             val = None
             try:
-                if score is None: # just call our score function
+                if score_fn is None: # just call our score function
                     val = self.score(X_TSd[valid_idx,...], Y_TSy[valid_idx,...], Fy=Fyi_TSy)
-                elif score == 'audc':
+                elif score_fn == 'audc':
                     val = self.audc_score(Fyi_TSy)
-                elif score=='gof': # goodness of fit
+                elif score_fn=='gof': # goodness of fit
                     val = self.gof_score(X_TSd[valid_idx,...], Y_TSy[valid_idx,...])
-                elif callable(score): # given score function
-                    val = score(X_TSd[valid_idx,...],Y_TSy[valid_idx,...])
-                elif isinstance(score,'str'):
-                    if hasattr(self,score):
-                        val = getattr(self,score)(self, X_TSd[valid_idx,...],Y_TSy[valid_idx,...])
+                elif callable(score_fn): # given score function
+                    val = score_fn(X_TSd[valid_idx,...],Y_TSy[valid_idx,...])
+                elif isinstance(score_fn,'str'):
+                    if hasattr(self,score_fn):
+                        val = getattr(self,score_fn)(self, X_TSd[valid_idx,...],Y_TSy[valid_idx,...])
                     else:
                         # try to get a function in our name-space with this name
-                        score = locals().get(score,score)
-                        if not callable(score): score = globals().get(score,score)
-                        val = score(X_TSd[valid_idx,...],Y_TSy[valid_idx,...],self.W_, self.R_, self.b_)
+                        score_fn = locals().get(score_fn,score_fn) or globals().get(score_fn,score_fn) or score_fn
+                        val = score_fn(X_TSd[valid_idx,...],Y_TSy[valid_idx,...],self.W_, self.R_, self.b_)
             except:
                 val = None
             scores.append(val)
@@ -1248,7 +1247,7 @@ class MultiCCACV(MultiCCA):
         return Cxxs, Cyxs, Cyys
 
 
-    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0,  score_type:str='audc',
+    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0,  score_fn:str='audc',
                return_estimator:bool=True, calibrate_softmax:bool=True, retrain_on_all:bool=True, ranks=None, fit_params:dict=None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None: cv= self.inner_cv_params
@@ -1322,7 +1321,7 @@ class MultiCCACV(MultiCCA):
                         Fy_cv = np.zeros((len(fit_configs),len(ranks),Y.shape[0])+Fyi.shape[1:], dtype=np.float32)
                     Fy_cv[ci,ri,valid_idx,...,:Fyi.shape[-1]]=Fyi[...,:Fy_cv.shape[-1]]
 
-                    if score_type=='corr':
+                    if score_fn=='corr':
                         Cxxval, Cyxval, Cyyval = [ np.sum(C[valid_idx],0) for C in (Cxxs, Cyxs, Cyys)]
                         score_y, _ = corr_cov(Cxxval, Cyxval, Cyyval, self.W_, self.R_)
                         score = score_y[0] # strip silly y dim
@@ -1574,7 +1573,7 @@ class FwdLinearRegressionCV(FwdLinearRegression):
         return self
 
 
-    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0,
+    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0, score_fn:str=None,
                return_estimator:bool=True, calibrate_softmax:bool=True, retrain_on_all:bool=True, fit_params:dict=None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None: cv= self.inner_cv_params
@@ -1828,7 +1827,7 @@ class BwdLinearRegressionCV(BwdLinearRegression):
         return self
 
 
-    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0,
+    def cv_fit(self, X, Y, cv=None, fs=None, verbose:bool=0, score_fn:str=None,
                return_estimator:bool=True, calibrate_softmax:bool=True, retrain_on_all:bool=True, fit_params:dict=None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None: cv= self.inner_cv_params

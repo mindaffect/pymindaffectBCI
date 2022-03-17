@@ -30,17 +30,25 @@ from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
 from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
-dataroot = '~/data/bci'
+dataroots = ['~/data/bci',
+            'G://Shared drives/Data/experiments',
+            '/content/drive/Shareddrives/Data',
+            '/home/shared/drive/',
+            'D://',
+            '.'
+            ]
+
+def add_dataroot(dataroot):
+    global dataroots
+    dataroots.append(dataroot)
+
+def set_dataroot(dataroot):
+    global dataroots
+    dataroots = [dataroot] if isinstance(dataroot,str) else dataroot
+
 def get_dataroot(dataroots=None):
-    global dataroot
     if dataroots is None:
-        dataroots = ['~/data/bci',
-                    'G://Shared drives/Data/experiments',
-                    '/content/drive/Shareddrives/Data',
-                     '/home/shared/drive/',
-                    'D://',
-                    '.'
-                    ]
+        dataroots = globals().get('dataroots')
     if dataroots is not None:
         # check whith dataroots are available
         for dr in dataroots:
@@ -49,16 +57,16 @@ def get_dataroot(dataroots=None):
                 break
     return dataroot
 
-
-def load_plos_one(datadir, **kwargs):
-    plos_ch_names = ['Fp1',
-        'AF7','AF3','F1','F3','F5','F7','FT7','FC5','FC3','FC1','C1','C3','C5',
-        'T7','TP7','CP5','CP3','CP1','P1','P3','P5','P7',
-        'P9','PO7','PO3','O1','Iz','Oz','POz','Pz','CPz','Fpz','Fp2','AF8','AF4','AFz',
-        'Fz','F2','F4','F6','F8','FT8','FC6','FC4','FC2','FCz',
-        'Cz','C2','C4','C6','T8','TP8','CP6','CP4','CP2','P2','P4','P6','P8','P10','PO8','PO4','O2']
-    fs_out=180
-    return load_brainstream(datadir, ch_names=plos_ch_names, fs_out=fs_out, **kwargs)
+def load_plos_one(datadir, ch_names=None, fs_out=None, **kwargs):
+    if ch_names is None:
+        ch_names = ['Fp1',
+            'AF7','AF3','F1','F3','F5','F7','FT7','FC5','FC3','FC1','C1','C3','C5',
+            'T7','TP7','CP5','CP3','CP1','P1','P3','P5','P7',
+            'P9','PO7','PO3','O1','Iz','Oz','POz','Pz','CPz','Fpz','Fp2','AF8','AF4','AFz',
+            'Fz','F2','F4','F6','F8','FT8','FC6','FC4','FC2','FCz',
+            'Cz','C2','C4','C6','T8','TP8','CP6','CP4','CP2','P2','P4','P6','P8','P10','PO8','PO4','O2']
+    if fs_out is None: fs_out=180
+    return load_brainstream(datadir, ch_names=ch_names, fs_out=fs_out, **kwargs)
 
 def plos_one():
     '''generate the directory+filename info for the plos_one noisetagging dataset'''
