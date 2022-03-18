@@ -247,7 +247,7 @@ class ElectrodeQualityWindow(Window):
                     # Draw the vertices:
                     buffer_length = len(dataringbuffer)
                     vertex_list = [[] for i in range(self.nch)]
-                    colors = ['red', 'green', 'blue', 'yellow']
+                    colors = [(255,0,0), (0,255,0), (0,0,255), (128,128,0)]
 
                     # Calculate the coordinates for each vertex in our graph:
                     for i, t in enumerate(dataringbuffer):
@@ -262,7 +262,10 @@ class ElectrodeQualityWindow(Window):
                     # Draw all the graphs using the vertex lists:
                     for i, vertices in enumerate(vertex_list):
                         graph = self.facade.create_line(vertices, colors[i % 4])
-                        graph.draw()
+                        if hasattr(graph,'draw') :
+                            graph.draw()
+                        else:
+                            for g in graph: g.draw()
 
     # end of inherited functions
     def reset(self):

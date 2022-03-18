@@ -1,0 +1,6 @@
+{
+    "logdir":"~/Desktop/logs",
+    "acquisition":"fakedata",
+    "decoder":"none",
+    "presentation":"sigViewer"
+}

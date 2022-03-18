@@ -171,6 +171,7 @@ class CuedPredictionWindow(Window):
         self.current_phase = self.phase_links[self.current_phase]
 
         if self.current_phase == "end":
+            self.noisetag.modeChange("idle")
             # Reset the phase for next time cued prediction is required:
             if self.use_flickering:
                 self.current_phase = "instruction"

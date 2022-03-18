@@ -294,9 +294,11 @@ class PygletFacade(FrameworkFacade):
 
         """
         vertices = [(self.convert_pos(v)) for v in vertices]
-        line = shapes.Line(vertices[0][0],vertices[0][1],vertices[1][0],vertices[1][1],
-                            color=self.convert_color(color))
-        line.visible = False
+        line=[]
+        for vi in range(len(vertices)-1):
+            x,y,x2,y2 = *vertices[vi], *vertices[vi+1]
+            line.append(shapes.Line(x,y,x2,y2,color=self.convert_color(color)))#,batch=self.batch)
+        #line.visible = False
         return line
 
     def set_text(self, text_object, new_text):

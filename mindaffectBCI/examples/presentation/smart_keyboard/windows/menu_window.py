@@ -106,6 +106,7 @@ class MenuWindow(Window):
         
         self.active_window = "GeneralMenu"
         self.switched_windows = False
+        self.use_flickering = use_flickering
 
         self.keys = self.build_navigation_bar(menu_config["Navigation_bar"])
 
@@ -119,7 +120,8 @@ class MenuWindow(Window):
             key.toggle_render(True)
         self.windows[self.active_window].activate()
         self.facade.toggle_image_render(self.logo, True)
-        
+        if not self.use_flickering:
+            self.noisetag.modeChange("idle")
 
     def deactivate(self):
         """Deactivates all visual and functional elements of this Window."""

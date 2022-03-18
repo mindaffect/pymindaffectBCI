@@ -916,7 +916,11 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, preproc
         pass
     else:
         if clsfr is None:  clsfr='cca'
-        clsfr = init_clsfr(clsfr, tau_ms=tau_ms, evtlabs=evtlabs, fs=ui.fs, offset_ms=offset_ms, prediction_offsets=prediction_offsets, **clsfr_args)
+        if tau_ms: clsfr_args['tau_ms']=tau_ms
+        if offset_ms: clsfr_args['offset_ms']=offset_ms
+        if evtlabs: clsfr_args['evtlabs']=evtlabs
+        if prediction_offsets: clsfr_args['prediction_offsets']=prediction_offsets
+        clsfr = init_clsfr(clsfr, fs=ui.fs, **clsfr_args)
     print('clsfr={}'.format(clsfr))
 
     if not preprocessor is None:
