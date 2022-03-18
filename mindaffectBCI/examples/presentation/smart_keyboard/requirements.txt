@@ -1,0 +1,8 @@
+pyttsx3>=2.5
+gTTS
+playsound>=1.2.2
+google-cloud-texttospeech
+symspellpy>=6.7.0
+psychopy>=2020.1.0
+opencv-python>=4.4.0.46
+mindaffectBCI

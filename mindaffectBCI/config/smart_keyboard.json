@@ -26,7 +26,7 @@
     },
 
     
-    "presentation":"smart_keyboard.bci_keyboard",
+    "presentation":"mindaffectBCI.examples.presentation.smart_keyboard.bci_keyboard",
     "presentation_args":{
         "ncal":10,
         "npred":10,
