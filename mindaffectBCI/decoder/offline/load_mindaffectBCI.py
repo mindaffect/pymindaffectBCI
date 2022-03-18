@@ -54,7 +54,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
 
     # pre-process: spectral filter + downsample
     # add anti-aliasing filter
-    if fs_out < fs:
+    if fs_out is not None and fs_out < fs:
         if filterband is None:
             filterband = []
         elif not hasattr(filterband[0],'__iter__'):

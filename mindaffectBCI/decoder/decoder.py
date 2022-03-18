@@ -847,7 +847,6 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, preproc
     Args:
         ui (UtopiaDataInterface, optional): The utopia data interface class. Defaults to None.
         clsfr (BaseSequence2Sequence, optional): the classifer to use when model fitting. Defaults to None.
-        preprocessor (Modifier|Transformer|str, optional): additional preprocessor to apply to the data+targets before calling the classifier.  Defaults to None.
         msg_timeout_ms (float, optional): timeout for getting new messages from the data-interface. Defaults to 100.
         host (str, optional): hostname for the utopia hub. Defaults to None.
         tau_ms (float, optional): length of the stimulus response. Defaults to 400.
@@ -912,20 +911,16 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, preproc
     # log the config
     ui.sendMessage(Log(-1,configmsg))
 
-    if not preprocessor is None:
-        preprocessor = make_preprocess_pipeline(preprocessor)
-
     # use a multi-cca for the model-fitting
     if isinstance(clsfr,BaseSequence2Sequence):
         pass
     else:
         if clsfr is None:  clsfr='cca'
-        if tau_ms: clsfr_args['tau_ms']=tau_ms
-        if offset_ms: clsfr_args['offset_ms']=offset_ms
-        if evtlabs: clsfr_args['evtlabs']=evtlabs
-        if prediction_offsets: clsfr_args['prediction_offsets']=prediction_offsets
-        clsfr = init_clsfr(clsfr, fs=ui.fs, **clsfr_args)
+        clsfr = init_clsfr(clsfr, tau_ms=tau_ms, evtlabs=evtlabs, fs=ui.fs, offset_ms=offset_ms, prediction_offsets=prediction_offsets, **clsfr_args)
     print('clsfr={}'.format(clsfr))
+
+    if not preprocessor is None:
+        preprocessor = make_preprocess_pipeline(preprocessor)
 
     # pre-train the model if the prior_dataset is given
     if prior_dataset is not None:

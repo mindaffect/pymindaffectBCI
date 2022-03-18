@@ -103,7 +103,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
         s2estate = etype
         # extract the stimulus modifier
         modifier = None
-        for mod in ('nt','any','onset','offset','first','last'):
+        for mod in ('nt','any','first','last'):
             if isinstance(etype,str) and etype.startswith(mod):
                 modifier = mod
                 etype = etype[len(mod):]
@@ -188,14 +188,14 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
                               equals_subarray(M, (b,a), axis))
 
         elif etype.startswith("re") or etype in ("onset",):
-            if len(etype)>2:
+            if etype.startswith("re") and len(etype)>2:
                 val = [float(e) for e in etype[2:].split(',')]
                 F, s2estate, elab = riseto(M, val, axis, oM, etype)
             else:
                 F, s2estate, elab = re(M, axis, oM, etype)
 
         elif etype.startswith("fe") or etype in ("offset",):
-            if len(etype)>2:
+            if etype.startswith("fe") and len(etype)>2:
                 val = [float(e) for e in etype[2:].split(',')]
                 F, s2estate, elab = fallfrom(M, val, axis, oM, etype)
             else:
@@ -286,7 +286,7 @@ def re(M,axis,oM=None,etype=None):
     tmp = np.diff(M, axis=axis, prepend=0) > 0
     F = np.zeros(M.shape,dtype=M.dtype)
     F[tmp]=M[tmp] # non-zero at new larger value, but retain the old value
-    return F, 're', None
+    return F, etype, None
 
 def fe(M,axis,oM=None,etype=None,val=None):
     """transform stim sequence to falling edge events, which are true when the stimulus level decreases
@@ -303,7 +303,7 @@ def fe(M,axis,oM=None,etype=None,val=None):
     tmp = np.diff(M, axis=axis, append=0) < 0
     F = np.zeros(M.shape,dtype=M.dtype)
     F[tmp]=M[tmp] # non-zero at old bigger value
-    return F, 'fe', None
+    return F, etype, None
 
 def riseto(M,val,axis,oM=None,etype=None):
     """transform stim sequence to rising edge to a given (set of) value, which are true when the stimulus level increases
