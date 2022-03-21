@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,195 +31,38 @@ import numpy as np
 import math
 import random as rnd
 
-
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-
-
-class CheckerboardGridScreen(selectionMatrix.SelectionGridScreen):
-    """variant of SelectionGridScreen which uses a checkerboard behind each target
-    """  
-    def __init__(self, window, noisetag, symbols=None, nchecks:int=3, **kwargs):
-        self.nchecks = nchecks if hasattr(nchecks,'__iter__') else (nchecks,nchecks)
-        super().__init__(window,noisetag,symbols=symbols,**kwargs)
-
-    # mapping from bci-stimulus-states to display color
-    state2color={0:(5, 5, 5, 0),     # off=invisible
-                 1:(160, 160, 160),  # on=white
-                 2:(96, 96, 96),     # invert
-                 254:(0,255,0),      # cue=green
-                 255:(0,0,255),      # feedback=blue
-                 None:(100,0,0)}     # red(ish)=task     
-    def init_target(self, symb, x, y, w, h, i, j, font_size:int=None):
-        # make the background
-        bg = Checkerboard(x,y,w,h,nx=self.nchecks[0],ny=self.nchecks[1],batch=self.batch,group=self.background)
-        # make the label
-        label= self.init_label(symb,x,y,w,h,font_size)
-        return bg, label
-
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-
-
-
-class CheckerboardStackScreen(CheckerboardGridScreen):
-    """variant of SelectionGridScreen uses a stack of checkerboards
-    """  
-    def __init__(self, window, noisetag, symbols=None, artificial_deficit_id=None, scale_to_fit:bool=True, color_labels:bool=True, stimulus_weight=None, **kwargs):
-        self.scale_to_fit, self.color_labels, self.artificial_deficit_id, self.stimulus_weight, self.prev_stimulus_state = \
-            (scale_to_fit, color_labels, artificial_deficit_id, stimulus_weight, None)
-        super().__init__(window,noisetag,symbols=symbols,**kwargs)
-
-    def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
-        """setup the display for the given symbols set
-
-        Args:
-            symbols ([type]): the symbols to show, inside the given display box
-            x (float): left-side of the display box
-            y (float): right-side of the display box
-            w (float): width of the display box
-            h (float): height of the display box
-            bgFraction (float, optional): fraction of empty space between objects. Defaults to .1.
-            font_size (int, optional): label font size. Defaults to None.
-        """        
-        x =  x + bgFraction*w/2
-        y =  y + bgFraction*h/2
-        w =  w - bgFraction*w
-        h =  h - bgFraction*h
-        # now create the display objects
-        idx=-1
-        for i in range(len(symbols)): # rows	 
-            for j in range(len(symbols[i])): # cols
-                if symbols[i][j] is None or symbols[i][j]=="": continue
-                idx = idx+1
-                symb = symbols[i][j]
-                self.objects[idx], self.labels[idx] = self.init_target(symb, 
-                                                       x, y, 
-                                                       w, h,
-                                                       i, j,
-                                                       font_size=font_size)
-
-    def init_target(self, symb, x, y, w, h, i, j, font_size:int=None):
-        if isinstance(symb,str): symb=symb.split("|")
-        lab=symb.pop(0)
-        nx, ny = (symb[0],1) if len(symb)==1 else symb[:2] 
-        # make the background
-        bg = Checkerboard(x,y,w,h,nx=int(nx),ny=int(ny),batch=self.batch,group=self.background)
-        # make the label
-        label= self.init_label(lab,x,y,w,h,font_size)
-        return bg, label
-
-
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-
-
-class SelectionWheelScreen(selectionMatrix.SelectionGridScreen):
-    """variant of SelectionGridScreen lays the grid out on a series of concentric rings
-    """  
-
-    def __init__(self, window, noisetag, symbols=None, ring_radii=None, ischeckerboard:bool=False, **kwargs):
-        self.ring_radii, self.ischeckerboard = ring_radii, ischeckerboard
-        super().__init__(window,noisetag,symbols=symbols,**kwargs)
-
-    # mapping from bci-stimulus-states to display color
-    state2color={0:(5, 5, 5, 0),     # off=invisible
-                 1:(160, 160, 160),  # on=white
-                 2:(96, 96, 96),     # invert
-                 254:(0,255,0),      # cue=green
-                 255:(0,0,255),      # feedback=blue
-                 None:(100,0,0)}     # red(ish)=task     
-    def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
-        """setup the display for the given symbols set
-
-        Args:
-            symbols ([type]): the symbols to show, inside the given display box
-            x (float): left-side of the display box
-            y (float): right-side of the display box
-            w (float): width of the display box
-            h (float): height of the display box
-            bgFraction (float, optional): fraction of empty space between objects. Defaults to .1.
-            font_size (int, optional): label font size. Defaults to None.
-        """        
-
-        # TODO: Include a background fraction
-        cx, cy = ( (x+w)/2, (y+h)/2 )
-        nrings = len(symbols)
-
-        # equally spaced rings
-        if self.ring_radii is None:
-            ringradius = min(w,h)/(nrings+1)/2
-            ring_radii = [(i+1)*ringradius for i in range(nrings+1)]
-        else:
-            # use the given ring radii
-            ring_radii = [ r*min(w,h)/2 for r in self.ring_radii ]
-
-
-        # now create the display objects
-        idx=-1
-        for i in range(len(symbols)): # radius
-            dr = ring_radii[i+1]-ring_radii[i]
-            radius = ring_radii[i]
-            dtheta = math.pi*2 / max(1,len(symbols[i]))
-            for j in range(len(symbols[i])): # theta
-                if symbols[i][j] is None or symbols[i][j]=="": continue
-                theta = j * dtheta
-                idx = idx+1
-                symb = symbols[i][j]
-                self.objects[idx], self.labels[idx] = self.init_target(symb, 
-                                                       cx, cy, 
-                                                       theta + bgFraction * dtheta/2, 
-                                                       radius + bgFraction * dr/2, 
-                                                       dtheta - bgFraction * dtheta/2, 
-                                                       dr - bgFraction * dr/2,
-                                                       font_size=font_size)
-
-    def init_target(self, symb, cx, cy, theta, radius, dtheta, dr, font_size:int=None):
-        # make the background
-        if self.ischeckerboard:
-            nx, ny = (3,3) if self.ischeckerboard == True else (self.ischeckerboard,self.ischeckerboard)
-            seg = CheckerboardSegment(cx,cy,theta,radius,dtheta,dr,nx=nx,ny=ny,batch=self.batch,group=self.foreground)
-        else:
-            seg = PieSegment(cx,cy,theta,radius,dtheta,dr,batch=self.batch,group=self.foreground)
-
-        # make the label
-        centx, centy = polar2cart(cx,cy,theta+dtheta/2, radius+dr/2)
-        lb, tr = (polar2cart(cx,cy,theta,radius), polar2cart(cx,cy,theta+dtheta,radius+dr))
-        w = max(abs(lb[0]-tr[0]), abs(lb[1]-tr[1]))
-        label= self.init_label(symb,centx-w/2,centy-w/2,w,w,font_size)
-
-        return seg, label
-
-    # def draw(self,t):
-    #     super().draw(t)
-        # self.window.clear()
-        # for o in self.objects:
-        #     o.draw()
-        #     pass
-
-
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-#-------------------------------------------------------------------------------
-class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
-    """variant of SelectionGridScreen which changes the background image on 'flash' rather than luminosity
-    """  
-
+class ImageFlashScreen(SelectionGridScreen):
     def __init__(self, window, noisetag, symbols=None, scale_to_fit:bool=True, color_labels:bool=True, **kwargs):
+        """variant of SelectionGridScreen which changes the background image on 'flash' rather than luminosity
+
+        Args:
+            window (_type_): the window the show the display in 
+            noisetag (_type_): the noisetag object to communicate with the EEG/BCI system
+            symbols (list-of-lists, optional): the grid layout, as a list of lists for rows/cols. Defaults to None.
+            scale_to_fit (bool,optional): scale the image to fix the size of the target.  Defaults to True.
+            color_labels (bool, optional): if true, then color the label as well as the background on state change.
+            ischeckerboard (bool, optional): _description_. Defaults to False.
+        """        
         self.scale_to_fit = scale_to_fit
         self.color_labels = color_labels
         super().__init__(window,noisetag,symbols=symbols,**kwargs)
 
     def init_target(self, symb, x, y, w, h, i, j, font_size:int=None):
+        """create a display sector target (i.e. pie wedge)
+
+        Args:
+            symb (str): the filename of the image to show as the background for this target
+            x,y,w,h (float): bounding box for the target
+            i,j (float): position of the target in the symbols grid, i.e. row + col
+            font_size (int, optional): size of the font to use for the sector label. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         # make list of sprites for the different state-dependent images
         symbs = symb.split("|")
         sprite = [self.init_sprite(symb,x,y,w,h,scale_to_fit=self.scale_to_fit)[0] for symb in symbs]
@@ -231,6 +74,14 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
         return sprite, label
 
     def update_object_state(self, idx:int, state):
+        """ update the state of an stimulus object given it's index and the new state
+
+        Here, the state is used to select which background image to show for this target.
+
+        Args:
+            idx (int): idx of the stimulus object to update in the symbols set
+            state (int): the new state for this stimulus object
+        """
         if self.objects[idx]:
             # turn all sprites off, non-colored
             for sprite in self.objects[idx]:
@@ -238,6 +89,7 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
             img_idx = state if len(self.objects[idx])>1 and state<len(self.objects[idx]) else 0
             self.objects[idx][img_idx].visible = True
             #self.objects[idx][img_idx].color = self.state2color[state]
+
         if self.labels[idx]:
             col = self.state2color.get(state,(255,255,255,255)) if self.color_labels else (255,255,255,255)
             self.labels[idx].color=  col if len(col)==4 else col+(255,) #(255,255,255,255) # reset labels
@@ -247,17 +99,21 @@ class ImageFlashScreen(selectionMatrix.SelectionGridScreen):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-class ImageStackScreen(selectionMatrix.SelectionGridScreen):
-    """variant of SelectionGridScreen which changes the background image on 'flash' rather than luminosity
-    """  
-    def __init__(self, window, noisetag, symbols=None, artificial_deficit_id=None, scale_to_fit:bool=True, color_labels:bool=True, stimulus_weight=None, **kwargs):
-        self.scale_to_fit, self.color_labels, self.artificial_deficit_id, self.stimulus_weight, self.prev_stimulus_state = \
-            (scale_to_fit, color_labels, artificial_deficit_id, stimulus_weight, None)
+class ImageStackScreen(SelectionGridScreen):
+    def __init__(self, window, noisetag, symbols=None, scale_to_fit:bool=True, color_labels:bool=True, **kwargs):
+        """variant of SelectionGridScreen which has a 'stack' of images *on top of each other* rather than a 'grid' of options.
+        i.e. in this screen all elements in the selection take the full grid display width.
+
+        Args:
+            window (_type_): the window the show the display in 
+            noisetag (_type_): the noisetag object to communicate with the EEG/BCI system
+            symbols (list-of-lists, optional): the grid layout, as a list of lists for rows/cols. Defaults to None.
+            scale_to_fit (bool,optional): scale the image to fix the size of the target.  Defaults to True.
+            color_labels (bool, optional): if true, then color the label as well as the background on state change.
+            ischeckerboard (bool, optional): _description_. Defaults to False.
+        """        
+        self.scale_to_fit, self.color_labels = scale_to_fit, color_labels
         super().__init__(window,noisetag,symbols=symbols,**kwargs)
-        self.vectorX = 0
-        self.vectorY = 0
-        self.finalX=0
-        self.finalY=0
 
     def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
         """setup the display for the given symbols set
@@ -286,7 +142,18 @@ class ImageStackScreen(selectionMatrix.SelectionGridScreen):
 
 
     def init_target(self, symb, x, y, w, h, i, j, font_size:int=None):
-        # make list of sprites for the different state-dependent images
+        """create a display sector target
+        In this case, we make a stack of images from the symbols as a file-name all with the full size of the grid region
+
+        Args:
+            symb (str): the filename of the image(s) to show as the background for this target.  Multiple images are given separated with '|' characters, e.g. 'duck.png|cat.png'.  When multiple images are given then the 1 image will be shown in state '1', and the 2nd in state '2' etc.
+            x,y,w,h (float): bounding box for the target
+            i,j (float): position of the target in the symbols grid, i.e. row + col
+            font_size (int, optional): size of the font to use for the sector label. Defaults to None.
+
+        Returns:
+            _type_: _description_
+        """
         symbs = symb.split("|")
         sprite = [self.init_sprite(symb,x,y,w,h,scale_to_fit=self.scale_to_fit)[0] for symb in symbs]
 
@@ -297,6 +164,16 @@ class ImageStackScreen(selectionMatrix.SelectionGridScreen):
         return sprite, label
 
     def update_object_state(self, idx:int, state):
+        """ update the state of an stimulus object given it's index and the new state
+
+        Here, the state is used to select which background image to show for this target.
+
+        Note: this varient has been modifed to *not* update the 'artificial deficit' entries..
+
+        Args:
+            idx (int): idx of the stimulus object to update in the symbols set
+            state (int): the new state for this stimulus object
+        """
         if self.objects[idx]:
             # turn all sprites off, non-colored
             for sprite in self.objects[idx]:
@@ -328,7 +205,31 @@ class ImageStackScreen(selectionMatrix.SelectionGridScreen):
     #     super().draw(t)
 
 
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 class ImageStackScreenMovingFixation(ImageStackScreen):
+    def __init__(self, window, noisetag, symbols=None, artificial_deficit_id=None, scale_to_fit:bool=True, color_labels:bool=True, stimulus_weight=None, **kwargs):
+        self.scale_to_fit, self.color_labels, self.artificial_deficit_id, self.stimulus_weight, self.prev_stimulus_state = \
+            (scale_to_fit, color_labels, artificial_deficit_id, stimulus_weight, None)
+        """variant of the ImageStackScreen which in addition moves the fixation point around during display
+
+        Args:
+            window (_type_): the window the show the display in 
+            noisetag (_type_): the noisetag object to communicate with the EEG/BCI system
+            symbols (list-of-lists, optional): the grid layout, as a list of lists for rows/cols. Defaults to None.
+            scale_to_fit (bool,optional): scale the image to fix the size of the target.  Defaults to True.
+            color_labels (bool, optional): if true, then color the label as well as the background on state change.
+            ischeckerboard (bool, optional): _description_. Defaults to False.
+        """        
+        super().__init__(window,noisetag,symbols=symbols,**kwargs)
+        self.vectorX = 0
+        self.vectorY = 0
+        self.finalX=0
+        self.finalY=0
+
         def do_draw(self, speed = 0.1):
             stimulus_state, target_idx, objIDs, sendEvents=self.noisetag.getStimulusState()
             winw, winh=self.window.get_size()

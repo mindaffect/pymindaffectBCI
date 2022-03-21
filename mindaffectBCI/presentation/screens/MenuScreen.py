@@ -1,3 +1,24 @@
+#!/usr/bin/env python3
+#  Copyright (c) 2019 MindAffect B.V. 
+#  Author: Jason Farquhar <jadref@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 from mindaffectBCI.presentation.screens.basic_screens import InstructionScreen
 
 #-----------------------------------------------------------------
@@ -38,8 +59,8 @@ class MenuScreen(InstructionScreen):
             self.window.last_key_press = lines[::-1][li][0]
 
     def draw(self,t):
-        self.handle_mouse_events()
         super().draw(t)
+        self.handle_mouse_events()
 
     def is_done(self):
         # check termination conditions

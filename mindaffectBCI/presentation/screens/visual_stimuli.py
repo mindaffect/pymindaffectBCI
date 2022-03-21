@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,11 @@ class TriangleStrip:
     
     @color.setter
     def color(self,col):
+        """set the color of the object
+
+        Args:
+            col (_type_): _description_
+        """        
         if not(hasattr(col,'__iter__')): col=(col,)*4
         elif len(col)==1 : col = col*4
         elif len(col)==3 : col = col + (255,)
@@ -74,10 +79,19 @@ class TriangleStrip:
     
     @visible.setter
     def visible(self,visible):
+        """set the visibility status of the object.
+        Note: currently not working correctly!
+
+        Args:
+            visible (_type_): _description_
+        """        
         self._visible = visible
         self.color = self._color
 
     def draw(self):
+        """manually draw the strip to the screen.
+        Note: you should *never* need to do this, if you add the object to a drawing batch...
+        """        
         N=len(self.vertices)//2
         pyglet.graphics.draw(N,pyglet.gl.GL_TRIANGLE_STRIP,
                             ('v2f',self.vertices),
@@ -93,11 +107,18 @@ class TriangleStrip:
 
 class Rectangle(TriangleStrip):
     def __init__(self,x,y,w,h,color=(255,255,255),batch=None, group=None):
+        """object to show a simple Rectangle on the screen
+
+        Args:
+            vertices (list-of-tuples-of-float): list of (x,y) vertices for this strip
+            color (list-of-int): rgba float base color for this quad
+            batch, group : pyglet drawing batch and group
+        """
         vertices = self.get_vertices(x,y,w,h)
         super().__init__(vertices,color,batch,group)
 
     def get_vertices(self,x,y,w,h):
-        """make a rectangle
+        """get the vertices needed to make a rectangle
 
         Args:
             x (float): starting x, relative to straight up
@@ -108,7 +129,6 @@ class Rectangle(TriangleStrip):
         #           lb   +    lt   +    rb   +    rt
         vertices = [x,y] + [x,y+h] + [x+w,y] + [x+w,y+h]
         return vertices
-
 
 
 #-------------------------------------------------------------------------------
@@ -123,7 +143,7 @@ class PieSegment(TriangleStrip):
         super().__init__(vertices,color,batch,group)
 
     def get_vertices(self,cx,cy,theta,radius,w,h,n):
-        """make a pie-segment, or wedge depending or square
+        """get the vertices needed to make a pie-segment, or wedge
 
         Args:
             theta (float): starting angle, relative to straight up
@@ -153,18 +173,28 @@ def invert_color(col, ave_color=(127,127,127)):
 
 class Checkerboard:
     def __init__(self,x,y,w,h, n=1, nx=5, ny=5, color=(255,255,255),ave_color=(127,127,127),visible:bool=True,batch=None, group=None):
+        """make a checkerboard object, with nx rows and ny cols of alternating color, like a chess board
+
+        Args:
+            x,y,w,h (float): the bounding box for the checkerboard
+            n (int, optional): _description_. Defaults to 1.
+            nx (int, optional): the number of horizontial bands. Defaults to 5.
+            ny (int, optional): the number of vertical bands. Defaults to 5.
+            color (tuple, optional): the *base* color of the checks, used for the 'white' checks. Defaults to (255,255,255).
+            ave_color (tuple, optional): the average color of the checks, used to compute the 'black' checks as : black = ave + (white-ave). Defaults to (127,127,127).
+            visible (bool, optional): the initial visibility status of this checkerboard. Defaults to True.
+            batch (_type_, optional): graphics batch for this check. Defaults to None.
+            group (_type_, optional): graphics group for this check. Defaults to None.
+        """        
         self.ave_color = ave_color
         self._color, self._visible = (color, visible)
         self.make_squares(x,y,w,h,color,nx,ny,batch=batch,group=group)
 
     def make_squares(self,x,y,w,h,color,nx=3,ny=3,batch=None,group=None):
-        """make a checkboard
+        """make a checkboard of squares
 
         Args:
-            x (float): starting horziontal coord
-            y (float): starting vertical coord
-            w (float): segment angular width (so theta -> theta+w)
-            h (float): segment radial width (so radius -> radisu+h)
+            x,y,w,h (float): the bounding box for the checkerboard
             nx (int): nx>=0 - number of checks in the block, nx<= size in pixels of one-band. Default to 3
             ny (int): ny>=0 - number of check in the block, ny<=0 size in pixels of one check. Default to 3
             batch (): batch to add this checkerboard to
@@ -195,6 +225,11 @@ class Checkerboard:
     
     @color.setter
     def color(self,color):
+        """set the color of the checkerboard.  
+
+        Args:
+            color ((3/4-tuple)): This is the 'white' cell color, the 'black' cells have the appropriate inverse color.
+        """        
         self._color = color if len(color)==4 else color+(255,)
         for i,row in enumerate(self.checkerboard):
             for j,seg in enumerate(row):
@@ -213,8 +248,10 @@ class Checkerboard:
         self._visible = visible
         self.color = self._color
 
-
     def draw(self):
+        """manually draw the strip to the screen.
+        Note: you should *never* need to do this, if you add the object to a drawing batch...
+        """        
         for row in self.checkerboard:
             for seg in row:
                 seg.draw()
@@ -227,6 +264,20 @@ class Checkerboard:
 
 class CheckerboardSegment:
     def __init__(self,cx,cy,theta,radius,w,h, n=1, nx=3, ny=3, color=(255,255,255),ave_color=(127,127,127),visible:bool=True,batch=None, group=None):
+        """make a checkeboard type Pie-Segment or Wedge
+        Args:
+            cx,cy (float): the center of the circle which defines the 'pie'
+            theta (float): starting angle, relative to straight up
+            radius (float): starting radius, relative to cx,cy
+            n (int, optional): _description_. Defaults to 1.
+            nx (int, optional): the number of horizontial bands. Defaults to 5.
+            ny (int, optional): the number of vertical bands. Defaults to 5.
+            color (tuple, optional): the *base* color of the checks, used for the 'white' checks. Defaults to (255,255,255).
+            ave_color (tuple, optional): the average color of the checks, used to compute the 'black' checks as : black = ave + (white-ave). Defaults to (127,127,127).
+            visible (bool, optional): the initial visibility status of this checkerboard. Defaults to True.
+            batch (_type_, optional): graphics batch for this check. Defaults to None.
+            group (_type_, optional): graphics group for this check. Defaults to None.
+        """        
         self.ave_color = ave_color
         self._color, self._visible = (color, visible)
         self.make_squares(cx,cy,theta,radius,w,h,color,n,nx,ny,batch=batch,group=group)
@@ -235,6 +286,7 @@ class CheckerboardSegment:
         """make a pie-segment checkboard
 
         Args:
+            cx,cy (float): the center of the circle which defines the 'pie'
             theta (float): starting angle, relative to straight up
             radius (float): starting radius, relative to cx,cy
             w (float): segment angular width (so theta -> theta+w)
@@ -271,9 +323,10 @@ class CheckerboardSegment:
 
 
     def make_bullseye(self,cx,cy,theta,radius,w,h,color,n=1,nx=3,ny=3,batch=None,group=None):
-        """make a pie-segment checkboard
+        """make a pie-segment for the center, i.e. starting at radius = 0
 
         Args:
+            cx,cy (float): the center of the circle which defines the 'pie'
             theta (float): starting angle, relative to straight up
             radius (float): starting radius, relative to cx,cy
             w (float): segment angular width (so theta -> theta+w)

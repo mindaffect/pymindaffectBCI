@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #  Copyright (c) 2019 MindAffect B.V.
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import PredictedTargetDist
-import mindaffectBCI.presentation.selectionMatrix as selectionMatrix
-from mindaffectBCI.examples.presentation.sound_flash_psypy import SoundFlash
-#from mindaffectBCI.examples.presentation.sound_flash import SoundFlash
-from mindaffectBCI.examples.presentation.image_flash import Checkerboard
+from mindaffectBCI.presentation.screens.SelectionGridScreen import SelectionGridScreen
+from mindaffectBCI.presentation.screens.sound_flash_psypy import SoundFlash
+#from mindaffectBCI.presentation.sound_flash import SoundFlash
+from mindaffectBCI.presentation.screens.image_flash import Checkerboard
 from mindaffectBCI.decoder.utils import intstr2intkey
 
 # -------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ from mindaffectBCI.decoder.utils import intstr2intkey
 # -------------------------------------------------------------------------------
 
 
-class SoundOrCheckerboardStackScreen(selectionMatrix.SelectionGridScreen):
+class SoundOrCheckerboardStackScreen(SelectionGridScreen):
     """variant of SelectionGridScreen which plays a sound dependent on the object id and it's current state
     """
 
