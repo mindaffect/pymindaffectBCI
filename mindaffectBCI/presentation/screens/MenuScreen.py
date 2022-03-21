@@ -38,8 +38,8 @@ class MenuScreen(InstructionScreen):
             self.window.last_key_press = lines[::-1][li][0]
 
     def draw(self,t):
-        super().draw(t)
         self.handle_mouse_events()
+        super().draw(t)
 
     def is_done(self):
         # check termination conditions

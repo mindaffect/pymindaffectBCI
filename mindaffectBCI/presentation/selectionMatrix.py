@@ -69,9 +69,9 @@ class ResultsScreen(InstructionScreen):
     waiting_text = "Waiting for performance results from decoder\n\nPlease wait"
     results_text = "Calibration Performance: %3.0f%% Correct\n\n<space> to continue"
     def __init__(self, window, noisetag, duration=20000, waitKey=False):
-        super().__init__(window, self.waiting_text, duration, waitKey)
         self.noisetag = noisetag
         self.pred = None
+        super().__init__(window, self.waiting_text, duration, waitKey)
 
     def reset(self):
         self.noisetag.clearLastPrediction()
@@ -729,19 +729,7 @@ class ExptScreenManager(ScreenSequence):
             self.next_screen = self.SubScreens.MainMenu
 
         else: # end
-            if self.confirm_quit is None:
-                from tkinter import Tk
-                from tkinter.messagebox import askyesno
-                root = Tk()
-                root.withdraw()
-                self.confirm_quit = askyesno(title='Confirmation',
-                                            message='Are you sure that you want to quit?')
-                if self.confirm_quit:
-                    print('quit')
-                    self.screen=None
-                else: 
-                    self.confirm_quit = None
-                    self.next_screen = self.SubScreens.MainMenu
+            self.screen = None
 
 
 #------------------------------------------------------------------------

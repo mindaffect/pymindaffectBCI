@@ -78,10 +78,14 @@ class WaitScreen(Screen):
                                                 color=(255, 0, 0, 255),
                                                 anchor_x='center', anchor_y='center',
                                                 batch=self.batch, group=self.group)
+        
+        self.reset()
 
     def reset(self):
         self.isRunning = False
         self.isDone = False
+        if self.waitKey: self.window.last_key_press = None
+        if self.waitMouse: self.window.last_mouse_release = None
 
     def is_done(self):
         # check termination conditions
