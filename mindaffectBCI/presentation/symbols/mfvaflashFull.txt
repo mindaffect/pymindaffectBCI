@@ -1,0 +1,4 @@
+# multifocal flash test, for 1 ring
++|dartboardflash/cross1.png|dartboard/cross2.png
++|dartboardflash/fullFlash/1L2.png|dartboardflash/fullFlash/2L2.png
+

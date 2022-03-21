@@ -1,0 +1,10 @@
+# multifocal flash test, for 2 quartered levels 
+#+|dartboard/cross1.png|dartboard/cross2.png
++|dartboard/2by4/1_16.png|dartboard/2by4/2_16.png
++|dartboard/2by4/3_16.png|dartboard/2by4/4_16.png
++|dartboard/2by4/5_16.png|dartboard/2by4/6_16.png
++|dartboard/2by4/7_16.png|dartboard/2by4/8_16.png
++|dartboard/2by4/9_16.png|dartboard/2by4/10_16.png
++|dartboard/2by4/11_16.png|dartboard/2by4/12_16.png
++|dartboard/2by4/13_16.png|dartboard/2by4/14_16.png
++|dartboard/2by4/15_16.png|dartboard/2by4/16_16.png

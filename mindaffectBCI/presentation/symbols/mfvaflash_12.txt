@@ -1,0 +1,69 @@
+# multifocal flash test, for 60 levels of  sizes
+
+# comment out all except the 1st ring
+# seg5 = inner ring
+#+|dartboardflash/seg5/1.png|dartboardflash/seg5/2.png
+#+|dartboardflash/seg5/3.png|dartboardflash/seg5/4.png
+#+|dartboardflash/seg5/5.png|dartboardflash/seg5/6.png
+#+|dartboardflash/seg5/7.png|dartboardflash/seg5/8.png
+#+|dartboardflash/seg5/9.png|dartboardflash/seg5/10.png
+#+|dartboardflash/seg5/11.png|dartboardflash/seg5/12.png
+#+|dartboardflash/seg5/13.png|dartboardflash/seg5/14.png
+#+|dartboardflash/seg5/15.png|dartboardflash/seg5/16.png
+#+|dartboardflash/seg5/17.png|dartboardflash/seg5/18.png
+#+|dartboardflash/seg5/19.png|dartboardflash/seg5/20.png
+#+|dartboardflash/seg5/21.png|dartboardflash/seg5/22.png
+#+|dartboardflash/seg5/23.png|dartboardflash/seg5/24.png
+# comment out rest so only inner ring visible
+# seg4 = 1st ring
++|dartboardflash/seg4/1.png|dartboardflash/seg4/2.png
++|dartboardflash/seg4/3.png|dartboardflash/seg4/4.png
++|dartboardflash/seg4/5.png|dartboardflash/seg4/6.png
++|dartboardflash/seg4/7.png|dartboardflash/seg4/8.png
++|dartboardflash/seg4/9.png|dartboardflash/seg4/10.png
++|dartboardflash/seg4/11.png|dartboardflash/seg4/12.png
++|dartboardflash/seg4/13.png|dartboardflash/seg4/14.png
++|dartboardflash/seg4/15.png|dartboardflash/seg4/16.png
++|dartboardflash/seg4/17.png|dartboardflash/seg4/18.png
++|dartboardflash/seg4/19.png|dartboardflash/seg4/20.png
++|dartboardflash/seg4/21.png|dartboardflash/seg4/22.png
++|dartboardflash/seg4/23.png|dartboardflash/seg4/24.png
+# seg3 = 2nd ring
+#+|dartboardflash/seg3/1.png|dartboardflash/seg3/2.png
+#+|dartboardflash/seg3/3.png|dartboardflash/seg3/4.png
+#+|dartboardflash/seg3/5.png|dartboardflash/seg3/6.png
+#+|dartboardflash/seg3/7.png|dartboardflash/seg3/8.png
+#+|dartboardflash/seg3/9.png|dartboardflash/seg3/10.png
+#+|dartboardflash/seg3/11.png|dartboardflash/seg3/12.png
+#+|dartboardflash/seg3/13.png|dartboardflash/seg3/14.png
+#+|dartboardflash/seg3/15.png|dartboardflash/seg3/16.png
+#+|dartboardflash/seg3/17.png|dartboardflash/seg3/18.png
+#+|dartboardflash/seg3/19.png|dartboardflash/seg3/20.png
+#+|dartboardflash/seg3/21.png|dartboardflash/seg3/22.png
+#+|dartboardflash/seg3/23.png|dartboardflash/seg3/24.png
+# seg2 = 3rd ring
+#+|dartboardflash/seg2/1.png|dartboardflash/seg2/2.png
+#+|dartboardflash/seg2/3.png|dartboardflash/seg2/4.png
+#+|dartboardflash/seg2/5.png|dartboardflash/seg2/6.png
+#+|dartboardflash/seg2/7.png|dartboardflash/seg2/8.png
+#+|dartboardflash/seg2/9.png|dartboardflash/seg2/10.png
+#+|dartboardflash/seg2/11.png|dartboardflash/seg2/12.png
+#+|dartboardflash/seg2/13.png|dartboardflash/seg2/14.png
+#+|dartboardflash/seg2/15.png|dartboardflash/seg2/16.png
+#+|dartboardflash/seg2/17.png|dartboardflash/seg2/18.png
+#+|dartboardflash/seg2/19.png|dartboardflash/seg2/20.png
+#+|dartboardflash/seg2/21.png|dartboardflash/seg2/22.png
+#+|dartboardflash/seg2/23.png|dartboardflash/seg2/24.png
+# seg1 = 4th ring
+#+|dartboardflash/seg1/1.png|dartboardflash/seg1/2.png
+#+|dartboardflash/seg1/3.png|dartboardflash/seg1/4.png
+#+|dartboardflash/seg1/5.png|dartboardflash/seg1/6.png
+#+|dartboardflash/seg1/7.png|dartboardflash/seg1/8.png
+#+|dartboardflash/seg1/9.png|dartboardflash/seg1/10.png
+#+|dartboardflash/seg1/11.png|dartboardflash/seg1/12.png
+#+|dartboardflash/seg1/13.png|dartboardflash/seg1/14.png
+#+|dartboardflash/seg1/15.png|dartboardflash/seg1/16.png
+#+|dartboardflash/seg1/17.png|dartboardflash/seg1/18.png
+#+|dartboardflash/seg1/19.png|dartboardflash/seg1/20.png
+#+|dartboardflash/seg1/21.png|dartboardflash/seg1/22.png
+#+|dartboardflash/seg1/23.png|dartboardflash/seg1/24.png

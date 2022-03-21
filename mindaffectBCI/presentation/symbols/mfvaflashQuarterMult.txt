@@ -1,0 +1,7 @@
+# multifocal flash test, for 1 quartered level 
+#+|dartboardflash/cross1.png|dartboardflash/cross2.png
++|dartboardflash/quarterFlash/1Large.png|dartboardflash/quarterFlash/2Large.png
++|dartboardflash/quarterFlash/3Large.png|dartboardflash/quarterFlash/4Large.png
++|dartboardflash/quarterFlash/5Large.png|dartboardflash/quarterFlash/6Large.png
++|dartboardflash/quarterFlash/7Large.png|dartboardflash/quarterFlash/8Large.png
+

@@ -1,0 +1,6 @@
+# multifocal flash test, for 1 halved level 
+
++|dartboardflash/halfFlash/1L2.png|dartboardflash/halfFlash/2L2.png
++|dartboardflash/halfFlash/3L2.png|dartboardflash/halfFlash/4L2.png
+
+

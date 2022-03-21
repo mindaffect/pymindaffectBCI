@@ -1,0 +1,6 @@
+# multifocal pattern reversal va test, for 60 levels of  sizes
++|dartboard/cross1.png|dartboard/cross2.png
++|dartboard/quarterCheck/1Large.png|dartboard/quarterCheck/2Large.png
++|dartboard/quarterCheck/3Large.png|dartboard/quarterCheck/4Large.png
++|dartboard/quarterCheck/5Large.png|dartboard/quarterCheck/6Large.png
++|dartboard/quarterCheck/7Large.png|dartboard/quarterCheck/8Large.png

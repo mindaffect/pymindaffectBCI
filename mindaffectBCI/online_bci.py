@@ -209,7 +209,7 @@ def startPresentationProcess(presentation,presentation_args:dict=dict()):
         if presentation_args is None:
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
-        from mindaffectBCI.examples.presentation import selectionMatrix
+        from mindaffectBCI.presentation import selectionMatrix
         target = selectionMatrix.run
 
     elif presentation.lower() == 'sigviewer':

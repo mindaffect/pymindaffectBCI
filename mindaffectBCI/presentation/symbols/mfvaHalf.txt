@@ -1,0 +1,4 @@
+# multifocal pattern reversal va test, for 2 angles
++|dartboard/cross1.png|dartboard/cross2.png
++|dartboard/halfCheck/1L2.png|dartboard/halfCheck/2L2.png
++|dartboard/halfCheck/3L2.png|dartboard/halfCheck/4L2.png
