@@ -124,7 +124,8 @@ class PygletFacade(FrameworkFacade):
         self.mouse = self.window
         self.click_feedback_buttons = []
         self.batch = pyglet.graphics.Batch()
-        self.group = None
+        self.background = pyglet.graphics.OrderedGroup(0)
+        self.foreground = pyglet.graphics.OrderedGroup(1)
         self.application = None
         self.nframe = 0
 
@@ -172,13 +173,13 @@ class PygletFacade(FrameworkFacade):
         x,y = self.convert_pos(pos)
         w,h = self.convert_size(size)
         rect = shapes.Rectangle(x,y,width=w,height=h,
-                                color=self.convert_color(color),batch=self.batch)
+                                color=self.convert_color(color),group= self.background, batch=self.batch)
         rect.anchor_x, rect.anchor_y = w//2, h//2
         rect.visible = False
         #rect = shapes.BorderedRectangle(x,y,w,h,border=3,color=self.convert_color(color),border_color=self.convert_color(line_color),batch=self.batch)
         return rect
 
-    def create_text(self, text='', col=(255, 255, 255), pos=(0, 0), size=(1,1), text_size=10, align_hor='center', align_vert='center', wrap_width=1):
+    def create_text(self, text='', col=(255, 255, 255), pos=(0, 0), size=(1,1), text_size=20, align_hor='center', align_vert='center', wrap_width=1):
         """Creates and returns a psychopy Text object, centered at the passed position
 
         Args:
@@ -202,7 +203,7 @@ class PygletFacade(FrameworkFacade):
                                 color=self.convert_text_color(col,0),
                                 #anchor_x=align_hor, #anchor_y=align_vert, 
                                 anchor_x='center', anchor_y='center',
-                                batch=self.batch, group=self.group)
+                                batch=self.batch, group=self.foreground)
         text.visible = False
         # text = visual.TextStim(self.window, text=text, pos=self.convert_pos(pos), color=self.convert_color(col),
         #                        depth=-1, height=size/100, alignText=align_hor, anchorVert=align_vert,
@@ -249,7 +250,7 @@ class PygletFacade(FrameworkFacade):
                                 anchor_x='center', anchor_y='center',
                                 multiline=True,
                                 #anchor_x=align_hor, #anchor_y=align_vert,
-                                batch=self.batch, group=self.group)
+                                batch=self.batch, group=self.foreground)
         text.visible = False
         return text
 
@@ -273,7 +274,7 @@ class PygletFacade(FrameworkFacade):
         img = pyglet.image.load(file)
         img.anchor_x, img.anchor_y  = (img.width//2,img.height//2)
         icon = pyglet.sprite.Sprite(img,x,y,
-                                    batch=self.batch, group=self.group)
+                                    batch=self.batch, group=self.foreground)
         # N.B. Sprites set color and alpha separately
         icon.color = self.convert_color(label_col)
         icon.update(scale_x=w/icon.image.width, 
