@@ -48,7 +48,7 @@ The class can be extended by any setting. In order to do so one must:
 
 import os
 import json
-import smart_keyboard.dictionary_retrieval as dictionary_retrieval
+import mindaffectBCI.examples.presentation.smart_keyboard.dictionary_retrieval as dictionary_retrieval
 
 class SettingsManager:
     """
