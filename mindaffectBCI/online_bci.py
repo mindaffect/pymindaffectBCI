@@ -31,6 +31,7 @@ signal.signal(signal.SIGTERM, lambda signum, frame: shutdown())
 class NoneProc:
     """tempory class simulating a working null sub-process
     """
+    exitcode = 0
     def is_alive(self): return True
     def terminate(self): pass
     def join(self): pass
