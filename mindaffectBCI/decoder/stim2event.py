@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -188,7 +188,7 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
                               equals_subarray(M, (b,a), axis))
 
         elif etype.startswith("re") or etype in ("onset",):
-            if etype.startswith("re") and len(etype)>2:
+            if etype.startswith('re') and len(etype)>2:
                 val = [float(e) for e in etype[2:].split(',')]
                 F, s2estate, elab = riseto(M, val, axis, oM, etype)
             else:
@@ -677,7 +677,10 @@ def output2event(M,axis=1,oM=None,etype=None):
     Returns:
         [type]: [description]
     """
-    labs = ["o{}.e{}".format(i,e) for i in range(M.shape[2]) for e in range(M.shape[3])]
+    if M.ndim==3:
+        labs = ["o{}".format(i) for i in range(M.shape[2])]
+    else:
+        labs = ["o{}.e{}".format(i,e) for i in range(M.shape[2]) for e in range(M.shape[3])]
     M = M.reshape(M.shape[:2]+(1,)+M.shape[2:]) # shift right by 1
     return M, "output2event", labs
 
@@ -801,7 +804,7 @@ def rewrite_levels(M,axis,oM=None,etype=None,level_dict:dict=None):
 
 
 
-def plot_stim_encoding(Y_TSy,Y_TSye,evtlabs=None,fs=None,times=None,outputs=None,suptitle:str="stim encoding",plot_all_zero_events:bool=True,block:bool=False):
+def plot_stim_encoding(Y_TSy,Y_TSye=None,evtlabs=None,fs=None,times=None,outputs=None,suptitle:str="stim encoding",plot_all_zero_events:bool=True,block:bool=False):
     """plot a stimulus encoding to debug if the stimulus encoding transformations are correct
 
     Args:
@@ -842,19 +845,19 @@ def plot_stim_encoding(Y_TSy,Y_TSye,evtlabs=None,fs=None,times=None,outputs=None
     for ti in range(Y_TSy.shape[0]):
         plt.sca(ax[ti][0])
         if Y_TSy is not None:
-            plt.plot(times, (Y_TSy[ti,...]/yscale + np.arange(Y_TSy.shape[-1])[np.newaxis,:])/Y_TSy.shape[-1],'.-')
+            plt.plot(times, (Y_TSy[ti,...]/yscale + np.arange(Y_TSy.shape[-1])[np.newaxis,:]),'.-')
             plt.grid(True)
-            plt.title('Y-raw (keep={})'.format(np.flatnonzero(keep_y)))
+            plt.title('Trial#{} Y-raw (keep={})'.format(ti,np.flatnonzero(keep_y)))
             plt.xlabel('time (seconds)')
-            plt.ylabel('Trial#')
+            plt.ylabel('Output+level')
         if Y_TSye is not None:
             plt.sca(ax[ti][1])
             Y_TS_ye = np.reshape(Y_TSye,Y_TSye.shape[:-2]+(-1,))
-            plt.plot(times, (Y_TS_ye[ti,...]/yescale + np.arange(Y_TS_ye.shape[-1])[np.newaxis,:])/Y_TSye.shape[-1]/Y_TSye.shape[-2],'.-')
+            plt.plot(times, (Y_TS_ye[ti,...]/yescale + np.arange(Y_TS_ye.shape[-1])[np.newaxis,:])/Y_TSye.shape[-1],'.-')
             plt.grid(True)
-            plt.title('Yevt {}  (Y={})'.format(evtlabs,np.flatnonzero(keep_ye)))
+            plt.title('Trail#{} Yevt {}  (Y={})'.format(ti, evtlabs,np.flatnonzero(keep_ye)))
             plt.xlabel('time (seconds)')
-            plt.ylabel('Trial#')
+            plt.ylabel('Output+Event+Level')
     if suptitle is not None:
         plt.suptitle(suptitle)
     plt.show(block=block)

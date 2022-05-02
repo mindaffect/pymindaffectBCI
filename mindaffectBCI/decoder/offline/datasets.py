@@ -7,7 +7,7 @@ from mindaffectBCI.decoder.offline.load_p300_prn import load_p300_prn
 from mindaffectBCI.decoder.offline.load_openBMI import load_openBMI
 from mindaffectBCI.decoder.offline.load_cocktail import load_cocktail
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify

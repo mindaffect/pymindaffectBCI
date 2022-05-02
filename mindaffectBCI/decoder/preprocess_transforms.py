@@ -108,6 +108,14 @@ def test_transform(mod, dur=3, fs=100, blksize=10):
     plot_test_signal(X_TSdd, Y_TSyy, fs, str(mod))
     plt.show()
 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+class ShapePrinter(BaseEstimator):
+    def fit(self,X, y=None):
+        print("X={} Y={}".format(X.shape,y.shape if y else None))
+
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -642,6 +650,17 @@ class TimeShifter(BaseEstimator, ModifierMixin):
     def __init__(
             self, axis=1, shift_who: str = 'y', timeshift: int = None, timeshift_ms: float = None, fs: float = None,
             padding: str = 0, verb=0):
+        """time shift X (eeg) relative to Y (stimulus) to simply move the analysis window spec for the impulse response function
+
+        Args:
+            axis (int, optional): the axis of X which corrosponds to 'time'. Defaults to 1.
+            shift_who (str, optional): shift X or Y?. Defaults to 'y'.
+            timeshift (int, optional): shift size in samples. Defaults to None.
+            timeshift_ms (float, optional): shift size in milliseconds. Defaults to None.
+            fs (float, optional): sampling rate of the data, got from X's meta-info if not given. Defaults to None.
+            padding (str, optional): Value/method to use to padd X/Y for the missing values after the shift. Defaults to 0.
+            verb (int, optional): verbosity level for debugging. Defaults to 0.
+        """            
         self.axis, self.shift_who, self.timeshift, self.timeshift_ms, self.fs, self.padding, self.verb = \
             (axis, shift_who, timeshift, timeshift_ms, fs, padding, verb)
 
@@ -712,6 +731,16 @@ class TargetEncoder(BaseEstimator, ModifierMixin):
     """
 
     def __init__(self, evtlabs=('re', 'fe'), axis=1, squeeze_feature_dim: bool = True, verb=0, **kwargs):
+        """(re)encode the stimulus sequence information
+
+        Args:
+            evtlabs (tuple|callable, optional): the evtlabs list to pass to `stim2event`.   
+               OR
+                  If evtlabs is callable with call signature signature `y_new, recode_state, output_labels = evtlabs(y,axis=axis,**kwargs)`. Defaults to ('re', 'fe').
+            axis (int, optional): the 'time' axis of Y for the re-coding. Defaults to 1.
+            squeeze_feature_dim (bool, optional): if true and re-coding of the targets results in a new feature dim with one entry then remove this extra dimension so the stim-seq size remains constant. Defaults to True.
+            verb (int, optional): verbosity level for progress printing. Defaults to 0.
+        """        
         self.evtlabs, self.axis, self.verb, self.squeeze_feature_dim, self.kwargs = \
             (evtlabs, axis, verb, squeeze_feature_dim, kwargs)
 
@@ -720,8 +749,11 @@ class TargetEncoder(BaseEstimator, ModifierMixin):
         if self.verb > 0:
             print("Y_in={}".format(y.shape))
         if self.evtlabs is not None:
-            y, self.s2estate_, self.evtlabs_ = stim2event(
-                y, evtypes=self.evtlabs, axis=self.axis, oM=prevY, **self.kwargs)  # (tr, samp, Y, e)
+            if callable(self.evtlabs): # call the re-coder directly
+                y, self.s2estate_, self.evtlabs_ = self.evtlabs(y,axis=self.axis,**self.kwargs)
+            else: # use stim2event
+                y, self.s2estate_, self.evtlabs_ = stim2event(
+                    y, evtypes=self.evtlabs, axis=self.axis, oM=prevY, **self.kwargs)  # (tr, samp, Y, e)
         else:
             self.e2state_, self.evtlabs_ = (self.evtlabs, None)
         if self.verb > 0:
@@ -732,7 +764,17 @@ class TargetEncoder(BaseEstimator, ModifierMixin):
 
         return X, y
 
-    def add_evtlabs_metainfo(self, y, yinfo, evtlabs):
+    def add_evtlabs_metainfo(self, y, yinfo:dict, evtlabs):
+        """add meta-info about the event labels to propogate to other later functions
+
+        Args:
+            y (_type_): the stimulus sequence
+            yinfo (dict): the current meta-information about y, specifically including the `evtlabs` field with the human-readable names for the different stimulus events
+            evtlabs (tuple-of-str): the new stimulus event human readable names  
+
+        Returns:
+            InfoArray: Y with the updated meta-info
+        """
         if not hasattr(y, 'info'):
             y = InfoArray(y, yinfo)
         if y.info is None:
@@ -762,7 +804,10 @@ class TargetEncoder(BaseEstimator, ModifierMixin):
 
         yinfo = Y_TSy.info if hasattr(Y_TSy, 'info') else None  # preserve the metainfo
         if self.s2estate_ is not None:
-            Y_TSy, _, _ = stim2event(Y_TSy, evtypes=self.s2estate_, axis=self.axis, oM=prevY)
+            if callable(self.evtlabs):
+                Y_TSy, _, _ = self.evtlabs(Y_TSy, axis=self.axis, **self.kwargs)
+            else:
+                Y_TSy, _, _ = stim2event(Y_TSy, evtypes=self.s2estate_, axis=self.axis, oM=prevY)
         else:
             if Y_TSy.ndim == 3:  # add event dim
                 Y_TSy = Y_TSy[:, :, :, np.newaxis]  # (tr,samp,Y,e)
@@ -788,6 +833,14 @@ class TemporalDecorrelator(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, order=10, reg=1e-4, eta=1e-5, axis=-2):
+        """Incremental streaming tranformer to decorrelate temporally channels in an input stream
+
+        Args:
+            order (int, optional): order of the AR model fit for decorrelation. Defaults to 10.
+            reg (_type_, optional): regularization factor. Defaults to 1e-4.
+            eta (_type_, optional): minimum value threshold. Defaults to 1e-5.
+            axis (int, optional): axis of X which corrosponds to time. Defaults to -2.
+        """        
         self.reg, self.eta, self.axis, self.order = (reg, eta, axis, order)
 
     def fit(self, X, y):
@@ -836,6 +889,14 @@ class StandardScaler(BaseEstimator):
     """
 
     def __init__(self, with_mean: bool = True, with_std: bool = True, reg: float = 1e-4, axis: int = (0, 1)):
+        """standardize X to have zero-mean and unit-standard-deviation in the feature dimensions
+
+        Args:
+            with_mean (bool, optional): flag if we zero-mean the data. Defaults to True.
+            with_std (bool, optional): flag if we unit standard deviation the data. Defaults to True.
+            reg (float, optional): regularization strength for computing the standard deviation and avoiding div-by-zero. Defaults to 1e-4.
+            axis (int, optional): axes of X over which we compute the statistics.  Defaults to 0,1 which normally means compute a per-channel mean/std over all trials and samples. Defaults to (0, 1).
+        """        
         self.reg, self.axis, self.with_mean, self.with_std = \
             (reg, axis, with_mean, with_std)
 
@@ -892,8 +953,13 @@ class ChannelPowerStandardizer(BaseEstimator, TransformerMixin):
     """Channel power normalization in an input stream"""
 
     def __init__(self, reg=1e-4, axis=-2):
-        self.reg = reg
-        self.axis = axis
+        """Channel power normalization in an input stream
+
+        Args:
+            reg (float, optional): regularization constant for compute the per-channel standard deviation. Defaults to 1e-4.
+            axis (int, optional): the 'time' axis of the data. Defaults to -2.
+        """        
+        self.reg, self.axis = reg, axis
 
     def fit(self, X, y=None):
         self.fit_transform(X.copy(), y)
@@ -970,8 +1036,15 @@ class AdaptiveChannelPowerStandardizer(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, reg=1e-4, axis=-2):
-        self.reg = reg
-        self.axis = axis
+        """Incremental streaming tranformer to channel power normalization in an input stream
+
+        N.B. incremental means it processes each trial in sequential order and using a moving average to compute the normalization statistics
+
+        Args:
+            reg (float, optional): regularization constant for compute the per-channel standard deviation. Defaults to 1e-4.
+            axis (int, optional): the 'time' axis of the data. Defaults to -2.
+        """        
+        self.reg, self.axis = reg, axis
 
     def fit(self, X, y=None):
         self.fit_transform(X.copy(), y)
@@ -1055,6 +1128,17 @@ class BadChannelRemover(BaseEstimator):
     def __init__(
             self, thresh: float = 3, mode: str = 'remove', minthresh: float = 4, disconnected_power: float = 1e-3,
             max_power: float = 1e8, center: bool = True, verb: int = 0):
+        """Remove channels with statistically outlying power, i.e. more than thresh standard-deviations more/less power than an average channel
+
+        Args:
+            thresh (float, optional): outlier threshold in standard deviations. Defaults to 3.
+            mode (str, optional): mode to do the removal.  One of: 'remove'-channel is removed, 'zero'-channel is set to zero value. Defaults to 'remove'.
+            minthresh (float, optional): ????. Defaults to 4.
+            disconnected_power (float, optional): channels with less than this amount of power are identified as disconneted and marked at 'bad'. Defaults to 1e-3.
+            max_power (float, optional): channels with more than max_power are automatically marked as 'bad' even if not outliers. Defaults to 1e8.
+            center (bool, optional): flag if we should center the data-per-trial before computing the power statistics. Defaults to True.
+            verb (int, optional): verbosity level. Defaults to 0.
+        """        
         self.thresh, self.mode, self.minthresh, self.disconnected_power, self.max_power, self.center, self.verb = \
             (thresh, mode, minthresh, disconnected_power, max_power, center, verb)
 
@@ -1159,6 +1243,13 @@ class BadChannelInterpolator(BaseEstimator):
     """
 
     def __init__(self, ch_names: list = None, bad_ch: list = None, verb: int = 0):
+        """bad-channel interpolator -- based on spherical spline interpolation
+
+        Args:
+            ch_names (list, optional): list of channel names in 10-10 format. Defaults to None.
+            bad_ch (list, optional): list of 'bad' channel names. If not given then bad-channels to be interploated are identified by channel names ending in '.bad'. Defaults to None.
+            verb (int, optional): verbosity level for debugging. Defaults to 0.
+        """        
         self.ch_names, self.bad_ch, self.verb = (ch_names, bad_ch, verb)
 
     def fit(self, X, y=None, ch_names: list = None, bad_ch: list = None, ch_pos: list = None):
@@ -1466,6 +1557,11 @@ class Slicer(BaseEstimator, ModifierMixin):
     """
 
     def __init__(self, slice: tuple = None):
+        """slice continous data into trials
+
+        Args:
+            slice (tuple, optional): tuple with the slicing indices, either as slice objects, or as strings in numpy slice format, e.g. ":" or "1:4". Defaults to None.
+        """        
         self.slice = slice
 
     def fit(self, X, y=None):
@@ -1513,10 +1609,18 @@ class Slicer(BaseEstimator, ModifierMixin):
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 class ChannelSlicer(BaseEstimator, TransformerMixin):
-    """slice continous data into trials
+    """select a sub-set of channels
     """
 
     def __init__(self, channels: tuple = None, exclude_channels: list = None, ch_names: list = None, axis: int = -1):
+        """slice a subset of channels from the data
+
+        Args:
+            channels (tuple, optional): the list of channels to keep, as list of channel indices, or list of channel-names, or slice object. Defaults to None.
+            exclude_channels (list, optional): list of channels to remove, as list-of-int for channel indices, or list-of-str for channel names. Defaults to None.
+            ch_names (list-of-str, optional): human readable channel names, or channel name matching. Defaults to None.
+            axis (int, optional): axis of X which contains the channels. Defaults to -1.
+        """        
         self.channels, self.exclude_channels, self.ch_names, self.axis = channels, exclude_channels, ch_names, axis
 
     def fit(self, X, y=None, fs=None, ch_names=None):
@@ -1603,6 +1707,18 @@ class Chunker(BaseEstimator, ModifierMixin):
 
     def __init__(self, tau: int = None, tau_ms: float = None, offset: int = None, offset_ms: float = 0, fs: float = None,
                  chunk_size: int = None, chunk_size_ms: float = None, per_chunk_label: bool = False):
+        """slice continuous data into chunks/trials
+
+        Args:
+            tau (int, optional): _description_. Defaults to None.
+            tau_ms (float, optional): _description_. Defaults to None.
+            offset (int, optional): _description_. Defaults to None.
+            offset_ms (float, optional): _description_. Defaults to 0.
+            fs (float, optional): _description_. Defaults to None.
+            chunk_size (int, optional): _description_. Defaults to None.
+            chunk_size_ms (float, optional): _description_. Defaults to None.
+            per_chunk_label (bool, optional): _description_. Defaults to False.
+        """        
         self.tau, self.tau_ms, self.offset, self.offset_ms, self.fs, self.chunk_size, self.chunk_size_ms, self.per_chunk_label =\
             (tau, tau_ms, offset, offset_ms, fs, chunk_size, chunk_size_ms, per_chunk_label)
 
@@ -1648,6 +1764,11 @@ class TrialLabelSelector(BaseEstimator, ModifierMixin):
     """
 
     def __init__(self, label_matcher='non_zero'):
+        """Select a sub-set of trials which match a label specification
+
+        Args:
+            label_matcher (str|callable|list, optional): criteria for selecting trials.  If str then must be 'non_zero' or '>0' to only select trials with non-zero stimulus info. If callable then with signature 'idx = label_matcher(y)' to return a boolean array with true for trials to keep, if list-of-int or list-of-bool then directly index and keep these trials. Defaults to 'non_zero'.
+        """        
         self.label_matcher = label_matcher
 
     def modify(self, X, y=None):
@@ -1686,9 +1807,25 @@ class FFTfilter(BaseEstimator, TransformerMixin):
     """filterbank transform the inputs
     """
 
-    def __init__(self, axis=1, filterbank: list = None, fs: float = None, blksz=None, blksz_ms=None, window=None,
+    def __init__(self, axis:int=1, filterbank: list = None, fs: float = None, blksz:int=None, blksz_ms:float=None, window=None,
                  fftlen: int = None, overlap: float = .5, squeeze_feature_dim: bool = False, prefix_feature_dim: bool = False,
                  ola_filter: bool = True, verb=1):
+        """apply a (set-of) spectral filters to the data using the FFT-filter technique
+
+        Args:
+            axis (int, optional): axis of X which corrosponds to time. Defaults to 1.
+            filterbank (list, optional): list-of-filter specifications.  Filter specification is in the format (low,high,type) where low and high are frequencies in Hz, and type is one-of 'bandpass', 'bandstop' or 'hilbert' for envelop transform. Defaults to None.
+            fs (float, optional): sampling rate of the data.  Got from X's meta-info if not given. Defaults to None.
+            blksz (int, optional): block-size in samples for applying the FFT. Defaults to None.
+            blksz_ms (float, optional): block-size in milliseconds for applying the FFT. Defaults to None.
+            window (str, optional): temporal window to apply to data blocks before FFT transform.  One of 'hamming','hanning','cos'. Defaults to None.
+            fftlen (int, optional): length of the analysis window in the fft-space.  Defaults to blksz/2. Defaults to None.
+            overlap (float, optional): fractional overlap of the FFT analysis windows. Defaults to .5.
+            squeeze_feature_dim (bool, optional): if true and only a single band is given then remove the resulting singleton feature dimension. Defaults to False.
+            prefix_feature_dim (bool, optional): put the feature dim before the time dimension?. Defaults to False.
+            ola_filter (bool, optional): if trun then use the overlap-add fitler, otherwise use the fft a whole-trial-at-a-time filter approach. Defaults to True.
+            verb (int, optional): verbosity level. Defaults to 1.
+        """        
         self.axis, self.filterbank, self.fs, self.blksz, self.blksz_ms, self.window, self.fftlen, self.overlap, self.squeeze_feature_dim, self.prefix_feature_dim, self.verb, self.ola_filter = (
             axis, filterbank, fs, blksz, blksz_ms, window, fftlen, overlap, squeeze_feature_dim, prefix_feature_dim, verb, ola_filter)
 
@@ -1866,6 +2003,12 @@ class BlockCovarianceMatrixizer(BaseEstimator, ModifierMixin):
 
 class DiagonalExtractor(BaseEstimator, TransformerMixin):
     def __init__(self, axis1=-2, axis2=-1):
+        """extract the diagonal entries of the input data
+
+        Args:
+            axis1 (int, optional): _description_. Defaults to -2.
+            axis2 (int, optional): _description_. Defaults to -1.
+        """        
         self.axis1, self.axis2 = (axis1, axis2)
 
     def fit(self, X, y=None): return self
@@ -1883,6 +2026,16 @@ class DiagonalExtractor(BaseEstimator, TransformerMixin):
 
 class WelchPSD(BaseEstimator, ModifierMixin):
     def __init__(self, axis=-2, detrend: bool = 'constant', blksz=None, blksz_ms=None, fs: float = None, resample_y: str = None):
+        """compute the power spectral density of the input data along the given axis using welch's method
+
+        Args:
+            axis (int, optional): _description_. Defaults to -2.
+            detrend (bool, optional): type of detrending to do before computing the power. Defaults to 'constant'.
+            blksz (_type_, optional): blocks size for the welch blocks in samples. Defaults to None.
+            blksz_ms (_type_, optional): block size for the welch blocks in milliseconds. Defaults to None.
+            fs (float, optional): sample rate of the data.  Got from X's meta-info if not given. Defaults to None.
+            resample_y (str, optional): Technique to use to re-sample the stimulus info Y to match that of the re-sampled X. Defaults to None.
+        """        
         self.axis, self.detrend, self.blksz, self.blksz_ms, self.fs, self.resample_y = (
             axis, detrend, blksz, blksz_ms, fs, resample_y)
 
@@ -1929,6 +2082,17 @@ class CommonSpatialPatterner(BaseEstimator):
     def __init__(
             self, nfilt_per_class: int = 3, mean: bool = True, compress_feature_dim=False, spoc: bool = False, reg:
             float = 1e-6, rcond: float = 1e-6, verb=1):
+        """use the common spatial pattern algorithm to map from sensors to virtual channels
+
+        Args:
+            nfilt_per_class (int, optional): _description_. Defaults to 3.
+            mean (bool, optional): _description_. Defaults to True.
+            compress_feature_dim (bool, optional): _description_. Defaults to False.
+            spoc (bool, optional): _description_. Defaults to False.
+            reg (float, optional): _description_. Defaults to 1e-6.
+            rcond (float, optional): _description_. Defaults to 1e-6.
+            verb (int, optional): _description_. Defaults to 1.
+        """
         self.nfilt_per_class, self.mean, self.compress_feature_dim, self.spoc, self.reg, self.rcond, self.verb = \
             (nfilt_per_class, mean, compress_feature_dim, spoc, reg, rcond, verb)
 
@@ -2129,6 +2293,12 @@ class AdaptiveSpatialWhitener(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, halflife: int = None, halflife_s: float = 10):
+        """Incremental streaming tranformer to channel power normalization in an input stream
+
+        Args:
+            halflife (int, optional): half-life in samples for the exp-moving-average estimation of the data-covariance for the whitener. Defaults to None.
+            halflife_s (float, optional): half-life in seconds for the exp-moving-average estimation window. Defaults to 10.
+        """
         self.halflife, self.halflife_s = (halflife, halflife_s)
 
     def fit(self, X, y=None, fs=None):
@@ -2202,6 +2372,14 @@ class SpatialWhitener(BaseEstimator, TransformerMixin):
     """
 
     def __init__(self, axis: int = -1, symetric: bool = True, reg: float = None, rcond: float = None):
+        """spatially whiten or spherize the input data X
+
+        Args:
+            axis (int, optional): the axis of X to whiten. Defaults to -1.
+            symetric (bool, optional): if true then compute a symetric whitener. Defaults to True.
+            reg (float, optional): regularization strenght for computing the inverse-square-root covariance matrix. Defaults to None.
+            rcond (float, optional): recopial-condition-number for thresholding components as zero-valued and discarded in computing the inverse. Defaults to None.
+        """
         self.axis, self.symetric, self.reg, self.rcond = (axis, symetric, reg, rcond)
 
     def fit(self, X, y=None):
@@ -2255,6 +2433,20 @@ class Resampler(BaseEstimator, ModifierMixin):
     def __init__(
             self, axis: int = 1, fs: float = 250, fs_out: float = 60, mode: str = 'sample', resample_y: str = 'max', nsamp: int = 0,
             verb: int = 0):
+        """Incremental streaming transformer for downsampling data transformations
+
+        Args:
+            axis (int, optional): the 'time' axis to resample. Defaults to 1.
+            fs (float, optional): input sample rate of the data. Defaults to 250.
+            fs_out (float, optional): desired output sample rate. Defaults to 60.
+            mode (str, optional): mode for the re-sampler. Defaults to 'sample'.
+            resample_y (str, optional): method used to re-sample the stimulus info, Y, to match the resampled X. Defaults to 'max'.
+            nsamp (int, optional): starting sample counter for incremental calls. Defaults to 0.
+            verb (int, optional): _description_. Defaults to 0.
+
+        Raises:
+            ValueError: _description_
+        """
         self.fs, self.fs_out, self.axis, self.nsamp, self.verb, self.mode, self.resample_y = \
             (fs, fs_out, axis, nsamp, verb, mode, resample_y)
         if not self.axis == 1:
@@ -2376,7 +2568,7 @@ class ButterFilterAndResampler(BaseEstimator, ModifierMixin):
                               (5, -1)),
             order: int = 6, axis: int = 1, fs: float = None, fs_out: float = None, ftype: str = 'butter', filter_y: bool = False,
             resample_y: str = 'max', verb: int = 0):
-        """[summary]
+        """Incremental streaming transformer for downsampling data transformations
 
         Args:
             filterband (tuple, optional): specification of the filter to apply, as for butterfilt_and_downsample. Defaults to ((0,5),(5,-1)).
@@ -2552,6 +2744,11 @@ class VirtualTargetAdder(BaseEstimator, ModifierMixin):
     """
 
     def __init__(self, nvirt_out=-20):
+        """Add virtual target sequences to the target matrix, so can assess performance at sequence level
+
+        Args:
+            nvirt_out (int, optional): number of virtual outputs to add to the data. If <0 then this is the total number of outputs to have. Defaults to -20.
+        """        
         self.nvirt_out = nvirt_out
 
     def fit(self, X, y=None):
@@ -2590,7 +2787,13 @@ class MetaInfoAdder(BaseEstimator, TransformerMixin):
     """add arbitary meta info to X
     """
 
-    def __init__(self, info=None, force: bool = False):
+    def __init__(self, info:dict=None, force: bool = False):
+        """add arbitary meta info to X
+
+        Args:
+            info (dict, optional): dictionary of meta-information to add. Defaults to None.
+            force (bool, optional): if true then force override of any existing meta-info of X. Defaults to False.
+        """        
         self.info, self.force = info, force
 
     def fit(self, X, y=None):
@@ -2633,6 +2836,12 @@ class PreprocessPipeline(BaseEstimator):
     """
 
     def __init__(self, stages: list, verb: int = 0):
+        """meta-estimator to make a pipeline of transform stages
+
+        Args:
+            stages (list-of-Transforms): list of preprocess_pipeline tranformation objects
+            verb (int, optional): verbosity level. Defaults to 0.
+        """
         self.stages = stages
         self.verb = verb
 
@@ -2829,6 +3038,8 @@ def make_preprocess_pipeline(pipeline: list):
 
 
 def testcase_pipeline():
+    """testcase for pipeline objects
+    """    
     import numpy as np
     import matplotlib.pyplot as plt
     from mindaffectBCI.decoder.utils import testSignal, InfoArray

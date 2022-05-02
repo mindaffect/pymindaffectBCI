@@ -229,10 +229,10 @@ def get_temporal_basis(tau: int, basis_type: str, dtype=np.float32) -> np.ndarra
 
         elif basis_type.startswith('fourier') or basis_type.startswith('f'):
             try:
-                if basis_type.startswith('f'):
-                    cycless = basis_type[len('f'):]
-                else:
+                if basis_type.startswith('fourier'):
                     cycless = basis_type[len('fourier'):]
+                else:
+                    cycless = basis_type[len('f'):]
                 cycless = [int(e) for e in cycless.replace(',', '_').split('_')]
                 mincycles, maxcycles = cycless[:2] if len(cycless) > 1 else (1, cycless[0])
             except:

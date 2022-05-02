@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -778,7 +778,7 @@ def zero_outliers(X, Y, badEpThresh=4,  badWinThresh=3, badEpChThresh=None,winsz
         #import matplotlib.pyplot as plt;plt.imshow(nidx_Tw.squeeze(),aspect='auto');plt.show()
         if np.any(nidx_Tw):
             if  verb > 0: 
-                print("{}/{} artifacts".format(np.sum(nidx_Tw),nidx_Tw.size))
+                print("{}/{} artifacts (ZO)".format(np.sum(nidx_Tw),nidx_Tw.size))
             # convert to logical sample idx
             nidx_Tw = nidx_Tw.squeeze((-1,-2))
             noise_idx = np.zeros(X.shape[:2],dtype=bool)

@@ -1,5 +1,5 @@
 # Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -79,7 +79,7 @@ def updateSummaryStatistics(X, Y, stimTimes=None,
         tau = X.shape[1]
     wght = 1
 
-    X, Y = zero_outliers(X, Y, badEpThresh, badWinThresh=badWinThresh, winsz=tau, verb=1)
+    X, Y = zero_outliers(X, Y, badEpThresh, badWinThresh=badWinThresh, winsz=tau, verb=0)
     
     # update the cross covariance XY
     Cxy = updateCxy(Cxy, X, Y, stimTimes, tau, wght, offset=offset, center=center, unitnorm=unitnorm)
@@ -1219,8 +1219,9 @@ def plot_erp(erp_yetd, evtlabs=None, outputs=None, times=None, fs:float=None, ch
     kcoords = ch_names 
     if axis<0:
         axis = erp_etd.ndim+axis
-    clim = [np.min(erp_etd), np.max(erp_etd)]
+    clim = [np.nanmedian(np.nanmin(erp_etd,axis=(1,2))), np.nanmedian(np.nanmax(erp_etd,axis=(1,2)))]
     if clim[0]==clim[1]: clim=[-1,1]
+    if any(np.isnan(clim)) or any(np.isinf(clim)): clim=None
     import matplotlib.pyplot as plt
 
     # print("erp_etd={}".format(erp_etd.shape))
@@ -1262,21 +1263,22 @@ def plot_erp(erp_yetd, evtlabs=None, outputs=None, times=None, fs:float=None, ch
         if plottype == 'plot':
             for li in range(A.shape[0]):
                 pl.plot(ycoords, A[li, :], '.-', label=xcoords[li] if li<len(xcoords) else None, markersize=1, linewidth=1)
-            #if ylim: 
-            plt.ylim(clim)
+            if clim: 
+                plt.ylim(clim)
             pl.grid(True)
         elif plottype == 'plott':
             for li in range(A.shape[1]):
                 pl.plot(xcoords, A[:, li], '.-', label=ycoords[li] if li<len(ycoords) else None, markersize=1, linewidth=1)
-            #if ylim: 
-            plt.ylim(clim)
+            if clim: 
+                plt.ylim(clim)
             pl.grid(True)
         elif plottype == 'imshow':
             # TODO[] : add the labels to the rows
             img=pl.imshow(A, aspect='auto')#,extent=[times[0],0,times[-1],erp_yetd.shape[-3]])
             pl.set_xticks(np.arange(len(ycoords)));pl.set_xticklabels(ycoords)
             pl.set_yticks(np.arange(len(xcoords)));pl.set_yticklabels(xcoords)
-            img.set_clim(clim)
+            if clim:
+                img.set_clim(clim)
         pl.title.set_text("{}".format(pltcoords[ci] if ci<len(pltcoords) else ci))
     # legend only in the last plot
     pl.legend()

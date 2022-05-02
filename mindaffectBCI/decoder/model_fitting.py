@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V.
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -170,9 +170,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if self.evtlabs is not None:
             if fit or not hasattr(self, 's2estate_') or self.s2estate_ is None:  # fit the event mapping
                 Y_TSye, self.s2estate_, self.evtlabs_ = stim2event(
-                    Y_TSy, self.evtlabs, axis=-2, oM=prevY)  # (tr, samp, Y, e)
+                    Y_TSy, evtypes=self.evtlabs, axis=-2, oM=prevY)  # (tr, samp, Y, e)
             else:  # use fitted event mapping
-                Y_TSye, _, _ = stim2event(Y_TSy, self.s2estate_, axis=-2, oM=prevY)  # (tr, samp, Y, e)
+                Y_TSye, _, _ = stim2event(Y_TSy, evtypes=self.s2estate_, axis=-2, oM=prevY)  # (tr, samp, Y, e)
         else:
             if hasattr(Y_TSy, 'info'):
                 self.evtlabs_ = Y_TSy.info.get('evtlabs', None)
@@ -444,9 +444,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             if Fy is None:  # compute the Fy from X,Y
                 Ytst = self.add_virt_out(Y, nvirt_out if nvirt_out is None else self.nvirt_out)
                 Fy = self.predict(X, Ytst)
-            score = BaseSequence2Sequence.audc_score(Fy)
+            score = BaseSequence2Sequence.score_audc(Fy)
         else:  # no true target info, so try to score w.r.t. the summed activity over all outputs
-            score = self.gof_score(X, Y)
+            score = self.score_corr(X, Y)
         return score
 
     def decoding_curve(self, X_TSd, Y_TSy, cv=None, **kwargs):
@@ -612,7 +612,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         disp.plot(ax=plt.gca())
 
     @staticmethod
-    def audc_score(Fy_TSy, score_noise=1e-5):
+    def score_audc(Fy_TSy, score_noise=1e-5):
         '''compute area under decoding curve score from Fy, *assuming* Fy[:,:,0] is the *true* classes score'''
         if Fy_TSy.ndim > 3:
             raise ValueError("Only for single models!")
@@ -629,7 +629,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         return score
 
     # TODO[]: correct and ensure the goodness of fit score is actually working
-    def gof_score(self, X_TSd, Y_TSy, featdim=False):
+    def score_corr(self, X_TSd, Y_TSy, featdim=False):
         """compute a goodness-of-fit (gof) score for this fited model, as the correlation between the latent-space time-series.
 
         Args:
@@ -735,9 +735,9 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
                 if score is None:  # just call our score function
                     val = self.score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...], Fy=Fyi_TSy)
                 elif score == 'audc':
-                    val = self.audc_score(Fyi_TSy)
+                    val = self.score_audc(Fyi_TSy)
                 elif score == 'gof':  # goodness of fit
-                    val = self.gof_score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
+                    val = self.score_corr(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
                 elif callable(score):  # given score function
                     val = score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
                 elif isinstance(score, 'str'):
@@ -898,11 +898,11 @@ class MultiCCA(BaseSequence2Sequence):
     def __init__(self, rank=1, reg=(1e-8, 1e-8), rcond=(1e-4, 1e-8), badEpThresh=6, badWinThresh=3, symetric=True,
                  center=True, CCA=True, outputscore: str = 'ip', whiten_alg: str = 'eigh', cxxp=True, temporal_basis=None,
                  # explicit args so sklearn can autoset and clone
-                 evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, normalize_sign=True,  **kwargs):
+                 evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, normalize_sign=True, score_type:str=None,  **kwargs):
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, tau_ms=tau_ms,
                          offset_ms=offset_ms, fs=fs, outputscore=outputscore, **kwargs)
-        self.rank, self.reg, self.rcond, self.badEpThresh, self.badWinThresh, self.symetric, self.center, self.CCA, self.whiten_alg, self.cxxp, self.normalize_sign, self.temporal_basis = (
-            rank, reg, rcond, badEpThresh, badWinThresh, symetric, center, CCA, whiten_alg, cxxp, normalize_sign, temporal_basis)
+        self.rank, self.reg, self.rcond, self.badEpThresh, self.badWinThresh, self.symetric, self.center, self.CCA, self.whiten_alg, self.cxxp, self.normalize_sign, self.temporal_basis, self.score_type = (
+            rank, reg, rcond, badEpThresh, badWinThresh, symetric, center, CCA, whiten_alg, cxxp, normalize_sign, temporal_basis, score_type)
 
     def fit_cca(
             self, Cxx_dd, Cyx_yetd, Cyy_yetet, rank=None, reg=None, rcond=None, CCA=None, symetric=None,
@@ -1033,7 +1033,7 @@ class MultiCCA(BaseSequence2Sequence):
             self.b_ = None
         return self
 
-    def cv_fit(self, X, Y, cv=None, fs=None, fit_params: dict = dict(), verbose: bool = 0,
+    def cv_fit(self, X, Y, cv=None, fs=None, fit_params: dict = dict(), verbose: bool = 0, 
                return_estimator: bool = True, calibrate_softmax: bool = True, retrain_on_all: bool = True, ranks=None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None:
@@ -1075,7 +1075,10 @@ class MultiCCA(BaseSequence2Sequence):
                 self.fit_b(X[train_idx, ...])
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.audc_score(Fyi)
+                if self.score_type == 'corr':
+                    score = self.score_corr(X[valid_idx, ...], Y[valid_idx, ...])
+                else:
+                    score = self.score_audc(Fyi)
                 if i == 0 and ri == 0:  # reshape Fy to include the extra model dim
                     Fy = np.zeros((len(ranks), Y.shape[0])+Fyi.shape[1:], dtype=np.float32)
                 Fy[ri, valid_idx, ..., :Fyi.shape[-1]] = Fyi[..., :Fy.shape[-1]]
@@ -1103,7 +1106,7 @@ class MultiCCACV(MultiCCA):
                  # other parms explicilty given so sklearn auto-set and clone works....
                  rank=1, reg=(1e-8, 1e-8), rcond=(1e-4, 1e-8), badEpThresh=6, symetric=True,
                  center=True, CCA=True, outputscore: str = 'ip', whiten_alg: str = 'eigh', cxxp=True, temporal_basis=None,
-                 evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, normalize_sign=True,
+                 evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, normalize_sign=True, score_type:str='audc',
                  **kwargs):
         """wrapper which does an inner cv to fit the inner_cv_params
 
@@ -1113,7 +1116,7 @@ class MultiCCACV(MultiCCA):
         super().__init__(rank=rank, reg=reg, rcond=rcond, badEpThresh=badEpThresh, symetric=symetric, center=center,
                          CCA=CCA, outputscore=outputscore, whiten_alg=whiten_alg, cxxp=cxxp, temporal_basis=temporal_basis,
                          evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms, offset_ms=offset_ms, fs=fs,
-                         normalize_sign=normalize_sign, **kwargs)
+                         normalize_sign=normalize_sign, score_type=score_type, **kwargs)
         self.inner_cv_params, self.inner_cv = (inner_cv_params, inner_cv)
 
     def fit(self, X, Y, fs=None, inner_cv_params: dict = None, retrain_on_all: bool = True):
@@ -1130,7 +1133,7 @@ class MultiCCACV(MultiCCA):
         """
         if inner_cv_params is None:
             inner_cv_params = self.inner_cv_params
-        if inner_cv_params is not None:  # inner CV for fit-params
+        if inner_cv_params is not None or self.inner_cv is not None:  # inner CV for fit-params
             self.cv_fit(X, Y, fs=fs, cv=self.inner_cv, fit_params=inner_cv_params, retrain_on_all=retrain_on_all)
         else:
             super().fit(X, Y, fs=fs)
@@ -1167,11 +1170,12 @@ class MultiCCACV(MultiCCA):
         Cxxs, Cyxs, Cyys = np.stack(Cxxs, 0), np.stack(Cyxs, 0), np.stack(Cyys, 0)
         return Cxxs, Cyxs, Cyys
 
-    def cv_fit(self, X, Y, cv=None, fs=None, verbose: bool = 0, score_type: str = 'audc', return_estimator: bool = True,
+    def cv_fit(self, X, Y, cv=None, fs=None, verbose: bool = 0, score_type: str = None, return_estimator: bool = True,
                calibrate_softmax: bool = True, retrain_on_all: bool = True, ranks=None, fit_params: dict = None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None:
             cv = self.inner_cv_params
+
         # fast path for cross validation over rank
         cv_in = cv.copy() if hasattr(cv, 'copy') else cv  # save copy of cv info for later
         if fit_params is None:
@@ -1218,6 +1222,7 @@ class MultiCCACV(MultiCCA):
 
         maxrank = max(ranks)
         self.rank = maxrank
+        if score_type is None:  score_type = self.score_type
         scores_cv = [[[] for _ in ranks] for _ in fit_configs]  # double nested list of lists..
         for i, (train_idx, valid_idx) in enumerate(cv):
             if verbose > 0:
@@ -1252,7 +1257,7 @@ class MultiCCACV(MultiCCA):
                         score_y, _ = corr_cov(Cxxval, Cyxval, Cyyval, self.W_, self.R_)
                         score = score_y[0]  # strip silly y dim
                     else:
-                        score = self.audc_score(Fyi)
+                        score = self.score_audc(Fyi)
                     scores_cv[ci][ri].append(score)
 
         # 3) get the *best* rank
@@ -1621,7 +1626,7 @@ class FwdLinearRegressionCV(FwdLinearRegression):
 
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.audc_score(Fyi)
+                score = self.score_audc(Fyi)
 
                 # save the prediction for later
                 if i == 0 and ci == 0:  # reshape Fy to include the extra model dim
@@ -1924,7 +1929,7 @@ class BwdLinearRegressionCV(BwdLinearRegression):
 
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.audc_score(Fyi)
+                score = self.score_audc(Fyi)
 
                 # save the prediction for later
                 if i == 0 and ci == 0:  # reshape Fy to include the extra model dim

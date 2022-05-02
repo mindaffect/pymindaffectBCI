@@ -141,8 +141,10 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
             trl_dur = stim_ts[trl_stim_idx[1:]-1] - stim_ts[trl_stim_idx[:-1]]
         else:
             trl_dur = stim_ts[trl_stim_idx[1:]] - stim_ts[trl_stim_idx[:-1]]
+    elif len(stim_ts)>1:
+        trl_dur = [stim_ts[-1]-stim_ts[0]] 
     else:
-        trl_dur = [stim_ts[-1]-stim_ts[0]]
+        trl_dur = [fs]
     if verb>=1 : print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
     if verb>=1 : print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
     # estimate the best trial-length to use

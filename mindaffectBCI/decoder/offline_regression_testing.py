@@ -7,13 +7,6 @@ random.seed(seed)
 np.random.seed(seed)
 
 
-
-
-
-
-
-
-
 def setup_plos_one():
     dataset = "plos_one"
     dataset_args = dict()
