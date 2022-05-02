@@ -273,8 +273,7 @@ class ExptManagerScreen(Screen):
                 if 'stimseq' in args: # BODGE: remove stim-seq from screen constructor
                     extra_stimseqs[i] = args.pop('stimseq')
                 scr = import_and_make_class(cls, window=window, noisetag=noisetag, **args)
-                if scr.label is None: 
-                    scr.label = symbols if extra_labels is None else extra_labels[i]
+                scr.label = symbols if extra_labels is None else extra_labels[i]
                 extra_screens.append(scr)
 
         self.extra_symbols = extra_symbols
@@ -294,10 +293,10 @@ class ExptManagerScreen(Screen):
                     if not 'optosensor' in args: args['optosensor']=self.optosensor
                     if 'stimseq' in args: # BODGE: remove stim-seq from screen constructor
                         self.extra_stimseqs[i] = args.pop('stimseq')
+                    if not 'label' in args: 
+                        args['label']= args['symbols'] if extra_labels is None else extra_labels[i]
                     print("Making screen: {} ({})".format(s,args))
                     extra_screens[i] = import_and_make_class(s, window=window, noisetag=noisetag, **args)
-                    if extra_labels is not None:
-                        extra_screens[i].label = extra_labels[i]
         self.extra_screens = extra_screens
 
         # Make the calibration screen
@@ -419,7 +418,7 @@ class ExptManagerScreen(Screen):
                     main_menu_numbered[i]=""
 
         if self.prediction_screen is not None:
-            if hasattr(self.prediction_screen,'label') and not self.prediction_screen.label is None:
+            if hasattr(self.prediction_screen,'label') and not self.prediction_screen.label is None and not self.prediction_screen.label == 'SelectionGridScreen':
                 main_menu_numbered[3] = "{}) {}".format(3,self.prediction_screen.label)
             menu_keys.update({'3':self.SubScreens.PredInstruct,
                               pyglet.window.key._3:self.SubScreens.PredInstruct,
@@ -430,7 +429,7 @@ class ExptManagerScreen(Screen):
                     main_menu_numbered[i]=""
             # TODO[]: remove from menu-keys?
         if self.cued_prediction_screen is not None: # remove the cued-prediction option
-            if hasattr(self.cued_prediction_screen,'label') and not self.cued_prediction_screen.label is None  and not self.prediction_screen.label == 'SelectionGridScreen':
+            if hasattr(self.cued_prediction_screen,'label') and not self.cued_prediction_screen.label is None  and not self.cued_prediction_screen.label == 'SelectionGridScreen':
                 main_menu_numbered[2] = "{}) {} (Cued)".format(2,self.cued_prediction_screen.label)
             menu_keys.update({'2':self.SubScreens.CuedPredInstruct,
                              pyglet.window.key._2:self.SubScreens.CuedPredInstruct,
