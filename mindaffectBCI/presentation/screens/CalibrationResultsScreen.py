@@ -32,4 +32,5 @@ class CalibrationResultsScreen(InstructionScreen):
             print("Prediction:{}".format(self.pred))
             self.waitKey = True
             self.set_text(self.results_text%((1.0-self.pred.Perr)*100.0))
+            self.duration = self.elapsed_ms() + 2000
         super().draw(t)

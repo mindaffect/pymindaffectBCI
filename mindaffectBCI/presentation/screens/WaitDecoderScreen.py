@@ -9,6 +9,7 @@ class WaitDecoderScreen(InstructionScreen):
     '''Modified instruction screen with waits for the decoder to be running -- as indicated by a signal-quality message'''
 
     waiting_text = "Waiting for decoder to startup\n\nPlease wait"
+    results_text = "Running decoder detected"
     def __init__(self, window, noisetag, duration=20000, waitKey=False):
         self.noisetag = noisetag
         self.qual = None
@@ -26,7 +27,9 @@ class WaitDecoderScreen(InstructionScreen):
         # check for new qualictions
         qual = self.noisetag.getLastSignalQuality()
         # update text if got qualicted performance
-        if qual is not None and self.qual is None :
+        if qual is not None and self.qual is None:
             self.qual = qual
             self.waitKey = True
+            self.set_text(self.results_text)
+            self.duration = self.elapsed_ms() + 1000
         super().draw(t)

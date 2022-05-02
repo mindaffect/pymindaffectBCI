@@ -249,7 +249,7 @@ def startPresentationProcess(presentation,presentation_args:dict=dict()):
         presentation.start()
         return presentation
     else:
-        return None
+        return NoneProc()
 
 def logConfiguration(args):
     """log the configuration of the system to the hub/savefile
@@ -272,11 +272,11 @@ def logConfiguration(args):
         traceback.print_exc()
     return
     
-def run(label='', logdir=None, block=True, hub=None, args:dict=dict(),
+def run(label='', logdir=None, hub=None, args:dict=dict(),
         acquisition:str=None, acq_args:dict=dict(), 
         decoder:str='decoder', decoder_args:dict=dict(), 
         presentation:str='selectionMatrix', presentation_args:dict=dict()):
-    """[summary]
+    """ Run the full on-line analysis stack with hub, acquisition, decoder and presentation
 
     Args:
         label (str, optional): string label for the saved data file. Defaults to ''.
@@ -287,7 +287,6 @@ def run(label='', logdir=None, block=True, hub=None, args:dict=dict(),
         decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
         presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
         presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.presentation.selectionMatrix.run(). Defaults to None.
-        block (bool, optional): return immeadiately or wait for presentation to finish and then terminate all processes.  Default to True
 
     Raises:
         ValueError: invalid options, e.g. unrecognised acq_driver
@@ -380,22 +379,37 @@ def run(label='', logdir=None, block=True, hub=None, args:dict=dict(),
     # run the stimulus, in a background processwith our matrix and default parameters for a noise tag
     presentation_process = startPresentationProcess(presentation, presentation_args)
 
-    if block == True:
-        if presentation_process is not None:
-            # wait for presentation to terminate
-            presentation_process.join()
-        else:
-            while True:
-                sleep(1)
-            #hub_process.wait()
-    else:
-        return False
+    # check all the sub-processes are running correctly.... abort on crash
+    def get_subprocess_liveness():
+        #nonlocal hub_process, acquisition_process, decoder_process, presentation_process
+        return hub_process.poll() is None, acquisition_process.is_alive(), decoder_process.is_alive(), presentation_process.is_alive()
+    # run while all sub-processes are alive
+    while all(get_subprocess_liveness()):
+        sleep(1)
 
     # TODO []: pop-up a monitoring object / dashboard!
 
+    # get the exit codes for the sub-processes
+    # check the reason we stopped... if something crashed then raise an error
+    exitcodes = {"hub": hub_process.poll(),
+                 "acq":acquisition_process.exitcode, 
+                 "decoder":decoder_process.exitcode,
+                 "presentation":presentation_process.exitcode}
+
     #--------------------------- SHUTDOWN ------------------------------
-    # shutdown the background processes
+    # shutdown the background processes cleanly
     shutdown(hub_process, acquisition_process, decoder_process)
+
+    # raise error if sub-process crashed
+    # get the exit codes for the sub-processes
+    # check the reason we stopped... if something crashed then raise an error
+    if exitcodes['acq'] is not None and exitcodes['acq'] > 0 :
+        raise ValueError("acquisition process crashed!")
+    if exitcodes['decoder'] is not None and exitcodes['decoder'] > 0 :
+        raise ValueError("Decoder process crashed!")
+    if exitcodes['presentation'] is not None and exitcodes['presentation'] > 0:
+        raise ValueError("Presentation process crashed!")
+
 
 
 def check_is_running(hub=None, acquisition=None, decoder=None):
@@ -421,7 +435,7 @@ def check_is_running(hub=None, acquisition=None, decoder=None):
         decoder = decoder_process
 
     isrunning=True
-    if hub is None or not hub.poll() is None:
+    if hub is None or hub.poll() is not None:
         isrunning=False
         print("Hub is dead!")
     if acquisition is None or not acquisition.is_alive():
@@ -482,8 +496,6 @@ def shutdown(hub=None, acquisition=None, decoder=None):
     hub.communicate()
     print("Hub is dead?")
     print("If not kill with:  taskkill /F /IM java.exe")
-    #print('exit online_bci')
-    quit()
 
 
 def parse_args():

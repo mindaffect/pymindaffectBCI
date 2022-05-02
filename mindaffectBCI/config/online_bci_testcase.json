@@ -24,7 +24,7 @@
             "offset_ms": 0, // offset from stimulus time -- N.B. Not tested, YMMV
             "prediction_offsets" : [0], // set of different offsets to test at prediction time to allow for clock/drift timing jitter
             "evtlabs" : ["re","fe"], // the types of event to fit the model to
-            "temporal_basis":"fourier2,15" // feature basis to use when fitting the temporal (impulse-response) model
+            "temporal_basis": "fourier2,15" // feature basis to use when fitting the temporal (impulse-response) model
         },
         "calplots" : true,
         "predplots" : false
