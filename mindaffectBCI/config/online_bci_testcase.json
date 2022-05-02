@@ -1,0 +1,71 @@
+{
+    // NOTE: we allow c-style comments in this file!
+
+    // logdir : root directory where data and results are saved
+    "logdir":"~/Desktop/logs",
+
+    // acquisition: driver for getting data from the amplifer
+    "acquisition":"fakedata",
+
+    // levelsccaViewer: estimate a shared response model with different amplitude for each output+level combination
+    "decoder":"decoder",
+    "decoder_args":{
+        "label":"decoder", // text label for this module
+        "stopband" : [[45,65],[2,25,"bandpass"]], // pre-filter to apply to the incomming EEG
+        "out_fs" : 120, // pre-downsample to apply to the incomming eeg
+        "ftype":"butter",
+        "order":6,
+        "cv":5,
+        // prior dataset to load to fit the model -- so don't need to calibrate if wanted
+        "prior_dataset": null,
+        // additional arguments to pass to the classifier
+        "clsfr_args":{
+            "tau_ms" : 450, // stimulus response duration in milliseconds
+            "offset_ms": 0, // offset from stimulus time -- N.B. Not tested, YMMV
+            "prediction_offsets" : [0], // set of different offsets to test at prediction time to allow for clock/drift timing jitter
+            "evtlabs" : ["re","fe"], // the types of event to fit the model to
+            "temporal_basis":"fourier2,15" // feature basis to use when fitting the temporal (impulse-response) model
+        },
+        "calplots" : true,
+        "predplots" : false
+    },
+
+    // presentation: runs the user-interface, presents stimuli and acts on predictions
+    "presentation":"mindaffectBCI.presentation.ScreenRunner",
+    "presentation_args":{
+        "fullscreen": false,
+
+        "screen":[
+            "mindaffectBCI.presentation.screens.SubscreenMenuScreen.ScreenGraph",
+            {
+                // here is the list of sub-screens to select from in the main menu
+                // the format is : "name":[ScreenClassName, screen_args]
+                // where screenclass name is either a fullyqualified class name, or a class in 'mindaffectBCI.presentation.screens' with the same filename and class name
+                // and screen_args is a dictionary of arguments to pass to the screen constructor
+                "subscreens":
+                {
+					"start": ["ConnectingScreen", {} ],
+                    // N.B. do electrode quality long enough that the decoder has a time to startup correctly
+                    "elect":["ElectrodeQualityScreen",{"label":"Electrode Quality Screen","duration":10000}],
+                    // calibration screen with 3x3 single-target stimulus
+                    "calibration":["SelectionGridScreen",{
+                        "symbols":"3x3.txt",
+                        "noisetag_mode":"calibration",
+                        "noisetag_args":{"nTrials":4, "duration":5},
+                        "target_only":true
+                    }],
+                    // Wait for the decoder to finish training the classifier
+                    "wait":["InstructionScreen",{"label":"waiting for decoder","text":"waiting for calibration results from the decoder", "duration":5000}],
+                    // prediction screen with a full keyboard running in cued mode
+                    "prediction":["SelectionGridScreen",{
+                        "symbols":"keyboard.txt",
+                        "noisetag_mode":"prediction",
+                        "noisetag_args":{"nTrials":10, "duration":15, "cuedprediction":true}
+                    }]
+                },
+                // set the order of sub-screen transitions, null means default sequential order
+                "subscreen_transitions":null
+            }
+        ]
+    }
+}

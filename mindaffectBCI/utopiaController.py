@@ -1,6 +1,6 @@
 
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -153,12 +153,13 @@ class UtopiaController:
             timestamp ([type], optional): [description]. Defaults to None.
             targetState ([type], optional): [description]. Defaults to None.
             objIDs ([type], optional): [description]. Defaults to None.
-            injectSignal (int,optional): inject a signal with this amplitude to fake data, should be 0-255 integer. If None then use the target state information. Defautls to None.
+            injectSignal (int|callable,optional): inject a signal with this amplitude to fake data, should be 0-255 integer. 
+                     If None then use the target state information. If callable, then injectSignal(targetState|stimulusState) to return the state to inject. Defautls to None.
         Returns:
             [type]: [description]
         """
         stimEvent = self.mkStimulusEvent(stimulusState, timestamp, targetState, objIDs)
-        if self.client: self.client.sendMessage(stimEvent)
+        if self.isConnected(): self.client.sendMessage(stimEvent)
         # erp injection for debugging with fakedata
         if injectSignal is None:
             if targetState is not None and targetState >= 0:
@@ -169,6 +170,8 @@ class UtopiaController:
                     injectSignal = int(targetState)
             else: # simple super-position of stimulus activity
                 injectSignal = int(sum(stimulusState))
+        elif callable(injectSignal): # call function to get the signal to inject
+            injectSignal = injectSignal(targetState if targetState>=0 else stimulusState)
         if injectSignal is not None:
             injectERP(int(injectSignal), self.gethost())
         return stimEvent
@@ -194,10 +197,10 @@ class UtopiaController:
         if not hasattr(stimulusState,'__iter__'): stimulusState=[stimulusState]
         if timestamp is None:
             timestamp = self.getTimeStamp()
-        if not hasattr(objIDs,'__iter__'): objIDs=[objIDs]
         if objIDs is None:
             objIDs = list(range(1, len(stimulusState)+1))
-        elif len(objIDs) != len(stimulusState):
+        if not hasattr(objIDs,'__iter__'): objIDs=[objIDs]
+        if len(objIDs) != len(stimulusState):
             raise ValueError("ARGH! objIDs and stimulusState not same length!")
     
         # insert extra 0 object ID if targetState given
@@ -214,7 +217,7 @@ class UtopiaController:
         Args:
             newmode ([type]): [description]
         """        
-        if self.client:
+        if self.isConnected():
             self.client.sendMessage(
                 ModeChange(self.getTimeStamp(), newmode))
 
@@ -227,7 +230,7 @@ class UtopiaController:
         # subscribe to PREDICTEDTARGETPROB, MODECHANGE, SELECTION and NEWTARGET, SIGNALQUALITY messages only
         if msgs:
             self.subscriptions = msgs
-        if self.client:
+        if self.isConnected():
             print("NewSubscriptions: {}".format(self.subscriptions))
             self.client.sendMessage(
                 Subscribe(self.getTimeStamp(), self.subscriptions))
@@ -261,13 +264,13 @@ class UtopiaController:
         Args:
             msg ([type]): [description]
         """        
-        if self.client:
+        if self.isConnected():
             self.client.sendMessage(Log(self.getTimeStamp(), msg))
 
     def newTarget(self):
         """[summary]
         """        
-        if self.client:
+        if self.isConnected():
             self.client.sendMessage(NewTarget(self.getTimeStamp()))
         for h in self.newTargetHandlers:
             h()         # do selection callbacks
@@ -278,7 +281,7 @@ class UtopiaController:
         Args:
             objID ([type]): [description]
         """        
-        if self.client:
+        if self.isConnected():
             self.client.sendMessage(Selection(self.getTimeStamp(), objID))
         for h in self.selectionHandlers:
             h(objID)         # do selection callbacks
@@ -294,7 +297,7 @@ class UtopiaController:
             [type]: [description]
         """        
         
-        if not self.client: return None
+        if not self.isConnected(): return None
         # get any messages with predictions
         self.msgs = self.client.getNewMessages(timeout_ms) if self.client else []
         # process these messages as needed & call-callbacks

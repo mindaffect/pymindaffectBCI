@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -165,7 +165,7 @@ class RawMessage(UtopiaMessage):
         return (msgs, nconsumed)
     
     
-class Heartbeat(UtopiaMessage):    
+class Heartbeat(UtopiaMessage):
     """the HEARTBEAT utopia message class
     """    
 

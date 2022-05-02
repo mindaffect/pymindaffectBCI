@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,40 +24,26 @@ pydir = os.path.dirname(os.path.abspath(__file__))
 savedir = os.path.join(pydir,'stimulus_sequence') if os.path.isdir(os.path.join(pydir,'stimulus_sequence')) else pydir
 
 class StimSeq :
-    """[summary]
-
-    Raises:
-        Exception: [description]
-        Exception: [description]
-
-    Returns:
-        [type]: [description]
-    """    
-
-    stimSeq     = None # [ nEvent x nSymb ] stimulus code for each time point for each stimulus
-    stimTime_ms = None # time stim i ends, i.e. stimulus i is on screen from stimTime_ms[i-1]-stimTime_ms[i]
-    eventSeq    = None # events to send at each stimulus point
-
     def __init__(self,st=None,ss=None,es=None):
-        """[summary]
+        """class which holds a stimulus-sequence, i.e. an (nobjects, ntimepoints) sequence describing the state of all objects at each time point.
+
+        Note: In real usage only the `stimSeq` property is used, all othe properties are currently unused.
 
         Args:
-            st ([type], optional): [description]. Defaults to None.
-            ss ([type], optional): [ nEvent x nSymb ] stimulus code. Defaults to None.
-            es ([type], optional): [description]. Defaults to None.
+            st (list, optional): (n_timepoints,) the stimulus times in milliseconds.  N.B. *ignored*. Defaults to None.
+            ss (list-of-list-of-int, optional): (n_timepoints, n_objects) stimulus code for each object at each time-point. Defaults to None.
+            es ([type], optional): (n_timepoints, n_objects). the event sequence, which says what event to send to the BCI at each time point.  N.B. *ignored* Defaults to None.
         """        
 
         self.stimSeq     = ss if not isinstance(ss,np.ndarray) else ss.tolist()
+        # (n_timepoints, n_objects) stimulus code for each time point for each stimulus
         self.stimTime_ms = st
+        # (n_timepoints,) **IGNORED** time in milliseconds at which a stimulus event takes place, i.e. stimulus i is on screen from stimTime_ms[i-1]-stimTime_ms[i]
         self.eventSeq    = es
+        # (n_timepints,) **IGNORED** additional event to send at each time point.
+        
 
     def __str__(self):
-        """[summary]
-
-        Returns:
-            [type]: [description]
-        """        
-
         res = "#stimTimes: ";
         if not self.stimTime_ms is None:
             res += "(1," + str(len(self.stimTime_ms)) + ")\n"
@@ -79,7 +65,16 @@ class StimSeq :
         res+="\n\n"
         return res
 
-    def plot(self,show=False,title=None):
+    def plot(self,show=None,title=None, xlim=None, ylim=None):
+        """plot the stimulus sequence as a multi-line plot
+
+        Args:
+            show (bool, optional): show the plot on the screen. Defaults to False.
+            title (str, optional): title for the plot. Defaults to None.
+
+        Returns:
+            matplotlib.axes: axes the plot was made in
+        """        
         import matplotlib.pyplot as plt
         import numpy as np
         ss = np.array(self.stimSeq)
@@ -89,30 +84,47 @@ class StimSeq :
             plt.plot(self.stimTime_ms, ss + yscale*np.arange(len(ss[0]))[np.newaxis,:],'.-')
         else:
             plt.plot(ss + yscale*np.arange(len(ss[0]))[np.newaxis,:],'.-')
+        plt.xlabel('time (samples)')
+        plt.ylabel('outputs+levels')
         if title:
             plt.title(title)
-        if show: 
-            plt.show()
+        if xlim:
+            plt.xlim(xlim)
+        if ylim:
+            plt.ylim(ylim)
+        if show is not None: 
+            plt.show(block=show)
         return plt.gca()
 
     def is_integer(self):
+        """test if the stimulus sequence is all integer states
+
+        Returns:
+            bool: integer status
+        """        
         return all([ isinstance(s,int) or s.is_integer() for row in self.stimSeq for s in row ])
 
-    def convertstimSeq2int(self,scale=1,force=False,minval=None,maxval=None):
-        """[summary]
+    def convertstimSeq2int(self,scale:float=1,force:bool=False,minval:float=None,maxval:float=None):
+        """convert floating point state stimulus sequence to an integer one
 
         Args:
-            scale (int, optional): [description]. Defaults to 1.
-        """        
+            scale (float, optional): multiplier to apply to the floating point values before conversion to int. Defaults to 1.
+            force (bool, optional): if true then force conversion even if contain non-integer floating point values. Defaults to False.
+            minval (float, optional): minval to convert, i.e. this value == 1. Defaults to None.
+            maxval (float, optional): maxvalue to convert, i.e. this value = maxval/scale. Defaults to None.
+        """
         if force or self.is_integer():
-            self.stimSeq = self.float2int(self.stimSeq)
+            self.stimSeq = self.float2int(self.stimSeq, scale=scale, minval=minval, maxval=maxval)
 
     def convertstimSeq2float(self,scale=1,force=False,minval=None,maxval=None):
-        """[summary]
+        """convert integer state stimulus sequence to an floating point one
 
         Args:
-            scale (int, optional): [description]. Defaults to 1.
-        """        
+            scale (float, optional): multiplier to apply to the floating point values before conversion to int. Defaults to 1.
+            force (bool, optional): if true then force conversion even if contain non-integer floating point values. Defaults to False.
+            minval (float, optional): minval to convert, i.e. this value == 1. Defaults to None.
+            maxval (float, optional): maxvalue to convert, i.e. this value = maxval/scale. Defaults to None.
+        """
         if force or self.is_integer():
             self.stimSeq = self.int2float(self.stimSeq,scale,minval,maxval)
 
@@ -121,13 +133,13 @@ class StimSeq :
         """convert float list of lists to integer
 
         Args:
-            stimSeq ([type]): [ nEvent x nSymb ] stimulus code
-            scale (int, optional): [description]. Defaults to 1.
-            minval ([type], optional): [description]. Defaults to None.
-            maxval ([type], optional): [description]. Defaults to None.
+            stimSeq (list-of-list-of-float): (n_timepoints, n_object) the raw stimulus sequence
+            scale (float, optional): multiplier to apply to the floating point values before conversion to int. Defaults to 1.
+            minval (float, optional): minval to convert, i.e. this value == 1. Defaults to None.
+            maxval (float, optional): maxvalue to convert, i.e. this value = maxval/scale. Defaults to None.
 
         Returns:
-            [type]: [description]
+            (list-of-list-of-int): (n_timepoints, n_object) the integer state value version of the stimulus sequence
         """        
         for i in range(len(stimSeq)):
             for j in range(len(stimSeq[i])):
@@ -142,13 +154,13 @@ class StimSeq :
         """convert float list of lists to integer
 
         Args:
-            stimSeq ([type]): [ nEvent x nSymb ] stimulus code
-            scale (int, optional): [description]. Defaults to 1.
-            minval ([type], optional): [description]. Defaults to None.
-            maxval ([type], optional): [description]. Defaults to None.
+            stimSeq (list-of-list-of-float): (n_timepoints, n_object) the raw stimulus sequence
+            scale (float, optional): multiplier to apply to the floating point values before conversion to int. Defaults to 1.
+            minval (float, optional): minval to convert, i.e. this value == 1. Defaults to None.
+            maxval (float, optional): maxvalue to convert, i.e. this value = maxval/scale. Defaults to None.
 
         Returns:
-            [type]: [description]
+            (list-of-list-of-int): (n_timepoints, n_object) the floating point state value version of the stimulus sequence
         """        
         for i in range(len(stimSeq)):
             for j in range(len(stimSeq[i])):
@@ -165,24 +177,22 @@ class StimSeq :
         Args:
             rate ([type]): [description]
         """        
-
         setStimRate(self.stimTime_ms,rate)
         
     @staticmethod
     def readArray(f,width=-1):
-        """[summary]
+        """read an array from a character source, such as a file stream
 
         Args:
-            f ([type]): [description]
-            width (int, optional): [description]. Defaults to -1.
+            f (char-stream): character source, such as a file stream returned by open(filename,'r')
+            width (int, optional): width of the loaded array, i.e. number cols.  Auto determined if <=0. Defaults to -1.
 
         Raises:
-            Exception: [description]
+            Exception: if there is a problem loading the file
 
         Returns:
-            [type]: [description]
-        """    
-
+            (list-of-list-of-float): (n_timepoints, n_objects) array
+        """
         array=[]
         nEmpty=0
         for line in f:
@@ -205,13 +215,13 @@ class StimSeq :
         """read a stimulus-sequence definition from a string
 
         Args:
-            f ([type]): [description]
+            f (str): the string to read the array definition from
 
         Raises:
-            Exception: [description]
+            Exception: if there was a conversion error
 
         Returns:
-            [type]: [description]
+            (list-of-list-of-float): the loaded array
         """  
 
         st=StimSeq.readArray(f) # read the stim times
@@ -229,10 +239,10 @@ class StimSeq :
         """read a stimulus-sequence from a file on disk
 
         Args:
-            fname ([type]): [description]
+            fname (str): the file name to load the array from
 
         Returns:
-            [type]: [description]
+            (list-of-list-of-float): the loaded array
         """  
 
         import os.path
@@ -255,16 +265,16 @@ class StimSeq :
                 return ss
             except:
                 pass
-        
+
         f = open(fname, 'r')
         ss = StimSeq.fromString(f)
         return ss
 
     def toFile(self, fname, comment:str=None):
-        """[summary]
+        """write the current stimulus-sequence to a text file format or a .png graphics file.
 
         Args:
-            fname ([type]): [description]
+            fname (str): the file name to save the textual description of the stimulus sequence to
         """ 
         print("Saving to: {}".format(fname))
         if '.png' in fname:
@@ -291,28 +301,27 @@ class StimSeq :
                 f.write(str(self))
 
 def transpose(M):
-    """[summary]
+    """swap the rows and colums of the input array
 
     Args:
-        M ([type]): [description]
+        M (list-of-list-of-?): the input array of size (i,j)
 
     Returns:
-        [type]: [description]
+        (list-of-list-of-?): the transposed array of size (j,i)
     """    
-
     return [[row[i] for row in M] for i in range(len(M[0]))]
+
 
 def setStimRate(stimTime_ms,framerate):
     """rewrite the stim-times to a new frequency
 
     Args:
-        stimTime_ms ([type]): [description]
-        framerate ([type]): [description]
+        stimTime_ms ([type]): total stimulus duration in milliseconds
+        framerate ([type]): the framerate to use
 
     Returns:
-        [type]: [description]
-    """    
-
+        (list-of-float): the stimulus time of the events
+    """
     for i in range(len(stimTime_ms)):
         stimTime_ms[i] = i*1000/framerate
     return stimTime_ms
@@ -444,6 +453,7 @@ def mkFreqTag(period_phase=((4,0),(5,0),(6,0),(7,0),(8,0),(3,1),(4,1),(5,1),(6,1
     return StimSeq(None,array.tolist(),None)
 
 
+
 def mkBlockRandPatternReversal(ncodes=1, nEvent=None, nSweep=1, soa=0, blockLen=10, blockLevels:list()=None, randblk=True):
     """make a block random pattern reversal stimulus
     Args:
@@ -481,6 +491,7 @@ def mkBlockRandPatternReversal(ncodes=1, nEvent=None, nSweep=1, soa=0, blockLen=
 
 def mkBlockSweepPatternReversal(**kwargs):
     return mkBlockRandPatternReversal(randblk=False, **kwargs)
+
 
 def mkModulatedFreqTag(soa=3, jitter=1, levels:list=[2], base_level:int=1, # modulator parameters
                       period_phase=((4,0),(5,0),(6,0),(3,1),(4,1),(5,1),(6,1),(3,2),(4,2),(5,2),(6,2),(4,3),(5,3),(6,3),(5,4),(6,4),(6,5)), nEvent=840 ): # freq-params
@@ -543,12 +554,32 @@ def mk_m_sequence(taps:list, state:list=None, nlevels:int=2, seqlen=None):
     return mseq
 
 def mkMSequence(taps:list, state:list=None, nlevels:int=2, seqlen=None):
+    """make an m-sequence and return a stimulus sequence object
+
+    Args:
+        taps (list): _description_
+        state (list, optional): _description_. Defaults to None.
+        nlevels (int, optional): _description_. Defaults to 2.
+        seqlen (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """    
     ss = mk_m_sequence(taps,state,nlevels,seqlen)
     if ss.ndim<2 : ss=ss[:,np.newaxis] # ensure 2d
     return StimSeq(None,ss.tolist(),None)
 
 def mktaps(tappos):
+    """make a list with given taps at the given locations
+
+    Args:
+        tappos (list-of-int): the list of tap positions
+
+    Returns:
+        (list-of-float): a 0-1 list at the taps locations
+    """
     return [1 if i in tappos else 0 for i in range(max(tappos)+1)]
+
 
 def mk_gold_code(as1, as2, ncodes=64, nlevels:int=2, seqlen=400):
     """make a set of gold codes (low-cross-correlation) from a set of m-sequence (low auto-correlation) specifications 
@@ -572,6 +603,15 @@ def mk_gold_code(as1, as2, ncodes=64, nlevels:int=2, seqlen=400):
 
 
 def stripbadpairs(seq,thresh=.2):
+    """strip pairs of objects stimulus sequence, where bad pairs are pairs of object sequences which have higher than average cross-correlation.
+
+    Args:
+        seq (list-of-list-of-int): (n_timepoints, n_objects)  the sequence to optimize
+        thresh (float, optional): threshold in standard deviations for removal. Defaults to .2.
+
+    Returns:
+        list-of-list-of-int: (n_timepoints, n_objects2) the revised stimulus sequence with bad pairs removed
+    """
     if hasattr(seq,'stimSeq') : seq=np.array(seq.stimSeq)
     cc = crosscorr(seq)
     print(cc)
@@ -592,6 +632,16 @@ def stripbadpairs(seq,thresh=.2):
     return seq[:,goodidx]
 
 def id_unbalanced(seq, zero_is_level:bool=True, thresh:float=1):
+    """identify unbalanced object sequences in the stimulus sequence, where unbalanced objects have an anamalouly uneven distribution of events over the object levels.
+
+    Args:
+        seq (list-of-list-of-int): (n_timepoints, n_objects)  the sequence to optimize
+        thresh (float, optional): threshold in standard deviations for removal. Defaults to .2.
+        zero_is_level (bool, optional): if true then treat level 0 as a level for level distribution calculation.  Otherwise level 0 events are ignored. Defaults to True.
+
+    Returns:
+        list-of-list-of-int: (n_timepoints, n_objects2) the revised stimulus sequence with bad pairs removed
+    """    
     # look at the distribution over levels in each entry
     if hasattr(seq,'stimSeq') : seq=np.array(seq.stimSeq)
     levels = np.unique(seq)
@@ -604,14 +654,27 @@ def id_unbalanced(seq, zero_is_level:bool=True, thresh:float=1):
         ent.append(hist/np.sum(hist) @ np.log(hist/np.sum(hist)).T)
         print("{:3} {} ent={}".format(oi,hist,ent[-1]))
     ent = np.array(ent)
-    mu, sigma = np.mean(ent), np.std(ent)
+    mu, sigma = np.nanmean(ent), np.nanstd(ent)
     print(mu,sigma)
-    badidx =  ent >= mu+thresh*sigma
+    badidx =  np.logical_or(ent >= mu+thresh*sigma, np.isnan(ent))
     print("Unbalanced sequences {} / {}".format(np.sum(badidx),len(badidx)))
     return badidx 
 
 
 def mkGoldCode(as1,as2,ncodes=8,nlevels=2,seqlen=400,stripbad:float=None):
+    """make a gold code from 2 input m-sequences
+
+    Args:
+        as1 (_type_): (2-tuple of lists-of-int) taps+state for the first m-sequence generator
+        as2 (_type_): (2-tuple of lists-of-int) taps+state for the first m-sequence generator
+        ncodes (int, optional): number of codes (or objects) to generate. Defaults to 8.
+        nlevels (int, optional): number of levels in the resulting code. Defaults to 2.
+        seqlen (int, optional): the length of stimulus sequence to generate. Defaults to 400.
+        stripbad (float, optional): threshold for removal of 'bad' code pairs, which have excessively high cross-correlation. Defaults to None.
+
+    Returns:
+        list-of-list-of-int: (n_timepoints, n_objects2) the revised stimulus sequence with bad pairs removed
+    """    
     s = mk_gold_code(as1, as2, ncodes=ncodes, nlevels=nlevels, seqlen=seqlen)
     print(s.shape)
     if stripbad is not None:
@@ -622,6 +685,16 @@ def mkGoldCode(as1,as2,ncodes=8,nlevels=2,seqlen=400,stripbad:float=None):
 import numpy as np
 from mindaffectBCI.decoder.utils import window_axis
 def autocorr(s,l,mu=None):
+    """compute the auto-correlation of a stim-sequence with itself at different time shifts
+
+    Args:
+        s (list-of-list-of-float): (n_timepoints, n_objects) the stimulus sequence
+        l (int): the length of the shifted version to compare
+        mu (ndarray, optional): (n_objects,) a mean value to subtract before computing the cross-correlation.  Sequence mean if None. Defaults to None.
+
+    Returns:
+        list-of-list-of-int: (n_timepoints, n_objects2) the revised stimulus sequence with bad pairs removed
+    """    
     s=np.array(s)
     if s.ndim<2: s=s[:,np.newaxis]
     if mu is None:
@@ -631,6 +704,15 @@ def autocorr(s,l,mu=None):
     return np.einsum("Ttd,td->Td",s_Ttd,s[:s_Ttd.shape[1],:])
 
 def crosscorr(s,mu=None):
+    """compute the cross correlation of a object stimulus sequence with the other objects stim-sequences in the code
+
+    Args:
+        s (list-of-list-of-float): (n_timepoints, n_objects) the stimulus sequence
+        mu (ndarray, optional): (n_objects,) a mean value to subtract before computing the cross-correlation.  Sequence mean if None. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """    
     s = np.array(s)
     if s.ndim<2: s=s[:,np.newaxis]
     if mu is None:
@@ -640,6 +722,8 @@ def crosscorr(s,mu=None):
     return Css
 
 def testcase_mseq():
+    """run a test of the msequence generator
+    """    
     import matplotlib.pyplot as plt
 
     s2 = mk_m_sequence([1,0,0,0,0,1],state=[1,0,1,0,1,1],nlevels=2)
@@ -692,10 +776,22 @@ def testcase_mseq():
     plt.show()
 
 
-def plot_level_counts(Y,zero_is_level:bool=False,label:str='',show=False):
+def plot_level_counts(Y,zero_is_level:bool=False,label:str='',show:bool=False,re:bool=False):
+    """generate a plot summarizing for each object in the stimulus sequence number of times it used a particular level.
+
+    Args:
+        Y (list-of-list-of-float): (n_timepoints, n_objects) the stimulus sequence
+        zero_is_level (bool, optional): treat level=0 as a valid level in computing the counts. Defaults to False.
+        label (str, optional): label for the plot. Defaults to ''.
+        show (bool, optional): show the plot?. Defaults to False.
+    """    
     import matplotlib.pyplot as plt
     if hasattr(Y,'stimSeq'): Y=np.array(Y.stimSeq)
     Y=np.array(Y)
+    if re:
+        from mindaffectBCI.decoder.stim2event import stim2event
+        Y_re,_,_ = stim2event(Y,evtypes='onset')
+        Y=Y_re[...,0] # remove the event-dim
     levels = np.unique(Y)
     if not zero_is_level == True and levels[0]==0: levels=levels[1:]
     hist_ol = np.sum(Y.reshape((-1,Y.shape[-1]))[...,np.newaxis]==levels,0)
@@ -707,10 +803,12 @@ def plot_level_counts(Y,zero_is_level:bool=False,label:str='',show=False):
     plt.xlabel("Level")
     plt.colorbar()
     plt.title("Event Counts: {}".format(label))
-    if show: plt.show(block=show)
+    if show is not None: plt.show(block=show)
 
 
 def testcase_gold():
+    """test for the gold code generator
+    """    
     import matplotlib.pyplot as plt
     if True:
         as1=([6,5],[0,0,0,0,0,1])
@@ -719,7 +817,7 @@ def testcase_gold():
     else:
         as1=([3, 1, 1, 7],[4, 4, 4, 3, 6, 1, 0, 6])
         as2=([5, 1, 5, 3],[4, 2, 3, 5, 5, 3, 1, 3])
-        s8 = mk_gold_code(as1,as2,ncodes=64,p=8,seqlen=800)
+        s8 = mk_gold_code(as1,as2,ncodes=64,nlevels=8,seqlen=800)
 
     ac = autocorr(s8,s8.shape[0]//2)
     cc = crosscorr(s8)
@@ -748,7 +846,19 @@ def testcase_gold():
     plt.show()
 
 
-def test_m_seq(taps,state,nlevels,seqlen,largevalcost=.1, largevalthresh=.5):
+def test_m_seq(taps,state,nlevels,seqlen,worstcasecost=.05):
+    """score a m-sequence for it's auto-correlation properties / cycle length
+
+    Args:
+        taps (list-of-int): list with the length of sequence 1 to make
+        state (list-of-int): list with the length of the 2nd sequence to make
+        nlevels (int): the number of levels in the generated sequences
+        seqlen (int): length of the sequence to generate
+        worsecasecost (float, optional): additional cost penalty for the worst-case autocorrelation. Defaults to .01
+
+    Returns:
+        _type_: _description_
+    """    
     seq = mk_m_sequence(taps,state=state,nlevels=nlevels,seqlen=seqlen)
     ac = autocorr(seq, len(seq)//2)
     # normalize so ac at time-point 0==1
@@ -758,9 +868,9 @@ def test_m_seq(taps,state,nlevels,seqlen,largevalcost=.1, largevalthresh=.5):
         v = 99999999
     else:
         # score is sum squared auto-corr, so don't like large values
-        v = sum([c**2 for c in ac[1:]])
-        # extra penalty for values bigger than .5
-        v = v + sum([largevalcost*len(seq) for c in ac[1:] if c>largevalthresh])
+        v = sum([c**2 for c in ac[1:]]) # max value = len(seq)
+        # worse case auto-correlation penalty
+        v = v + worstcasecost*len(seq)*max([abs(c) for c in ac[1:]]) #sum([c*largevalcost*len(seq) for c in ac[1:] if c>largevalthresh])
     # penalize not using all the levels (roughly) equally
     h = np.sum(seq == np.arange(nlevels)[:,np.newaxis],1)
     n_opt = len(seq)/nlevels
@@ -769,7 +879,20 @@ def test_m_seq(taps,state,nlevels,seqlen,largevalcost=.1, largevalthresh=.5):
     #import matplotlib.pyplot as plt; plt.plot(ac8); plt.title("{}".format(v)); plt.show()
     return float(v+v_bal),ac,seq
 
+
 def get_rand_seq(a,s,p):
+    """ generate a random multi-level sequence, using the python randint function. N.B. No guarantees on auto/cross correlation properties.
+
+    This function is mostly used to generate the taps+state info for a m-sequence
+
+    Args:
+        a (list-of-int): list with the length of sequence 1 to make
+        s (list-of-int): list with the length of the 2nd sequence to make
+        p (int): the number of levels in the generated sequences
+
+    Returns:
+        (a,s): the generated random sequences
+    """    
     from random import randint
     for j in range(len(a)):
         a[j] = randint(0,p-1)
@@ -778,6 +901,21 @@ def get_rand_seq(a,s,p):
     return a,s
 
 def inc_seq(a,s,p):
+    """generate the next consequetive sequence from the input sequences, i.e. by increasing (with overflow+carry) the level by 1
+
+    This is mostly use for exhaustive search through the possible taps+state for m-sequence generators
+
+    Args:
+        a (list-of-int): list with the length of sequence 1 to make
+        s (list-of-int): list with the length of the 2nd sequence to make
+        p (int): the number of levels in the generated sequences
+
+    Raises:
+        StopIteration: _description_
+
+    Returns:
+        _type_: _description_
+    """    
     c=1
     for i in range(len(s)):
         ic = s[i] + c
@@ -797,6 +935,17 @@ def inc_seq(a,s,p):
     return (a,s)
 
 def test_rand_m_seq(a,s,p,seqlen=3000):
+    """ generate the settings for a random m-sequence and score the properties of the result
+
+    Args:
+        a (list-of-int): list with the length of sequence 1 to make
+        s (list-of-int): list with the length of the 2nd sequence to make
+        p (int): the number of levels in the generated sequences
+        seqlen (int, optional): the lenght of the sequence generated used to test it's performance. Defaults to 3000.
+
+    Returns:
+        _type_: _description_
+    """    
     a,s=get_rand_seq(a,s,p)
     return test_m_seq(a,s,p,seqlen)
 
@@ -874,7 +1023,7 @@ def optimize_m_sequence_taps(p:int, a=[0,0,0], s=None, taps=None, state=None, se
     print("{}".format(a_star))
     return a_star
 
-def upsample_with_jitter(seq,soa:int=4,jitter:int=0,min_soa:int=None, max_soa:int=None):
+def upsample_with_jitter(seq,soa:int=4,jitter:int=0,min_soa:int=None, max_soa:int=None, latch:bool=False):
     """upsample a stim-sequence to a higher sampling rate, padding between new locations with 0
 
     Args:
@@ -883,6 +1032,7 @@ def upsample_with_jitter(seq,soa:int=4,jitter:int=0,min_soa:int=None, max_soa:in
         jitter (int, optional): jitter in the new stimuli locations. Defaults to 0.
         min_soa (int, optional): min number stim events between stimuli
         max_soa (int, optional): max number between stim events
+        latch (bool,optional): if true the hold previous value until new event, if False the pad with zeros.  Defaults to False.
     """    
     stimSeq = np.array(seq.stimSeq)
     # compute the new indices
@@ -898,7 +1048,11 @@ def upsample_with_jitter(seq,soa:int=4,jitter:int=0,min_soa:int=None, max_soa:in
     event_idx = np.cumsum(np.maximum(dsample,1)).astype(int)
     # insert in place
     ss = np.zeros((event_idx[-1]+soa,stimSeq.shape[-1]),dtype=stimSeq.dtype)
-    ss[event_idx,:] = stimSeq
+    if latch:
+        for ei,(es,ee) in enumerate(zip(event_idx[:-1],event_idx[1:])):
+            ss[es:ee,:] = stimSeq[ei,:]
+    else:
+        ss[event_idx,:] = stimSeq
     seq.stimSeq=ss.tolist()
     seq.stimTime_ms=None
     return seq
@@ -914,16 +1068,25 @@ def rewrite_levels(seq,new_levels:dict):
     seq.stimSeq = [ [new_levels.get(s,s) for s in ss] for ss in seq.stimSeq ] # subistuting the matching old-levels
     return seq
 
-def repeat_sequence(seq,nrepeats=4):
+def repeat_sequence(seq:StimSeq,nrepeats=4):
+    """repeat the input sequence a number of times
+
+    Args:
+        seq (StimSeq): the stimulus sequence to be repeated
+        nrepeats (int, optional): number of times to repeat it temporally. Defaults to 4.
+
+    Returns:
+        StimSeq: _description_
+    """    
     seq.stimSeq = [s for i in range(nrepeats) for s in seq.stimSeq ]
     seq.stimTime_ms=None #TODO[]: better stimtime bits
     return seq
 
-def interleave_objects(seq,nobj=4,block_size:int=1, nactive:int=1):
+def interleave_objects(seq:StimSeq,nobj=4,block_size:int=1, nactive:int=1):
     """make an interleaved sequence (i.e. only 1 is active at a time) with nobj objects
 
     Args:
-        seq ([type]): [description]
+        seq (StimSeq): the input stimulus sequence
         nobj (int, optional): [description]. Defaults to 4.
         block_size (int, optional): size of blocks of single obj to do at a time. Defaults to 1.
         nactive (int,optional): number of active objects at any time.  Defaults to 1.
@@ -948,7 +1111,16 @@ def interleave_objects(seq,nobj=4,block_size:int=1, nactive:int=1):
     return StimSeq(None,ss,None)
 
 
-def concatenate_objects(seq1,seq2):
+def concatenate_objects(seq1:StimSeq,seq2:StimSeq):
+    """concatenate 2 sequences temporally
+
+    Args:
+        seq1 (StimSeq): the first stimulus sequence
+        seq2 (StimSeq): the second stimulus sequence to concatenate behind the first one
+
+    Returns:
+        StimSeq: the temporally concatenated result
+    """    
     a=seq1.stimSeq if hasattr(seq1,'stimSeq') else seq1
     b=seq2.stimSeq if hasattr(seq2,'stimSeq') else seq2
     stimSeq = [ a[i%len(a)] + b[i%len(b)] for i in range(max(len(a),len(b)))]
@@ -956,6 +1128,15 @@ def concatenate_objects(seq1,seq2):
 
 
 def make_audio(nobj=4,soa=6):
+    """make a stimulus sequence for audio experiments, which uses levels 1..., only has a single object active at any time, and has a given SOA
+
+    Args:
+        nobj (int, optional): number of objects in the final sequence. Defaults to 4.
+        soa (int, optional): the stimulus-onset-asynchrony, i.e. the time (in events) between stimulus events. Defaults to 6.
+
+    Returns:
+        StimSeq: the final stimulus sequence
+    """    
     a = StimSeq.fromFile('level9_gold.txt')
     a = rewrite_levels(a,{k:k+1 for k in range(9)}) # level 0,1..8 -> 1,2..9
     a = interleave_objects(a, nobj=nobj) # 4-obj interleave
@@ -965,6 +1146,15 @@ def make_audio(nobj=4,soa=6):
     return a
 
 def make_visual(nobj=8,block_size=60):
+    """make a stimulus sequence for visual experiments, which uses levels 1,2, only has a single object active at any time, and interleaves the objective activation in blocks of multiple seconds
+
+    Args:
+        nobj (int, optional): number of objects in the final sequence. Defaults to 4.
+        block_size (int, optional): the active object is flicking for this number of events in a row, before switching to the next active object
+
+    Returns:
+        StimSeq: the final stimulus sequence
+    """    
     b = StimSeq.fromFile('mgold_0000011_0011011.txt')
     #b.plot(show=False);plt.figure()
     b = rewrite_levels(b,{0:1,1:2}) # level 0,1 -> 1,2
@@ -979,6 +1169,17 @@ def make_visual(nobj=8,block_size=60):
 
 
 def make_audio_visual(naudio=4,audio_soa=6,nvisual=8,visual_block_size=60):
+    """make and plot a combined audio-visual stimulus sequence
+
+    Args:
+        naudio (int, optional): number of audio objects in the final sequence. Defaults to 4.
+        audio_soa (int, optional): the stimulus-onset-asynchrony, i.e. the time (in events) between stimulus events. Defaults to 6.
+        nvisual (int, optional): number of visual objects in the final sequence. Defaults to 4.
+        visual_block_size (int, optional): the active object is flicking for this number of events in a row, before switching to the next active object
+
+    Returns:
+        StimSeq: the final stimulus sequence
+    """    
     import matplotlib.pyplot as plt
 
     a = StimSeq.fromFile('level9_gold_{:d}obj_interleaved_soa{:d}.txt'.format(naudio,audio_soa))
@@ -990,7 +1191,8 @@ def make_audio_visual(naudio=4,audio_soa=6,nvisual=8,visual_block_size=60):
 
 
 def mkCodes():  
-
+    """make a load of standard stimulus sequences, e.g. visual, audio, m-sequence, gold, etc.
+    """
     make_visual(nobj=3,block_size=60)
 
     make_audio(nobj=4,soa=6)
@@ -999,7 +1201,7 @@ def mkCodes():
 
     as1=(mktaps([6,5]),[0,0,0,0,0,1])
     as2=(mktaps([6,5,3,2]),[0,0,0,0,0,1])
-    gold = mkGoldCode(as1=as1,as2=as2,p=2,seqlen=2**6,ncodes=64)
+    gold = mkGoldCode(as1=as1,as2=as2,nlevels=2,seqlen=2**6,ncodes=64)
     lab = '{}_{}'.format("".join(str(a) for a in as1[0]),"".join(str(a) for a in as2[0])) 
     gold.plot(show=True,title='bin_gold {}'.format(lab))
     gold.toFile(os.path.join(savedir,'mgold_{}.txt'.format(lab)))
@@ -1021,7 +1223,7 @@ def mkCodes():
 
     as1=(mktaps([6,1]),[0,0,0,0,0,1])
     as2=(mktaps([6,5,2,1]),[0,0,0,0,0,1])
-    gold = mkGoldCode(as1=as1,as2=as2,p=2,seqlen=2**6,ncodes=64)
+    gold = mkGoldCode(as1=as1,as2=as2,nlevels=2,seqlen=2**6,ncodes=64)
     lab = '{}_{}'.format("".join(str(a) for a in as1[0]),"".join(str(a) for a in as2[0]))
     gold.plot(show=True,title='bin_gold {}'.format(lab))
     gold.toFile(os.path.join(savedir,'mgold_{}.txt'.format(lab)))
@@ -1054,7 +1256,7 @@ def mkCodes():
 
     as1=([3, 1, 1, 7],[4, 4, 4, 3, 6, 1, 0, 6])
     as2=([5, 1, 5, 3],[4, 2, 3, 5, 5, 3, 1, 3])
-    seq = mkGoldCode(as1=as1,as2=as2,p=8,seqlen=800,ncodes=64)
+    seq = mkGoldCode(as1=as1,as2=as2,nlevels=8,seqlen=800,ncodes=64)
     # insert 0 before each stim with fancy list comprenhsion
     seq.stimSeq = [ i for j in seq.stimSeq for i in ([jj+1 for jj in j],[0]*len(j))]
     seq.plot(show=True, title='8level_expdist')
@@ -1062,7 +1264,7 @@ def mkCodes():
                 comment='8 levels gold code with 0 before each level')
 
     # 4 outputs / 8 levels interleaved
-    seq = mkGoldCode(as1=as1,as2=as2,p=8,seqlen=800,ncodes=64)
+    seq = mkGoldCode(as1=as1,as2=as2,nlevels=8,seqlen=800,ncodes=64)
     seq = interleave_objects(seq,nobj=4)
     seq.plot(show=True, title='8level_expdist')
     seq.toFile(os.path.join(savedir,'level8_gold_4obj_interleaved.txt'),
@@ -1156,17 +1358,17 @@ def mkCodes():
 
     as1=([3, 1, 1, 7],[4, 4, 4, 3, 6, 1, 0, 6])
     as2=([5, 1, 5, 3],[4, 2, 3, 5, 5, 3, 1, 3])
-    seq = mkGoldCode(as1=as1,as2=as2,p=8,seqlen=800,ncodes=64)
+    seq = mkGoldCode(as1=as1,as2=as2,nlevels=8,seqlen=800,ncodes=64)
     seq.plot(show=True,title='level8_gold')
     seq.toFile(os.path.join(savedir,'level8_gold.txt'))
 
-    seq = mkGoldCode(as1=as1,as2=as2,p=8,seqlen=800,ncodes=64)
+    seq = mkGoldCode(as1=as1,as2=as2,nlevels=8,seqlen=800,ncodes=64)
     seq.convertstimSeq2float(scale=1/8,force=True) # convert to 0-1
     seq.toFile(os.path.join(savedir,'level8_gold_01.txt'))
 
     as1=([3, 1, 1, 7],[4, 4, 4, 3, 6, 1, 0, 6])
     as2=([5, 1, 5, 3],[4, 2, 3, 5, 5, 3, 1, 3])
-    seq = mkGoldCode(as1=as1,as2=as2,p=8,seqlen=800,ncodes=64)
+    seq = mkGoldCode(as1=as1,as2=as2,nlevels=8,seqlen=800,ncodes=64)
     idx2level = [0,3,7,15,31,63,127,249]
     seq.stimSeq = [[idx2level[i] for i in j] for j in seq.stimSeq]
     seq.toFile(os.path.join(savedir,'level8_gold_expdist.txt'))
@@ -1175,6 +1377,11 @@ def mkCodes():
 
 
 def load_n_plotstimSeq(savefile=None):
+    """load and plot a stimulus sequence from file
+
+    Args:
+        savefile (str, optional): stimulus sequence file to load. Defaults to None.
+    """    
     if savefile is None:
         from tkinter import Tk
         from tkinter.filedialog import askopenfilename

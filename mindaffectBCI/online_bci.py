@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -203,9 +203,18 @@ def startDecoderProcess(decoder,decoder_args, label='online_bci', logdir=None):
 
 
 def startPresentationProcess(presentation,presentation_args:dict=dict()):
+    """start the presentation process, i.e. the process which presents the user-interface and stimuli to the user
+
+    Args:
+        presentation (_type_): the presentation process to start -- normally a string with a fully-qualified python class name to run
+        presentation_args (dict, optional): arguments to pass to the presentation object at creation. Defaults to dict().
+
+    Returns:
+        _type_: _description_
+    """    
     print("Attempting to start presentation: {}".format(presentation))
     target=None
-    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.examples.presentation.selectionMatrix'.lower():
+    if presentation.lower() == 'selectionMatrix'.lower() or presentation.lower() == 'mindaffectBCI.presentation.selectionMatrix'.lower():
         if presentation_args is None:
             presentation_args = dict(symbols= [['Hello', 'Good bye'], 
                                                ['Yes',   'No']])
@@ -243,8 +252,13 @@ def startPresentationProcess(presentation,presentation_args:dict=dict()):
         return None
 
 def logConfiguration(args):
+    """log the configuration of the system to the hub/savefile
+
+    Args:
+        args (dict): the arguments used to start the BCI
+    """
     import json
-    from mindaffectBCI.utopiaController import utopiaControler
+    from mindaffectBCI.utopiaController import utopiaController
     try:
         uc = utopicController()
         uc.autoconnect()
@@ -272,7 +286,7 @@ def run(label='', logdir=None, block=True, hub=None, args:dict=dict(),
         decoder (str, optional): the name of the decoder function to use.  Defaults to 'decoder'.
         decoder_args (dict, optional): dictinoary of options to pass to the mindaffectBCI.decoder.run(). Defaults to None.
         presentation (str, optional): the name of the presentation function to use.  Defaults to: 'selectionMatrix'
-        presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.examples.presentation.selectionMatrix.run(). Defaults to None.
+        presentation_args (dict, optional): dictionary of options to pass to mindaffectBCI.presentation.selectionMatrix.run(). Defaults to None.
         block (bool, optional): return immeadiately or wait for presentation to finish and then terminate all processes.  Default to True
 
     Raises:
@@ -469,7 +483,7 @@ def shutdown(hub=None, acquisition=None, decoder=None):
     print("Hub is dead?")
     print("If not kill with:  taskkill /F /IM java.exe")
     #print('exit online_bci')
-    exit(0)
+    quit()
 
 
 def parse_args():

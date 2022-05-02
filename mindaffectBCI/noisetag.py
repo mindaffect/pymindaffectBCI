@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #  Copyright (c) 2019 MindAffect B.V.
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -348,7 +348,7 @@ class SingleTrial(FSM):
     """do a complete single trial with: cue->wait->flicker->feedback
     """
 
-    def __init__(self, stimSeq, tgtidx: int, utopiaController, stimulusStateStack, numframes: int = None,
+    def __init__(self, stimSeq, tgtidx: int, utopiaController, stimulusStateMachineStack, numframes: int = None,
                  framesperbit: int = 1, selectionThreshold: float = None, cuestate: int = 254, feedbackstate: int = 255,
                  duration: float = 4, trialduration: float = None, cueduration: float = 1, feedbackduration: float = 1,
                  waitduration: float = 1, intertrialduration: float = 1, cueframes: int = None, feedbackframes: int = None,
@@ -360,7 +360,7 @@ class SingleTrial(FSM):
             stimSeq (list-of-lists): (time,outputs)  the stimulus Sequence matrix to play
             tgtidx (int): the index in stimSeq of the cued target output.
             utopiaController (UtopiaController): the utopia controller for interaction with the decoder
-            stimulusStateStack (GSM): the stimulus state stack to which we add state machines
+            stimulusStateMachineStack (GSM): the stimulus state stack to which we add state machines
             numframes (int, optional): the number of frames to flicker for. Defaults to None.
             framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
             selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
@@ -371,9 +371,12 @@ class SingleTrial(FSM):
             cueframes (int, optional): cue duration in frames. Defaults to None.
             feedbackframes (int, optional): feedback duration in frames. Defaults to None.
             waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
-        self.stimSeq, self.tgtidx, self.utopiaController, self.stimulusStateStack, self.selectionThreshold, self.permute, self.startframe, self.cuestate, self.feedbackstate, self.sendEvents = (
-            stimSeq, tgtidx, utopiaController, stimulusStateStack, selectionThreshold, permute, startframe, cuestate, feedbackstate, sendEvents)
+        self.stimSeq, self.tgtidx, self.utopiaController, self.stimulusStateMachineStack, self.selectionThreshold, self.permute, self.startframe, self.cuestate, self.feedbackstate, self.sendEvents = (
+            stimSeq, tgtidx, utopiaController, stimulusStateMachineStack, selectionThreshold, permute, startframe, cuestate, feedbackstate, sendEvents)
         self.numframes = numframes if numframes else (duration/isi if duration is not None else trialduration/isi)
         self.cueframes = cueframes if cueframes else cueduration/isi
         self.framesperbit = framesperbit if framesperbit is not None else 1
@@ -406,7 +409,7 @@ class SingleTrial(FSM):
 
             if self.tgtidx >= 0:  # blinking: only if target is set
                 print('\n0.start/cue {}'.format(self.cueframes))
-                self.stimulusStateStack.push(
+                self.stimulusStateMachineStack.push(
                     HighlightObject(self.cueframes,
                                     self.tgtidx,
                                     tgtState=self.cuestate,
@@ -416,7 +419,7 @@ class SingleTrial(FSM):
 
         elif self.stage == 1:  # wait
             print('1.wait {}'.format(self.waitframes))
-            self.stimulusStateStack.push(
+            self.stimulusStateMachineStack.push(
                 HighlightObject(self.waitframes, -1,
                                 sendEvents=False))
 
@@ -424,7 +427,7 @@ class SingleTrial(FSM):
             print('2.stim, tgt:%d   %dframes' % (self.tgtidx if self.tgtidx >= 0 else -1, self.numframes))
             # objIDs=8,stimSeq=None,numframes=None,tgtidx=None,duration=4
             if self.selectionThreshold is not None:  # early stop if thres set
-                self.stimulusStateStack.push(
+                self.stimulusStateMachineStack.push(
                     FlickerWithSelection(self.stimSeq,
                                          self.numframes,
                                          self.tgtidx,
@@ -433,7 +436,7 @@ class SingleTrial(FSM):
                                          sendEvents=self.sendEvents, permute=self.permute,
                                          startframe=self.startframe))
             else:  # no selection based stopping
-                self.stimulusStateStack.push(
+                self.stimulusStateMachineStack.push(
                     Flicker(self.stimSeq,
                             self.numframes,
                             self.tgtidx,
@@ -443,7 +446,7 @@ class SingleTrial(FSM):
         elif self.stage == 3:  # wait/feedback
             if self.selectionThreshold is None:
                 print('3.wait {}'.format(self.intertrialframes))
-                self.stimulusStateStack.push(
+                self.stimulusStateMachineStack.push(
                     HighlightObject(self.intertrialframes, -1))
             else:
                 print('3.feedback {}'.format(self.feedbackframes))  # solid on
@@ -454,7 +457,7 @@ class SingleTrial(FSM):
                 if selected:
                     #tgtidx = self.objIDs.index(predObjId) if predObjId in self.objIDs else -1
                     tgtidx = predObjId-1
-                    self.stimulusStateStack.push(
+                    self.stimulusStateMachineStack.push(
                         HighlightObject(self.feedbackframes,
                                         tgtidx,
                                         tgtState=self.feedbackstate,
@@ -462,7 +465,7 @@ class SingleTrial(FSM):
                                         numblinkframes=0))
                 else:  # no selection do the intertrial
                     print('3.wait {}'.format(self.intertrialframes))
-                    self.stimulusStateStack.push(
+                    self.stimulusStateMachineStack.push(
                         HighlightObject(self.intertrialframes, -1))
 
         else:
@@ -481,7 +484,7 @@ class CalibrationPhase(FSM):
     """
 
     def __init__(self, objIDs: int = 8, stimSeq=None, nTrials: int = 10,
-                 utopiaController=None, stimulusStateStack: GSM = None,
+                 utopiaController=None, stimulusStateMachineStack: GSM = None,
                  *args, **kwargs):
         """do a complete calibration phase with nTrials x CalibrationTrial
 
@@ -490,12 +493,12 @@ class CalibrationPhase(FSM):
             stimSeq (list-of-lists, optional): (time,outputs) the stimulus sequence to play for the flicker. Defaults to None.
             nTrials (int | list, optional): the number of calibration trials  OR list of target IDs to give in order. Defaults to 10.
             utopiaController (UtopiaController, optional): the utopiaController for interfacing to the decoder. Defaults to None.
-            stimulusStateStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
+            stimulusStateMachineStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
 
         Raises:
             ValueError: if utopiaController or stimulusStateMachine is not given
         """
-
+        if objIDs is None:  objIDs=8
         self.objIDs = objIDs if hasattr(objIDs, "__len__") else list(range(1, objIDs+1))
         self.stimSeq = stimSeq
         self.trialSeq = [-1]*nTrials if not hasattr(nTrials, '__len__') else nTrials
@@ -505,8 +508,8 @@ class CalibrationPhase(FSM):
         self.kwargs = kwargs
         if self.utopiaController is None:
             raise ValueError
-        self.stimulusStateStack = stimulusStateStack
-        if self.stimulusStateStack is None:
+        self.stimulusStateMachineStack = stimulusStateMachineStack
+        if self.stimulusStateMachineStack is None:
             raise ValueError
         self.trli = 0
         self.tgtidx = -1
@@ -534,11 +537,11 @@ class CalibrationPhase(FSM):
                 self.trialSeq[self.trli] = tgtidx
             self.tgtidx = tgtidx
             print("Start Cal: %d/%d tgtidx=%d" % (self.trli, len(self.trialSeq), self.tgtidx))
-            self.stimulusStateStack.push(
+            self.stimulusStateMachineStack.push(
                 SingleTrial(self.stimSeq,
                             self.tgtidx,
                             self.utopiaController,
-                            self.stimulusStateStack,
+                            self.stimulusStateMachineStack,
                             *self.args, **self.kwargs))  # pass through other arguments?
         else:
             self.utopiaController.modeChange("idle")
@@ -554,8 +557,8 @@ class PredictionPhase(FSM):
     """
 
     def __init__(self, objIDs, stimSeq=None, nTrials=10,
-                 utopiaController=None, stimulusStateStack=None,
-                 selectionThreshold=.1, cuedprediction=False, *args, **kwargs):
+                 utopiaController=None, stimulusStateMachineStack=None,
+                 selectionThreshold=.1, cuedprediction=False, **kwargs):
         """do a complete calibration phase with nTrials x CalibrationTrial
 
         Args:
@@ -563,19 +566,19 @@ class PredictionPhase(FSM):
             stimSeq (list-of-lists, optional): (time,outputs) the stimulus sequence to play for the flicker. Defaults to None.
             nTrials (int|list, optional): the number of calibration trials OR list of target IDs to give in order. Defaults to 10.
             utopiaController (UtopiaController, optional): the utopiaController for interfacing to the decoder. Defaults to None.
-            stimulusStateStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
+            stimulusStateMachineStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
             selectionThreshold (float, optional): the Perr threshold for selection. Defaults to .1
             cuedprediction (bool, optional): flag if we do cueing before trial starts.  Default to False.
 
         Raises:
             ValueError: if utopiaController or stimulusStateMachine is not given
         """
-        self.objIDs = objIDs if hasattr(objIDs, "__len__") else list(range(1, objIDs+1))
+        if objIDs is None:  objIDs=10
+        self.objIDs = objIDs if hasattr(objIDs, "__iter__") else list(range(1, objIDs+1))
         self.stimSeq = stimSeq
-        self.trialSeq = [-1]*nTrials if not hasattr(nTrials, '__len__') else nTrials
+        self.trialSeq = [-1]*nTrials if not hasattr(nTrials, '__iter__') else nTrials
         self.selectionThreshold = selectionThreshold
         self.cuedprediction = cuedprediction
-        self.args = args
         self.kwargs = kwargs
         self.tgti = 0
         self.tgtidx = -1
@@ -583,8 +586,8 @@ class PredictionPhase(FSM):
         self.utopiaController = utopiaController
         if self.utopiaController is None:
             raise ValueError
-        self.stimulusStateStack = stimulusStateStack
-        if self.stimulusStateStack is None:
+        self.stimulusStateMachineStack = stimulusStateMachineStack
+        if self.stimulusStateMachineStack is None:
             raise ValueError
         # tell decoder to start cal
 
@@ -607,13 +610,13 @@ class PredictionPhase(FSM):
                 self.tgtidx = tgtidx if not tgtidx == self.tgtidx else (tgtidx+1) % len(self.objIDs)
                 self.trialSeq[self.tgti] = self.tgtidx
             print("Start Pred: %d/%d" % (self.tgti, len(self.trialSeq)))
-            self.stimulusStateStack.push(
+            self.stimulusStateMachineStack.push(
                 SingleTrial(self.stimSeq,
                             self.tgtidx,
-                            self.utopiaController,
-                            self.stimulusStateStack,
+                            utopiaController=self.utopiaController,
+                            stimulusStateMachineStack=self.stimulusStateMachineStack,
                             selectionThreshold=self.selectionThreshold,
-                            *self.args, **self.kwargs))
+                            **self.kwargs))
         else:
             self.utopiaController.modeChange("idle")
             raise StopIteration()
@@ -626,7 +629,7 @@ class Experiment(FSM):
 
     def __init__(self, objIDs, stimSeq=None, nCal=10, nPred=20,
                  selectionThreshold=.1, cuedprediction=False,
-                 utopiaController=None, stimulusStateStack=None,
+                 utopiaController=None, stimulusStateMachineStack=None,
                  numframes=4//isi, calframes=None, predframes=None,
                  interphaseframes=15//isi,
                  *args, **kwargs):
@@ -638,19 +641,20 @@ class Experiment(FSM):
             nCal (int, optional): the number of calibration trials. Defaults to 10.
             nPred (int, optional): the number of prediction trials. Defaults to 20.
             utopiaController (UtopiaController, optional): the utopiaController for interfacing to the decoder. Defaults to None.
-            stimulusStateStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
+            stimulusStateMachineStack (GSM, optional): the state-machine-stack to add new machines to for playback. Defaults to None.
             selectionThreshold (float, optional): the Perr threshold for selection. Defaults to .1
             cuedprediction (bool, optional): flag if we do cueing before trial starts.  Default to False.
             selectionThreshold (float, optional): [description]. Defaults to .1.
             cuedprediction (bool, optional): [description]. Defaults to False.
             utopiaController ([type], optional): [description]. Defaults to None.
-            stimulusStateStack ([type], optional): [description]. Defaults to None.
+            stimulusStateMachineStack ([type], optional): [description]. Defaults to None.
             calduration (int, optional): the duration of the calibration flicker. Defaults to 4.
             predduration (int, optional): the duration of the prediction flicker. Defaults to 10.
 
         Raises:
-            ValueError: if the utopiaController or stimulusStateStack is not given
+            ValueError: if the utopiaController or stimulusStateMachineStack is not given
         """
+        if objIDs is None:  objIDs=8
         self.objIDs = objIDs if hasattr(objIDs, "__len__") else list(range(1, objIDs+1))
         self.stimSeq = stimSeq
         self.nCal = nCal
@@ -663,8 +667,8 @@ class Experiment(FSM):
         self.utopiaController = utopiaController
         if self.utopiaController is None:
             raise ValueError
-        self.stimulusStateStack = stimulusStateStack
-        if self.stimulusStateStack is None:
+        self.stimulusStateMachineStack = stimulusStateMachineStack
+        if self.stimulusStateMachineStack is None:
             raise ValueError
         self.args = args
         self.kwargs = kwargs
@@ -680,24 +684,24 @@ class Experiment(FSM):
             StopIteration: when the whole sequence is complete
         """
         if self.stage == 0:  # start
-            self.stimulusStateStack.push(WaitFor(2/isi))
+            self.stimulusStateMachineStack.push(WaitFor(2/isi))
 
         elif self.stage == 1:  # calibration
-            self.stimulusStateStack.push(
+            self.stimulusStateMachineStack.push(
                 CalibrationPhase(self.objIDs, self.stimSeq, self.nCal,
                                  self.utopiaController,
-                                 self.stimulusStateStack,
+                                 self.stimulusStateMachineStack,
                                  *self.args, numframes=self.calframes, **self.kwargs))
 
         elif self.stage == 2:  # wait-for-classifier
             # TODO []: do a correct wait for classifier prediction message
-            self.stimulusStateStack.push(WaitFor(self.interphaseframes))
+            self.stimulusStateMachineStack.push(WaitFor(self.interphaseframes))
 
         elif self.stage == 3:  # prediction
-            self.stimulusStateStack.push(
+            self.stimulusStateMachineStack.push(
                 PredictionPhase(self.objIDs, self.stimSeq, self.nPred,
                                 self.utopiaController,
-                                self.stimulusStateStack,
+                                self.stimulusStateMachineStack,
                                 self.selectionThreshold,
                                 self.cuedprediction,
                                 *self.args, numframes=self.predframes, **self.kwargs))
@@ -713,19 +717,18 @@ uc = None
 
 
 class Noisetag:
-    '''noisetag abstraction layer to handle *both* the sequencing of the stimulus
-    flicker, *and* the communications with the Mindaffect decoder.  Clients can
-    use this class to implement BCI control by:
-     0) setting the flicker sequence to use (method: startFlicker, startFlickerWithSelection, startCalibration, startPrediction, startExpt)
-     1) getting the current stimulus state (method: getStimulusState), and using that to draw the display
-     2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
-     3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
-     '''
-
     def __init__(
             self, stimSeq: StimSeq = None, stimFile=None, utopiaController=None, stimulusStateMachineStack: GSM = None,
             clientid: str = None):
         """noisetag abstraction layer to handle *both* the sequencing of the stimulus flicker, *and* the communications with the Mindaffect decoder.
+
+        noisetag abstraction layer to handle *both* the sequencing of the stimulus
+        flicker, *and* the communications with the Mindaffect decoder.  Clients can
+        use this class to implement BCI control by:
+        0) setting the flicker sequence to use (method: startFlicker, startFlickerWithSelection, startCalibration, startPrediction, startExpt)
+        1) getting the current stimulus state (method: getStimulusState), and using that to draw the display
+        2) telling Noisetag when *exactly* the stimulus update took place (method: sendStimulusState)
+        3) getting the predictions/selections from noisetag and acting on them. (method: getLastPrediction() or getLastSelection())
 
         Args:
             stimSeq (str file-like, optional): the file to load the stimulus sequence from. Defaults to None.
@@ -830,6 +833,15 @@ class Noisetag:
         isi = new_isi
         return isi
 
+    def isRunning(self):
+        """return if we are currently running a stimulus sequence
+
+        Returns:
+            bool: true if we are currently running a stimulus sequence
+        """
+        return self.stimulusStateMachineStack.stack
+
+
     # stimulus sequence methods via the stimulus state machine stack
     # returns if sequence is still running
     def updateStimulusState(self, t=None):
@@ -858,10 +870,15 @@ class Noisetag:
         stimState, tgtidx, objIDs, sendEvents = self.stimulusStateMachineStack.get()
         # subset to the active set, matching objIDs to allobjIDs
         # N.B. objID-1 to map from objID->stimStateIndex
-        if stimState is not None:
+        if stimState is not None and self.objIDs is not None:
             stimState = [stimState[i-1] for i in self.objIDs]
         self.laststate = (stimState, tgtidx, self.objIDs, sendEvents)
         return self.laststate
+
+    def getNextStimulusState(self, objIDs=None):
+        self.updateStimulusState()
+        return self.getStimulusState(objIDs=objIDs)
+
 
     def setActiveObjIDs(self, objIDs):
         """update the set of active objects we send info to decoder about
@@ -1125,8 +1142,8 @@ class Noisetag:
 
     # methods to define what (meta) stimulus sequence we will play
     def startExpt(self, nCal=1, nPred=20, selectionThreshold=.1,
-                  cuedprediction=False,
-                  *args, **kwargs):
+                  cuedprediction=False,  objIDs=None,
+                  **kwargs):
         """Start the sequence for a full Calibration->Prediction experiment.
 
         Args:
@@ -1134,26 +1151,57 @@ class Noisetag:
             nPred (int, optional): the number of prediction trials. Defaults to 20.
             selectionThreshold (float, optional): the Perr threshold for selection. Defaults to .1
             cuedprediction (bool, optional): flag if we do cueing before trial starts.  Default to False.
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
 
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
             self.stimulusStateMachineStack.clear()
-        self.stimulusStateMachineStack.push(
-            Experiment(self.objIDs, self.noisecode,
-                       nCal, nPred,
-                       selectionThreshold, cuedprediction,
-                       self.utopiaController,
-                       self.stimulusStateMachineStack,
-                       *args, **kwargs))
 
-    def startCalibration(self, nTrials=10, stimSeq=None,
-                         *args, **kwargs):
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
+
+        self.stimulusStateMachineStack.push(
+            Experiment(objIDs=self.objIDs, stimSeq=self.noisecode,
+                       nCal=nCal, nPred=nPred,
+                       selectionThreshold=selectionThreshold, 
+                       cuedprediction=cuedprediction,
+                       utopiaController=self.utopiaController,
+                       stimulusStateMachineStack=self.stimulusStateMachineStack,
+                       **kwargs))
+
+    def startCalibration(self, nTrials=10, stimSeq=None, objIDs=None,
+                         **kwargs):
         """setup and run a complete calibration phase
 
         Args:
             nTrials (int, optional): number of calibration trials to run. Defaults to 10.
             stimSeq (list-of-lists-of-int, optional): the stimulus sequence to play for the flicker in the calibration phase. Defaults to None.
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
@@ -1162,21 +1210,38 @@ class Noisetag:
         if stimSeq is not None:
             self.set_stimSeq(stimSeq)
 
-        self.stimulusStateMachineStack.push(
-            CalibrationPhase(self.objIDs,
-                             self.noisecode,
-                             nTrials,
-                             self.utopiaController,
-                             self.stimulusStateMachineStack,
-                             *args, **kwargs))
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
 
-    def startPrediction(self, nTrials=10, stimSeq=None,
-                        *args, **kwargs):
+        self.stimulusStateMachineStack.push(
+            CalibrationPhase(objIDs=self.objIDs,
+                             stimSeq=self.noisecode,
+                             nTrials=nTrials,
+                             utopiaController=self.utopiaController,
+                             stimulusStateMachineStack=self.stimulusStateMachineStack,
+                             **kwargs))
+
+    def startPrediction(self, nTrials:int=10, stimSeq=None, objIDs:list=None,
+                        **kwargs):
         """setup and run a complete prediction phase
 
         Args:
             nTrials (int, optional): number of prediction trials to run. Defaults to 10.
             stimSeq (list-of-lists-of-int, optional): the stimulus sequence to play for the flicker in the calibration phase. Defaults to None.
+            objIDs (list|int, optional): the set of objectIDs to generate stimulus states for in this sequence.  If None use the Noisetag objects list of objIDs.  Defaults to None.
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
@@ -1185,20 +1250,36 @@ class Noisetag:
         if stimSeq is not None:
             self.set_stimSeq(stimSeq)
 
-        self.stimulusStateMachineStack.push(
-            PredictionPhase(self.objIDs,
-                            self.noisecode,
-                            nTrials,
-                            self.utopiaController,
-                            self.stimulusStateMachineStack,
-                            *args, **kwargs))
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
 
-    def startSingleTrial(self, numframes: int = 100, tgtidx: int = -1, stimSeq=None, *args, **kwargs):
+        self.stimulusStateMachineStack.push(
+            PredictionPhase(objIDs=self.objIDs,
+                            stimSeq=self.noisecode,
+                            nTrials=nTrials,
+                            utopiaController=self.utopiaController,
+                            stimulusStateMachineStack=self.stimulusStateMachineStack,
+                            **kwargs))
+
+    def startSingleTrial(self, numframes: int = 60*4, tgtidx: int = -1, stimSeq=None, objIDs:list=None, **kwargs):
         """setup and run a single flicker trial, with (optional)cue->wait->flicker->feedback
 
         Args:
             numframes (int, optional): the number of frames for the flicker. Defaults to 100.
             tgtidx (int, optional): the index in the stimSequence of the target, -1 if no cued target.  Default to -1
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
@@ -1207,20 +1288,36 @@ class Noisetag:
         if stimSeq is not None:
             self.set_stimSeq(stimSeq)
 
-        self.stimulusStateMachineStack.push(
-            SingleTrial(self.noisecode,
-                        tgtidx,
-                        self.utopiaController,
-                        self.stimulusStateMachineStack,
-                        numframes,
-                        *args, **kwargs))
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
 
-    def startFlicker(self, numframes=100, tgtidx=-1, stimSeq=None, *args, **kwargs):
+        self.stimulusStateMachineStack.push(
+            SingleTrial(stimSeq=self.noisecode,
+                        tgtidx=tgtidx,
+                        utopiaController=self.utopiaController,
+                        stimulusStateMachineStack=self.stimulusStateMachineStack,
+                        numframes=numframes,
+                        **kwargs))
+
+    def startFlicker(self, numframes=60*4, tgtidx=-1, stimSeq=None, objIDs=None, *args, **kwargs):
         """setup and run the just the flicker
 
         Args:
             numframes (int, optional): the number of frames for the flicker. Defaults to 100.
             tgtidx (int, optional): the index in the stimSequence of the target, -1 if no cued target.  Default to -1
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
@@ -1228,6 +1325,10 @@ class Noisetag:
 
         if stimSeq is not None:
             self.set_stimSeq(stimSeq)
+
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
+
 
         self.stimulusStateMachineStack.push(
             Flicker(self.noisecode,
@@ -1235,13 +1336,26 @@ class Noisetag:
                     tgtidx,
                     *args, **kwargs))
 
-    def startFlickerWithSelection(self, numframes: int = 100,
-                                  tgtidx: int = -1, stimSeq=None, *args, **kwargs):
+    def startFlickerWithSelection(self, numframes: int = 60*4,
+                                  tgtidx: int = -1, stimSeq=None, objIDs=None, *args, **kwargs):
         """setup and run the just the flicker, with early stopping if the BCI selects an output
 
         Args:
             numframes (int, optional): the number of frames for the flicker. Defaults to 100.
             tgtidx (int, optional): the index in the stimSequence of the target, -1 if no cued target.  Default to -1
+            numframes (int, optional): the number of frames to flicker for. Defaults to None.
+            framesperbit (int, optional): the number of video frames per stimSeq time-points. Defaults to 1.
+            selectionThreshold (float, optional): Target error probability for selection. Defaults to None.
+            duration (int, optional): flicker duration in seconds. Defaults to 4.
+            cueduration (int, optional): cue duration in seconds. Defaults to 1.
+            feedbackduration (int, optional): feedback duration in seconds. Defaults to 1.
+            waitduration (int, optional): wait duration in seconds. Defaults to 1.
+            cueframes (int, optional): cue duration in frames. Defaults to None.
+            feedbackframes (int, optional): feedback duration in frames. Defaults to None.
+            waitframes (int, optional): wait duration in frames. Defaults to None.
+            permute (bool, optional): if true then permute the order of objects before running the flicker sequence.  Default to False
+            startframe (int, optional): set the frame in the sequence to start the flicker from.  if 'random' then pick a random starting point. If 'lastframe' then continue from the last played frame.  Defaults to 0.
+            sendEvents (bool, optoinal): if true then send event info to the Hub, if false then do not send events.  For example used for for practice / debugging. Defaults to True.
         """
         if self.stimulusStateMachineStack.stack:
             print("Warning: replacing running sequence?")
@@ -1249,6 +1363,9 @@ class Noisetag:
 
         if stimSeq is not None:
             self.set_stimSeq(stimSeq)
+
+        if objIDs is not None:
+            self.setActiveObjIDs(objIDs) if hasattr(objIDs,'__iter__') else self.setnumActiveObjIDs(objIDs)
 
         self.stimulusStateMachineStack.push(
             FlickerWithSelection(self.noisecode,
@@ -1366,10 +1483,13 @@ def run(symbols=None, ncal: int = 10, npred: int = 10, cuedprediction: bool = Tr
     nt.connect()
     nsymb = sum([len(r) for r in symbols]) if symbols is not None else 10
     # set the subset of active objects being displayed
-    nt.setnumActiveObjIDs(nsymb)
+    # nt.setnumActiveObjIDs(nsymb)
     # tell it to play a full experiment sequence
     nt.startExpt(nCal=ncal, nPred=npred, cuedprediction=cuedprediction, framesperbit=frameperbit,
                  selectionThreshold=selectionThreshold, startframe='lastframe')
+    # just do the prediction phase
+    # nt.startPrediction(nTrials=npred, framesperbit=frameperbit,
+    #              selectionThreshold=selectionThreshold, startframe='lastframe')
     # mainloop
     nframe = 0
     while True:

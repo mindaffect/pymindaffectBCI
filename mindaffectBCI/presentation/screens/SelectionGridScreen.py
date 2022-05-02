@@ -177,9 +177,11 @@ class SelectionGridScreen(Screen):
     def reset_noisetag(self):
         print('noisetag_reset')
         if self.noisetag_mode.lower() == 'calibration':
+            self.noisetag.modeChange("calibration")
             self.noisetag.startCalibration(**self.noisetag_args)
         elif self.noisetag_mode.lower() == 'prediction':
             print('noisetag::prediction {}'.format(self.noisetag_args))
+            self.noisetag.modeChange("prediction")
             self.noisetag.startPrediction(**self.noisetag_args)
         elif self.noisetag_mode.lower() == 'single_trial':
             self.noisetag.startSingleTrial(**self.noisetag_args)

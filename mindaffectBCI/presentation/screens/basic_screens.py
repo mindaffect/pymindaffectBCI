@@ -294,10 +294,10 @@ class ScreenGraph(Screen):
         self.window, self.label, self.noisetag = window, label, noisetag
         if self.label is None: self.label = self.__class__.__name__
 
-        self.init_subscreens(subscreens, subscreen_args)
-        self.subscreen_transitions = subscreen_transitions
+        self.subscreens = self.init_subscreens(subscreens, subscreen_args)
+        self.subscreen_transitions = subscreen_transitions if subscreen_transitions else self.sequential_subscreen_transitions(subscreens)
         self.default_screen, self.exit_screen = default_screen, exit_screen
-        self.start_screen = start_screen if start_screen else list(subscreens.keys())[0]
+        self.start_screen = start_screen if start_screen else tuple(subscreens.keys())[0]
         self.reset()
 
     def reset(self):
@@ -315,7 +315,7 @@ class ScreenGraph(Screen):
         Returns:
             (dict): dictionary of named sub-screens with instaintated screen classes as values.
         """
-        self.subscreens = dict()
+        inited_subscreens = dict()
         for k,screen in subscreens.items():
             if not isinstance(screen,Screen):
                 screenclass = screen[0]
@@ -329,8 +329,21 @@ class ScreenGraph(Screen):
                 if self.noisetag:
                     screen_args['noisetag']=self.noisetag
                 screen=import_and_make_class(screenclass,window=self.window,**screen_args)
-            self.subscreens[k] = screen
-        return self.subscreens
+            inited_subscreens[k] = screen
+        return inited_subscreens
+
+    def sequential_subscreen_transitions(self,subscreens):
+        """ make a set of transitions to sequentially transition through the given dict/list of subscreens
+
+        Returns:
+            dict: a dict of from:to screen names
+        """        
+        # init as a sequential scan through sub-screens in given order
+        # get the list of screens
+        scrns = tuple(subscreens.keys()) if isinstance(subscreens,dict) else subscreens
+        # make the dict of transitions for one screen to the next
+        subscreen_transitions = { k:v for k,v in zip(scrns[:-1],scrns[1:]) }
+        return subscreen_transitions
 
     def draw(self, t):
         if self.screen is None:
@@ -448,6 +461,6 @@ if __name__=='__main__':
         "looper":["InstructionScreen",{"text":"Loop Screen\n\n","waitKey":True,"duration":1000}],    
     }
     subscreen_transitions = {'ins1':'ins2', 'ins2':'exit'}
-    screen = ScreenGraph(window, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
+    #screen = ScreenGraph(window, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
     #screen = LoopedScreenGraph(window, n_loop=5, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
     run_screen(window, screen)
