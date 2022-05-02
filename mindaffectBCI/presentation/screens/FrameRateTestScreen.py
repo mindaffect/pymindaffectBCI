@@ -103,3 +103,10 @@ class FrameRateTestScreen(InstructionScreen):
                 pass
         return (medt,madt,mint,maxt)
 
+
+
+if __name__=='__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    window = initPyglet(width=640, height=480)
+    screen = FrameRateTestScreen(window)
+    run_screen(window, screen)

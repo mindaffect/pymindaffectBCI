@@ -19,10 +19,10 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-import mindaffectBCI.presentation.selectionMatrix as selectionMatrix
+from mindaffectBCI.presentation.screens.basic_screens import WaitScreen
 from mindaffectBCI.examples.presentation.snakegame import SnakeGame
 
-class SnakeGameScreen(selectionMatrix.WaitScreen):
+class SnakeGameScreen(WaitScreen):
     def __init__(self, window, symbols, noisetag, duration:float=None, waitKey:bool=False, logo:str=None, framespermove:int=60, target_only:bool=False, clearScreen:bool=True, **kwargs):
         super().__init__(window, duration, waitKey, logo)
         self.window=window

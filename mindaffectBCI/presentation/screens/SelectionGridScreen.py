@@ -21,10 +21,11 @@
 # SOFTWARE.
 import pyglet
 import os
+import random
 from mindaffectBCI.presentation.screens.basic_screens import Screen
 from mindaffectBCI.noisetag import Noisetag
 from mindaffectBCI.utopiaclient import PredictedTargetProb, PredictedTargetDist
-from mindaffectBCI.decoder.utils import search_directories_for_file
+from mindaffectBCI.decoder.utils import search_directories_for_file, intstr2intkey
 
 
 def load_symbols(fn, replacements:dict={"<comma>":",", "<space>":"_"}):
@@ -71,31 +72,64 @@ def load_symbols(fn, replacements:dict={"<comma>":",", "<space>":"_"}):
 #-----------------------------------------------------------------
 #-------------------------------------------------------------
 class SelectionGridScreen(Screen):
-    '''Screen which shows a grid of symbols which will be flickered with the noisecode
-    and which can be selected from by the mindaffect decoder Brain Computer Interface'''
 
     LOGLEVEL=0
-    def __init__(self, window, noisetag, symbols=None, objIDs=None,
+    def __init__(self, window, noisetag=None, symbols=None, objIDs=None,
+                 noisetag_mode:str = 'prediction', noisetag_args:dict={'nTrials':10, 'duration':5},
                  bgFraction:float=.2, instruct:str="", label:str=None,
-                 clearScreen:bool=True, sendEvents:bool=True, liveFeedback:bool=True, 
-                 optosensor:bool=True, fixation:bool=False, state2color:dict=None,
+                 clearScreen:bool=True, background_color:tuple=None, sendEvents:bool=True, liveFeedback:bool=True, 
+                 optosensor:bool=True, inject_threshold: float = None, inject_noise:float=None,
+                 fixation:bool=False, state2color:dict=None,
                  target_only:bool=False, show_correct:bool=True, show_newtarget_count:bool=None,
                  waitKey:bool=True, stimulus_callback=None, framerate_display:bool=True,
                  logo:str='MindAffect_Logo.png', media_directories:list=[], font_size:int=None, only_update_on_change:bool=True,
                  self_paced_intertrial:int=-1, self_paced_sentence:str='\n\n\n\nPause.  Press <space> to continue'):
-        '''Intialize the stimulus display with the grid of strings in the
-            shape given by symbols.
-        '''
+        """Screen which shows a grid of symbols which will be flickered with a given stimulus-sequence
+           and the approrpiate information sent-to and recieved from a running hub+decoder to implement an on-line or off-line BCI system.
+
+        Args:
+            window (pyglet.window): pyglet window to display the selection grid in
+            noisetag (mindaffectBCI.Noisetag): Noisetag object which manages the stimulus-sequence order and communication to the on-line BCI components.
+            noisetag_mode (str, optional): The mode to run the noisetag sequence in.  One of: 'calibration','prediction','single_trial'.  Defaults to 'prediction'.
+            noisetag_args (dict, optional): Additional argument to pass to the noisetag when setting the sequence up.  See `Noisetag.startPrediciton` or `Noisetag.startCalibration` or the options available.  Examples include `nTrials`,`duration`,`waitduration`, etc.  Defaults to dict().
+            symbols (list-of-list-of-str, optional): the grid of symbols to display, i.e. the foreground letters of the virtual-keys. Defaults to None.
+            objIDs (list-of-int, optional): the set of BCI unique object identifiers to use for the symbols in the grid. Defaults to None.
+            bgFraction (float, optional): fraction of empty space between the background of the 'virtual keys' of the on-screen grid. Defaults to .2.
+            instruct (str, optional): instruction to show at the top of the screen. Defaults to "".
+            label (str, optional): human readable label for this screen, used for example to automatically make menu entries, or for logging messages. Defaults to None.
+            clearScreen (bool, optional): set to true to clear the screen to background color before every frame flip. Defaults to True.
+            background_color (3-tuple, optional): the color to use for the background of the grid. Defaults to None
+            sendEvents (bool, optional): set to true to send events about the stimulus state to the hub and BCI.  N.B. if false no events are sent and hence no BCI functionality will work. Defaults to True.
+            liveFeedback (bool, optional): set to true to show live feedback, in the form of the key label color, of the BCIs current most likely target. Defaults to True.
+            optosensor (bool, optional): set to true to show the optosensor box in the top left of the window. Defaults to True.
+            fixation (bool, optional): set to true to show a red fixation cross in the center of the grid. Defaults to False.
+            state2color (dict, optional): dictionary with the mapping from stimulus 'states' (as obtained from the stimulus-sequence obtained from the noisetag object) to the color of the grid virtual key  background.  Note: the following states have pre-defined meanings: 0-no-stimulus, 254-cued target, 255-feedback.  Defaults to None.
+            target_only (bool, optional): set to true to only show the cued target and it's stimuli.  This is used for 'simple-calibration' where only the target is show in order to not distract the user with the flickering of the other keys. Defaults to False.
+            show_correct (bool, optional): if a target is cued, then show with a * if the BCI correctly selects this cued target. Defaults to True.
+            show_newtarget_count (bool, optional): set to true to show a count at the top of the screen of the number of trials completed this run. Defaults to None.
+            waitKey (bool, optional): if true the wait for key press to finish the screen.  In this case this means a key-press automatically finishes the stimulus display. Defaults to True.
+            stimulus_callback (_type_, optional): call-back function to call when the stimulus is updated. Defaults to None.
+            framerate_display (bool, optional): set to true to show the framerate counter in the top-right of the display. Defaults to True.
+            logo (str, optional): file name of an image to load and show as the logo the top right of the display. Defaults to 'MindAffect_Logo.png'.
+            media_directories (list, optional): list of directories to search for media-resources, such as images or audio, when loading. Defaults to [].
+            font_size (int, optional): size of the base font to use for the instructions etc.  Note: the grid cell keys font size is automatically computed to fit in the grid-cell. Defaults to None.
+            only_update_on_change (bool, optional): set to true to only update the stimulus objects state when that state has changed.  This is an efficiency optimization to reduce the computational demands of the stimuli. Defaults to True.
+            self_paced_intertrial (int, optional): time in seconds to *automatically* pause the stimuli between trials and wait for the user to press a key to continue. Defaults to -1.
+            self_paced_sentence (str, optional): sentence to show on the screen when auto-pausing to wait for the user to continue. Defaults to '\n\n\n\nPause.  Press <space> to continue'.
+        """
         self.window, self.symbols, self.noisetag, self.objIDs = ( window, symbols, noisetag, objIDs)
-        self.sendEvents, self.liveFeedback, self.optosensor, self.framerate_display, self.logo, self.font_size, self.waitKey, self.stimulus_callback, self.target_only, self.show_correct, self.fixation, self.only_update_on_change, self.label, self.self_paced_intertrial, self.self_paced_sentence, self.media_directories = \
-            (sendEvents, liveFeedback, optosensor, framerate_display, logo, font_size, waitKey, stimulus_callback, target_only, show_correct, fixation, only_update_on_change, label, self_paced_intertrial, self_paced_sentence, media_directories)
+        self.sendEvents, self.liveFeedback, self.optosensor, self.framerate_display, self.logo, self.background_color, self.font_size, self.waitKey, self.stimulus_callback, self.target_only, self.show_correct, self.fixation, self.only_update_on_change, self.self_paced_intertrial, self.self_paced_sentence, self.media_directories, self.inject_threshold, self.inject_noise, self.instruct, self.bgFraction =\
+            (sendEvents, liveFeedback, optosensor, framerate_display, logo, background_color, font_size, waitKey, stimulus_callback, target_only, show_correct, fixation, only_update_on_change, self_paced_intertrial, self_paced_sentence, media_directories, inject_threshold, inject_noise, instruct, bgFraction)
+        self.noisetag_mode, self.noisetag_args = noisetag_mode, noisetag_args
+        self.label = label if label is not None else self.__class__.__name__
         # ensure media directories has right format
         if self.media_directories is None: self.media_directories = []
         elif not hasattr(self.media_directories,'__iter__'): self.media_directories=[self.media_directories]
         # create set of sprites and add to render batch
-        self.clearScreen= True
+        self.clearScreen=clearScreen
         self.isRunning=False
         self.isDone=False
+        self.pause=False
         self.nframe=0
         self.last_target_idx=-1
         self.framestart = self.getTimeStamp()
@@ -115,17 +149,15 @@ class SelectionGridScreen(Screen):
         self.liveSelections = None
         self.feedbackThreshold = .4
         self.last_target_idx = -1
-        self.injectSignal = None
         self.show_newtarget_count=show_newtarget_count
 
         # add new state to color mappings
         if state2color is not None:
-            for k,v in state2color.items():
-                self.state2color[int(k)]=v
+            self.state2color.update(intstr2intkey(state2color))
 
     def reset(self):
         """reset the stimulus state
-        """        
+        """
         self.isRunning=False
         self.isDone=False
         self.nframe=0
@@ -138,6 +170,21 @@ class SelectionGridScreen(Screen):
             self.show_newtarget_count=0 
         self.prev_stimulus_state = None #self.stimulus_state
         self.set_grid()
+        # reset the noisetag if not already running
+        if self.noisetag and not self.noisetag.isRunning():
+            self.reset_noisetag()
+
+    def reset_noisetag(self):
+        print('noisetag_reset')
+        if self.noisetag_mode.lower() == 'calibration':
+            self.noisetag.startCalibration(**self.noisetag_args)
+        elif self.noisetag_mode.lower() == 'prediction':
+            print('noisetag::prediction {}'.format(self.noisetag_args))
+            self.noisetag.startPrediction(**self.noisetag_args)
+        elif self.noisetag_mode.lower() == 'single_trial':
+            self.noisetag.startSingleTrial(**self.noisetag_args)
+        else:
+            self.noisetag.startFlickerWithSelection(**self.noisetag_args)
 
     def elapsed_ms(self):
         """get the elasped time in milliseconds since this screen started running
@@ -316,7 +363,7 @@ class SelectionGridScreen(Screen):
         self.framerate.text=text
         self.framerate.end_update()
 
-    def set_grid(self, symbols=None, objIDs=None, bgFraction:float=.3, sentence:str="What you type goes here", logo=None):
+    def set_grid(self, symbols=None, objIDs=None, bgFraction:float=None, sentence:str=None, logo=None):
         """set/update the grid of symbols to be selected from
 
         Args:
@@ -325,14 +372,20 @@ class SelectionGridScreen(Screen):
             bgFraction (float, optional): background fraction -- fraction of empty space between selectable objects. Defaults to .3.
             sentence (str, optional): starting sentence for the top of the screen. Defaults to "What you type goes here".
             logo (str, optional): logo to display at the top of the screen. Defaults to None.
-        """        
+        """
         winw, winh=self.window.get_size()
         # tell noisetag which objIDs we are using
         if symbols is None:
             symbols = self.symbols
+        if sentence is None:
+            sentence = self.instruct
+        if bgFraction is None:
+            bgFraction = self.bgFraction
 
         if isinstance(symbols, str):
             symbols = load_symbols(symbols)
+        if isinstance(symbols[0],str):
+            symbols=[symbols]
 
         self.symbols=symbols
         # Number of non-None symbols
@@ -352,14 +405,15 @@ class SelectionGridScreen(Screen):
 
         self.noisetag.setActiveObjIDs(self.objIDs)
 
-        # add a background sprite with the right color
         self.objects=[None]*self.nsymb
         self.labels=[None]*self.nsymb
         self.batch = pyglet.graphics.Batch()
-        self.background = pyglet.graphics.OrderedGroup(0)
-        self.foreground = pyglet.graphics.OrderedGroup(1)
+        self.grid_background_group = pyglet.graphics.OrderedGroup(0)
+        self.background_group = pyglet.graphics.OrderedGroup(1)
+        self.foreground_group = pyglet.graphics.OrderedGroup(2)
 
         # init the symbols list -- using the bottom 90% of the screen
+        self.init_background(0, 0, winw, winh*.9, self.background_color)
         self.init_symbols(symbols, 0, 0, winw, winh*.9, bgFraction )
         # add the other bits
         self.init_opto()
@@ -368,6 +422,15 @@ class SelectionGridScreen(Screen):
         self.init_framerate()
         self.init_logo(logo)
         self.init_fixation(0, 0, winw, winh*.9)
+
+
+    def init_background(self, x, y, w, h, color=None):
+        # make an color block for the background
+        self.background = None
+        if color:
+            self.background = self.init_sprite('', x, y, w, h, batch=self.batch, group=self.grid_background_group)[0]
+            self.background.color = color
+
 
     def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
         """setup the display for the given symbols set
@@ -380,7 +443,7 @@ class SelectionGridScreen(Screen):
             h (float): height of the display box
             bgFraction (float, optional): fraction of empty space between objects. Defaults to .1.
             font_size (int, optional): label font size. Defaults to None.
-        """        
+        """
         # now create the display objects
         sw = int(w/self.gridwidth) # cell-width
         bgoffsetx = int(sw*bgFraction) # offset within cell for the button
@@ -441,10 +504,10 @@ class SelectionGridScreen(Screen):
         label=pyglet.text.Label(symb, font_size=font_size, x=x+w/2, y=y+h/2,
                                 color=(255, 255, 255, 255),
                                 anchor_x='center', anchor_y='center',
-                                batch=self.batch, group=self.foreground)
+                                batch=self.batch, group=self.foreground_group)
         return label
 
-    def init_sprite(self, symb, x, y, w, h, scale_to_fit=True):
+    def init_sprite(self, symb, x, y, w, h, scale_to_fit=True, batch=None, group=None):
         """setup the background image for this target 'button', inside the given display box
 
         Args:
@@ -457,10 +520,11 @@ class SelectionGridScreen(Screen):
 
         Returns:
             sprite: the background image sprite
-        """        
+        """
         try : # symb is image to use for this button
             img = search_directories_for_file(symb,os.path.dirname(__file__),
                                               os.path.join(os.path.dirname(__file__),'images'),
+                                              os.path.join(os.path.dirname(__file__),'..','images'),
                                               *self.media_directories)
             img = pyglet.image.load(img)
             symb = '.' # symb is a fixation dot
@@ -472,7 +536,8 @@ class SelectionGridScreen(Screen):
         # convert to a sprite (for fast re-draw) and store in objects list
         # and add to the drawing batch (as background)
         sprite=pyglet.sprite.Sprite(img, x=x+w/2, y=y+h/2,
-                                    batch=self.batch, group=self.background)
+                                    batch=batch if batch else self.batch, 
+                                    group=group if group else self.background_group)
         sprite.w = w
         sprite.h = h
         # re-scale (on GPU) to the size of this grid cell
@@ -489,7 +554,7 @@ class SelectionGridScreen(Screen):
         self.framerate=pyglet.text.Label("", font_size=12, x=winw, y=winh,
                                         color=(255, 255, 255, 255),
                                         anchor_x='right', anchor_y='top',
-                                        batch=self.batch, group=self.foreground)
+                                        batch=self.batch, group=self.foreground_group)
 
     def init_sentence(self,sentence, x, y, w, h, font_size=32):
         """create the display lable for the current spelled sentence, inside the display box
@@ -507,7 +572,7 @@ class SelectionGridScreen(Screen):
                                         color=(255, 255, 255, 255),
                                         anchor_x='left', anchor_y='top',
                                         multiline=True,
-                                        batch=self.batch, group=self.foreground)
+                                        batch=self.batch, group=self.foreground_group)
 
     def init_logo(self,logo):
         """init the sprite for the logo display at the top right of the window
@@ -522,13 +587,12 @@ class SelectionGridScreen(Screen):
             try :
                 logo = pyglet.image.load(logo)
                 logo.anchor_x, logo.anchor_y  = (logo.width,logo.height) # anchor top-right 
-                self.logo = pyglet.sprite.Sprite(logo, self.window.width, self.window.height-16,
-                                                 batch=self.batch, group=self.background) # sprite a window top-right
+                self.logo = pyglet.sprite.Sprite(logo, self.window.width, self.window.height-16)
             except :
                 self.logo = None
         if self.logo:
             self.logo.batch = self.batch
-            self.logo.group = self.foreground
+            self.logo.group = self.foreground_group
             self.logo.update(x=self.window.width,  y=self.window.height-16,
                             scale_x=self.window.width*.1/self.logo.image.width, 
                             scale_y=self.window.height*.1/self.logo.image.height)
@@ -542,7 +606,7 @@ class SelectionGridScreen(Screen):
 
     def init_fixation(self,x,y,w,h):
         """initialize the sprite/test for the fixation point in the middle of the display
-        """        
+        """
         self.fixation_obj = None
         # add a fixation point in the middle of the grid
         if isinstance(self.fixation,str):
@@ -556,6 +620,28 @@ class SelectionGridScreen(Screen):
             self.fixation_obj.color = (255,0,0,255)
 
 
+    def injectSignal(self,stim_state:int):
+        """given a stimulus or targetstate compute the amplitude of signal to inject into fake-data streams
+
+        Args:
+            stim_state (int|list-of-int): either the targetState if target is set, or the full stimulus state for all objects if not.
+
+        Returns:
+            int|float: the amplitude of the signal to inject
+        """
+        if hasattr(stim_state,'__iter__'):
+            # summed stimulus power
+            amp = int(sum(stim_state))
+        else:
+            # direct state to amplitude mapping
+            amp = int(stim_state*255) if 0 <= stim_state and stim_state <= 1 else int(stim_state)
+        if self.inject_threshold:
+            amp = max(0, amp-self.inject_threshold)
+        if self.inject_noise:
+            # add gaussian noise
+            amp = max(0,amp + random.gauss(0,self.inject_noise))
+        return amp
+
     def is_done(self):
         """test if this screen is finished displaying
 
@@ -564,17 +650,16 @@ class SelectionGridScreen(Screen):
         """
         if self.isDone:
             self.noisetag.modeChange('idle')
-            self.injectSignal=None
         return self.isDone
 
     # mapping from bci-stimulus-states to display color
     state2color={0:(5, 5, 5),       # off=grey
                  1:(255, 255, 255), # on=white
-                 #2:(0, 255, 0),     # cue=green
-                 #3:(0, 0, 255),     # feedback=blue
                  254:(0,255,0),     # cue=green
                  255:(0,0,255),     # feedback=blue
                  None:(100,0,0)}    # red(ish)=task
+    """ dictionary mapping for object stimulus 'states' (keys as int) to the color (3-tuples) (of the background) to use for that object.
+    """
     def update_object_state(self, idx:int, state:int):
         """update the idx'th object to stimulus state state
 
@@ -610,8 +695,7 @@ class SelectionGridScreen(Screen):
     def draw(self, t):
         """draw the letter-grid with given stimulus state for each object.
         Note: To maximise timing accuracy we send the info on the grid-stimulus state
-        at the start of the *next* frame, as this happens as soon as possible after
-        the screen 'flip'. """
+        at the start of the *next* frame, as by this time we have the accurate timing information from the subsequent display flip. """
         if not self.isRunning:
             self.isRunning=True
             self.t0 = self.getTimeStamp()
@@ -735,14 +819,32 @@ class SelectionGridScreen(Screen):
 
     def do_draw(self):
         """do the actual drawing of the current display state
-        """        
+        """
+        if self.clearScreen:
+            self.window.clear()
+
         self.batch.draw()
         #if self.logo: self.logo.draw()
         #if self.fixation_obj: self.fixation_obj.draw()
         self.frameend=self.getTimeStamp()
         # add the frame rate info
         # TODO[]: limit update rate..
-        if self.framerate_display:
-            from mindaffectBCI.presentation.selectionMatrix import flipstats
-            flipstats.update_statistics()
-            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(flipstats.median,flipstats.sigma))                
+        if self.framerate_display and hasattr(self.window,'flipstats'):
+            self.window.flipstats.update_statistics()
+            self.set_framerate("{:4.1f} +/-{:4.1f}ms".format(self.window.flipstats.median,self.window.flipstats.sigma))                
+
+
+
+
+if __name__=='__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    # make a noisetag object without the connection to the hub for testing
+    nt = Noisetag(stimSeq='mgold_65_6532.txt', utopiaController=None)
+    window = initPyglet(width=640, height=480)
+    screen = SelectionGridScreen(window, nt, symbols=[['1','2'],['3','4']],
+                        inject_threshold=5, inject_noise=5)
+    # start the stimulus sequence playing
+    nt.startFlicker()
+    # run the screen with the flicker
+    run_screen(window, screen)

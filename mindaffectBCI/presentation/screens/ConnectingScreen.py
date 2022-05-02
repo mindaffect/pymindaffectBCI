@@ -39,7 +39,7 @@ class ConnectingScreen(InstructionScreen):
     autoconnect_timeout_ms = 5000
 
     def __init__(self, window, noisetag, duration=150000):
-        super().__init__(window, self.prefix_text + self.searching_text, duration, False)
+        super().__init__(window, text=self.prefix_text + self.searching_text, duration=duration, waitKey=False)
         self.noisetag = noisetag
         self.host = None
         self.port = -1

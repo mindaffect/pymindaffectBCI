@@ -4,7 +4,6 @@ import cmath
 from scipy.io import wavfile
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
-import soundfile as sf
 #import pyloudnorm as pyln
 # adapted from https://scicomp.stackexchange.com/questions/18987/algorithm-for-high-quality-1-f-noise
 def pink_noise(f_ref, f_min, f_max, length, f_sample):
@@ -132,6 +131,7 @@ def set_volume_range(signal,range):
     
 
 if __name__=="__main__":
+    import soundfile as sf
     length = 0.750  # seconds
     f_sample = 44100  # Hz
 

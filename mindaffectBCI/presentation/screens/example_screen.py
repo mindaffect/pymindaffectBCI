@@ -20,9 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 import pyglet
-import mindaffectBCI.presentation.selectionMatrix as selectionMatrix
-from mindaffectBCI.presentation.selectionMatrix import getTimeStamp, Screen
-from mindaffectBCI.examples.presentation.sound_flash_psypy import SoundFlash
+import time
+from mindaffectBCI.presentation.screens.basic_screens import Screen
+from mindaffectBCI.presentation.screens.sound_flash import SoundFlash
 
 class HelloWorldScreen(Screen):
     def __init__(self,window,noisetag=None,text="HelloWorld\n\nPress <space> to quit",sound="music_fragments/BR1.wav",duration_ms:float=50000,waitKey:bool=True):
@@ -48,7 +48,7 @@ class HelloWorldScreen(Screen):
         self.batch = pyglet.graphics.Batch()
         self.group = pyglet.graphics.OrderedGroup(0)
         # record start time for screen run time computations
-        self.t0 = getTimeStamp()
+        self.t0 = self.getTimeStamp()
         # init the text display
         self.init_text()
         # init the sound display
@@ -69,9 +69,12 @@ class HelloWorldScreen(Screen):
 
     def init_sound(self):
         """initialize the sound display, i.e. just load the sound and create the player object
-        """        
+        """
         self.sound_obj = SoundFlash(self.sound)
-        self.next_play_time = getTimeStamp() + 1000
+        self.next_play_time = self.getTimeStamp() + 1000
+
+    def getTimeStamp(self):
+        return (int(time.perf_counter()*1000) % (1<<31))
 
     def elapsed_ms(self):
         """helper function to get the current running time of the screen in milliseconds
@@ -79,7 +82,7 @@ class HelloWorldScreen(Screen):
         Returns:
             float: elapsed time in milliseconds
         """        
-        return getTimeStamp()-self.t0 if self.t0 else -1
+        return self.getTimeStamp()-self.t0 if self.t0 else -1
 
     def is_done(self):
         """test if this screen is finished
@@ -134,23 +137,8 @@ class HelloWorldScreen(Screen):
     def setshowNewTarget(self, shownewtarget:bool): pass
     def set_sentence(self, sentence:str): pass
 
-
-
-def run():
-    """Setup and run the given screen for debugging.
-    """  
-
-    # initialize the display  
-    selectionMatrix.init_noisetag_and_window()
-    # connect to the BCI hub
-    selectionMatrix.nt.connect()
-
-    # make the screen object
-    ss = HelloWorldScreen(selectionMatrix.window, selectionMatrix.nt)
-
-    # run the given screen
-    selectionMatrix.run_screen(ss)
-
-
-if __name__ == "__main__":
-    run()
+if __name__=='__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    window = initPyglet(width=640, height=480)
+    screen = HelloWorldScreen(window)
+    run_screen(window, screen)

@@ -66,8 +66,8 @@ class TriangleStrip:
             col (_type_): _description_
         """        
         if not(hasattr(col,'__iter__')): col=(col,)*4
-        elif len(col)==1 : col = col*4
-        elif len(col)==3 : col = col + (255,)
+        elif len(col)==1 : col = tuple(col)*4
+        elif len(col)==3 : col = tuple(col) + (255,)
         self._color = col
         if hasattr(self,'vertex_list'):
             N=len(self.vertex_list.vertices)//2
@@ -186,8 +186,8 @@ class Checkerboard:
             batch (_type_, optional): graphics batch for this check. Defaults to None.
             group (_type_, optional): graphics group for this check. Defaults to None.
         """        
-        self.ave_color = ave_color
-        self._color, self._visible = (color, visible)
+        self.ave_color = tuple(ave_color)
+        self._color, self._visible = (tuple(color), visible)
         self.make_squares(x,y,w,h,color,nx,ny,batch=batch,group=group)
 
     def make_squares(self,x,y,w,h,color,nx=3,ny=3,batch=None,group=None):
@@ -230,7 +230,7 @@ class Checkerboard:
         Args:
             color ((3/4-tuple)): This is the 'white' cell color, the 'black' cells have the appropriate inverse color.
         """        
-        self._color = color if len(color)==4 else color+(255,)
+        self._color = tuple(color) if len(color)==4 else tuple(color)+(255,)
         for i,row in enumerate(self.checkerboard):
             for j,seg in enumerate(row):
                 isblack = (i+j) % 2 == 0 # get the type of this check
@@ -238,7 +238,6 @@ class Checkerboard:
                 col = self._color if isblack else invert_color(self._color,self.ave_color)
                 if not self._visible: col = col[:3]+(0,)
                 seg.color = col
-
 
     @property
     def visible(self): return self._visible
@@ -255,6 +254,7 @@ class Checkerboard:
         for row in self.checkerboard:
             for seg in row:
                 seg.draw()
+
 
 
 #-------------------------------------------------------------------------------
@@ -354,7 +354,7 @@ class CheckerboardSegment:
     
     @color.setter
     def color(self,color):
-        self._color = color if len(color)==4 else color+(255,)
+        self._color = tuple(color) if len(color)==4 else tuple(color)+(255,)
         for i,row in enumerate(self.checkerboard):
             for j,seg in enumerate(row):
                 isblack = (i+j) % 2 == 0 # get the type of this check

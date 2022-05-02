@@ -748,9 +748,10 @@ def testcase_gold():
     plt.show()
 
 
-def test_m_seq(taps,state,nlevels,seqlen):
+def test_m_seq(taps,state,nlevels,seqlen,largevalcost=.1, largevalthresh=.5):
     seq = mk_m_sequence(taps,state=state,nlevels=nlevels,seqlen=seqlen)
     ac = autocorr(seq, len(seq)//2)
+    # normalize so ac at time-point 0==1
     N = ac[0]; ac = [ a/N for a in ac]
     mu=sum(seq)/len(seq)
     if sum([abs(si-mu) for si in seq])/len(seq) < nlevels*.2:
@@ -758,6 +759,8 @@ def test_m_seq(taps,state,nlevels,seqlen):
     else:
         # score is sum squared auto-corr, so don't like large values
         v = sum([c**2 for c in ac[1:]])
+        # extra penalty for values bigger than .5
+        v = v + sum([largevalcost*len(seq) for c in ac[1:] if c>largevalthresh])
     # penalize not using all the levels (roughly) equally
     h = np.sum(seq == np.arange(nlevels)[:,np.newaxis],1)
     n_opt = len(seq)/nlevels

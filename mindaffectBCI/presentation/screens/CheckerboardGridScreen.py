@@ -64,3 +64,15 @@ class CheckerboardGridScreen(SelectionGridScreen):
         label= self.init_label(symb,x,y,w,h,font_size)
         return bg, label
 
+
+if __name__=='__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    # make a noisetag object without the connection to the hub for testing
+    nt = Noisetag(stimSeq='mgold_65_6532.txt', utopiaController=None)
+    window = initPyglet(width=640, height=480) # small testing window
+    screen = CheckerboardGridScreen(window, nt, symbols=[['1','2'],['3','4']])
+    # start the stimulus sequence playing, 10s with a 10x slowdown
+    nt.startFlicker(numframes=60*10, framesperbit=10)
+    # run the screen with the flicker
+    run_screen(window, screen)

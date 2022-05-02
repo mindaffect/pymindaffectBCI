@@ -21,48 +21,53 @@
 # SOFTWARE.
 from mindaffectBCI.utopiaclient import PredictedTargetDist
 from mindaffectBCI.presentation.screens.SelectionGridScreen import SelectionGridScreen
-from mindaffectBCI.presentation.screens.sound_flash_psypy import SoundFlash
 #from mindaffectBCI.presentation.sound_flash import SoundFlash
-from mindaffectBCI.presentation.screens.image_flash import Checkerboard
+from mindaffectBCI.presentation.screens.visual_stimuli import Checkerboard
 from mindaffectBCI.decoder.utils import intstr2intkey
 
 # -------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------
-
-
 class SoundOrCheckerboardStackScreen(SelectionGridScreen):
     """variant of SelectionGridScreen which plays a sound dependent on the object id and it's current state
     """
 
     def __init__(self, window, noisetag, symbols, state2vol: dict = None, state2col: dict = None,
-                 object_vol_correction: dict = None, play_audio: bool = True, play_visual: bool = True, 
-                 spatialize:bool = False, use_audio_timestamp: bool = False, visual_flash: bool = True, 
-                 play_delay: float = .05, adaptive_stimulus:bool=False, **kwargs):
-        """[summary]
+                 object_vol_correction: dict = None, play_audio: bool = True, play_visual: bool = True,
+                 spatialize: bool = False, use_audio_timestamp: bool = False, visual_flash: bool = True,
+                 play_delay: float = .05, adaptive_stimulus: bool = False, use_psychopy:bool=True, **kwargs):
+        """ Selection grid screen where a grid element players either a sound or a checkerboard cell on the screen..
 
         Args:
-            window ([type]): [description]
-            noisetag ([type]): [description]
+            window ([type]): pyglet window to draw into
+            noisetag ([type]): object to manage the communication with the BCI in the background.
             symbols ([type]): specification of the objects type and parameters, e.g. audio-file-name for audio, nx,ny for checkerboards
             state2vol (dict, optional): audio-objects, mapping from states to volume. Defaults to None.
             state2col (dict, optional): visual-objects, mapping from states to colors. Defaults to None.
             object_vol_correction (dict, optional): for each audio object a correction factor to apply when computing the final volume.  So played vol = object_vol_correction[objId]*state2vol[state]
-            play_audio (bool, optional): [description]. Defaults to True.
-            play_visual (bool, optional): [description]. Defaults to True.
-            spatialize (bool, optional): [description]. Defaults to False.
-            use_audio_timestamp (bool, optional): [description]. Defaults to False.
-            visual_flash (bool, optional): [description]. Defaults to True.
-            play_delay (float, optional): [description]. Defaults to .05.
+            play_audio (bool, optional): If True then play audio stimuli. Defaults to True.
+            play_visual (bool, optional): If True then play the visual stimuli. Defaults to True.
+            spatialize (bool, optional): If True then spatialize the sounds left-right according to the position in the symbols matrix. Defaults to False.
+            use_audio_timestamp (bool, optional): Use the time-stamps from the audio system. Defaults to False.
+            visual_flash (bool, optional): If true then show a visual flash on objects with non-zero state. Defaults to True.
+            play_delay (float, optional): Delay for playing sounds for psychopy backends. Defaults to .05.
+            inject_threshold (float, optional): only injection signals above this amplitude are actually propogated. If None then all are propogated.  Defaults to None.
         """
-        self.visual_flash, self.spatialize, self.use_audio_timestamp, self.play_audio, self.play_visual, self.play_delay, self.adaptive_stimulus = (
+        self.visual_flash, self.spatialize, self.use_audio_timestamp, self.play_audio, self.play_visual, self.play_delay, self.adaptive_stimulus= (
             visual_flash, spatialize, use_audio_timestamp, play_audio, play_visual, play_delay, adaptive_stimulus)
         self.state2vol = intstr2intkey(state2vol) if state2vol is not None else dict()
         self.state2col = intstr2intkey(state2col) if state2col is not None else dict()
         self.object_vol_correction = intstr2intkey(
             object_vol_correction) if object_vol_correction is not None else dict()
         self.stimtime = None
+        # setup the media backend to use
+        if use_psychopy:
+            from mindaffectBCI.presentation.screens.sound_flash_psypy import SoundFlash
+        else:
+            from mindaffectBCI.presentation.screens.sound_flash import SoundFlash
+        self.SoundFlash = SoundFlash
+            
         super().__init__(window, noisetag, symbols=symbols, **kwargs)
 
     def init_symbols(self, symbols, x, y, w, h, bgFraction: float = .1, font_size: int = None):
@@ -90,6 +95,7 @@ class SoundOrCheckerboardStackScreen(SelectionGridScreen):
         lab = symb[0]
         symb = symb[1:]
 
+
         # make the right type of stimulus object -- sound if string that starts with audio
         if isinstance(symb[0], str) and symb[0].endswith('.wav'):
             # make the stimulus object (sound)
@@ -98,7 +104,7 @@ class SoundOrCheckerboardStackScreen(SelectionGridScreen):
                 pos = self.spatialize
             elif self.spatialize == True:
                 pos = (i/(len(self.symbols)-1)) * 2 - 1
-            obj = SoundFlash(symb[0], pos, media_directories=self.media_directories)
+            obj = self.SoundFlash(symb[0], pos, media_directories=self.media_directories)
 
         # otherwise assume it's a checkerboard spec
         else:
@@ -149,10 +155,10 @@ class SoundOrCheckerboardStackScreen(SelectionGridScreen):
                 # apply the object vol correction, default to no correction
                 vol = vol * self.object_vol_correction.get(idx, 1)
                 vol = min(1.0, vol)  # bounds check vol to 0-1
-                if vol > 0: # only play if non-zero vol
+                if vol > 0:  # only play if non-zero vol
                     self.objects[idx].volume = vol
                     self.objects[idx].play(delay=self.play_delay)
-                    print('idx={}, state={}, vol={}'.format(idx,state,vol))
+                    print('idx={}, state={}, vol={}'.format(idx, state, vol))
                 # record the start time on the noise-tag timestamp clock
                 self.stimtime = self.noisetag.getTimeStamp()
 
@@ -171,14 +177,34 @@ class SoundOrCheckerboardStackScreen(SelectionGridScreen):
         Args:
             ptd (PredictedTargetDist): [description]
         """
-        if self.adaptive_stimulus:
-            try:
-                self.noisetag.get_stimSeq().update_from_predicted_target_dist(ptd)
-            except:
-                pass
+        if self.adaptive_stimulus and hasattr(self.noisetag.get_stimSeq(),'update_from_predicted_target_dist'):
+            self.noisetag.get_stimSeq().update_from_predicted_target_dist(ptd)
 
 
+if __name__ == '__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    # make a noisetag object without the connection to the hub for testing
+    # use the special purpose stim-seq for 4 sound objects and 8 grating objects
+    nt = Noisetag(stimSeq="4obj_9lvl_6x+8obj_2lvl_60int.txt", utopiaController=None)
+    window = initPyglet(width=640, height=480)
 
-if __name__ == "__main__":
-    args = selectionMatrix.parse_args()
-    selectionMatrix.run(**vars(args))
+    # symbol value says what type of stimulus object to make.  If string, the it's a sound
+    # object with the value the file-name to play.  If 2 element tuple, then checkerboard with
+    # with the structure ('label',nx,ny) where nx and ny are the number of checks or band-size if negative.
+    symbols = [
+        ["|chirp\\400-600-gauss.wav", "|chirp\\800-1200-gauss.wav", "|chirp\\1600-2400-gauss.wav",
+         "|chirp\\3000-5000-gauss.wav"],
+        [["", -1],
+         ["", -2],
+         ["", -3],
+         ["", -4],
+         ["", -7],
+         ["", -10],
+         ["", -16],
+         ["", -24]]]
+    screen = SoundOrCheckerboardStackScreen(window, nt, symbols=symbols, inject_threshold=3, fixation=True)
+    # start the stimulus sequence playing, 20s with a 10x slowdown
+    nt.startFlicker(numframes=60*20, framesperbit=10)
+    # run the screen with the flicker
+    run_screen(window, screen)

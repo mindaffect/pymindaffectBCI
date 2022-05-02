@@ -19,22 +19,14 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-
-import pyglet
-import os
-import numpy as np
-import math
-import random as rnd
 from mindaffectBCI.presentation.screens.SelectionGridScreen import SelectionGridScreen
-from mindaffectBCI.noisetag import Noisetag
-from mindaffectBCI.presentation.screens.visual_stimuli import Checkerboard, CheckerboardSegment, Rectangle, TriangleStrip
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 class ImageStackScreen(SelectionGridScreen):
-    def __init__(self, window, noisetag, symbols=None, scale_to_fit:bool=True, color_labels:bool=True, **kwargs):
+    def __init__(self, window, noisetag, symbols=None, scale_to_fit:bool=True, artifical_deficit_id:int=None, color_labels:bool=True, **kwargs):
         """variant of SelectionGridScreen which has a 'stack' of images *on top of each other* rather than a 'grid' of options.
         i.e. in this screen all elements in the selection take the full grid display width.
 
@@ -44,9 +36,8 @@ class ImageStackScreen(SelectionGridScreen):
             symbols (list-of-lists, optional): the grid layout, as a list of lists for rows/cols. Defaults to None.
             scale_to_fit (bool,optional): scale the image to fix the size of the target.  Defaults to True.
             color_labels (bool, optional): if true, then color the label as well as the background on state change.
-            ischeckerboard (bool, optional): _description_. Defaults to False.
         """        
-        self.scale_to_fit, self.color_labels = scale_to_fit, color_labels
+        self.scale_to_fit, self.color_labels, self.artifical_deficit_id = scale_to_fit, color_labels, artifical_deficit_id
         super().__init__(window,noisetag,symbols=symbols,**kwargs)
 
     def init_symbols(self, symbols, x, y, w, h, bgFraction:float=.1, font_size:int=None):
@@ -112,7 +103,7 @@ class ImageStackScreen(SelectionGridScreen):
             # turn all sprites off, non-colored
             for sprite in self.objects[idx]:
                 sprite.visible = False
-            if idx == self.artificial_deficit_id and state==1:
+            if idx == self.artifical_deficit_id and state==1:
                 # TODO[X]: use a randomly choosen state!
                 state = 0 # np.random.randint(0,1)  # don't flicker it!
             img_idx = min(state+1,len(self.objects[idx])-1) if len(self.objects[idx])>1 else 0
@@ -120,6 +111,7 @@ class ImageStackScreen(SelectionGridScreen):
             #self.objects[idx][img_idx].color = self.state2color[state]
         if self.labels[idx]:
             col = self.state2color.get(state,(255,255,255,255)) if self.color_labels else (255,255,255,255)
+            col = tuple(col)
             self.labels[idx].color =  col if len(col)==4 else col+(255,) #(255,255,255,255) # reset labels
 
 
@@ -144,7 +136,6 @@ class ImageStackScreen(SelectionGridScreen):
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
-from mindaffectBCI.presentation.screens.image_flash import ImageStackScreen
 class ImageStackScreenMovingFixation(ImageStackScreen):
     def __init__(self, window, noisetag, symbols=None, artificial_deficit_id=None, scale_to_fit:bool=True, color_labels:bool=True, stimulus_weight=None, **kwargs):
         self.scale_to_fit, self.color_labels, self.artificial_deficit_id, self.stimulus_weight, self.prev_stimulus_state = \
@@ -202,26 +193,10 @@ class ImageStackScreenMovingFixation(ImageStackScreen):
 
 
 if __name__ == "__main__":
-    from mindaffectBCI.presentation.selectionMatrix import selectionMatrix
-    args = selectionMatrix.parse_args()
-    #setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.ImageStackScreen.ImageStackScreen')
-    #setattr(args,'symbols','mfvaflash.txt')
-    setattr(args,'symbols',[['1','2','3','4','5','6','7','8','9','10','11','12'],
-                            ['1','2','3','4','5','6','7','8','9','10','11','12']])
-    setattr(args,'stimfile','mgold_65_6532.txt')
-    setattr(args,'framesperbit',1)
-    setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.image_flash.SelectionWheelScreen')
-    setattr(args,'calibration_args',dict(startframe='random',permute=True))
-    setattr(args,'prediction_args',dict(startframe='random',permute=True)) # rand start point, and shuffle each repeat
-
-    # 300s prediction data = 5min
-    setattr(args,'prediction_trialduration',10)
-    setattr(args,'npred',30)
-
-    wght = np.exp( -.5* (np.arange(60)-30)**2 / 15) # gaussian blob
-    wght = 1-wght # make it a blind-spot
-    wght = wght * 50 / np.sum(wght)
-    setattr(args,'calibration_screen_args', dict(ring_radii=[0,.1,.2,.3], fixation=True, target_only=True, ischeckerboard=True))
-    #setattr(args,'calibration_screen_args', dict(stimulus_weight=wght, font_size=0, fixation="dartboardflash/cross.png", artificial_deficit_id=5, target_only=True))
-
-    selectionMatrix.run(**vars(args))
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    nt = Noisetag(stimSeq='level4_gold_soa12.txt', utopiaController=None)
+    window = initPyglet(width=640, height=480)
+    screen = ImageStackScreen(window, nt, symbols=[["faces/0.jpg|faces/1.jpg|faces/2.jpg|faces/3.jpg","houses/House_005.jpg|houses/House_0011.jpg|houses/House_012.jpg|houses/House_13.jpg"],["objects/0.JPG|objects/1.jpg|objects/2.jpg|objects/6.jpg","animals/0.jpg|animals/1.jpg|animals/3.jpg|animals/5.jpg"]])
+    nt.startFlicker(framesperbit=30)
+    run_screen(window, screen)

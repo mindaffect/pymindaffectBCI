@@ -21,12 +21,12 @@
 # SOFTWARE.
 
 import pyglet
-import mindaffectBCI.presentation.selectionMatrix as selectionMatrix
+from mindaffectBCI.presentation.screens.SelectionGridScreen import SelectionGridScreen
 from mindaffectBCI.noisetag import Noisetag
 from mindaffectBCI.decoder.utils import search_directories_for_file
 import os
 
-class TextFlashScreen(selectionMatrix.SelectionGridScreen):
+class TextFlashScreen(SelectionGridScreen):
     """variant of SelectionGridScreen which changes the text on 'flash' rather than luminosity
     """  
     def __init__(self, window, noisetag, symbols, scale_to_fit:bool=True, color_labels:bool=True, **kwargs):
@@ -55,19 +55,18 @@ class TextFlashScreen(selectionMatrix.SelectionGridScreen):
             #self.objects[idx][img_idx].color = self.state2color[state]
         if self.labels[idx]:
             col = self.state2color.get(state,(255,255,255,255)) if self.color_labels else (255,255,255,255)
+            col = tuple(col)
             self.labels[idx].color=  col if len(col)==4 else col+(255,) #(255,255,255,255) # reset labels
 
 if __name__ == "__main__":
-    args = selectionMatrix.parse_args()
-    setattr(args,'symbols','prva.txt')
-    setattr(args,'stimfile','6blk_rand_pr.txt')
-    setattr(args,'framesperbit',4)
-    setattr(args,'calibration_screen','mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen')
-    setattr(args,'calibration_screen_args', dict(font_size=20))
-    setattr(args,"extra_screens",["mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
-                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen",
-                          "mindaffectBCI.examples.presentation.image_flash.ImageFlashScreen"])
-    setattr(args,"extra_stimseqs",["6blk_rand_pr.txt","6blk_sweep_pr.txt","6blk_rand.txt"])
-    setattr(args,"extra_screen_args",[dict(font_size=10, scale_to_fit=False, color_labels=False)])
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    window = initPyglet(width=640, height=480)
+    nt = Noisetag(stimSeq='level4_gold.txt', utopiaController=None)
 
-    selectionMatrix.run(**vars(args))
+    symbols=[['o1.e0|o1.e1|o1.e2|o1.e3|o1.e4','o2.e0|o2.e1|o2.e2|o2.e3|o2.e4']]
+    screen = TextFlashScreen(window, noisetag=nt, symbols=symbols)
+
+    nt.startFlicker(framesperbit=6, numframes=60*60)
+
+    run_screen(window, screen)

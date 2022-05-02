@@ -8,8 +8,8 @@ import pyglet
 class UserInputScreen(WaitScreen):
     '''Modified screen to enter text'''
 
-    def __init__(self, window, callback, title_text=None, text=None, valid_text=None, duration=150000, logo="Mindaffect_Logo.png"):
-        super().__init__(window, duration, False, logo)
+    def __init__(self, window, callback=None, title_text=None, text=None, valid_text=None, duration=150000, logo="Mindaffect_Logo.png", **kwargs):
+        super().__init__(window, duration=duration, waitKey=False, logo=logo, **kwargs)
         self.valid_text = valid_text
         self.usertext = ''
         self.callback = callback

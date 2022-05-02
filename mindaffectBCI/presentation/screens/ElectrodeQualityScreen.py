@@ -24,6 +24,7 @@ from mindaffectBCI.utopiaclient import DataPacket
 import pyglet
 from math import log10
 from collections import deque
+import time
 
 #-----------------------------------------------------------------
 #-----------------------------------------------------------------
@@ -33,8 +34,9 @@ class ElectrodeQualityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
 
     instruct = "Electrode Quality\n\nAdjust headset until all electrodes are green\n(or noise to signal ratio < 5)"
-    def __init__(self, window, noisetag, nch=4, duration=3600*1000, waitKey=True):
-        super().__init__(window)
+    def __init__(self, window, noisetag, nch=4, duration=3600*1000, waitKey=True, label:str=None):
+        super().__init__(window, label=label)
+
         self.noisetag = noisetag
         self.t0 = None  # timer for the duration
         self.duration = duration
@@ -47,10 +49,13 @@ class ElectrodeQualityScreen(Screen):
         self.datascale_uv = 20  # scale of gap between ch plots
         print("Electrode Quality (%dms)"%(duration))
 
+    def getTimeStamp(self):
+        return (int(time.perf_counter()*1000) % (1<<31))
+
     def update_nch(self, nch):
         self.batch      = pyglet.graphics.Batch()
-        self.background = pyglet.graphics.OrderedGroup(0)
-        self.foreground = pyglet.graphics.OrderedGroup(1)
+        self.background_group = pyglet.graphics.OrderedGroup(0)
+        self.foreground_group = pyglet.graphics.OrderedGroup(1)
         winw, winh = self.window.get_size()
         if nch > 12: # 2-col mode
             col2ch = nch//2
@@ -63,10 +68,10 @@ class ElectrodeQualityScreen(Screen):
         # anchor in the center to make drawing easier
         img.anchor_x = 1
         img.anchor_y = 1
-        self.label  = [None]*nch
-        self.sprite = [None]*nch
-        self.quallabel=[None]*nch
-        self.linebbox = [None]*nch # bounding box for the channel line
+        self.labels  = [None]*nch
+        self.sprites = [None]*nch
+        self.quallabels=[None]*nch
+        self.linebboxs = [None]*nch # bounding box for the channel line
         for i in range(nch):
             # get the rectangle this channel should remain inside
             if nch<col2ch:
@@ -79,31 +84,31 @@ class ElectrodeQualityScreen(Screen):
 
             x,y,w,h = chrect
             # channel label name
-            self.label[i] = pyglet.text.Label("{:2d}".format(i), font_size=26,
+            self.labels[i] = pyglet.text.Label("{:2d}".format(i), font_size=26,
                                             x=x+r*.5, y=y,
                                             color=self.get_linecol(i),
                                             anchor_x='right',
                                             anchor_y='center',
                                             batch=self.batch,
-                                            group=self.foreground)
+                                            group=self.foreground_group)
 
             # signal quality box
             # convert to a sprite and make the right size, N.B. anchor'd to the image center!
-            self.sprite[i] = pyglet.sprite.Sprite(img, x=x+r*.8, y=y,
+            self.sprites[i] = pyglet.sprite.Sprite(img, x=x+r*.8, y=y,
                                                 batch=self.batch,
-                                                group=self.background)
+                                                group=self.background_group)
             # make the desired size
-            self.sprite[i].update(scale_x=r*.4/img.width, scale_y=r*.8/img.height)
+            self.sprites[i].update(scale_x=r*.4/img.width, scale_y=r*.8/img.height)
             # and a text label object
-            self.quallabel[i] = pyglet.text.Label("{:2d}".format(i), font_size=15,
+            self.quallabels[i] = pyglet.text.Label("{:2d}".format(i), font_size=15,
                                             x=x+r*.8, y=y,
                                             color=(255,255,255,255),
                                             anchor_x='center',
                                             anchor_y='center',
                                             batch=self.batch,
-                                            group=self.foreground)
+                                            group=self.foreground_group)
             # bounding box for the datalines
-            self.linebbox[i] = (x+r, y, w-.5*r, h)
+            self.linebboxs[i] = (x+r, y, w-.5*r, h)
         # title for the screen
         self.title=pyglet.text.Label(self.instruct, font_size=32,
                                      x=winw*.1, y=winh, color=(255, 255, 255, 255),
@@ -111,14 +116,12 @@ class ElectrodeQualityScreen(Screen):
                                      width=int(winw*.9),
                                      multiline=True,
                                      batch=self.batch,
-                                     group=self.foreground)
+                                     group=self.foreground_group)
 
     def reset(self):
         self.isRunning = False
 
     def is_done(self):
-        from mindaffectBCI.presentation.selectionMatrix import getTimeStamp
-
         # check termination conditions
         isDone=False
         if not self.isRunning:
@@ -129,7 +132,7 @@ class ElectrodeQualityScreen(Screen):
                 self.key_press = self.window.last_key_press
                 isDone = True
                 self.window.last_key_press = None
-        if getTimeStamp() > self.t0+self.duration:
+        if self.getTimeStamp() > self.t0+self.duration:
             isDone=True
         if isDone:
             self.noisetag.removeSubscription("D")
@@ -141,12 +144,11 @@ class ElectrodeQualityScreen(Screen):
         return col
 
     def draw(self, t):
-        from mindaffectBCI.presentation.selectionMatrix import getTimeStamp
 
         '''Show a set of colored circles based on the lastSigQuality'''
         if not self.isRunning:
             self.isRunning = True # mark that we're running
-            self.t0 = getTimeStamp()
+            self.t0 = self.getTimeStamp()
             self.noisetag.addSubscription("D") # subscribe to "DataPacket" messages
             self.noisetag.modeChange("ElectrodeQuality")
             self.dataringbuffer.clear()
@@ -155,22 +157,22 @@ class ElectrodeQualityScreen(Screen):
         # get the sig qualities
         electrodeQualities = self.noisetag.getLastSignalQuality()
         if not electrodeQualities: # default to 4 off qualities
-            electrodeQualities = [.5]*len(self.sprite)
+            electrodeQualities = [.5]*len(self.sprites)
 
-        if len(electrodeQualities) != len(self.sprite):
+        if len(electrodeQualities) != len(self.sprites):
             self.update_nch(len(electrodeQualities))
 
         issig2noise = True #any([s>1.5 for s in electrodeQualities])
         # update the colors
         #print("Qual:", end='')
         for i, qual in enumerate(electrodeQualities):
-            self.quallabel[i].text = "%2.0f"%(qual)
+            self.quallabels[i].text = "%2.0f"%(qual)
             #print(self.label[i].text + " ", end='')
             if issig2noise:
                 qual = log10(qual)/1 # n2s=50->1 n2s=10->.5 n2s=1->0
             qual = max(0, min(1, qual))
             qualcolor = (int(255*qual), int(255*(1-qual)), 0) #red=bad, green=good
-            self.sprite[i].color=qualcolor
+            self.sprites[i].color=qualcolor
         #print("")
         # draw the updated batch
         self.batch.draw()
@@ -181,14 +183,14 @@ class ElectrodeQualityScreen(Screen):
             if m.msgID == DataPacket.msgID:
                 print('D', end='', flush=True)
                 self.dataringbuffer.extend(m.samples)
-                if getTimeStamp() > self.t0+self.datawindow_ms: # slide buffer
+                if self.getTimeStamp() > self.t0+self.datawindow_ms: # slide buffer
                     # remove same number of samples we've just added
                     for i in range(len(m.samples)):
                         self.dataringbuffer.popleft()
 
 
         if self.dataringbuffer:
-            if len(self.dataringbuffer[0]) != len(self.sprite):
+            if len(self.dataringbuffer[0]) != len(self.sprites):
                 self.update_nch(len(self.dataringbuffer[0]))
 
             # transpose and flatten the data
@@ -205,7 +207,7 @@ class ElectrodeQualityScreen(Screen):
             data = []
             mu = [] # mean
             mad = [] # mean-absolute-difference
-            nch=len(self.linebbox)
+            nch=len(self.linebboxs)
             for ci in range(nch):
                 d = [ t[ci] for t in dataringbuffer ]
                 # mean last samples
@@ -225,7 +227,7 @@ class ElectrodeQualityScreen(Screen):
             for ci in range(nch):
                 d = data[ci]
                 # map to screen coordinates
-                bbox=self.linebbox[ci]
+                bbox=self.linebboxs[ci]
 
                 # downsample if needed to avoid visual aliasing
                 #if len(d) > (bbox[2]-bbox[1])*2:
@@ -252,3 +254,17 @@ class ElectrodeQualityScreen(Screen):
                 pyglet.gl.glLineWidth(10)
                 pyglet.graphics.draw(2, pyglet.gl.GL_LINES,
                                         ('v2f', (x,y-10/2*yscale, x,y+10/2*yscale)))
+
+
+
+if __name__=='__main__':
+    from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
+    from mindaffectBCI.noisetag import Noisetag
+    # make a noisetag object without the connection to the hub for testing
+    nt = Noisetag(stimSeq='mgold_65_6532.txt', utopiaController=None)
+    window = initPyglet(width=640, height=480)
+    screen = ElectrodeQualityScreen(window, nt, symbols=[['1','2'],['3','4']])
+    # wait for a connection to the BCI
+    nt.autoconnect()
+    # run the screen with the flicker
+    run_screen(window, screen)
