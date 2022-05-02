@@ -35,6 +35,7 @@ from mindaffectBCI.presentation.screens.FrameRateTestScreen import FrameRateTest
 from mindaffectBCI.presentation.screens.ElectrodeQualityScreen import ElectrodeQualityScreen
 from mindaffectBCI.presentation.screens.MenuScreen import MenuScreen
 from mindaffectBCI.presentation.screens.ConnectingScreen import ConnectingScreen
+from mindaffectBCI.presentation.screens.CalibrationResultsScreen import CalibrationResultsScreen
 
 # graphic library
 configmsg = None
@@ -45,39 +46,7 @@ configmsg = None
 #  selectionMatrix.user_state['my_state'] = 'hello'
 user_state = dict()
 
-#-----------------------------------------------------------------
-#-----------------------------------------------------------------
-#-----------------------------------------------------------------
-#-----------------------------------------------------------------
-#-----------------------------------------------------------------
-class CalibrationResultsScreen(InstructionScreen):
-    '''Modified instruction screen with waits for and presents calibration results'''
 
-    waiting_text = "Waiting for performance results from decoder\n\nPlease wait"
-    results_text = "Calibration Performance: %3.0f%% Correct\n\n<space> to continue"
-    def __init__(self, window, noisetag, duration=20000, waitKey=False):
-        self.noisetag = noisetag
-        self.pred = None
-        super().__init__(window, text=self.waiting_text, duration=duration, waitKey=waitKey)
-
-    def reset(self):
-        self.noisetag.clearLastPrediction()
-        self.pred = None
-        super().reset()
-
-    def draw(self, t):
-        '''check for results from decoder.  show if found..'''
-        if not self.isRunning:
-            self.reset()
-        # check for new predictions
-        pred = self.noisetag.getLastPrediction()
-        # update text if got predicted performance
-        if pred is not None and (self.pred is None or pred.timestamp > self.pred.timestamp) :
-            self.pred = pred
-            print("Prediction:{}".format(self.pred))
-            self.waitKey = True
-            self.set_text(self.results_text%((1.0-self.pred.Perr)*100.0))
-        super().draw(t)
 
 
 #-----------------------------------------------------------------
@@ -433,7 +402,7 @@ class ExptManagerScreen(Screen):
 
         # build the main menu options
         if self.calibration_screen is not None: 
-            if hasattr(self.calibration_screen,'label') and not self.calibration_screen.label is None:
+            if hasattr(self.calibration_screen,'label') and not self.calibration_screen.label is None and not self.calibration_screen.label == 'SelectionGridScreen':
                 main_menu_numbered[1] = "{}) {}".format(1,self.calibration_screen.label)
             # add to the key-menu
             menu_keys.update({'1':self.SubScreens.CalInstruct,
@@ -461,7 +430,7 @@ class ExptManagerScreen(Screen):
                     main_menu_numbered[i]=""
             # TODO[]: remove from menu-keys?
         if self.cued_prediction_screen is not None: # remove the cued-prediction option
-            if hasattr(self.cued_prediction_screen,'label') and not self.cued_prediction_screen.label is None:
+            if hasattr(self.cued_prediction_screen,'label') and not self.cued_prediction_screen.label is None  and not self.prediction_screen.label == 'SelectionGridScreen':
                 main_menu_numbered[2] = "{}) {} (Cued)".format(2,self.cued_prediction_screen.label)
             menu_keys.update({'2':self.SubScreens.CuedPredInstruct,
                              pyglet.window.key._2:self.SubScreens.CuedPredInstruct,

@@ -46,7 +46,9 @@
                 {
 					"start": ["ConnectingScreen", {} ],
                     // N.B. do electrode quality long enough that the decoder has a time to startup correctly
-                    "elect":["ElectrodeQualityScreen",{"label":"Electrode Quality Screen","duration":10000}],
+                    "elect":["ElectrodeQualityScreen",{"label":"Electrode Quality Screen","duration":5000}],
+                    // Wait for the decoder to finish training the classifier
+                    "wait":["WaitDecoderScreen",{}],
                     // calibration screen with 3x3 single-target stimulus
                     "calibration":["SelectionGridScreen",{
                         "symbols":"3x3.txt",
@@ -55,7 +57,7 @@
                         "target_only":true
                     }],
                     // Wait for the decoder to finish training the classifier
-                    "wait":["InstructionScreen",{"label":"waiting for decoder","text":"waiting for calibration results from the decoder", "duration":5000}],
+                    "results":["CalibrationResultsScreen",{}],
                     // prediction screen with a full keyboard running in cued mode
                     "prediction":["SelectionGridScreen",{
                         "symbols":"keyboard.txt",

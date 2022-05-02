@@ -382,6 +382,9 @@ class UtopiaController:
         """        
         self.getNewMessages()
         return self.lastSignalQuality
+    
+    def clearLastSignalQuality(self):
+        self.lastSignalQuality = None
 
 def injectERP(amp, host="localhost", port=8300):
     """
