@@ -50,7 +50,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     if not fs_out is None:
         fs_out = min(fs,fs_out)
 
-    if verb >= 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
+    if verb > 0: print("X={} @{}Hz".format(X.shape,fs),flush=True)
 
     # pre-process: spectral filter + downsample
     # add anti-aliasing filter
@@ -67,7 +67,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     ppfn = butterfilt_and_downsample(filterband=filterband, order=order, fs=fs, fs_out=fs_out, ftype=ftype)
     #ppfn = None
     if ppfn is not None:
-        if verb >= 0:
+        if verb > 0:
             print("preFilter: {}th {} {}Hz & downsample {}->{}Hz".format(order,ftype,filterband,fs,fs_out))
         #ppfn.fit(X[0:1,:])
         # process in blocks to be like the on-line, use time-stamp as Y to get revised ts
@@ -112,7 +112,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     # remove un-used stim info
     stim_ts = stim_ts[stim_samp>0]
     stim_samp = stim_samp[stim_samp>0]
-    if verb >= 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
+    if verb > 0: print("Y={} @{}Hz".format(Y.shape,fs),flush=True)
 
     # slice into trials
     if len(nt_events)>1: # use the new-target events to identify new trials
@@ -145,14 +145,14 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
         trl_dur = [stim_ts[-1]-stim_ts[0]] 
     else:
         trl_dur = [fs]
-    if verb>=1 : print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
-    if verb>=1 : print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
+    if verb>1 : print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
+    if verb>1 : print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
     # estimate the best trial-length to use
     if trlen_ms is None and len(trl_dur)>0:
         trlen_ms = np.percentile(trl_dur,90)
     # strip any trial too much shorter than trlen_ms (50%)
     keep = np.flatnonzero(trl_dur>trlen_ms*.2)
-    if verb>=1 : print('Got {} trials, keeping {}'.format(len(trl_stim_idx)-1,len(keep)))
+    if verb>1 : print('Got {} trials, keeping {}'.format(len(trl_stim_idx)-1,len(keep)))
     # re-compute the trlen_ms for the good trials
     trl_stim_idx = trl_stim_idx[keep]
 
@@ -163,8 +163,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     if np.max(np.abs(trl_ts-trl_data_ts)) > 20: # sanity check the trial alignment info
         print("Warning: big different between sample and stimulus trial times...")
 
-    if verb>=1 : print('{} trl_dur (samp): {}'.format(len(trl_samp_idx),np.diff(trl_samp_idx)))
-    if verb>=1 : print('{} trl_dur (ms) : {}'.format(len(trl_ts),np.diff(trl_ts)))
+    if verb>1 : print('{} trl_dur (samp): {}'.format(len(trl_samp_idx),np.diff(trl_samp_idx)))
+    if verb>1 : print('{} trl_dur (ms) : {}'.format(len(trl_ts),np.diff(trl_ts)))
 
     # compute the trial start/end relative to the trial-start
     trlen_samp  = int(trlen_ms *  fs / 1000)
@@ -180,7 +180,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     Xe_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     Ye_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     ep_idx = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
-    print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
+    if verb>0 : 
+        print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
     for ti, si in enumerate(trl_samp_idx):
         bgn_idx = si+bgnend_samp[0]
         end_idx_x = min(Xraw.shape[0],si+bgnend_samp[1])
@@ -210,8 +211,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
         # concatenate windows into trial dim
         X = X.reshape((X.shape[0]*X.shape[1],)+X.shape[2:])
         Y = Y.reshape((Y.shape[0]*Y.shape[1],)+Y.shape[2:])
-        print("X={}".format(X.shape))
-        print("Y={}".format(Y.shape))
+        if verb>1 : print("X={}".format(X.shape))
+        if verb>1 : print("Y={}".format(Y.shape))
 
     # ensure the channelnames match the data
     if ch_names is not None:
@@ -344,7 +345,7 @@ def load_mindaffectBCI_raw_continuous(source, sample2timestamp='lower_bound_trac
 
 
 def load_mindaffectBCI_raw_mne(source, sample2timestamp:str='lower_bound_tracker',
-                        ch_names=None, verb:int=0, **kwargs):
+                        ch_names=None, verb:int=0, non_eeg_ch=['acc','eog','ref','status'], **kwargs):
     """load a mindaffectBCI and return in an MNE compatiable raw format with stim_channels with unique integer event IDs
 
     Args:
@@ -387,7 +388,7 @@ def load_mindaffectBCI_raw_mne(source, sample2timestamp:str='lower_bound_tracker
     ch_names = ch_names + marker_labels # add marker channel names
     ch_types = ['eeg']*len(eeg_ch_names) + ['bio']*(X.shape[-1]-len(eeg_ch_names)) + ['stim']*Y.shape[-1]
 
-    non_eeg = [i for i,c in enumerate(ch_names) if 'eog' in c.lower() or 'acc' in c.lower()]
+    non_eeg = [i for i,c in enumerate(ch_names) if any(t in c.lower() for t in non_eeg_ch)]
     for i in  non_eeg:
         ch_types[i]='bio'
 

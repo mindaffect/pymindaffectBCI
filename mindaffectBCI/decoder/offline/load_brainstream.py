@@ -130,7 +130,7 @@ def load_brainstream(datadir, sessdir=None, sessfn=None, fs_out=None, ifs=None, 
     # preprocess -> downsample
     resamprate = round(2*fs/fs_out)/2 # round to nearest .5
     if resamprate > 1:
-        if 1 or verb > 0:
+        if verb > 0:
             print("resample by {}: {}->{}Hz".format(resamprate, fs, fs/resamprate))
         idx = np.arange(0,X.shape[1],resamprate).astype(np.int)
         X = X[:, idx, :] # decimate X (trl, samp, d)

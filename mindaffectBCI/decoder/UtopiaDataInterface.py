@@ -698,7 +698,7 @@ class butterfilt_and_downsample(BaseEstimator, TransformerMixin):
         self.nsamp = 0
         self.resamprate_ = int(round(self.fs*2.0/self.fs_out))/2.0 if self.fs_out is not None else 1
         self.out_fs_  = self.fs/self.resamprate_
-        print("resample: {}->{}hz rsrate={}".format(self.fs, self.out_fs_, self.resamprate_))
+        #print("resample: {}->{}hz rsrate={}".format(self.fs, self.out_fs_, self.resamprate_))
 
         return self
 

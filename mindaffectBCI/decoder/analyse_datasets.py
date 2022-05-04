@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -281,9 +281,11 @@ def plot_stimseq(Y_TSy,fs=None,show=None):
     if fs is not None:
         plt.plot(np.arange(Y_TSy.shape[1])/fs, Y_TSy[0,...]/np.max(Y_TSy)*.75+np.arange(Y_TSy.shape[-1])[np.newaxis,:],'.')
         plt.xlabel('time (s)')
+        plt.ylabel('output + level')
     else:
         plt.plot(Y_TSy[0,...]/np.max(Y_TSy)*.75+np.arange(Y_TSy.shape[-1])[np.newaxis,:],'.')
         plt.xlabel('time (samp)')
+        plt.ylabel('output + level')
     plt.grid(True)
     plt.title('Y_TSy')
     if show is not None: plt.show(block=show)

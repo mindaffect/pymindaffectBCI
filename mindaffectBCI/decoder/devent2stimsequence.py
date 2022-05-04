@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -147,7 +147,7 @@ def strip_unused(Y):
     Returns:
         (np.ndarray (time,used-outputs)): Y with unused outputs removed
     """    
-    if Y is None: return None, np.ones((Y.shape[-1],),dtype=bool)
+    if Y is None: return None, np.ones((0,),dtype=bool)
     used_y = np.any(Y.reshape((-1, Y.shape[-1])), 0)
     used_y[0] = True # ensure objID=0 is always used..
     Y = Y[..., used_y]
@@ -198,6 +198,16 @@ def devent2stimchannels(sample_ts, stimSeq, stimulus_ts=None, objIDs=None, nt_ev
     return stim_channel, stim_labels
 
 def get_trial_bounds(stim_channels,stim_labels,iti_evt=60):
+    """given a continuous stimulus sequence try to identify trial boundaries as times with a sufficiently large gap in the stimulus information where all outputs have level 0
+
+    Args:
+        stim_channels (_type_): the stimulus seqeuence information, with shape (Trials,Samples,Outputs,...)
+        stim_labels (_type_): human readable names for the outputs
+        iti_evt (int, optional): minimum number of all zero samples to indicate an inter-trial gap. Defaults to 60.
+
+    Returns:
+        list-of-int: sample indices of the trial boundaries
+    """    
     nt_channel = [i for i,l in enumerate(stim_labels) if l.startswith('new_target')]
     if False: #len(nt_channel)>0:
         # TODO[]: use the new_taget channel to identify trial boundaries
@@ -211,6 +221,14 @@ def get_trial_bounds(stim_channels,stim_labels,iti_evt=60):
     return trlidx
 
 def find_tgt_obj(stim_channels):
+    """given a stim-sequence with a set of outputs and trials, identify the target output for each trial as the one which matches best the stimulus info for the cued target, i.e. output with objID==0
+
+    Args:
+        stim_channels (ndarray): stimulus sequence with shape (Trials, Samples, Outputs, ...)
+
+    Returns:
+        list-of-int: for each trial the identifed 'target' output with non-zero stimulus 
+    """    
     # score is normalized hamming distance between true-target and given object.  0=perfect, 1=all-non-zero missed
     score = np.sum(stim_channels[...,[0]] != stim_channels[...,1:],axis=-2)/max(1,np.sum(stim_channels[...,[0]]>0)) 
     score[np.sum(stim_channels[...,0],axis=1)==0] = 1 # don't match if no stimuli 

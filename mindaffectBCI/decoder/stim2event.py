@@ -244,15 +244,15 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
             elab = s2estate
 
 
-        if F.shape[:-1] == M.shape[:-1] and (F.shape[-1]==1 or F.shape[-1]==M.shape[-1]) :
+        if len(evtypes)==1:
+            E = F.astype(E.dtype)
+            evtlabs = elab
+            s2estates = s2estate
+        elif F.shape[:-1] == M.shape[:-1] and (F.shape[-1]==1 or F.shape[-1]==M.shape[-1]) :
             # single output to add
             E[..., ei] = F
             evtlabs.append(elab)
             s2estates.append(s2estate)
-        elif len(evtypes)==1:
-            E = F.astype(E.dtype)
-            evtlabs = elab
-            s2estates = s2estate
         else:
             raise ValueError("Cant (currently) mix direct and indirect encodings")
         
@@ -581,7 +581,7 @@ def oddeven_pattern_reversal(M,axis,oM=None,etype='oddeven_pattern_reversal', va
 
     Returns:
         [type]: [description]
-    """    
+    """
     if vals is None:
         vals = np.unique(M)
         vals = vals[vals!=0] # strip 0
@@ -802,6 +802,28 @@ def rewrite_levels(M,axis,oM=None,etype=None,level_dict:dict=None):
         F[M==k]=v
     return F, lambda M,axis,oM,etype: rewrite_levels(M,axis,oM,etype,level_dict=level_dict), None
 
+def slice_outputs(Y_TSye, axis=1, oM=None, etype=None, output_idx=None):
+    """select a sub-set of outputs from the full set
+
+    Args:
+        M (): the stim-sequence to slice from
+        axis (int, optional): the time axis in M. N.B. we assume the outputs axis is axis+1. Defaults to 1.
+        output_idx (_type_, optional): the indices along this axis to select. Defaults to None.
+
+    Returns:
+        (M, apply_args, evtlabs): 
+              M - the stim-seq with the selected outputs
+              apply_args - args to apply this transformation to new data
+              evtlabs - list-of-str with the names of the new events
+    """
+    if output_idx is None: return Y_TSye, None, np.arange(Y_TSye.shape[axis+1])
+    if not hasattr(output_idx,'__iter__'): output_idx=(output_idx,)
+    assert axis in (0,1), 'Only time in 2nd dim is'
+    if axis==0:
+        Y_TSye=Y_TSye[:,output_idx,...]
+    elif axis==1:
+        Y_TSye=Y_TSye[:,:,output_idx,...] 
+    return Y_TSye, output_idx, ["o{}".format(o) for o in tuple(output_idx)]
 
 
 def plot_stim_encoding(Y_TSy,Y_TSye=None,evtlabs=None,fs=None,times=None,outputs=None,suptitle:str="stim encoding",plot_all_zero_events:bool=True,block:bool=False):
@@ -871,11 +893,14 @@ def testcase():
 
     print("Raw  :{}".format(M))
 
-    e,l, _ = stim2event(M.T, 'hotyon_re', axis=-2)
+    e,_, l = stim2event(M.T, 'slice_outputs', axis=0, output_idx=[0])
     for s,v in zip(e.T,l): print("{}:{}".format(v,s))
 
-    e,l,_ = stim2event(M, 'rewrite_levels', level_dict={1:2,2:3})
-    e2,l2,_ = stim2event(M,l)
+    e,_, l = stim2event(M.T, 'hotyon_re', axis=-2)
+    for s,v in zip(e.T,l): print("{}:{}".format(v,s))
+
+    e,_,l = stim2event(M, 'rewrite_levels', level_dict={1:2,2:3})
+    e2,_,l2 = stim2event(M,l)
     assert np.all(e==e2)
 
 

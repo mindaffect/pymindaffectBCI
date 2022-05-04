@@ -74,7 +74,7 @@ def load_symbols(fn, replacements:dict={"<comma>":",", "<space>":"_"}):
 class SelectionGridScreen(Screen):
 
     LOGLEVEL=0
-    def __init__(self, window, noisetag=None, symbols=None, objIDs=None,
+    def __init__(self, window, noisetag=None, symbols=None, objIDs=1,
                  noisetag_mode:str = 'prediction', noisetag_args:dict={'nTrials':10, 'duration':5},
                  bgFraction:float=.2, instruct:str="", label:str=None,
                  clearScreen:bool=True, background_color:tuple=None, sendEvents:bool=True, liveFeedback:bool=True, 
@@ -93,7 +93,7 @@ class SelectionGridScreen(Screen):
             noisetag_mode (str, optional): The mode to run the noisetag sequence in.  One of: 'calibration','prediction','single_trial'.  Defaults to 'prediction'.
             noisetag_args (dict, optional): Additional argument to pass to the noisetag when setting the sequence up.  See `Noisetag.startPrediciton` or `Noisetag.startCalibration` or the options available.  Examples include `nTrials`,`duration`,`waitduration`, etc.  Defaults to dict().
             symbols (list-of-list-of-str, optional): the grid of symbols to display, i.e. the foreground letters of the virtual-keys. Defaults to None.
-            objIDs (list-of-int, optional): the set of BCI unique object identifiers to use for the symbols in the grid. Defaults to None.
+            objIDs (list-of-int|int, optional): the set of BCI unique object identifiers to use for the symbols in the grid, OR the starting objectID to use. Defaults to 1.
             bgFraction (float, optional): fraction of empty space between the background of the 'virtual keys' of the on-screen grid. Defaults to .2.
             instruct (str, optional): instruction to show at the top of the screen. Defaults to "".
             label (str, optional): human readable label for this screen, used for example to automatically make menu entries, or for logging messages. Defaults to None.
@@ -383,6 +383,8 @@ class SelectionGridScreen(Screen):
             sentence = self.instruct
         if bgFraction is None:
             bgFraction = self.bgFraction
+        if objIDs is None:
+            objIDs = self.objIDs
 
         if isinstance(symbols, str):
             symbols = load_symbols(symbols)
@@ -394,7 +396,10 @@ class SelectionGridScreen(Screen):
         self.nsymb  = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
 
         if objIDs is not None:
-            self.objIDs = objIDs
+            if not hasattr(objIDs,'__iter__'):
+                self.objIDs = list(range(objIDs, objIDs+self.nsymb+1))
+            else:
+                self.objIDs = list(objIDs)  
         else:
             self.objIDs = list(range(1,self.nsymb+1))
             objIDs = self.objIDs
@@ -405,6 +410,8 @@ class SelectionGridScreen(Screen):
         self.gridwidth = max([len(s) for s in symbols])
         self.ngrid      = self.gridwidth * self.gridheight
 
+        # update the objIDs set for the noisetag object
+        self.noisetag_args['objIDs']=self.objIDs
         self.noisetag.setActiveObjIDs(self.objIDs)
 
         self.objects=[None]*self.nsymb
@@ -844,9 +851,11 @@ if __name__=='__main__':
     # make a noisetag object without the connection to the hub for testing
     nt = Noisetag(stimSeq='mgold_65_6532.txt', utopiaController=None)
     window = initPyglet(width=640, height=480)
-    screen = SelectionGridScreen(window, nt, symbols=[['1','2'],['3','4']],
-                        inject_threshold=5, inject_noise=5)
-    # start the stimulus sequence playing
-    nt.startFlicker()
+    screen = SelectionGridScreen(window, nt, 
+                        noisetag_mode='calibration', # set to run in calibration mode
+                        symbols=[['1','2'],['3','4']], # use a simple 2x2 grid
+                        inject_threshold=5, 
+                        inject_noise=5, 
+                        objIDs=10) # set to use objIDs 10,11,12,13
     # run the screen with the flicker
     run_screen(window, screen)
