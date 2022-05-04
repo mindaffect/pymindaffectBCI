@@ -30,6 +30,7 @@ from mindaffectBCI.decoder.offline.load_ninapro_db2 import load_ninapro_db2
 from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
+# List of root directories to search for the experiment sub-directory
 dataroots = ['~/data/bci',
             'G://Shared drives/Data/experiments',
             'G://Shared drives/Data',
@@ -41,14 +42,33 @@ dataroots = ['~/data/bci',
             ]
 
 def add_dataroot(dataroot):
+    """add a new data root directory to search for dataset sub-directories
+
+    Args:
+        dataroot (str): directory to add to the dataroots set
+    """    
     global dataroots
     dataroots.append(dataroot)
 
 def set_dataroot(dataroot):
+    """set the list of rood directories to search for dataset sub-directories
+
+    Args:
+        dataroots (list-of-str): list of directory names to search for data root directories
+    """    
     global dataroots
     dataroots = [dataroot] if isinstance(dataroot,str) else dataroot
 
 def get_dataroot(dataroots=None,subdir=None):
+    """search through the list of data-roots to find a sub-directory which contains the given experiment sub-directory
+
+    Args:
+        dataroots (list-of-str, optional): list of data root directories.  If None then use the system default list. Defaults to None.
+        subdir (str, optional): the experiment specific sub-directory to search for.  If None then just the first data root which exists on this machine. Defaults to None.
+
+    Returns:
+        str: a data root directory which exists on this machine and contains the desired sub-directory
+    """    
     dataroot=None
     if dataroots is None:
         dataroots = globals().get('dataroots')
@@ -68,6 +88,16 @@ def get_dataroot(dataroots=None,subdir=None):
     return dataroot
 
 def load_plos_one(datadir, ch_names=None, fs_out=None, **kwargs):
+    """dataset specific loader for the plos-one dataset
+
+    Args:
+        datadir (_type_): _description_
+        ch_names (_type_, optional): _description_. Defaults to None.
+        fs_out (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        _type_: _description_
+    """    
     if ch_names is None:
         ch_names = ['Fp1',
             'AF7','AF3','F1','F3','F5','F7','FT7','FC5','FC3','FC1','C1','C3','C5',
@@ -296,6 +326,11 @@ def mindaffectBCI(exptdir, regexp:str=None, exregexp:str=None, **args):
 
 
 def kaggle():
+    """generate the dataset directory, loader for the mindaffectBCI kaggle dataset
+
+    Returns:
+        _type_: _description_
+    """    
     return mindaffectBCI('external_data/kaggle')
 
 
