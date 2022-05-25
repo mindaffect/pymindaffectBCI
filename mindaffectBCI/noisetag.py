@@ -168,13 +168,13 @@ class Flicker(FSM):
             tgtidx (int, optional): the index into stimSeq of the target output, -1 for no target. Defaults to -1
             sendEvents (bool, optional): should we send stimulus events.  Defaults to True
             framesperbit (int, optional): number of video-frames, i.e. calls to next, per stimsequence bit.  Defaults to 1.
-            permute (bool, optional): flag, should we permute the codebook to output mapping.  Defaults to False.
+            permute (bool|list-of-int, optional): If True then randomly permute the codebook to output mapping.  If list then use this given mapping such that: cb = cb[:,permute].  Defaults to False.
             startframe (int, optional): starting frame number in the stimulus sequence.  If set to 'random' then choose a random starting point.  If set to 'lastframe' continue from the last frame for which 'sendEvents' was true. Defaults to 0.
         """
         self.stimSeq, self.numframes, self.tgtidx, self.sendEvents, self.permute = (
             stimSeq, numframes, tgtidx, sendEvents, permute)
         if startframe == 'random':
-            self.startframe = random.randint(0, len(self.stimSeq) if hasattr(self.stimSeq, '__len__') else 0)
+            self.startframe = random.randrange(0, len(self.stimSeq) if hasattr(self.stimSeq, '__len__') else 0)
             print('Start at frame: {}'.format(self.startframe))
         elif startframe == 'lastframe':
             self.startframe = Flicker.lastframe
@@ -183,8 +183,8 @@ class Flicker(FSM):
             self.startframe = startframe
         self.nframe = 0
         self.framesperbit = framesperbit if framesperbit is not None else 1
-        if self.permute == True:
-            self.update_codebook_permutation()
+        if self.permute is not None and self.permute is not False:
+            self.update_codebook_permutation(self.permute)
 
         # ensure right length
         self.ss = None
@@ -193,11 +193,17 @@ class Flicker(FSM):
         #    print(["objID %d = %s"%(i,"".join([ '*' if self.stimSeq[t][i]==1 else '.' for t in range(len(self.stimSeq))]))])
         print('flicker: %d frames, tgt %d' % (self.numframes, tgtidx if tgtidx >= 0 else -1))
 
-    def update_codebook_permutation(self):
-        """update the permutation randomly mapping between codebook rows and outputs
+    def update_codebook_permutation(self, permute):
+        """update the permutation mapping between codebook rows and outputs
         """
-        self.codebook_permutation = list(range(len(self.stimSeq[0])))  # linear index
-        random.shuffle(self.codebook_permutation)  # N.B. in-place permutation
+        if permute is True:
+            self.codebook_permutation = list(range(len(self.stimSeq[0])))  # linear index
+            random.shuffle(self.codebook_permutation)  # N.B. in-place permutation
+        else:
+            # make a permutation vector with self.permute at the start
+            self.codebook_permutation = self.permute
+            # and every other code book entry after the initial permute entries
+            self.codebook_permutation.extend([i for i in range(len(self.stimSeq[0])) if not i in self.permute])
 
     def next(self, t):
         """move to the next state
@@ -531,7 +537,7 @@ class CalibrationPhase(FSM):
             # TODO []: should choose from set active objIDs?
             tgtidx = self.trialSeq[self.trli]
             if tgtidx < 0:  # insert random target
-                tgtidx = random.randint(0, len(self.objIDs)-1)
+                tgtidx = random.randrange(0, len(self.objIDs))
                 if tgtidx == self.tgtidx:
                     tgtidx = (tgtidx+1) % len(self.objIDs)
                 self.trialSeq[self.trli] = tgtidx
@@ -606,7 +612,7 @@ class PredictionPhase(FSM):
         if self.tgti < len(self.trialSeq):
             self.tgtidx = self.trialSeq[self.tgti]
             if self.tgtidx < 0 and self.cuedprediction:
-                tgtidx = random.randint(0, len(self.objIDs)-1)
+                tgtidx = random.randrange(0, len(self.objIDs))
                 self.tgtidx = tgtidx if not tgtidx == self.tgtidx else (tgtidx+1) % len(self.objIDs)
                 self.trialSeq[self.tgti] = self.tgtidx
             print("Start Pred: %d/%d" % (self.tgti, len(self.trialSeq)))

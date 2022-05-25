@@ -31,14 +31,15 @@ from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
 from mindaffectBCI.decoder.utils import testSignal
 
 # List of root directories to search for the experiment sub-directory
-dataroots = ['~/data/bci',
+dataroots = ['~/data',
+            os.path.join(os.path.dirname(__file__),'..','..','..','data'),
             'G://Shared drives/Data/experiments',
             'G://Shared drives/Data',
             '/content/drive/Shareddrives/Data',
             '/content/drive/Shareddrives',
             '/home/shared/drive/',
             'D://',
-            '.'
+            '.',
             ]
 
 def add_dataroot(dataroot):
@@ -46,7 +47,7 @@ def add_dataroot(dataroot):
 
     Args:
         dataroot (str): directory to add to the dataroots set
-    """    
+    """
     global dataroots
     dataroots.append(dataroot)
 
@@ -59,7 +60,7 @@ def set_dataroot(dataroot):
     global dataroots
     dataroots = [dataroot] if isinstance(dataroot,str) else dataroot
 
-def get_dataroot(dataroots=None,subdir=None):
+def get_dataroot(dataroots=None,subdir=None,verb:int=0):
     """search through the list of data-roots to find a sub-directory which contains the given experiment sub-directory
 
     Args:
@@ -76,13 +77,17 @@ def get_dataroot(dataroots=None,subdir=None):
         # check whith dataroots are available
         if subdir is not None:
             for dr in dataroots:
+                if verb>0: print('Searching: {}'.format(dr))
                 if os.path.exists(os.path.join(os.path.expanduser(dr),subdir)):
+                    if verb>0 : print('Found in {}'.format(dr))
                     dataroot = os.path.expanduser(dr)
                     break
         # if got here, either no subdir or didn't find subdir
         if dataroot is None:
             for dr in dataroots:
+                if verb>0: print('Searching: {}'.format(dr))
                 if os.path.exists(os.path.expanduser(dr)):
+                    if verb>0 : print('Found in {}'.format(dr))
                     dataroot = os.path.expanduser(dr)
                     break
     return dataroot
@@ -215,9 +220,9 @@ def mark_EMG():
     return (loader,filenames,datadir)    
 
 
-import mne
 import numpy as np
 def mne_annotation2stimseq(data, event_id=None, regexp=None):
+    import mne
     fs = data.info['sfreq']
     # event per sample, N.B. may be overlapping?
     events, event_id = mne.events_from_annotations(data, regexp=regexp, chunk_duration=1/fs)
@@ -281,6 +286,7 @@ def mne_eegbci_runlabels2labels(raw):
     return raw
 
 def load_mne_eegbci(run_files):
+    import mne
     if isinstance(run_files,str): run_files=[run_files]
     raws = []
     for f in run_files:
@@ -330,7 +336,7 @@ def kaggle():
 
     Returns:
         _type_: _description_
-    """    
+    """
     return mindaffectBCI('external_data/kaggle')
 
 

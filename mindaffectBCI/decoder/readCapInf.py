@@ -18,7 +18,7 @@
 import os
 import numpy as np
 
-def getPosInfo(chnames=None,capFile='1010',overridechnms=0,prefixMatch=False,verb=0,capDir=None):
+def getPosInfo(chnames=None,capFile='1010',overridechnms=0,prefixMatch=True,verb=0,capDir=None):
     """
      add electrode position info to a dimInfo structure
     
@@ -229,7 +229,7 @@ def latlong2xy(latlong):
     "convert lat-long to 2-d unrolled x,y coordinates"
     eegch=np.logical_not(np.any(np.logical_or(np.isnan(latlong),np.isinf(latlong)),0))
     xy=np.zeros((2,latlong.shape[1]))
-    xy[0,eegch]=np.sin(latlong[0,eegch]) * np.cos(latlong[1,eegch])
-    xy[1,eegch]=np.sin(latlong[0,eegch]) * np.sin(latlong[1,eegch])
+    xy[0,eegch]=np.sin(latlong[0,eegch]*.7) * np.cos(latlong[1,eegch])
+    xy[1,eegch]=np.sin(latlong[0,eegch]*.7) * np.sin(latlong[1,eegch])
     return xy
     

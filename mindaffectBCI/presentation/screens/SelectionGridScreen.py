@@ -74,7 +74,7 @@ def load_symbols(fn, replacements:dict={"<comma>":",", "<space>":"_"}):
 class SelectionGridScreen(Screen):
 
     LOGLEVEL=0
-    def __init__(self, window, noisetag=None, symbols=None, objIDs=1,
+    def __init__(self, window, noisetag=None, symbols=None, objIDs=None,
                  noisetag_mode:str = 'prediction', noisetag_args:dict={'nTrials':10, 'duration':5},
                  bgFraction:float=.2, instruct:str="", label:str=None,
                  clearScreen:bool=True, background_color:tuple=None, sendEvents:bool=True, liveFeedback:bool=True, 
@@ -118,32 +118,31 @@ class SelectionGridScreen(Screen):
             self_paced_sentence (str, optional): sentence to show on the screen when auto-pausing to wait for the user to continue. Defaults to '\n\n\n\nPause.  Press <space> to continue'.
         """
         self.window, self.symbols, self.noisetag, self.objIDs = ( window, symbols, noisetag, objIDs)
+        self.activeObjIDs = None
         self.sendEvents, self.liveFeedback, self.optosensor, self.framerate_display, self.logo, self.background_color, self.font_size, self.waitKey, self.stimulus_callback, self.target_only, self.show_correct, self.fixation, self.only_update_on_change, self.self_paced_intertrial, self.self_paced_sentence, self.media_directories, self.inject_threshold, self.inject_noise, self.instruct, self.bgFraction =\
             (sendEvents, liveFeedback, optosensor, framerate_display, logo, background_color, font_size, waitKey, stimulus_callback, target_only, show_correct, fixation, only_update_on_change, self_paced_intertrial, self_paced_sentence, media_directories, inject_threshold, inject_noise, instruct, bgFraction)
-        self.noisetag_mode, self.noisetag_args = noisetag_mode, noisetag_args
+        self.noisetag_mode, self.noisetag_args = noisetag_mode, noisetag_args.copy()
         self.label = label if label is not None else self.__class__.__name__
+        if self.objIDs is None:
+            # BODGE: set for the noisetag args...
+            self.objIDs = noisetag_args.get('objIDs',None)
         # ensure media directories has right format
         if self.media_directories is None: self.media_directories = []
-        elif not hasattr(self.media_directories,'__iter__'): self.media_directories=[self.media_directories]
+        elif isinstance(self.media_directories,str): self.media_directories=[self.media_directories]
         # create set of sprites and add to render batch
         self.clearScreen=clearScreen
         self.isRunning=False
         self.isDone=False
         self.pause=False
         self.nframe=0
+        self.t0=-1
+        self.self_paced_time_ms = 0
         self.last_target_idx=-1
         self.framestart = self.getTimeStamp()
         self.frameend = self.getTimeStamp()
         #self.stimulus_state = None
         self.prev_stimulus_state = None # used to track state changes for display optimization / trigger injection
         self.target_idx = None
-        # N.B. noisetag does the whole stimulus sequence
-        self.set_noisetag(noisetag)
-        # register event handlers
-        self.noisetag.addSelectionHandler(self.doSelection)
-        self.noisetag.addNewTargetHandler(self.doNewTarget)
-        self.noisetag.addPredictionHandler(self.doPrediction)
-        self.noisetag.addPredictionDistributionHandler(self.doPredictionDistribution)
         if self.symbols is not None:
             self.set_grid(self.symbols, objIDs, bgFraction, sentence=instruct, logo=logo)
         self.liveSelections = None
@@ -154,6 +153,15 @@ class SelectionGridScreen(Screen):
         # add new state to color mappings
         if state2color is not None:
             self.state2color.update(intstr2intkey(state2color))
+
+        # N.B. noisetag does the whole stimulus sequence
+        self.set_noisetag(noisetag)
+        # register event handlers
+        self.noisetag.addSelectionHandler(self.doSelection)
+        self.noisetag.addNewTargetHandler(self.doNewTarget)
+        self.noisetag.addPredictionHandler(self.doPrediction)
+        self.noisetag.addPredictionDistributionHandler(self.doPredictionDistribution)
+
 
     def reset(self):
         """reset the stimulus state
@@ -175,17 +183,19 @@ class SelectionGridScreen(Screen):
             self.reset_noisetag()
 
     def reset_noisetag(self):
-        print('noisetag_reset')
         if self.noisetag_mode.lower() == 'calibration':
+            print('SelectionGridScreen:reset_noisetag::calibration {}'.format(self.noisetag_args))
             self.noisetag.modeChange("calibration")
             self.noisetag.startCalibration(**self.noisetag_args)
         elif self.noisetag_mode.lower() == 'prediction':
-            print('noisetag::prediction {}'.format(self.noisetag_args))
+            print('SelectionGridScreen:reset_noisetag::prediction {}'.format(self.noisetag_args))
             self.noisetag.modeChange("prediction")
             self.noisetag.startPrediction(**self.noisetag_args)
         elif self.noisetag_mode.lower() == 'single_trial':
+            print('SelectionGridScreen:reset_noisetag::single_trial {}'.format(self.noisetag_args))
             self.noisetag.startSingleTrial(**self.noisetag_args)
         else:
+            print('SelectionGridScreen:reset_noisetag::flickerwithselection {}'.format(self.noisetag_args))
             self.noisetag.startFlickerWithSelection(**self.noisetag_args)
 
     def elapsed_ms(self):
@@ -289,11 +299,11 @@ class SelectionGridScreen(Screen):
 
         Args:
             objID (int): the objId of the selected letter
-        """        
+        """
         if self.liveSelections == True:
-            if objID in self.objIDs:
+            if objID in self.activeobjIDs:
                 print("doSelection: {}".format(objID))
-                symbIdx = self.objIDs.index(objID)
+                symbIdx = self.activeobjIDs.index(objID)
                 sel = self.getLabel(symbIdx)
                 sel = sel.text if sel is not None else ''
                 text = self.update_text(self.sentence.text, sel)
@@ -303,7 +313,7 @@ class SelectionGridScreen(Screen):
 
     def doNewTarget(self):
         """do processing triggered by starting a new-target sequence, e.g. update the trial counter
-        """        
+        """
         if not self.show_newtarget_count is None and self.show_newtarget_count:
             self.show_newtarget_count = self.show_newtarget_count+1
             bits = self.sentence.text.split("\n")
@@ -314,6 +324,7 @@ class SelectionGridScreen(Screen):
         if self.self_paced_intertrial>0 and self.elapsed_ms() > self.self_paced_intertrial*1000 + self.self_paced_time_ms :
             self.set_sentence( self.sentence.text + self.self_paced_sentence )
             self.pause = True
+            self.self_paced_time_ms = self.elapsed_ms()
 
     def doPredictionDistribution(self, ptd:PredictedTargetDist):
         """do processing triggered by recieving a predicted target distribution
@@ -351,6 +362,7 @@ class SelectionGridScreen(Screen):
 
     def set_sentence(self, text):
         '''set/update the text to show at the top of the screen '''
+        self.instruct = text
         if type(text) is list:
             text = "\n".join(text)
         self.sentence.begin_update()
@@ -383,8 +395,10 @@ class SelectionGridScreen(Screen):
             sentence = self.instruct
         if bgFraction is None:
             bgFraction = self.bgFraction
-        if objIDs is None:
+        if objIDs is None and self.objIDs is not None:
             objIDs = self.objIDs
+        if logo is None:
+            logo = self.logo
 
         if isinstance(symbols, str):
             symbols = load_symbols(symbols)
@@ -395,24 +409,28 @@ class SelectionGridScreen(Screen):
         # Number of non-None symbols
         self.nsymb  = sum([sum([(s is not None and not s == '') for s in x ]) for x in symbols])
 
+        # get size of the matrix
+        self.gridheight = len(symbols) # extra row for sentence
+        self.gridwidth = max([len(s) for s in symbols])
+        self.ngrid     = self.gridwidth * self.gridheight
+
+
+        # get the set of active objIDs we will use at this time
         if objIDs is not None:
             if not hasattr(objIDs,'__iter__'):
-                self.objIDs = list(range(objIDs, objIDs+self.nsymb+1))
+                activeobjIDs = list(range(objIDs, objIDs+self.nsymb+1))
             else:
-                self.objIDs = list(objIDs)  
+                activeobjIDs = list(objIDs)[:self.nsymb]
         else:
-            self.objIDs = list(range(1,self.nsymb+1))
-            objIDs = self.objIDs
-        if logo is None:
-            logo = self.logo
-        # get size of the matrix
-        self.gridheight  = len(symbols) # extra row for sentence
-        self.gridwidth = max([len(s) for s in symbols])
-        self.ngrid      = self.gridwidth * self.gridheight
+            activeobjIDs = list(range(1,self.nsymb+1))
+
 
         # update the objIDs set for the noisetag object
-        self.noisetag_args['objIDs']=self.objIDs
-        self.noisetag.setActiveObjIDs(self.objIDs)
+        if self.noisetag_args.get('objIDs',None) is not None and not self.noisetag_args['objIDs'] == self.objIDs:
+            print('WARNING: objIDs set in 2 places.... we overide!')
+        self.noisetag_args['objIDs']=activeobjIDs
+        self.noisetag.setActiveObjIDs(activeobjIDs)
+        self.activeobjIDs = activeobjIDs
 
         self.objects=[None]*self.nsymb
         self.labels=[None]*self.nsymb
@@ -657,7 +675,7 @@ class SelectionGridScreen(Screen):
         Returns:
             bool: is done status
         """
-        if self.isDone:
+        if self.isDone and self.noisetag_mode.lower() in ('calibration','prediction'):
             self.noisetag.modeChange('idle')
         return self.isDone
 

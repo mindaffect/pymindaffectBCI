@@ -1,5 +1,5 @@
 #  Copyright (c) 2019 MindAffect B.V. 
-#  Author: Jason Farquhar <jason@mindaffect.nl>
+#  Author: Jason Farquhar <jadref@gmail.com>
 # This file is part of pymindaffectBCI <https://github.com/mindaffect/pymindaffectBCI>.
 #
 # pymindaffectBCI is free software: you can redistribute it and/or modify
@@ -34,10 +34,10 @@ from scipy.signal import welch
 l,f,_=get_dataset('openBMI_MI')
 
 # get raw MI data, just for the trial duration
-#X,Y,coords=l(f[1],stopband=((0,3),(29,-1)),CAR=False,offset_ms=None,ppMI=False)
+#X,Y,coords=l(f[1],filterband=((0,3),(29,-1)),CAR=False,offset_ms=None,ppMI=False)
 offset_ms=(0,0);(-6000,12000)
-stopband=None #((0,3),(30,-1))
-X,Y,coords=l(f[0],stopband=stopband,CAR=True,offset_ms=offset_ms,ppMI=False,fs_out=100)
+filterband=None #((0,3),(30,-1))
+X,Y,coords=l(f[0],filterband=filterband,CAR=True,offset_ms=offset_ms,ppMI=False,fs_out=100)
 oX=X.copy()
 fs=coords[1]['fs']
 lab=coords[0]['lab']
@@ -92,7 +92,7 @@ ch_names = [ ch_names[i] for i in range(len(ch_names)) if keep[i] ]
 plt.figure(100);plot_erp(X,lab,'car')
 
 # hp-lp
-X,_,_=butter_sosfilt(X,stopband=((0,8),(16,-1)),fs=fs)
+X,_,_=butter_sosfilt(X,filterband=((0,8),(16,-1)),fs=fs)
 plt.figure(101);plot_erp(X,lab,'hp-lp',plotp=True)
 
 # whiten
@@ -108,7 +108,7 @@ freqs, X = welch(X,fs,axis=-2,nperseg=int(fs*.5),noverlap=.5,return_onesided=Tru
 plt.figure(103);plot_erp(X,lab,'welch')
 
 # envelope
-X = extract_envelope(X,fs,stopband=None,whiten=None,filterbank=None,log=False,env_stopband=(2,-1),plot=False)
+X = extract_envelope(X,fs,filterband=None,whiten=None,filterbank=None,log=False,env_filterband=(2,-1),plot=False)
 plt.figure(103);plot_erp(X,lab,'env',plotp=True)
 
 X=np.log(np.maximum(X,1e-5))

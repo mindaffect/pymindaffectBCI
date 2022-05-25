@@ -356,8 +356,9 @@ class PredictedTargetDist(UtopiaMessage):
         """        
         super().__init__(PredictedTargetDist.msgID, PredictedTargetDist.msgName)
         self.timestamp=timestamp
-        self.objIDs=objIDs
         self.pTgt=pTgt
+        self.objIDs=objIDs if objIDs is not None else [range(len(pTgt))]
+
 
     def serialize(self):
         """Returns the contents of this event as a byte-stream, ready to send over the network, 

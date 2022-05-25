@@ -16,7 +16,6 @@
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
 
-from mindaffectBCI.decoder.temporal_basis import get_temporal_basis, apply_temporal_basis, invert_temporal_basis_mapping
 import numpy as np
 import scipy as sp
 import copy
@@ -30,6 +29,7 @@ from mindaffectBCI.decoder.decodingSupervised import decodingSupervised
 from mindaffectBCI.decoder.stim2event import stim2event
 from mindaffectBCI.decoder.normalizeOutputScores import normalizeOutputScores, estimate_Fy_noise_variance
 from mindaffectBCI.decoder.zscore2Ptgt_softmax import softmax, calibrate_softmaxscale, marginalize_scores
+from mindaffectBCI.decoder.temporal_basis import get_temporal_basis, apply_temporal_basis, invert_temporal_basis_mapping, apply_temporal_basis_X_TStd, invert_temporal_basis_mapping_spatiotemporal, apply_temporal_basis_tdtd, apply_temporal_basis_tde
 
 try:
     from sklearn.linear_model import Ridge, LogisticRegression
@@ -98,24 +98,36 @@ def init_clsfr(
     """
     if isinstance(model, BaseSequence2Sequence):
         clsfr = model
+        
     elif model.lower() == 'cca' or model is None:
         clsfr = MultiCCA(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, rank=rank, evtlabs=evtlabs, center=center, **kwargs)
+
     elif model.lower() == 'bwd':
         clsfr = BwdLinearRegression(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs, center=center, **kwargs)
+
     elif model.lower() == 'fwd':
         clsfr = FwdLinearRegression(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs, center=center, **kwargs)
+
     elif model.lower() == 'ridge':  # should be equivalent to BwdLinearRegression
         clsfr = LinearSklearn(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs,
                               clsfr=Ridge(alpha=C, fit_intercept=True, max_iter=max_iter), **kwargs)
-    elif model.lower() == 'lr':
-        clsfr = LinearSklearn(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs, clsfr=LogisticRegression(
+
+    elif model.lower() in ('lr', 'linearlogisticregression'):
+        clsfr = LinearLogisticRegression(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs, clsfr=LogisticRegression(
             C=C, fit_intercept=True, max_iter=max_iter, solver='lbfgs'), labelizeY=True, **kwargs)
+
+    elif model.lower() in ('lrcv', 'linearlogisticregressioncv'):
+        clsfr = LinearLogisticRegressionCV(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs, clsfr=LogisticRegression(
+            C=C, fit_intercept=True, max_iter=max_iter, solver='lbfgs'), labelizeY=True, **kwargs)
+
     elif model.lower() == 'svr':
         clsfr = LinearSklearn(tau_ms=tau_ms, offset=offset_ms, fs=fs, evtlabs=evtlabs,
                               clsfr=LinearSVR(C=C, max_iter=max_iter), **kwargs)
+
     elif model.lower() == 'svc':
         clsfr = LinearSklearn(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, evtlabs=evtlabs,
                               clsfr=LinearSVC(C=C, max_iter=max_iter), labelizeY=True, **kwargs)
+
     elif isinstance(model, BaseEstimator):
         clsfr = LinearSklearn(tau_ms=tau_ms, offset_ms=offset_ms, fs=fs,
                               evtlabs=evtlabs, clsfr=model, labelizeY=True, **kwargs)
@@ -147,7 +159,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     def __init__(self, evtlabs=None, tau_ms: int = None, tau: int = None, offset_ms: int = None, offset: int = None,
                  fs: float = None, outputscore: str = 'ip', priorweight: float = 0, startup_correction: int = 50,
                  prediction_offsets: list = None, centerY: bool = False, minDecisLen: int = 0, bwdAccumulate: bool = False,
-                 nvirt_out: int = -20, nocontrol_condn: float = .5, verb: int = 0):
+                 nvirt_out: int = -20, nocontrol_condn: float = .5, verb: int = 0, score_type:str='audc'):
         """Base class for general sequence to sequence models and inference
 
             N.B. this implementation assumes linear coefficients in W_ (nM,nfilt,d) and R_ (nM,nfilt,nE,tau)
@@ -170,8 +182,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         self.evtlabs = evtlabs
         self.fs, self.tau_ms, self.tau, self.offset_ms, self.offset, self.priorweight, self.startup_correction, self.prediction_offsets = (
             fs, tau_ms, tau, offset_ms, offset, priorweight, startup_correction, prediction_offsets)
-        self.verb, self.minDecisLen, self.bwdAccumulate, self.nvirt_out, self.nocontrol_condn, self.centerY = (
-            verb, minDecisLen, bwdAccumulate, nvirt_out, nocontrol_condn, centerY)
+        self.verb, self.minDecisLen, self.bwdAccumulate, self.nvirt_out, self.nocontrol_condn, self.centerY, self.score_type = (
+            verb, minDecisLen, bwdAccumulate, nvirt_out, nocontrol_condn, centerY, score_type)
         self.outputscore = outputscore
 
     def stim2event(self, Y_TSy, prevY=None, fit=False):
@@ -209,11 +221,15 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         if fs is not None:
             self.fs_ = fs
         elif hasattr(X, 'info'):  # meta-data ndarray
-            self.fs_ = X.info['fs']
+            self.fs_ = X.info.get('fs',None)
+            self.ch_names_ = X.info.get('ch_names',None)
         elif self.fs is not None:
             self.fs_ = self.fs
         elif not hasattr(self, 'fs_'):
             self.fs_ = None
+        
+        if not hasattr(self, 'ch_names_'):
+            self.ch_names_ = None
 
         self.tau_ = self.tau
         if self.tau_ is None and self.tau_ms is not None:
@@ -263,7 +279,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         Args:
             X (np.ndarray (tr,samp,d)): the multi-trial data
             Y (np.ndarray (tr,samp,nY)): the multi-trial stimulus sequences
-            dedup0 ([type], optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. Defaults to False.
+            dedup0 ([type], optional): remove duplicates of the Yidx==0, i.e. 1st, assumed true, output of Y. >0 remove the copy (used when calibrating), <0 remove objID==0 (used when predicting) Defaults to False.
             prevY ([type], optional): previous stimulus sequence information. for partial incremental calls. Defaults to None.
             offsets ([ListInt], optional): list of offsets in Y to try when decoding, to override the class variable.  Defaults to None.
 
@@ -315,7 +331,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         W_Mkd = self.W_
         if X.ndim > 3:
             X_TSd = X_TSd.reshape(X_TSd.shape[:2]+(-1,))  # squash extra feature dims
-            W_Mkd = W_Mkd.reshape(W_Mkd.shape[:2]+(-1,))
+            if W_Mkd.shape[-1] < X_TSd.shape[-1]: 
+                W_Mkd = W_Mkd.reshape(W_Mkd.shape[:2]+(-1,))
         if X_TSd.ndim < 3:
             X_TSd = X_TSd.reshape((1,)*(3-X_TSd.ndim) + X.shape)  # add trial dim
 
@@ -447,14 +464,28 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
                 Ytst = np.concatenate((Y, virt_Y), axis=-2)
         return Ytst
 
-    def score(self, X, Y, Fy=None, nvirt_out=None):
+    def score(self,X,Y,score_type:str=None, **kwargs):
+        if score_type is None: score_type=self.score_type
+        if score_type=='corr':
+            score = self.score_corr(X,Y,**kwargs)
+        elif score_type == 'classifier':
+            score = self.score_classifier(X,Y,**kwargs)
+        elif callable(score_type):
+            score = self.score_type(self,X,Y,**kwargs)
+        elif score_type == 'audc' or score_type is None:
+            score = self.score_audc(X,Y,**kwargs)
+        else:
+            raise ValueError("Unrecog score type: {}".format(self.score_type))
+        return score
+
+    def score_audc(self, X, Y, Fy=None, nvirt_out=None):
         '''score this model on this data, N.B. for model_selection higher is *better*'''
         # score, removing duplicates for true target (objId==0) so can compute score
         if np.any(Y[:, :, 0, ...] != 0):  # we have true-target info to fit
             if Fy is None:  # compute the Fy from X,Y
                 Ytst = self.add_virt_out(Y, nvirt_out if nvirt_out is None else self.nvirt_out)
                 Fy = self.predict(X, Ytst)
-            score = BaseSequence2Sequence.score_audc(Fy)
+            score = BaseSequence2Sequence.inner_score_audc(Fy)
         else:  # no true target info, so try to score w.r.t. the summed activity over all outputs
             score = self.score_corr(X, Y)
         return score
@@ -622,7 +653,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         disp.plot(ax=plt.gca())
 
     @staticmethod
-    def score_audc(Fy_TSy, score_noise=1e-5):
+    def inner_score_audc(Fy_TSy, score_noise=1e-5):
         '''compute area under decoding curve score from Fy, *assuming* Fy[:,:,0] is the *true* classes score'''
         if Fy_TSy.ndim > 3:
             raise ValueError("Only for single models!")
@@ -691,7 +722,7 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
     def cv_fit(
             self, X, y, cv: int = 5, fs=None, fit_params: dict = dict(),
             verbose: bool = 0, return_estimator: bool = True, calibrate_softmax: bool = True, retrain_on_all: bool = True,
-            score=None):
+            score_type=None):
         """Cross-validated fit the model for generalization performance estimation
 
         N.B. write our own as sklearn doesn't work for getting the estimator values for structured output.
@@ -715,6 +746,8 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         # TODO [] : move into a wrapper class
         Y_TSy = y  # BODGE []: rename to conform to sklearn naming...
         X_TSd = X
+        if score_type is None:
+            score_type = self.score_type
 
         cv = self.get_folding(X_TSd, Y_TSy, cv)
         scores = []  # decoding scores
@@ -741,26 +774,25 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
             Fy_TSy[valid_idx, ..., :Fyi_TSy.shape[-1]] = Fyi_TSy[..., :Fy_TSy.shape[-1]]
 
             val = None
-            try:
-                if score is None:  # just call our score function
+            #try:
+            if 1:
+                if score_type is None:  # just call our score function
                     val = self.score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...], Fy=Fyi_TSy)
-                elif score == 'audc':
-                    val = self.score_audc(Fyi_TSy)
-                elif score == 'gof':  # goodness of fit
+                elif score_type == 'audc':
+                    val = self.inner_score_audc(Fyi_TSy)
+                elif score_type == 'gof':  # goodness of fit
                     val = self.score_corr(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
-                elif callable(score):  # given score function
-                    val = score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
-                elif isinstance(score, 'str'):
-                    if hasattr(self, score):
-                        val = getattr(self, score)(self, X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
+                elif callable(score_type):  # given score function
+                    val = score_type(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
+                elif isinstance(score_type, 'str'):
+                    if hasattr(self, score_type):
+                        val = getattr(self, score_type)(self, X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...])
                     else:
                         # try to get a function in our name-space with this name
-                        score = locals().get(score, score)
-                        if not callable(score):
-                            score = globals().get(score, score)
-                        val = score(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...], self.W_, self.R_, self.b_)
-            except:
-                val = None
+                        score_type = locals().get(score_type) or globals().get(score_type) or score_type
+                        val = score_type(X_TSd[valid_idx, ...], Y_TSy[valid_idx, ...], self.W_, self.R_, self.b_)
+            #except:
+            #    pass
             scores.append(val)
         # final retrain with all the data
         if retrain_on_all:
@@ -864,31 +896,38 @@ class BaseSequence2Sequence(BaseEstimator, ClassifierMixin):
         self.softmaxscale_ = self.calibrate_softmaxscale(Fy)
         return self
 
-    def plot_model(self, fs: float = None, ncol: int = 2, plot_pattern: bool = True, **kwargs):
+    def plot_model(self, fs: float = None, ncol: int = 2, plot_pattern: bool = True, ch_names: list = None, offset:float=None, offset_ms:float=None, **kwargs):
         """plot the fitted model, either as a factored spatial+temporal model, or combined spatiotemporal model
 
         Args:
-            fs (float, optional): _description_. Defaults to None.
-            ncol (int, optional): _description_. Defaults to 2.
-            plot_pattern (bool, optional): _description_. Defaults to True.
+            fs (float, optional): sample rate of the data.  If None then use the sample rate given at construction/fitting time. Defaults to None.
+            ncol (int, optional): number of colums of the figure to make when ploting the figure.  The sptial + temporal will be in columns 0,1.  For example use ncols=3 to leave a 3rd col for additional model info plotted outside this function. Defaults to 2.
+            plot_pattern (bool, optional): plot a spatial pattern or a spatial filter. Defaults to True.
         """
         evtlabs = self.evtlabs_ if hasattr(self, 'evtlabs_') else self.evtlabs
-        if fs is None:
-            fs = self.fs_
+        if fs is None:        fs = self.fs_
+        if ch_names is None:  ch_names = self.ch_names_
+        if offset is None and offset_ms is None:  offset = self.offset_
         if hasattr(self, 'R_') and not self.R_ is None:
-            print("Plot Factored Model")
+            #print("Plot Factored Model")
             sp = (self.A_, 'spatial-pattern') if plot_pattern and hasattr(self,
                                                                           'A_') and self.A_ is not None else (self.W_, 'spatial-filter')
-            tp = (self.I_, 'temporal-pattern') if plot_pattern and hasattr(self,
-                                                                           'I_') and self.I_ is not None else (self.R_, 'temporal-filter')
+            tp = (self.R_, 'temporal-pattern')
             plot_factoredmodel(
                 sp[0].reshape((-1, sp[0].shape[-1])),
                 tp[0].reshape((-1,) + tp[0].shape[-2:]),
-                evtlabs=evtlabs, offset=self.offset_, fs=fs, spatial_filter_type=sp[1],
+                evtlabs=evtlabs, 
+                offset=offset, offset_ms = offset_ms, fs=fs,
+                ch_names=ch_names,  
+                spatial_filter_type=sp[1],
                 temporal_filter_type=tp[1],
                 ncol=ncol, **kwargs)
         else:
-            plot_erp(self.W_, evtlabs=evtlabs, fs=fs, offset=self.offset_, **kwargs)
+            plot_erp(self.W_[np.newaxis,...], # add back in a epoch-dim
+                    evtlabs=evtlabs, 
+                    fs=fs, offset=offset, offset_ms = offset_ms, 
+                    ch_names=ch_names, 
+                    **kwargs)
 
         #import matplotlib.pyplot as plt
         # plt.figure()
@@ -941,9 +980,9 @@ class MultiCCA(BaseSequence2Sequence):
             verb (int, optional): verbosity level, 0 is default, higher number means be more talky in debug messages.  Defaults to 0.
         """
         super().__init__(evtlabs=evtlabs, tau=tau,  offset=offset, tau_ms=tau_ms,
-                         offset_ms=offset_ms, fs=fs, outputscore=outputscore, **kwargs)
-        self.rank, self.reg, self.rcond, self.badEpThresh, self.badWinThresh, self.symetric, self.center, self.CCA, self.whiten_alg, self.cxxp, self.normalize_sign, self.temporal_basis, self.score_type = (
-            rank, reg, rcond, badEpThresh, badWinThresh, symetric, center, CCA, whiten_alg, cxxp, normalize_sign, temporal_basis, score_type)
+                         offset_ms=offset_ms, fs=fs, outputscore=outputscore, score_type=score_type, **kwargs)
+        self.rank, self.reg, self.rcond, self.badEpThresh, self.badWinThresh, self.symetric, self.center, self.CCA, self.whiten_alg, self.cxxp, self.normalize_sign, self.temporal_basis = (
+            rank, reg, rcond, badEpThresh, badWinThresh, symetric, center, CCA, whiten_alg, cxxp, normalize_sign, temporal_basis)
 
     def fit_cca(
             self, Cxx_dd, Cyx_yetd, Cyy_yetet, rank=None, reg=None, rcond=None, CCA=None, symetric=None,
@@ -1074,7 +1113,7 @@ class MultiCCA(BaseSequence2Sequence):
             self.b_ = None
         return self
 
-    def cv_fit(self, X, Y, cv=None, fs=None, fit_params: dict = dict(), verbose: bool = 0, 
+    def cv_fit(self, X, Y, cv=None, fs=None, fit_params: dict = dict(), verbose: bool = 0, score_type=None,
                return_estimator: bool = True, calibrate_softmax: bool = True, retrain_on_all: bool = True, ranks=None):
         ''' cross validated fit to the data.  optimized wrapper for optimization of the model rank.'''
         if cv is None:
@@ -1086,6 +1125,9 @@ class MultiCCA(BaseSequence2Sequence):
             return BaseSequence2Sequence.cv_fit(
                 self, X, Y, cv=cv_in, fit_params=fit_params, verbose=verbose, return_estimator=return_estimator,
                 calibrate_softmax=calibrate_softmax, retrain_on_all=retrain_on_all)
+
+        if score_type is None:
+            score_type = self.score_type
 
         # compute the summary statistics for each trial
         maxrank = max(ranks)
@@ -1116,10 +1158,12 @@ class MultiCCA(BaseSequence2Sequence):
                 self.fit_b(X[train_idx, ...])
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                if self.score_type == 'corr':
+                if callable(score_type):
+                    score = score_type(self, X[valid_idx,...], Y[valid_idx,...])
+                elif score_type == 'corr':
                     score = self.score_corr(X[valid_idx, ...], Y[valid_idx, ...])
                 else:
-                    score = self.score_audc(Fyi)
+                    score = self.inner_score_audc(Fyi)
                 if i == 0 and ri == 0:  # reshape Fy to include the extra model dim
                     Fy = np.zeros((len(ranks), Y.shape[0])+Fyi.shape[1:], dtype=np.float32)
                 Fy[ri, valid_idx, ..., :Fyi.shape[-1]] = Fyi[..., :Fy.shape[-1]]
@@ -1140,6 +1184,7 @@ class MultiCCA(BaseSequence2Sequence):
             calibrate_softmax=calibrate_softmax, retrain_on_all=retrain_on_all)
         res['Fy_rank'] = Fy  # store the pre-rank info
         return res
+
 
 
 class MultiCCACV(MultiCCA):
@@ -1312,7 +1357,7 @@ class MultiCCACV(MultiCCA):
                 for ri, r in enumerate(ranks):
                     self.W_ = W[..., :r, :].copy()
                     self.R_ = R[..., :r, :, :].copy()
-                    self.fit_b(X[train_idx, ...])
+                    self.fit_b(X_TSd[train_idx, ...])
 
                     Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
                     # save the prediction for later
@@ -1320,12 +1365,14 @@ class MultiCCACV(MultiCCA):
                         Fy_cv = np.zeros((len(fit_configs), len(ranks), Y.shape[0])+Fyi.shape[1:], dtype=np.float32)
                     Fy_cv[ci, ri, valid_idx, ..., :Fyi.shape[-1]] = Fyi[..., :Fy_cv.shape[-1]]
 
-                    if score_type == 'corr':
+                    if callable(score_type):
+                        score = score_type(self, X[valid_idx,...], Y[valid_idx,...])
+                    elif score_type == 'corr':
                         Cxxval, Cyxval, Cyyval = [np.sum(C[valid_idx], 0) for C in (Cxxs, Cyxs, Cyys)]
                         score_y, _ = corr_cov(Cxxval, Cyxval, Cyyval, self.W_, self.R_)
                         score = score_y[0]  # strip silly y dim
                     else:
-                        score = self.score_audc(Fyi)
+                        score = self.inner_score_audc(Fyi)
                     scores_cv[ci][ri].append(score)
 
         # 3) get the *best* rank
@@ -1367,7 +1414,7 @@ class MultiCCACV(MultiCCA):
             self.I_ = I.astype(X.dtype)
 
         return dict(
-            estimator=Fy, estimator_cv=Fy_cv, test_score=scores_cv[maxci][maxri],
+            estimator=Fy, estimator_cv=Fy_cv, test_score=scores,
             scores_cv=scores_cv, ranks=ranks, fit_configs=[cf for cf in fit_configs])
 
 
@@ -1705,7 +1752,7 @@ class FwdLinearRegressionCV(FwdLinearRegression):
 
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.score_audc(Fyi)
+                score = self.inner_score_audc(Fyi)
 
                 # save the prediction for later
                 if i == 0 and ci == 0:  # reshape Fy to include the extra model dim
@@ -2021,7 +2068,7 @@ class BwdLinearRegressionCV(BwdLinearRegression):
 
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.score_audc(Fyi)
+                score = self.inner_score_audc(Fyi)
 
                 # save the prediction for later
                 if i == 0 and ci == 0:  # reshape Fy to include the extra model dim
@@ -2078,9 +2125,9 @@ class LinearSklearn(BaseSequence2Sequence):
     def __init__(
             self, clsfr="lr", clsfr_args: dict = {},
             evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, labelizeY=False,
-            ignore_unlabelled=True, chunk_size: int = 1, chunk_labeller: str = None, badEpThresh=None,
-            temporal_basis: str = None, **kwargs):
-        """_summary_
+            ignore_unlabelled=True, chunk_size: int = None, chunk_size_ms: int = None, chunk_labeller: str = None, badEpThresh=None,
+            temporal_basis: str = None, score_type:str='audc', **kwargs):
+        """  Wrap a normal sk-learn classifier for sequence to sequence learning 
 
         Args:
             clsfr (str|sklearn.model, optional): The base classifier to use.  If string then one-of; cca,bwd,fwd,ridge,lr,svr,svc,linearsklearn.  Defaults to "lr".
@@ -2093,19 +2140,20 @@ class LinearSklearn(BaseSequence2Sequence):
             offset_ms (float, optional): the offset from the event time for the start of the response window.  Defaults to None.
             fs (float, optional): the sampling rate of the data, used for coverting milliseconds to samples.  Defaults to None.
             chunk_size (int, optional): the number of samples between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            chunk_size_ms (float, optional): time in milliseconds between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
             labelizeY (bool, optional): flag if whe should labelize-Y such that each unique combination of stimulus-event values is a new class. Defaults to False.
             ignore_unlabelled (bool, optional): flag if we should discard data-windows for which no stimulus events are non-zero. Defaults to True.
             chunk_labeller (_type_, optional): funtion name to use to convert from stimulus-event information to classes. Defaults to None.
             badEpThresh (int, optional): Bad epoch threshold for computing a robustified covariance matrix for the CCA fit.  See `utils.py::zero_outliers` for information on how the threshold is used, and `updateSummaryStatistics.py::updateSummaryStatistics` for usage in computing the summary statistics needed to compute a CCA model. Defaults to 6.
             temporal_basis (_type_, optional): As temporal basis is an array mapping from the raw sample temporal basis to a new parametric basis, such as the amplitude of a particular sinusoidal frequency. See `temporal_basis.py` for more information on the available types of basis. Defaults to None.
         """
-        super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, **kwargs)
-        self.clsfr, self.clsfr_args, self.labelizeY, self.badEpThresh, self.ignore_unlabelled, self.chunk_size, self.chunk_labeller, self.temporal_basis = (
-            clsfr, clsfr_args, labelizeY, badEpThresh, ignore_unlabelled, chunk_size, chunk_labeller, temporal_basis)
+        super().__init__(evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms, offset_ms=offset_ms, fs=fs, score_type=score_type, **kwargs)
+        self.clsfr, self.clsfr_args, self.labelizeY, self.badEpThresh, self.ignore_unlabelled, self.chunk_size, self.chunk_size_ms, self.chunk_labeller, self.temporal_basis = (
+            clsfr, clsfr_args, labelizeY, badEpThresh, ignore_unlabelled, chunk_size, chunk_size_ms, chunk_labeller, temporal_basis)
 
     @staticmethod
     def make_sklearn_dataset(
-            X_TSd, Y_TSe, tau, offset, chunk_size=1, labelizeY=False, ignore_unlabelled=True, chunk_labeller=None,
+            X_TSd, Y_TSe, tau, offset, chunk_size=None, labelizeY=False, ignore_unlabelled=True, chunk_labeller=None,
             badEpThresh=None, temporal_basis: str = None, verb=0):
         """convert a sequence 2 sequence learning problem into a conventional classification problem, by treating temporal windows of X and Y as independent training examples.
 
@@ -2139,8 +2187,10 @@ class LinearSklearn(BaseSequence2Sequence):
                              axis=1) if tau is not None and tau < X_TSd.shape[1] else X_TSd[:, np.newaxis, ...]
         # TODO[]: include label offset....
         assert offset is None or offset == 0, 'Offset not yet supported'
-        if chunk_labeller is None:
-            Y_TSe = Y_TSe[:, :X_TStd.shape[1], ...]
+        if chunk_labeller is None or chunk_labeller=='first':
+            # just use the label from the first sample of each chunk
+            Y_TSte = window_axis(Y_TSe, winsz=tau, step=chunk_size, axis=1)
+            Y_TSe = Y_TSte[:,:,0,:]
         else:
             Y_TSte = window_axis(Y_TSe, winsz=tau, step=chunk_size, axis=1)
             # label is the max value in the chunk
@@ -2170,8 +2220,8 @@ class LinearSklearn(BaseSequence2Sequence):
             if Y_TS_e.shape[-1] > 1:  # multiple event types, event type is the label
                 Y_TS = np.argmax(Y_TS_e, axis=-1)+1  # 1,2,3... for actual events
                 Y_TS[np.all(Y_TS_e == 0, axis=-1)] = 0  # unlabelled samples have class 0
-                import matplotlib.pyplot as plt
-                plt.plot(Y_TS[300:600])
+                #import matplotlib.pyplot as plt
+                #plt.plot(Y_TS[300:600])
             else:  # level of the single event type is the label
                 Y_TS = Y_TS_e[..., 0]
             if ignore_unlabelled:
@@ -2186,7 +2236,6 @@ class LinearSklearn(BaseSequence2Sequence):
                     Y_TS_e = Y_TS_e[keep, ...]
                     X_TS_td = X_TS_td[keep, ...]
             Ytrn = Y_TS
-            print(np.unique(Ytrn))
         else:
             Ytrn = Y_TS_e
 
@@ -2294,7 +2343,7 @@ class LinearSklearn(BaseSequence2Sequence):
 
         if C_scale is None:
             C_scale = self.C_scale_estimate(X)
-            print("C_scale = {}".format(C_scale))
+            #print("C_scale = {}".format(C_scale))
 
         self.clsfr = self.make_clsfr(self.clsfr, self.clsfr_args, C=C*C_scale)
 
@@ -2304,11 +2353,14 @@ class LinearSklearn(BaseSequence2Sequence):
         # extract the true target to fit to
         Y_true = Y[..., 0, :]  # (tr,samp,e)
 
+        # get the chunksize for the classification windows
+        self.chunk_size_ = int(self.chunk_size_ms * self.fs_ // 1000) if self.chunk_size_ms is not None else self.chunk_size
         # transform the data into a sk-learn compatiable version
         Xtrn, Ytrn, temporal_basis = LinearSklearn.make_sklearn_dataset(
             X, Y_true, tau=self.tau_, offset=self.offset_, labelizeY=self.labelizeY,
-            ignore_unlabelled=self.ignore_unlabelled, badEpThresh=self.badEpThresh, chunk_size=self.chunk_size,
-            chunk_labeller=self.chunk_labeller, temporal_basis=self.temporal_basis, **fit_params)
+            ignore_unlabelled=self.ignore_unlabelled, badEpThresh=self.badEpThresh, 
+            chunk_size=self.chunk_size_, chunk_labeller=self.chunk_labeller, 
+            temporal_basis=self.temporal_basis)
 
         # fit the model
         # BODGE: allow set C at fit time!
@@ -2402,7 +2454,7 @@ class LinearSklearn(BaseSequence2Sequence):
         # estimate C_scaling if not given & combine with the Cs
         if C_scale is None:
             C_scale = self.C_scale_estimate(X)
-            print("C_scale = {}".format(C_scale))
+            if verbose > 0 : print("C_scale = {}".format(C_scale))
 
         from sklearn.model_selection import ParameterGrid
         fit_configs = ParameterGrid(fit_params) if fit_params is not None else dict()
@@ -2426,7 +2478,11 @@ class LinearSklearn(BaseSequence2Sequence):
 
                 # predict, forcing removal of copies of  tgt=0 so can score
                 Fyi = self.predict(X[valid_idx, ...], Y[valid_idx, ...], dedup0=False)
-                score = self.score_classifier(X[valid_idx, ...], Y[valid_idx, ...])
+                # score with the wanted score function
+                if self.score_type == 'audc': # Fast-path for audc score
+                    score = self.inner_score_audc(Fyi)
+                else:
+                    score = self.score(X[valid_idx, ...], Y[valid_idx, ...])
                 # save the prediction for later
                 if i == 0 and ci == 0:  # reshape Fy to include the extra model dim
                     Fy_cv = np.zeros((len(fit_configs), Y.shape[0])+Fyi.shape[1:], dtype=np.float32)
@@ -2436,7 +2492,7 @@ class LinearSklearn(BaseSequence2Sequence):
 
         # 3) get the *best* reg
         avescore = np.mean(np.array(scores_cv), axis=-1)  # (cfgs,folds) -> ranks
-        if self.verb >= 0:
+        if self.verb > 0:
             for ci, c in enumerate(fit_configs):
                 print("Cfg {} = {:4.3f} ".format(c, avescore[ci]))
         maxci = np.argmax(avescore)
@@ -2444,8 +2500,9 @@ class LinearSklearn(BaseSequence2Sequence):
         for k, v in opt_config.items():
             setattr(self, k, v)  # self.reg = regs[maxci]
         Fy = Fy_cv[maxci, ...]
-        scores = scores_cv[maxci]
-        print("     -> best={} = {:4.3f}".format(fit_configs[maxci], avescore[maxci]))
+        self.score_cv_ = scores = scores_cv[maxci]
+        if self.verb>=0 :
+            print("     -> best={} = {:4.3f}".format(fit_configs[maxci], avescore[maxci]))
 
         # setup the p-value calibration
         self.sigma0_ = self.estimate_prior_sigma(Fy)
@@ -2472,9 +2529,30 @@ class LinearLogisticRegression(LinearSklearn):
 
     def __init__(
             self, evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, labelizeY=True,
-            ignore_unlabelled=True, badEpThresh=None, **kwargs):
+            ignore_unlabelled=True, badEpThresh=None, score_type:str='audc', **kwargs):
+        """alias for fitting a normal sklearn logistic regression classifier
+
+        Args:
+            evtlabs (_type_, optional): _description_. Defaults to None.
+            evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
+            tau (int, optional): the length in samples of the stimulus response. Defaults to None.
+            offset (int, optional): offset from the event time for the response window. Defaults to None.
+            tau_ms (int, optional): the lenght in milliseconds of the stimulus response. Defaults to None
+            offset_ms (float, optional): the offset from the event time for the start of the response window.  Defaults to None.
+            fs (float, optional): the sampling rate of the data, used for coverting milliseconds to samples.  Defaults to None.
+            chunk_size (int, optional): the number of samples between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            chunk_size_ms (float, optional): time in milliseconds between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            labelizeY (bool, optional): flag if whe should labelize-Y such that each unique combination of stimulus-event values is a new class. Defaults to False.
+            ignore_unlabelled (bool, optional): flag if we should discard data-windows for which no stimulus events are non-zero. Defaults to True.
+            chunk_labeller (_type_, optional): funtion name to use to convert from stimulus-event information to classes. Defaults to None.
+            badEpThresh (int, optional): Bad epoch threshold for computing a robustified covariance matrix for the CCA fit.  See `utils.py::zero_outliers` for information on how the threshold is used, and `updateSummaryStatistics.py::updateSummaryStatistics` for usage in computing the summary statistics needed to compute a CCA model. Defaults to 6.
+            temporal_basis (_type_, optional): As temporal basis is an array mapping from the raw sample temporal basis to a new parametric basis, such as the amplitude of a particular sinusoidal frequency. See `temporal_basis.py` for more information on the available types of basis. Defaults to None.
+            score_type (str, optional): Type of scoring function to use. One of: 'audc','corr', 'classifier', callable. Defaults to 'audc'.
+            ignore_unlabelled (bool, optional): _description_. Defaults to True.
+            badEpThresh (_type_, optional): _description_. Defaults to None.
+        """        
         super().__init__(clsfr='lr', evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms, offset_ms=offset_ms,
-                         fs=fs, labelizeY=labelizeY, ignore_unlabelled=ignore_unlabelled, badEpThresh=badEpThresh, **kwargs)
+                         fs=fs, labelizeY=labelizeY, ignore_unlabelled=ignore_unlabelled, badEpThresh=badEpThresh, score_type=score_type, **kwargs)
 
 
 class LinearLogisticRegressionCV(LinearSklearn):
@@ -2486,11 +2564,35 @@ class LinearLogisticRegressionCV(LinearSklearn):
 
     def __init__(
             self, evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, labelizeY=True,
+            score_type:str='audc', 
             ignore_unlabelled=True, badEpThresh=None, inner_cv=5,
-            inner_cv_params: dict = {"C": [8 ** v for v in [-6, -4, -2, -1, 0, 1, 2, 4, 6, 10, 16]]},
+            inner_cv_params: dict = {"C": [8 ** v for v in [0, 1, 2, 4, 6, 10, 16]]},
             **kwargs):
+        """alias for fitting a normal sklearn logistic regression classifier with automatic inner cross-valiation to optimize the regularization strength
+
+        Args:
+            evtlabs (_type_, optional): _description_. Defaults to None.
+            evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
+            tau (int, optional): the length in samples of the stimulus response. Defaults to None.
+            offset (int, optional): offset from the event time for the response window. Defaults to None.
+            tau_ms (int, optional): the lenght in milliseconds of the stimulus response. Defaults to None
+            offset_ms (float, optional): the offset from the event time for the start of the response window.  Defaults to None.
+            fs (float, optional): the sampling rate of the data, used for coverting milliseconds to samples.  Defaults to None.
+            chunk_size (int, optional): the number of samples between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            chunk_size_ms (float, optional): time in milliseconds between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            labelizeY (bool, optional): flag if whe should labelize-Y such that each unique combination of stimulus-event values is a new class. Defaults to False.
+            ignore_unlabelled (bool, optional): flag if we should discard data-windows for which no stimulus events are non-zero. Defaults to True.
+            chunk_labeller (_type_, optional): funtion name to use to convert from stimulus-event information to classes. Defaults to None.
+            badEpThresh (int, optional): Bad epoch threshold for computing a robustified covariance matrix for the CCA fit.  See `utils.py::zero_outliers` for information on how the threshold is used, and `updateSummaryStatistics.py::updateSummaryStatistics` for usage in computing the summary statistics needed to compute a CCA model. Defaults to 6.
+            temporal_basis (_type_, optional): As temporal basis is an array mapping from the raw sample temporal basis to a new parametric basis, such as the amplitude of a particular sinusoidal frequency. See `temporal_basis.py` for more information on the available types of basis. Defaults to None.
+            score_type (str, optional): Type of scoring function to use. One of: 'audc','corr', 'classifier', callable. Defaults to 'audc'.
+            ignore_unlabelled (bool, optional): _description_. Defaults to True.
+            badEpThresh (_type_, optional): _description_. Defaults to None.
+            inner_cv (int, optional): Number of inner cross validation folds to use. Defaults to 5.
+            inner_cv_params (_type_, optional): parameters to evaluate during the inner cross-validation. Defaults to {"C": [8 ** v for v in [0, 1, 2, 4, 6, 10, 16]]}.
+        """        
         super().__init__(clsfr='lr', evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms, offset_ms=offset_ms,
-                         fs=fs, labelizeY=labelizeY, ignore_unlabelled=ignore_unlabelled, badEpThresh=badEpThresh, **kwargs)
+                         fs=fs, labelizeY=labelizeY, ignore_unlabelled=ignore_unlabelled, badEpThresh=badEpThresh, score_type=score_type, **kwargs)
         self.inner_cv, self.inner_cv_params = (inner_cv, inner_cv_params)
 
     def fit(self, X, Y, fs=None, inner_cv_params: dict = None, retrain_on_all: bool = True):
@@ -2508,10 +2610,8 @@ class LinearLogisticRegressionCV(LinearSklearn):
         if inner_cv_params is None:
             inner_cv_params = self.inner_cv_params
         if inner_cv_params is not None:  # inner CV for fit-params
-            print('cv_fit')
             super().cv_fit(X, Y, fs=fs, cv=self.inner_cv, fit_params=inner_cv_params, retrain_on_all=retrain_on_all)
         else:
-            print('direct fit')
             super().fit(X, Y, fs=fs)
         return self
 
@@ -2535,6 +2635,27 @@ class LinearRidgeRegression(LinearSklearn):
     def __init__(
             self, evtlabs=None, tau=None, offset=None, tau_ms=None, offset_ms=0, fs=None, labelizeY=False,
             ignore_unlabelled=False, badEpThresh=None, **kwargs):
+        """alias for fitting a normal sklearn ridge regression classifier
+
+        Args:
+            evtlabs (_type_, optional): _description_. Defaults to None.
+            evtlabs ([ListStr,optional]): the event types to use for model fitting.  See `stim2event.py` for the support event types. Defautls to ('fe','re').
+            tau (int, optional): the length in samples of the stimulus response. Defaults to None.
+            offset (int, optional): offset from the event time for the response window. Defaults to None.
+            tau_ms (int, optional): the lenght in milliseconds of the stimulus response. Defaults to None
+            offset_ms (float, optional): the offset from the event time for the start of the response window.  Defaults to None.
+            fs (float, optional): the sampling rate of the data, used for coverting milliseconds to samples.  Defaults to None.
+            chunk_size (int, optional): the number of samples between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            chunk_size_ms (float, optional): time in milliseconds between time-windows making a new classification problem. Defaults to 1, which means every sample is a new example.
+            labelizeY (bool, optional): flag if whe should labelize-Y such that each unique combination of stimulus-event values is a new class. Defaults to False.
+            ignore_unlabelled (bool, optional): flag if we should discard data-windows for which no stimulus events are non-zero. Defaults to True.
+            chunk_labeller (_type_, optional): funtion name to use to convert from stimulus-event information to classes. Defaults to None.
+            badEpThresh (int, optional): Bad epoch threshold for computing a robustified covariance matrix for the CCA fit.  See `utils.py::zero_outliers` for information on how the threshold is used, and `updateSummaryStatistics.py::updateSummaryStatistics` for usage in computing the summary statistics needed to compute a CCA model. Defaults to 6.
+            temporal_basis (_type_, optional): As temporal basis is an array mapping from the raw sample temporal basis to a new parametric basis, such as the amplitude of a particular sinusoidal frequency. See `temporal_basis.py` for more information on the available types of basis. Defaults to None.
+            score_type (str, optional): Type of scoring function to use. One of: 'audc','corr', 'classifier', callable. Defaults to 'audc'.
+            ignore_unlabelled (bool, optional): _description_. Defaults to True.
+            badEpThresh (_type_, optional): _description_. Defaults to None.
+        """        
         super().__init__(clsfr='ridge', evtlabs=evtlabs, tau=tau, offset=offset, tau_ms=tau_ms,
                          offset_ms=offset_ms, fs=fs, labelizeY=False, ignore_unlabelled=False, badEpThresh=None,  **kwargs)
 
@@ -2693,16 +2814,17 @@ def testcase(dataset='toy', loader_args=dict()):
     # ccaw = MultiCCA(tau=tau, offset=offset, evtlabs=evtlabs, temporal_basis="fourier10")
     # fit_predict_plot(ccaw,X_TSd,Y_TSy, fs, title='fourier5')
 
-    bwd = BwdLinearRegression(tau=tau, evtlabs=evtlabs, verb=2, reg=None, badEpThresh=4,
-                              compdiagcxx=True, temporal_basis='winfourier5')
-    fit_predict_plot(bwd, X_TSd, Y_TSy, fs, title='bwd')
-
-    lr = LinearLogisticRegression(tau=tau, offset=offset, evtlabs=evtlabs, labelizeY=True,
-                                  ignore_unlabelled=False, temporal_basis='winfourier4')
+    lr = LinearLogisticRegressionCV(tau=tau, offset=offset, evtlabs=evtlabs, labelizeY=True,
+                                  ignore_unlabelled=False, temporal_basis='winfourier4', score_type='classifier')
     # lr = LinearLogisticRegressionCV(tau=tau, offset=offset, evtlabs=evtlabs, labelizeY=True,
     #                                 clsfr_args={"max_iter":200,"solver":"lbfgs"}, temporal_basis='winfourier10',
     #                                 inner_cv=5, inner_cv_params={"C":[8**v for v in [-6,-4,-2,-1,0,1,2]]})
     fit_predict_plot(lr, X_TSd, Y_TSy, fs)
+
+    bwd = BwdLinearRegression(tau=tau, evtlabs=evtlabs, verb=2, reg=None, badEpThresh=4,
+                              compdiagcxx=True, temporal_basis='winfourier5')
+    fit_predict_plot(bwd, X_TSd, Y_TSy, fs, title='bwd')
+
 
     plt.show(block=True)
 
@@ -2712,7 +2834,7 @@ def testcase(dataset='toy', loader_args=dict()):
     # cca - cv-fit
     print("CV fitted")
     cca = MultiCCA(tau=tau, rank=1, evtlabs=evtlabs)
-    cv_res = cca.cv_fit(X_TSd, Y_TSy, ranks=(1, 2, 3, 5))
+    cv_res = cca.cv_fit(X_TSd, Y_TSy, ranks=(1, 2, 3, 5), inner_cv_params=dict())
     Fy = cv_res['estimator']
     (_) = decodingCurveSupervised(Fy, priorsigma=(cca.sigma0_, cca.priorweight))
 

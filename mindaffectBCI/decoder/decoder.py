@@ -232,7 +232,7 @@ def dataset_to_XY_ndarrays(dataset,fs=None,ch_names=None):
     trstim = [trl[1].shape[0] for trl in dataset]
     # set array trial length to 90th percential length
     trlen = int(np.percentile(trlen, 75))
-    trstim = max(20, int(np.percentile(trstim, 75)))
+    trstim = int(np.percentile(trstim, 75))
     # filter the trials to only be the  ones long enough to be worth processing
     dataset = [d for d in dataset if d[0].shape[0] > trlen//2 and d[1].shape[0] > trstim//2]
     if trlen == 0 or len(dataset) == 0:
@@ -269,9 +269,9 @@ def dataset_to_XY_ndarrays(dataset,fs=None,ch_names=None):
         tmp = data_i < Y.shape[1]
         Y_ts[ti,data_i[tmp]] = stimulus_ts[tmp] 
 
-    # add timing meta-info to X,Y
-    # TODO[]: estimate fs from the time-stamp info?
+    # add meta-info to X,Y
     if fs is None: fs = (data_ts[-1] - data_ts[0]) / len(data_ts) / 1000.0
+    if ch_names is not None and len(ch_names)<X.shape[-1]: ch_names = None
     X = InfoArray(X, info=dict(fs=fs, ts=X_ts, ch_names=ch_names))
     Y = InfoArray(Y, info=dict(fs=fs, ts=Y_ts))
 
@@ -618,7 +618,7 @@ def send_prediction(ui: UtopiaDataInterface, Ptgt, used_idx=None, timestamp:int=
     ui.sendMessage(ptp)
     # distribution over all *non-zero* targets
     ui.sendMessage(PredictedTargetDist(timestamp, used_idx, Ptgt))
-    
+
 
 def doPredictionStatic(ui: UtopiaDataInterface, clsfr: BaseSequence2Sequence, 
                 preprocessor=None, 
@@ -847,6 +847,7 @@ def run(ui: UtopiaDataInterface=None, clsfr: BaseSequence2Sequence=None, preproc
     Args:
         ui (UtopiaDataInterface, optional): The utopia data interface class. Defaults to None.
         clsfr (BaseSequence2Sequence, optional): the classifer to use when model fitting. Defaults to None.
+        preprocessor (Pipeline, optional): Preprocessing pipeline to apply to the data before the classifier.  Defaults to None.
         msg_timeout_ms (float, optional): timeout for getting new messages from the data-interface. Defaults to 100.
         host (str, optional): hostname for the utopia hub. Defaults to None.
         tau_ms (float, optional): length of the stimulus response. Defaults to 400.
@@ -1031,7 +1032,7 @@ if  __name__ == "__main__":
     # # EMG
     # ppp = [
     #         "SpatialWhitener",
-    #         ["FFTfilter", {"filterbank":[ [40,45,145,150,"hilbert"] ], "blksz":100 }],
+    #         ["FFTfilter", {"filterband":[ [40,45,145,150,"hilbert"] ], "blksz":100 }],
     #         "Log",
     #         "SpatialWhitener",
     #         ["ButterFilterAndResampler", {"filterband":[8,-1], "fs_out":20 }]
@@ -1040,7 +1041,7 @@ if  __name__ == "__main__":
     # # MOTOR Imagery
     # ppp =[
     #     "SpatialWhitener",
-    #     ["FFTfilter", {"filterbank":[8,12,25,28,"hilbert"], "blksz":25 }],
+    #     ["FFTfilter", {"filterband":[8,12,25,28,"hilbert"], "blksz":25 }],
     #     "Abs",
     #     "SpatialWhitener",
     #     ["ButterFilterAndResampler", {"filterband":[8,-1], "fs_out":25 }]

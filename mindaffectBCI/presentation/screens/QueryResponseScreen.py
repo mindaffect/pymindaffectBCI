@@ -27,7 +27,7 @@ from mindaffectBCI.presentation.screens.basic_screens import InstructionScreen
 class QueryResponseScreen(InstructionScreen):
     '''Modified instruction screen queries the user for textual input and finishes on key press'''
 
-    def __init__(self, window, text:str='This is a test dialog screen.\nEnter some text:', duration=50000, waitKey:bool=False, waitMouse:bool=False, input_callback=None):
+    def __init__(self, window, text:str='This is a test dialog screen.\nEnter some text:', duration=50000, waitKey:bool=False, waitMouse:bool=False, input_callback=None, **kwargs):
         """simple screen for asking for input from the user
 
         Args:
@@ -38,7 +38,7 @@ class QueryResponseScreen(InstructionScreen):
             waitMouse (bool, optional): finish on mouse-press.  IGNORED.  Defaults to False
             input_callback ([type], optional): function to validate user input as string, raise ValueError if invalid input. Defaults to None.
         """
-        super().__init__(window, text=text, duration=duration, waitKey=False, waitMouse=False)
+        super().__init__(window, text=text, duration=duration, waitKey=False, waitMouse=False, **kwargs)
         self.query = text
         self.usertext = ''
         self.input_callback = input_callback
@@ -47,6 +47,8 @@ class QueryResponseScreen(InstructionScreen):
         super().reset()
         # clear text on reset
         self.usertext = ''
+        self.window.last_key_press = None
+        self.window.last_text = None
         self.set_text(self.query)
 
     def draw(self, t):

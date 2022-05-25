@@ -58,14 +58,15 @@ class RawAudioSource(pyglet.media.codecs.StaticMemorySource):
         return pyglet.media.codecs.StaticMemorySource(self._data,self.audio_format)
 
 class SoundFlash:
-    def __init__(self,sound,pos=0,nplayers=7, media_directories:list=None):
+    def __init__(self,sound,pos=0,nplayers=7, media_directories:list=None, verb:int=0):
         """sound-flash object, which can 'flash' (play) by setting volume propety
 
         Args:
             sound ([type]): [description]
             pos (int, optional): [description]. Defaults to 0.
+            verb (int, optional): verbosity level for file loading. Defaults to 0
         """
-        self.nplayers, self.media_directories = (nplayers, media_directories)
+        self.nplayers, self.media_directories, self.verb = (nplayers, media_directories, verb)
         if self.media_directories is None: self.media_directories = []
         elif not hasattr(self.media_directories,'__iter__'): self.media_directories=[self.media_directories]
         self.sound, self.players = self.init_players(sound,pos)
@@ -86,7 +87,7 @@ class SoundFlash:
                                                 os.path.join(os.path.dirname(__file__),'audio'),
                                                 os.path.join(os.path.dirname(__file__),'..','audio'),
                                                 *self.media_directories)
-            print("Loading: {}".format(sndfile))
+            if self.verb>0 : print("Loading: {}".format(sndfile))
             sound = pyglet.media.load(sndfile, streaming=False)
         except:
             sound = None

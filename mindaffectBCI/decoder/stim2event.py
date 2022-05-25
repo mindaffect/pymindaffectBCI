@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pymindaffectBCI.  If not, see <http://www.gnu.org/licenses/>
 
+from mindaffectBCI.decoder.utils import index_along_axis
 import numpy as np
 from mindaffectBCI.decoder.utils import equals_subarray
 def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=None, **kwargs):
@@ -27,9 +28,9 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
         "0", "1", "00", "11", "01", "10", "010" (aka. short), "0110" (aka long)
         "re", "onset" - rising edge, or onset of this event
         "fe", "offset" - falling edge, or offset from this value
-        ">XXX" - greater than XXX
-        "<XXX" - less than XXX
-        "=XXX" - equal to XXX
+        ">X,Y,Z" - greater than X,Y,Z
+        "<X,Y,Z" - less than X,Y,Z
+        "=X,Y,Z" - equal to X or Y or Z
         "reX,Y,Z" - rising to a value of X or Y or Z ...
         "feX,Y,Z" - falling from a value of X or Y or Z
         "prX,Y" - pattern reversal from X to Y or Y to X
@@ -100,14 +101,16 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
     for ei, etype in enumerate(evtypes):
 
         elab = etype
-        s2estate = etype
         # extract the stimulus modifier
         modifier = None
-        for mod in ('nt','any','first','last'):
-            if isinstance(etype,str) and etype.startswith(mod):
-                modifier = mod
-                etype = etype[len(mod):]
-                break
+        if isinstance(etype,str):
+            for mod in ('nt_','any_','first_','last_','nt','any','first','last'):
+                if etype.startswith(mod):
+                    modifier = mod
+                    etype = etype[len(mod):]
+                    break
+
+        s2estate = etype
 
         if isinstance(etype,str): # try to convert to callable
             fn = locals().get(etype) or globals().get(etype)
@@ -219,21 +222,21 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
                 F[..., yi] = np.logical_and(F[..., yi] == 0, anyevt)
             s2estate = modifier + s2estate
 
-        elif modifier == "any":
+        elif modifier in ("any","any_"):
             if not axis == M.ndim-2:
                 raise ValueError("any feature only for axis==-2")   
             # any, means true if any target is true, N.B. use logical_or to broadcast
-            F = np.any(F > 0, axis=-1, keepdims=True)
+            F = np.max(F, axis=-1, keepdims=True)
             #F = np.repeat(F,repeats=M.shape[-1],axis=-1) # blow up to orginal size
             s2estate = modifier + s2estate
 
-        elif modifier in ('onset','first'):
+        elif modifier in ('onset','first','onset_','first_'):
             # first stimulus RE for any output
             F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
             F[F>1] = 0 # zero out if more than 1 stimulus since trial start
             s2estate = modifier + s2estate
 
-        elif modifier in ('offset','last'):
+        elif modifier in ('offset','last','offset_','last_'):
             # first stimulus RE for any output
             F = np.cumsum(F, axis=axis, dtype=M.dtype) # number of stimulus since trial start 
             F[F>1] = 0 # zero out if more than 1 stimulus since trial start
@@ -244,15 +247,17 @@ def stim2event(M:np.ndarray, evtypes=('re','fe'), axis:int=-2, oM:np.ndarray=Non
             elab = s2estate
 
 
-        if len(evtypes)==1:
-            E = F.astype(E.dtype)
-            evtlabs = elab
-            s2estates = s2estate
-        elif F.shape[:-1] == M.shape[:-1] and (F.shape[-1]==1 or F.shape[-1]==M.shape[-1]) :
+        # stack the new event types
+        # TODO[]: fix this logic...
+        if len(evtypes)>1 or (F.shape[:-1] == M.shape[:-1] and ((F.ndim==M.ndim+1 and F.shape[-1]==1) or F.shape[-1]==M.shape[-1])) :
             # single output to add
             E[..., ei] = F
             evtlabs.append(elab)
             s2estates.append(s2estate)
+        elif len(evtypes)==1:
+            E = F.astype(E.dtype)
+            evtlabs = elab
+            s2estates = s2estate
         else:
             raise ValueError("Cant (currently) mix direct and indirect encodings")
         
@@ -282,8 +287,9 @@ def re(M,axis,oM=None,etype=None):
 
     Returns:
         [type]: [description]
-    """    
+    """
     tmp = np.diff(M, axis=axis, prepend=0) > 0
+    tmp[index_along_axis(0,axis=axis)]=0 # clear rise-from-0 at start
     F = np.zeros(M.shape,dtype=M.dtype)
     F[tmp]=M[tmp] # non-zero at new larger value, but retain the old value
     return F, etype, None
@@ -301,8 +307,9 @@ def fe(M,axis,oM=None,etype=None,val=None):
         [type]: [description]
     """    
     tmp = np.diff(M, axis=axis, append=0) < 0
+    tmp[index_along_axis(-1,axis=axis)]=0 # clear fall-to-0 at end
     F = np.zeros(M.shape,dtype=M.dtype)
-    F[tmp]=M[tmp] # non-zero at old bigger value
+    F[tmp]=M[tmp] # non-zero at old larger value
     return F, etype, None
 
 def riseto(M,val,axis,oM=None,etype=None):
@@ -326,6 +333,7 @@ def riseto(M,val,axis,oM=None,etype=None):
         for v in val:
             tmp = np.logical_or(tmp,
                                 np.diff(np.any(M[...,np.newaxis]==v,M.ndim), axis=axis, prepend=0) > 0)
+    tmp[index_along_axis(0,axis=axis)]=0 # clear rise-from-0 at start
     F = np.zeros(M.shape,dtype=bool)
     F[tmp]=True # non-zero at new larger value
     lab = 're' if val is None else 're{}'.format(val)
@@ -353,6 +361,7 @@ def fallfrom(M,val,axis,oM=None,etype=None):
             tmp = np.logical_or(tmp,
                                 np.diff(np.any(M[...,np.newaxis]==v,M.ndim), axis=axis, prepend=0) < 0)
         #tmp = np.diff(np.any(M[...,np.newaxis]==val,M.ndim),axis=axis, prepend=0) < 0
+    tmp[index_along_axis(-1,axis=axis)]=0 # clear fall-to-0 at end
     F = np.zeros(M.shape,dtype=bool)
     F[tmp]=True # non-zero at old bigger value
     lab = 'fe' if val is None else 'fe{}'.format(val)
@@ -566,6 +575,7 @@ def hotyon_re(M,axis,oM=None,etype=None,vals=None):
     """
     F, vals, none = hotyon(M,axis,oM=oM,etype=etype,vals=vals)
     re_ind = np.diff(F, axis=axis, prepend=0) > 0 #flag end of rising edge
+    re_ind[index_along_axis(0,axis=axis)]=0 # clear rise-from-0 at start
     F[~re_ind] = 0  # zero all non-re locations
     return F, vals, None
 
@@ -640,6 +650,8 @@ def hoton_re(M,axis:int,oM=None,etype:str=None):
     hoton = M[...,np.newaxis] == vals
 
     tmp = np.diff(hoton, axis=axis, prepend=0) > 0 #flag end of rising edge
+    tmp[index_along_axis(0,axis=axis)]=0 # clear rise-from-0 at start
+
     F = np.zeros(hoton.shape,dtype=M.dtype)
     F[tmp]=hoton[tmp] # non-zero at new larger value
     return F, ['re{}'.format(v) for v in vals], None
@@ -661,6 +673,7 @@ def hoton_fe(M,axis,oM=None,etype=None):
     hoton = M[...,np.newaxis] == vals
 
     tmp = np.diff(hoton, axis=axis, append=0) < 0 #flag *start* of falling edge
+    tmp[index_along_axis(-1,axis=axis)]=0 # clear rise-from-0 at start
     F = np.zeros(hoton.shape,dtype=M.dtype)
     F[tmp]=hoton[tmp] # non-zero at new larger value
     return F, ['fe{}'.format(v) for v in vals], None
@@ -888,8 +901,8 @@ def plot_stim_encoding(Y_TSy,Y_TSye=None,evtlabs=None,fs=None,times=None,outputs
 def testcase():
     from mindaffectBCI.decoder.stim2event import stim2event
     # M = (samp,Y)
-    M = np.array([[0, 0, 2, 1, 0, 0, 0, 0, 1, 2, 1, 1, 0],
-                  [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0]])
+    M = np.array([[1, 0, 2, 1, 0, 0, 0, 0, 1, 2, 1, 1, 0],
+                  [0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1]])
 
     print("Raw  :{}".format(M))
 
@@ -907,6 +920,7 @@ def testcase():
     e,_, _ = stim2event(M, 'flash', axis=-1);     print("flash:{}".format(e[0, ...].T))
     e,_, _ = stim2event(M, 're', axis=-1);        print("re   :{}".format(e[0, ...].T))
     e,_, _ = stim2event(M, 're1,2,3', axis=-1);        print("re1,2,3   :{}".format(e[0, ...].T))
+    e,_, _ = stim2event(M.T[np.newaxis,...], 'any_re', axis=-2);    print('any_re :{}'.format(e[0,...].T))
     e,_, _ = stim2event(M, 'fe', axis=-1);        print("fe   :{}".format(e[0, ...].T))
     e,_, _ = stim2event(M, 1, axis=-1);     print("1:{}".format(e[0, ...].T))
     e,_, _ = stim2event(M, 'pr1,2', axis=-1);  print("pr1,2:{}".format(e[0, ...].T))

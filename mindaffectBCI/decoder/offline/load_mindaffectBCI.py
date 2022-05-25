@@ -11,6 +11,7 @@ from mindaffectBCI.decoder.preprocess import ola_fftfilter
 def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cached:bool=True,
                         fs_out:float=10000, filterband=((45,65),(.5,45,'bandpass')), order:int=6, ftype:str='butter',  
                         iti_ms:float=1500, trlen_ms:float=None, offset_ms:float=(-2000,2000), subtriallen_ms:float=None,
+                        min_trlen_ms : float = None, max_trlen_percentile:float = .9,
                         zero_before_stimevents:bool=False,  sample2timestamp='lower_bound_tracker',#'robust_timestamp_regression',
                         ch_names=None, verb:int=0, **kwargs):
     """Load and pre-process a mindaffectBCI offline save-file and return the EEG data, and stimulus information
@@ -24,6 +25,8 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
         verb (int, optional): General verbosity/logging level. Defaults to 0.
         iti_ms (int, optional): Inter-trial interval. Used to detect trial-transitions when gap between stimuli is greater than this duration. Defaults to 1000.
         trlen_ms (float, optional): Trial duration in milli-seconds.  If None then this is deduced from the stimulus information. Defaults to None.
+        min_trlen_ms (float, optional): Minimal acceptable Trial duration in milli-seconds.  If None then this is deduced from the stimulus information. Defaults to None.
+        max_trlen_percentile (float, optional): limit the used trial-length to the length of the trial with at this percentile position of the trial length distribution.  Defaults to .9.
         offset_ms (tuple, (2,) optional): Offset in milliseconds from the trial start/end for the returned data such that X has range [tr_start+offset_ms[0] -> tr_end+offset_ms[0]]. Defaults to (-500,500).
         ch_names (tuple, optional): Names for the channels of the EEG data.
 
@@ -148,13 +151,16 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     if verb>1 : print('{} trl_dur (ms) : {}'.format(len(trl_dur),trl_dur))
     if verb>1 : print("{} trl_stim : {}".format(len(trl_stim_idx),[trl_stim_idx[1:]-trl_stim_idx[:-1]]))
     # estimate the best trial-length to use
-    if trlen_ms is None and len(trl_dur)>0:
-        trlen_ms = np.percentile(trl_dur,90)
+    if min_trlen_ms is None and len(trl_dur)>0:
+        min_trlen_ms = np.sort(trl_dur)[int(len(trl_dur)*max_trlen_percentile)]
     # strip any trial too much shorter than trlen_ms (50%)
-    keep = np.flatnonzero(trl_dur>trlen_ms*.2)
+    keep = np.flatnonzero(trl_dur>min_trlen_ms*.2)
     if verb>1 : print('Got {} trials, keeping {}'.format(len(trl_stim_idx)-1,len(keep)))
     # re-compute the trlen_ms for the good trials
     trl_stim_idx = trl_stim_idx[keep]
+    trl_dur = trl_dur[keep]
+    if trlen_ms is None:
+        trlen_ms = np.sort(trl_dur)[int(len(trl_dur)*max_trlen_percentile)]
 
     # get the trial starts as indices & ms into the data array
     trl_samp_idx = stim_samp[trl_stim_idx]
@@ -165,6 +171,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
 
     if verb>1 : print('{} trl_dur (samp): {}'.format(len(trl_samp_idx),np.diff(trl_samp_idx)))
     if verb>1 : print('{} trl_dur (ms) : {}'.format(len(trl_ts),np.diff(trl_ts)))
+    if verb>1 : print('trlen_ms : {}'.format(trlen_ms))
 
     # compute the trial start/end relative to the trial-start
     trlen_samp  = int(trlen_ms *  fs / 1000)
@@ -181,7 +188,7 @@ def load_mindaffectBCI(source, datadir:str=None, sessdir:str=None, load_from_cac
     Ye_ts = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     ep_idx = np.zeros((len(trl_samp_idx), xlen_samp),dtype=int)
     if verb>0 : 
-        print("slicing {} trials =[{} - {}] samples @ {}Hz".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs))
+        print("slicing {} trials =[{} - {}] samples @ {}Hz = [{} - {}] ms".format(len(trl_samp_idx),bgnend_samp[0], bgnend_samp[1],fs,bgnend_samp[0]*1000//fs, bgnend_samp[1]*1000//fs))
     for ti, si in enumerate(trl_samp_idx):
         bgn_idx = si+bgnend_samp[0]
         end_idx_x = min(Xraw.shape[0],si+bgnend_samp[1])
@@ -296,7 +303,7 @@ def load_mindaffectBCI_raw(source, sample2timestamp='lower_bound_tracker',
     if hdr_ch_names is not None:
         if ch_names is None: # use the hdr-names
             ch_names = hdr_ch_names
-            print("Ch: {}".format(ch_names))
+            #print("Ch: {}".format(ch_names))
 
         else: # merge the two sets of channel names
             # hdr_ch_names override if non-numeric
@@ -450,11 +457,15 @@ def make_coords(dim_names=('trial','time','channel'),dim_coords=(None,None,None)
     return coords
 
 def testcase():
+    import matplotlib.pyplot as plt
     from mindaffectBCI.decoder.offline.load_mindaffectBCI import load_mindaffectBCI
     from mindaffectBCI.decoder.analyse_datasets import plot_trial
     source = askloadsavefile(initialdir=os.path.dirname(os.path.abspath(__file__)))
 
-    X, Y, coords = load_mindaffectBCI(source, fs_out=100, regress=True, zero_before_stimevents=True)
+    X, Y, coords = load_mindaffectBCI(source, fs_out=100, regress=True, zero_before_stimevents=True, min_trlen_ms=200, verb=2)
+    plot_trial(X[0,...],Y[0,...])
+    plt.show()
+
 
     raw, event_id = load_mindaffectBCI_raw_mne(source)
     print(event_id)

@@ -49,6 +49,9 @@ class SubscreenMenuScreen(ScreenGraph):
         # init the normal subscreen graph
         super().__init__(window,label=label,subscreens=subscreens,subscreen_transitions=subscreen_transitions,start_screen=start_screen,default_screen="menu", subscreen_args={"noisetag":noisetag})
         self.noisetag = noisetag
+        # reset the subscreen state
+        self.subscreen_transitions = subscreen_transitions
+        self.start_screen = start_screen
 
         # make the menu-screen
         menu_screen = self.init_menu_subscreen(self.subscreens, title=title)
@@ -58,6 +61,7 @@ class SubscreenMenuScreen(ScreenGraph):
         self.subscreen_transitions["menu"]=self.call_menu_subscreen
         # re-set the start screen to the new menu screen if wanted
         if start_screen is None or start_screen == "menu":
+            self.start_screen = "menu"
             self.current_screen = "menu"
             self.screen = self.subscreens[self.current_screen]
 
@@ -70,13 +74,14 @@ class SubscreenMenuScreen(ScreenGraph):
         return menu
 
     def call_menu_subscreen(self, menu_screen):
+        subscreen = "menu"
         # get the menu line first
         menu_text = menu_screen.text
         if isinstance(menu_text,str): menu_text = menu_text.split("\n")
         key_press = menu_screen.key_press if isinstance(menu_screen.key_press,str) else chr(menu_screen.key_press)
         selected_menu_entry = [ l for l in menu_text if l.startswith(key_press) ]
         if len(selected_menu_entry)==0:
-            return None
+            return "menu"
         if len(selected_menu_entry)>1:  print("Warning multple lines matched? taking 1st")
         selected_menu_str = selected_menu_entry[0]
         # find the sub-screen this menu entry refers to
@@ -85,7 +90,7 @@ class SubscreenMenuScreen(ScreenGraph):
         if len(subscreen) == 0: # fall back on matching the class label
             subscreen = [ k for k,s in self.subscreens.items() if s.label in selected_menu_str ]
         # return the first matching entry
-        subscreen = subscreen[0] if len(subscreen)>0 else None
+        subscreen = subscreen[0] if len(subscreen)>0 else "menu"
         # return the key for this sub-screen
         return subscreen
 

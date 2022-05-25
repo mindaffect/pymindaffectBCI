@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 import gc
 import re
 import traceback
+import os
 
 try:
     from sklearn.model_selection import GridSearchCV
@@ -302,18 +303,19 @@ def print_hyperparam_summary(res):
     return s
 
 
-def cv_fit(clsfr, X, Y, cv, fit_params=dict(), verbose:int=0, cv_clsfr_only:bool=False, score_fn=None, **kwargs):
+def cv_fit(clsfr, X, Y, cv, fit_params=dict(), verbose:int=0, cv_clsfr_only:bool=False, **kwargs):
     """cross-validated fit a classifier and compute it's scores on the validation set
 
     Args:
-        clsfr (BaseSequence2Sequence): [description]
-        X ([type]): [description]
-        Y ([type]): [description]
-        cv ([type]): [description]
-        fit_params ([type]): [description]
+        clsfr (BaseSequence2Sequence): the analysis pipeline to use
+        X ([type]): the data to fit the model to 
+        Y ([type]): the targets
+        cv ([type]): cross-validation configuration.  if int then number folds, if CrossValidation object then use this folding structure.
+        fit_params (dict): additional parameters to pass to the fit call
+        cv_clsfr_only (bool, optional): if true then only run the crossvaliation on the classifier at the end of the pipeline for efficiency.  Default to False.
 
     Returns:
-        np.ndarray: Fy the predictions on the validation examples
+        dict: results summary for this pipeline on this dataset.  This should have keys: 'score'
     """
     if fit_params is None: fit_params=dict()
 
@@ -325,7 +327,7 @@ def cv_fit(clsfr, X, Y, cv, fit_params=dict(), verbose:int=0, cv_clsfr_only:bool
         if cv_clsfr_only and hasattr(clsfr,'stages') and hasattr(clsfr.stages[-1][1],'cv_fit'):
             # BODGE: only cv the final stage
             Xpp, Ypp = clsfr.fit_modify(X, Y, until_stage=-1)
-            res = clsfr.stages[-1][1].cv_fit(Xpp, Ypp, cv=cv, fit_params=fit_params, score_fn=score_fn, **kwargs)
+            res = clsfr.stages[-1][1].cv_fit(Xpp, Ypp, cv=cv, fit_params=fit_params, **kwargs)
 
         else:
             # manually run the folds and collect the results
@@ -352,15 +354,9 @@ def cv_fit(clsfr, X, Y, cv, fit_params=dict(), verbose:int=0, cv_clsfr_only:bool
                     valid_idx = slice(X.shape[0])
                 if hasattr(clsfr,'stages'):
                     Xpp, Ypp = clsfr.modify(X[valid_idx,...],Y[valid_idx,...],until_stage=-1) # pre-process
-                    if score_fn is not None:
-                        score = score_fn(clsfr,Xpp,Ypp)
-                    elif hasattr(clsfr.stages[-1][1],'score'):
-                        score = clsfr.stages[-1][1].score(Xpp, Ypp) # score
+                    score = clsfr.stages[-1][1].score(Xpp, Ypp) # score
                 else:
-                    if score_fn is not None:
-                        score = score_fn(clsfr,X[valid_idx,...].copy(), Y[valid_idx,...].copy())
-                    else:
-                        score = clsfr.score(X[valid_idx, ...].copy(), Y[valid_idx, ...].copy())
+                    score = clsfr.score(X[valid_idx, ...].copy(), Y[valid_idx, ...].copy())
                 scores.append(score)
             res=dict(scores_cv=scores)
 
@@ -371,11 +367,12 @@ def cv_fit_predict(clsfr, X, Y, cv, fit_params=dict(), verbose:int=0, cv_clsfr_o
     """cross-validated fit a classifier and compute it's predictions on the validation set
 
     Args:
-        clsfr (BaseSequence2Sequence): [description]
-        X ([type]): [description]
-        Y ([type]): [description]
-        cv ([type]): [description]
-        fit_params ([type]): [description]
+        clsfr (BaseSequence2Sequence): the analysis pipeline to use
+        X ([type]): the data to fit the model to 
+        Y ([type]): the targets
+        cv ([type]): cross-validation configuration.  if int then number folds, if CrossValidation object then use this folding structure.
+        fit_params (dict): additional parameters to pass to the fit call
+        cv_clsfr_only (bool, optional): if true then only run the crossvaliation on the classifier at the end of the pipeline for efficiency.  Default to False.
 
     Returns:
         np.ndarray: Fy the predictions on the validation examples
@@ -429,11 +426,12 @@ def decoding_curve_cv(clsfr:BaseSequence2Sequence, X, Y, cv, fit_params=dict(), 
     """cross-validated fit a classifier and compute it's decoding curve and associated scores
 
     Args:
-        clsfr (BaseSequence2Sequence): [description]
-        X ([type]): [description]
-        Y ([type]): [description]
-        cv ([type]): [description]
-        fit_params ([type]): [description]
+        clsfr (BaseSequence2Sequence): the analysis pipeline to use
+        X ([type]): the data to fit the model to 
+        Y ([type]): the targets
+        cv ([type]): cross-validation configuration.  if int then number folds, if CrossValidation object then use this folding structure.
+        fit_params (dict): additional parameters to pass to the fit call
+        cv_clsfr_only (bool, optional): if true then only run the crossvaliation on the classifier at the end of the pipeline for efficiency.  Default to False.
 
     Returns:
         [type]: [description]
@@ -467,10 +465,12 @@ def set_params_decoding_curve_cv(clsfr:BaseSequence2Sequence, X, Y, cv, config:d
     """set parameters on classifier and then cv-fit and compute it's decoding curve
 
     Args:
-        clsfr (BaseSequence2Sequence): [description]
-        X ([type]): [description]
-        Y ([type]): [description]
-        cv ([type]): [description]
+        clsfr (BaseSequence2Sequence): the analysis pipeline to use
+        X ([type]): the data to fit the model to 
+        Y ([type]): the targets
+        cv ([type]): cross-validation configuration.  if int then number folds, if CrossValidation object then use this folding structure.
+        fit_params (dict): additional parameters to pass to the fit call
+        cv_clsfr_only (bool, optional): if true then only run the crossvaliation on the classifier at the end of the pipeline for efficiency.  Default to False.
         config (dict): parameters to set on the estimator with set_params(**config)
         fit_params (dict): additional parameters to pass to cv_fit
         extra_config (dict): extra info about X/Y to store in this runs results
@@ -662,7 +662,7 @@ def load_and_decoding_curve_GridSearchCV(clsfr:BaseSequence2Sequence, filename, 
     try:
         fs = coords[1]['fs']
         ch_names = coords[2]['coords']
-        clsfr.set_params(metainfoadder__info=dict(fs=fs, ch_names=ch_names))
+        clsfr.set_params(metainfoadder__info=dict(fs=fs, ch_names=ch_names, filename=filename))
     except:
         print("Warning -- cant add meta-info to clsfr pipeline!")
 
@@ -769,7 +769,7 @@ def set_params_cv(clsfr:BaseSequence2Sequence, X, Y, cv, config:dict=dict(), sco
     return scores
 
 
-def load_and_GridSearchCV(clsfr:BaseSequence2Sequence, filename, loader, cv, 
+def load_and_GridSearchCV(clsfr:BaseSequence2Sequence, filename, loader=load_mindaffectBCI, cv=10, 
             n_jobs:int=1, tuned_parameters:dict=dict(), label:str=None, 
             fit_params:dict=dict(), loader_args:dict=dict(), shortfilename:str=None, **kwargs):
     """ load filename with given loader and then do gridsearch CV
@@ -784,6 +784,8 @@ def load_and_GridSearchCV(clsfr:BaseSequence2Sequence, filename, loader, cv,
         label (str, optional): descriptive label for this run. Defaults to None.
         fit_params (dict, optional): additional parameters to pass to clsfr.fit . Defaults to dict().
         loader_args (dict, optional): additional parameters to pass to loader(filename). Defaults to dict().
+        clsfr (BaseSequence2Sequence): the analysis pipeline to use
+        cv_clsfr_only (bool, optional): if true then only run the crossvaliation on the classifier at the end of the pipeline for efficiency.  Default to False.
 
     Returns:
         list-of-dict: list of cvresults dictionary, with keys for different outputs and rows for particular configuration runs (combination of filename and tuned_parameters)
@@ -806,14 +808,18 @@ def load_and_GridSearchCV(clsfr:BaseSequence2Sequence, filename, loader, cv,
     try:
         fs = coords[1]['fs']
         ch_names = coords[2]['coords']
-        clsfr.set_params(metainfoadder__info=dict(fs=fs, ch_names=ch_names))
+        clsfr.set_params(metainfoadder__info=dict(fs=fs, ch_names=ch_names, filename=filename))
     except:
         print("Warning -- cant add meta-info to clsfr pipeline!")
 
     # record the shortened filename as extra_config
-    extra_config = { 'filename':shortfilename }
+    extra_config = { 'filename':filename, 'shortfilename':shortfilename }
     if loader_args:
         extra_config['loader_args']=loader_args
+
+    if n_jobs>1:
+        print("Running with {} parallel tasks, one-per-config".format(n_jobs))
+        print("Submitting {} jobs:",end='')
 
     futures=[]
     with concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs) as executor:
@@ -827,13 +833,21 @@ def load_and_GridSearchCV(clsfr:BaseSequence2Sequence, filename, loader, cv,
     return futures
 
 
-def datasets_GridSearchCV(clsfr:BaseSequence2Sequence, filenames, loader, cv, 
-            n_jobs:int=-1, tuned_parameters:dict=dict(), label:str=None, 
+def print_progress_and_timetogo(i, n, t0):
+    elapsed = time.time()-t0
+    done = i/n
+    print("\r{:d}% {:d} / {:d} in {:4.1f}s  est {:4.1f}s total {:4.1f}s remaining".format(int(100*done),
+        i, n, elapsed, elapsed/max(1e-8, done), elapsed/max(1e-8, done) - elapsed))
+
+
+
+def datasets_GridSearchCV(clsfr:BaseSequence2Sequence, filenames, loader=load_mindaffectBCI, cv=10, 
+            n_jobs:int=-1, debug:bool=False, tuned_parameters:dict=dict(), label:str=None, 
             fit_params:dict=dict(), cv_clsfr_only:bool=False, loader_args:dict=dict(), job_per_file:bool=True):
     """run a complete dataset with different parameter settings expanding the grid of tuned_parameters
 
     Args:
-        clsfr (BaseSequence2Sequence): the classifier to apply to the datasets
+        clsfr (BaseSequence2Sequence): the classification pipeline to apply to the datasets
         filenames ([type]): list of filenames to load
         loader ([type]): loader function to load filename
         cv ([type]): cross-validation to do, or CV object
@@ -856,12 +870,14 @@ def datasets_GridSearchCV(clsfr:BaseSequence2Sequence, filenames, loader, cv,
     t0 = time.time()
     tlog = t0
 
-    if n_jobs > 1 and job_per_file: # each file in it's own job
+    if not debug and n_jobs > 1 and job_per_file: # each file in it's own job
         with concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs) as executor:
             print("Running with {} parallel tasks, one-per-filename".format(n_jobs))
-            print("Submitting {} jobs:",end='')
+            print("Submitting {} jobs:".format(len(filenames)),end='')
             for fi,fn in enumerate(filenames):
-                print('.',end='')
+                if time.time()-tlog > 3:
+                    print_progress_and_timetogo(fi, len(filenames), t0)
+                    tlog=time.time()
                 future = executor.submit(load_and_GridSearchCV, clsfr, fn, loader, cv, n_jobs=1, tuned_parameters=tuned_parameters,label=label,fit_params=fit_params, cv_clsfr_only=cv_clsfr_only, loader_args=loader_args, shortfilename=fn[len(common_path)+1:])
                 futures.append(future)
             print("{} jobs submitted in {:4.0f}s. Waiting results.\n".format(len(filenames),time.time()-t0))
@@ -869,17 +885,190 @@ def datasets_GridSearchCV(clsfr:BaseSequence2Sequence, filenames, loader, cv,
             # collect the results as the jobs finish
             res = collate_futures_results(futures)
     else: # each config in it's own job
+        print("Submitting {} jobs:".format(len(filenames)),end='')
         for fi,fn in enumerate(filenames):
             if time.time()-tlog > 3:
-                print("\r{} of {}  in {}s".format(fi,len(filenames),time.time()-t0))
+                print_progress_and_timetogo(fi, len(filenames), t0)
                 tlog=time.time()
             future = load_and_GridSearchCV(clsfr,fn,loader,cv,n_jobs=n_jobs,tuned_parameters=tuned_parameters,label=label,fit_params=fit_params, cv_clsfr_only=cv_clsfr_only, loader_args=loader_args, shortfilename=fn[len(common_path)+1:])
             futures.append(future)
 
-        # collect the results as the jobs finish
+        # collect the results
         res = collate_futures_results(futures)
 
     return res
+
+
+
+def analyse_datasets(file_analysis_fn, exptdir=None, filematch='mindaffectBCI*.txt', label:str=None, n_jobs:int=None, debug:bool=False, **kwargs):
+    """run the given analysis function on all files in the given experiment directory
+
+    TODO[]: make a multi-threaded version with concurrency
+
+    Args:
+        file_analysis_fn (callable): the analysis function to run, with signature:  
+                def file_analysis_fn(filename:str, savedir:str=None, label:str=None, **kwargs)
+                where, savedir (str,optional) - is a directory to save results to,  label (str,optional) - is a human readable label for this analysis
+        exptdir (str, optional): the root directory to search for raw savefiles.  If None then query the user.   Defaults to None. 
+        filematch (str, optional): regular expression to match raw savefiles. Defaults to 'mindaffectBCI*.txt'.
+        label (str, optional): Human readable label for this analysis, used to generate savefile directory and save-file-names. Defaults to None.
+        n_jobs (int, optional): number of parallel analysis tasks to run.  Single task if None.  Defaults to None.
+    """    
+    import glob
+    import time
+    import os
+    import concurrent.futures
+    
+    if exptdir is None:
+        from mindaffectBCI.decoder.utils import askloadsavefile
+        exptdir=askloadsavefile(initialdir=os.getcwd(), filetypes='dir')
+        print(exptdir)
+    else:
+        exptdir = os.path.expanduser(exptdir)
+
+    # get the list of save files to load
+    if not os.path.exists(exptdir):  # add the data-root prefix
+        from mindaffectBCI.decoder.offline.datasets import get_dataroot
+        exptdir=os.path.join(get_dataroot(), exptdir)
+
+    filenames=glob.glob(os.path.join(exptdir, '**', filematch), recursive=True)
+    # get the prefix to strip for short names
+    commonprefix=os.path.dirname(os.path.commonprefix(filenames))
+    # sort to process the newest first, based on modify time
+    filenames.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+    print("Found {} matching data files\n".format(len(filenames)))
+    print([f[len(commonprefix):] for f in filenames])
+
+
+    if len(filenames)>1 and (n_jobs is None or n_jobs > 1):
+        # switch the backend to allow multi-threading
+        plt.switch_backend('agg')
+        print("Running with {} parallel tasks, one-per-filename".format(n_jobs))
+        print("Submitting {} jobs.".format(len(filenames)))
+
+    # run each file at a time & save per-condition average response for grand-average later
+    futures, results = [], []
+    with concurrent.futures.ProcessPoolExecutor(max_workers=n_jobs) as executor:
+        t0=time.time()
+        for fi, filename in enumerate(filenames):
+            sessdir=os.path.dirname(filename)
+            flabel=os.path.split(filename[len(commonprefix):])
+            flabel=flabel[0] if flabel[0] else flabel[1]
+            flabel=flabel.replace('\\', '_').replace('/', '_')
+            flabel=flabel + '_' + label
+
+            # location to save the figures
+            savedir=os.path.join(sessdir, label)
+            if not os.path.isdir(savedir):
+                os.makedirs(savedir)
+
+            print("\n-------       {}         --------".format(filename[len(commonprefix):]))
+            print_progress_and_timetogo(fi, len(filenames), t0)
+
+            if debug:
+                res = file_analysis_fn(filename=filename,savedir=savedir,label=flabel,**kwargs)
+                results.append(res)
+                plt.close('all')
+
+            elif len(filenames)==1 or n_jobs is None or n_jobs == 1 or n_jobs==0:
+                # single-threaded version
+                try:
+                    res = file_analysis_fn(filename=filename,savedir=savedir,label=flabel,**kwargs)
+                    results.append(res)
+                    plt.close('all')
+                except:
+                    print("Error loading {}".format(filename))
+                    import traceback
+                    traceback.print_exc()
+                    continue
+
+            else:
+                # process each file in it's own thread
+                future = executor.submit(file_analysis_fn,filename,savedir=savedir,label=flabel,**kwargs)
+                futures.append(future)
+
+        # wait for the parallel runs to complete
+        if futures:
+            print("Collecting {} futures results".format(len(futures)))
+            fi=0
+            for future in concurrent.futures.as_completed(futures):
+                fi=fi+1
+                print_progress_and_timetogo(fi, len(filenames), t0)
+                try:
+                    res = future.result()
+                    results.append(res)
+                except:
+                    print("Error collecting future")
+                    import traceback
+                    traceback.print_exc()
+                    continue
+
+    print_progress_and_timetogo(fi, len(filenames), t0)
+    return results
+
+
+def load_and_run_pipeline(pipeline, filename: str = None, savedir: str = None, label: str = None, verb: int = 0, plot_model:bool=True, dataset_args:dict=None, **kwargs):
+    """load a save data file and run the given pipeline on it
+
+    Args:
+        pipeline (ModifierMixin|callable): the analysis pipeline to run.  If callable then function to call to geneate the pipeline
+        filename (str): the savefile to analyse.  If None then query user for a filename
+        savedir (str, optional): directory to save plot/results to. Defaults to None.
+        label (str, optional): label for this analysis run. Defaults to None.
+        verb (int, optional): verbosity level for the run. Defaults to 0.
+        **kwargs: other options to pass to the pipeline constructor, if pipeline is a callable
+
+    Returns:
+        Pipeline, Xpp, Ypp: the fitted preprocess_transform Pipeline and the transformed data
+    """
+    if filename is None:
+        filename = askloadsavefile()
+
+    # location to save the figures
+    if savedir is None:
+        savedir = os.path.join(os.path.dirname(filename), label)
+        if not os.path.isdir(savedir):
+            os.makedirs(savedir)
+
+    # load and extract meta-info
+    if dataset_args is None:
+        dataset_args = dict(filterband=((45, 65), (.5, 45, 'bandpass')), offset_ms=(-5000, 5000))
+    X_TSd, Y_TSy, coords = load_mindaffectBCI(filename, **dataset_args)
+    fs = coords[1]['fs'] if coords is not None else 100
+    ch_names = coords[2]['coords'] if coords is not None else None
+
+    # get the pipeline
+    if callable(pipeline):
+        # generate the pipeline with the given function
+        pipeline = pipeline(fs=fs, ch_names=ch_names, savedir=savedir, filename=filename, **kwargs)
+    else:
+        # add the meta-info
+        pipeline.set_params(metainfoadder__info={"fs": fs, "ch_names": ch_names, "filename":filename})
+
+    # apply the pipeline
+    Xpp_TSd, Ypp_TSye = pipeline.fit_modify(X_TSd.copy(), Y_TSy.copy(), verb=verb)
+    # plot and save the fitted model
+    # BODGE: fix the time-axes to remove the time-shift in the pre-processing
+    clf = pipeline.stages[-1][1]
+    if plot_model and hasattr(clf,'plot_model'):
+        plt.close('all')
+        clf.plot_model(suptitle=label)  # , offset_ms=timeshift_ms)
+        score = np.mean(clf.score_cv_) if hasattr(clf, 'score_cv_') else None
+        title = "{} (N={}) Score={:5.3f}".format(label, X_TSd.shape[0], score)
+        plt.suptitle(title)
+        plt.savefig(os.path.join(savedir, 'model_{}.png'.format(label)))
+
+    # attach filename info to the return object
+    if hasattr(Xpp_TSd,'info'):
+        Xpp_TSd.info['filename']=filename
+
+    # attach label info to pipeline
+    pipeline.label = label
+    pipeline.filename = filename
+
+    # return the fitted pipeline and pre-processed data
+    return pipeline, Xpp_TSd, Ypp_TSye
+
 
 
 from datetime import datetime

@@ -6,7 +6,7 @@ from scipy.signal import welch
 from mindaffectBCI.decoder.preprocess import get_window_step, pool_axis
 from mindaffectBCI.decoder.spherical_interpolation import make_spherical_spline_interpolation_matrix
 from mindaffectBCI.decoder.utils import idOutliers
-from mindaffectBCI.decoder.stim2event import stim2event
+from mindaffectBCI.decoder.stim2event import stim2event, plot_stim_encoding
 import matplotlib.pyplot as plt
 from mindaffectBCI.decoder.model_fitting import *
 from mindaffectBCI.decoder.utils import InfoArray, import_and_make_class
@@ -69,6 +69,7 @@ def make_test_signal(dur=3, fs=100, blksize=1):
     from mindaffectBCI.decoder.utils import testSignal
     X_TSd, Y_TSy, st, A, B = testSignal(tau=10, noise2signal=1, nTrl=20, nSamp=300)
     fs = fs
+    X_TSd = InfoArray(X_TSd,info={"fs":fs})
     return X_TSd, Y_TSy, fs
 
 
@@ -96,7 +97,11 @@ def test_transform(mod, dur=3, fs=100, blksize=10):
     wX = []
     wY = []
     for i in range(X_TSd.shape[0]):
-        Xi, Yi = mod.modify(X_TSd[i:i+1, ...], Y_TSy[i:i+1, ...])
+        if hasattr(mod,'modify'):
+            Xi, Yi = mod.modify(X_TSd[i:i+1, ...], Y_TSy[i:i+1, ...])
+        else:
+            Xi = mod.transform(X_TSd[i:i+1, ...], Y_TSy[i:i+1, ...])
+            Yi = Y_TSy[i:i+1, ...]
         wX.append(Xi)
         wY.append(Yi)
     X_TSdd = np.concatenate(wX, 0)
@@ -135,8 +140,6 @@ class Log(BaseEstimator):
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-
-
 class Power(BaseEstimator):
     """raise X to a power """
 
@@ -231,8 +234,8 @@ class TrialPlotter(BaseEstimator):
     def __init__(
             self, fs: float = None, plot_trial_number: int = 0, plot_x: bool = True, plot_y: bool = True,
         plot_args: dict = dict(),
-            plot_output_idx: int = None, fig: int = None, block: bool = False, suptitle: str = None):
-        """[summary]
+            plot_output_idx: int = None, fig: int = None, block: bool = False, suptitle: str = None, savefile:str=None):
+        """Plot one or more trials of the input data
 
         Args:
             fs (float, optional): data sample rate. Defaults to None.
@@ -242,8 +245,8 @@ class TrialPlotter(BaseEstimator):
             block (bool, optional): blocking or non-blocking show after plotting
             suptitle (str, optional): override the super-title on the plot with this string
         """
-        self.fs, self.plot_trial_number, self.plot_args, self.fig, self.block, self.suptitle, self.plot_output_idx, self.plot_x, self.plot_y = (
-            fs, plot_trial_number, plot_args, fig, block, suptitle, plot_output_idx, plot_x, plot_y)
+        self.fs, self.plot_trial_number, self.plot_args, self.fig, self.block, self.suptitle, self.plot_output_idx, self.plot_x, self.plot_y, self.savefile = (
+            fs, plot_trial_number, plot_args, fig, block, suptitle, plot_output_idx, plot_x, plot_y, savefile)
 
     def fit(self, X, y):
         self.ntrial_ = 0
@@ -282,6 +285,7 @@ class TrialPlotter(BaseEstimator):
                 plt.clf()
             else:
                 self.fig = plt.figure()
+                plt.clf()
 
             if y is not None:
                 Y_TSye = y[idx, ...]
@@ -294,8 +298,90 @@ class TrialPlotter(BaseEstimator):
             Y_plt = Y_TSye if self.plot_y else None
             plot_trial(X_plt, Y_plt, fs=fs, ch_names=ch_names, outputs=outputs, evtlabs=evtlabs, **self.plot_args)
 
+            if self.savefile is not None:
+                plt.savefig(self.savefile)
             if self.suptitle:
                 plt.suptitle(self.suptitle)
+            plt.show(block=self.block)
+        # update the trial counter
+        self.ntrial_ = self.ntrial_ + X.shape[0]
+        return X
+
+
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+
+class TargetEncodingPlotter(BaseEstimator):
+    """plot the incomming trials """
+
+    def __init__(
+            self, fs: float = None, plot_trial_number: int = 0,
+        plot_args: dict = dict(),
+            plot_output_idx: int = None, fig: int = None, block: bool = False, suptitle: str = None, savefile: str = None):
+        """[summary]
+
+        Args:
+            fs (float, optional): data sample rate. Defaults to None.
+            plot_trial_number (int, optional): if not None then plot only this trial number. Defaults to True.
+            plot_args (dict, optional): additional key-value args to pass to plot_trial
+            fig (int, optional): figure to put the plot in. N.B. clf'd before plotting
+            block (bool, optional): blocking or non-blocking show after plotting
+            suptitle (str, optional): override the super-title on the plot with this string
+            savefile (str, optional): if given then save copy of the plot to this file
+        """
+        self.fs, self.plot_trial_number, self.plot_args, self.fig, self.block, self.suptitle, self.plot_output_idx, self.savefile = (
+            fs, plot_trial_number, plot_args, fig, block, suptitle, plot_output_idx, savefile)
+
+    def fit(self, X, y):
+        self.ntrial_ = 0
+
+    def fit_transform(self, X, y=None, **kwargs):
+        self.fit(X, y)
+        # get sample rate, priority order is: fit-argument, X.info, __init__-argument
+        return self.transform(X, y, **kwargs)
+
+    def transform(self, X, y=None, fs=None, ch_names=None, outputs=None, evtlabs=None):
+        """plot X,y
+        """
+        import matplotlib.pyplot as plt
+        if self.plot_trial_number is not None:
+            if hasattr(self.plot_trial_number, '__iter__'):
+                idx = [i for i in range(X.shape[0]) if self.ntrial_+i in self.plot_trial_number]
+            else:
+                idx = [i for i in range(X.shape[0]) if self.ntrial_+i == self.plot_trial_number]
+        else:
+            idx = slice(None)
+
+        # only plot if should plot all, or this is the wanted trial to plot
+        if idx:
+            # extract meta-info to make a pretty plot:
+            if outputs is None and hasattr(y, 'info'):
+                outputs = y.info.get('outputs', None)
+            if evtlabs is None and hasattr(y, 'info'):
+                evtlabs = y.info.get('evtlabs', None)
+            if fs is None and hasattr(X, 'info'):
+                fs = X.info.get('fs', None)
+
+            if self.fig:
+                plt.figure(self.fig.number if hasattr(self.fig, 'number') else self.fig)
+                plt.clf()
+            else:
+                self.fig = plt.figure()
+
+            if y is not None:
+                Y_TSye = y[idx, ...]
+                if self.plot_output_idx is not None:
+                    Y_TSye = Y_TSye[:, :, [self.plot_output_idx], ...]
+            else:
+                Y_TSye = y
+
+            plot_stim_encoding(Y_TSye,None,fs=fs,outputs=outputs,evtlabs=evtlabs,suptitle=self.suptitle)
+
+            if self.savefile is not None:
+                plt.savefig(self.savefile)
+
             plt.show(block=self.block)
         # update the trial counter
         self.ntrial_ = self.ntrial_ + X.shape[0]
@@ -362,7 +448,6 @@ def plot_class_average(
 
     Cxy_yetd = updateCxy(None, X_TSd, Y_TSye, tau=tau, offset=offset)
     N = np.sum(Y_TSye, axis=(0, 1, 2))
-    print(N)
     Cxy_yetd = Cxy_yetd / N[:, np.newaxis, np.newaxis]  # normalize
 
     import matplotlib.pyplot as plt
@@ -371,6 +456,7 @@ def plot_class_average(
         plt.clf()
     else:
         fig = plt.figure()
+        plt.clf()
 
     # add back in feature dims
     Cxy_yetd = Cxy_yetd.reshape(Cxy_yetd.shape[:3]+X_TSd.shape[2:])
@@ -388,7 +474,7 @@ def plot_f_classif(X_TSd, Y_TSye=None, y0_is_true: bool = True, fs=None, outputs
         X_TSd (InfoArray|ndarray): The data.  Shape (T,S,d)=(#Trials, #samples per trial, #sensors)
         Y_TSye (InfoArray|ndarray, optional): The stimulus properties. Shape (T,S,y,e)=(#Trails, #Samples per trial, #outputs, #stimulus feature types). Defaults to None.
         y0_is_true (bool, optional): flag we should treat the first output, y, at the true label sequence and ignore the rest. Defaults to True.
-        fs (_type_, optional): _description_. Defaults to None.
+        fs (float, optional): sample rate of the data. Defaults to None.
         outputs (_type_, optional): Labels for the y outputs (in Y_TSye). Defaults to None.
         ch_names (_type_, optional): Labels for the d channels (in X_TSd). Defaults to None.
         evtlabs (_type_, optional): Labels for the e event types (in Y_TSye). Defaults to None.
@@ -462,18 +548,23 @@ class EventRelatedPotentialPlotter(BaseEstimator):
     def __init__(
             self, fs: float = None, tau: int = None, tau_ms: float = 500, offset: int = None, offset_ms: float = 0,
             plot_trial_number: int = 0, plot_args: dict = dict(),
-            fig: int = None, block: bool = None, suptitle: str = None, cls_diff: bool = False):
-        """[summary]
+            fig: int = None, block: bool = None, suptitle: str = None, cls_diff: bool = False, savefile:str=None):
+        """plot a class average of the incomming data
 
         Args:
-            fs (float, optional): data sample rate. Defaults to None.
+            tau (int, optional): lenght of the response window in samples. Defaults to None.
+            tau_ms (float, optional): length of the response window in milliseconds. Defaults to None.
+            offset (int, optional): offset from event trigger time in samples. Defaults to None.
+            offset_ms (float, optional): offset from the event trigger time in milliseconds. Defaults to 0.
+            fs (float, optional): _description_. Defaults to None.
             plot_args (dict, optional): additional key-value args to pass to plot_trial
             fig (int, optional): figure to put the plot in. N.B. clf'd before plotting
             block (bool, optional): if true show and block, false show and don't block, None don't show. Defaults to None.
             suptitle (str, optional): override the super-title on the plot with this string
+            savefile (str, optional): filename to save a .png copy of the plot
         """
-        self.fs, self.tau, self.tau_ms, self.offset, self.offset_ms, self.plot_trial_number, self.plot_args, self.fig, self.block, self.suptitle, self.cls_diff = (
-            fs, tau, tau_ms, offset, offset_ms, plot_trial_number, plot_args, fig, block, suptitle, cls_diff)
+        self.fs, self.tau, self.tau_ms, self.offset, self.offset_ms, self.plot_trial_number, self.plot_args, self.fig, self.block, self.suptitle, self.cls_diff, self.savefile = (
+            fs, tau, tau_ms, offset, offset_ms, plot_trial_number, plot_args, fig, block, suptitle, cls_diff, savefile)
 
     def fit(self, X, y=None, y0_is_true: bool = True, fs=None, outputs=None, ch_names=None, evtlabs=None):
         # get sample rate, priority order is: fit-argument, X.info, __init__-argument
@@ -484,9 +575,11 @@ class EventRelatedPotentialPlotter(BaseEstimator):
         if self.plot_trial_number is not None and not self.ntrial_ == self.plot_trial_number:
             return self
 
-        self.fig = plot_class_average(X, y, y0_is_true, fs, outputs, ch_names, evtlabs,
-                                      self.tau, self.tau_ms, self.offset, self.offset_ms)
+        self.fig = plot_class_average(X, y, y0_is_true, fs=fs, outputs=outputs, ch_names=ch_names, evtlabs=evtlabs,
+                                      tau=self.tau, tau_ms=self.tau_ms, offset=self.offset, offset_ms=self.offset_ms, suptitle=self.suptitle)
 
+        if self.savefile is not None:
+            plt.savefig(self.savefile)
         if self.block is not None:
             plt.show(block=self.block)
         return self
@@ -513,10 +606,14 @@ class SummaryStatisticsPlotter(BaseEstimator):
             self, fs: float = None, tau: int = None, tau_ms: float = 500, offset: int = None, offset_ms: float = 0,
             plot_args: dict = dict(),
             fig: int = None, block: bool = None, suptitle: str = None):
-        """[summary]
+        """ Plot the summary statistics of the incomming data, where summary statistics are: Cxx=per-channel covariance,  Cyx=ERP=class-average response,  Cyy=per-time-point stimulus cross-auto-covariance
 
         Args:
-            fs (float, optional): data sample rate. Defaults to None.
+            tau (int, optional): lenght of the response window in samples. Defaults to None.
+            tau_ms (float, optional): length of the response window in milliseconds. Defaults to None.
+            offset (int, optional): offset from event trigger time in samples. Defaults to None.
+            offset_ms (float, optional): offset from the event trigger time in milliseconds. Defaults to 0.
+            fs (float, optional): _description_. Defaults to None.
             plot_trial_number (int, optional): if not None then plot only this trial number. Defaults to True.
             plot_args (dict, optional): additional key-value args to pass to plot_trial
             fig (int, optional): figure to put the plot in. N.B. clf'd before plotting
@@ -666,14 +763,12 @@ class TimeShifter(BaseEstimator, ModifierMixin):
 
     def fit(self, X, y=None, fs: float = None):
         # setup the window, and step
-        if fs is not None:
-            self.fs = fs
-        elif hasattr(X, 'info'):  # meta-data ndarray
-            self.fs = X.info['fs']
         if self.timeshift is not None:  # compute shift in samples
             self.timeshift_ = self.timeshift  # store the result
         else:
-            self.timeshift_ = int(self.timeshift_ms * self.fs / 1000)
+            if fs is None: # extract sample rate
+                fs = X.info['fs'] if hasattr(X, 'info') else self.fs
+            self.timeshift_ = int(self.timeshift_ms * fs / 1000)
         assert self.axis == 1
 
         if self.verb > 0:
@@ -690,8 +785,8 @@ class TimeShifter(BaseEstimator, ModifierMixin):
             M[index_along_axis(slice(shift, None), axis)] = M[index_along_axis(slice(None, -shift), axis)]
             M[index_along_axis(slice(0, shift), axis)] = padding
         elif shift < 0:  # -shift->0, so padd after
-            M[index_along_axis(slice(None, -shift), axis)] = M[index_along_axis(slice(shift, None), axis)]
-            M[index_along_axis(slice(-shift, None), axis)] = padding
+            M[index_along_axis(slice(None, shift), axis)] = M[index_along_axis(slice(-shift, None), axis)]
+            M[index_along_axis(slice(shift, None), axis)] = padding
 
         return M
 
@@ -718,6 +813,8 @@ class TimeShifter(BaseEstimator, ModifierMixin):
 
     def testcase(self):
         test_transform(TimeShifter(timeshift=2))
+        test_transform(TimeShifter(timeshift=-2))
+
 
 
 # --------------------------------------------------------------------------
@@ -785,7 +882,10 @@ class TargetEncoder(BaseEstimator, ModifierMixin):
             # TODO[]: make it a list of lists? instead of flattening it early?
             el2 = evtlabs
             if el is not None:
+                if isinstance(el,str): el=[el]
+                if isinstance(evtlabs,str): evtlabs=[evtlabs]
                 el2 = ["{}_{}".format(e1, e2) for e1 in el for e2 in evtlabs]
+                #print('new-lab: {}'.format(el2))
             y.info.update({'evtlabs': el2})
         return y
 
@@ -1804,12 +1904,129 @@ class TrialLabelSelector(BaseEstimator, ModifierMixin):
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 class FFTfilter(BaseEstimator, TransformerMixin):
-    """filterbank transform the inputs
+    """filterband transform the inputs
     """
 
+    def __init__(self, axis:int=1, filterband: list = None, isfilterbank:bool= False, fs: float = None, blksz:int=None, blksz_ms:float=None, window=None, center:bool=True, 
+                 fftlen: int = None, overlap: float = .5, squeeze_feature_dim: bool = True, prefix_feature_dim: bool = False,
+                 ola_filter: bool = False, verb=1):
+        """apply a (set-of) spectral filters to the data using the FFT-filter technique
+
+        TODO[]: Imnplement downsampling...
+
+        Args:
+            axis (int, optional): axis of X which corrosponds to time. Defaults to 1.
+            filterband (list, optional): list-of-filter specifications.  Filter specification is in the format (low,high,type) where low and high are frequencies in Hz, and type is one-of 'bandpass', 'bandstop' or 'hilbert' for envelop transform. Defaults to None.
+            isfilterbank (bool, optional): If True, then run as filterbank where each band in filterband generates it's own output feature.  If false, then operate as a single filter where the filterbands are combined to generate a single output feature, where the final filter is the OR'd combination of these filters.  Defaults to False.
+            fs (float, optional): sampling rate of the data.  Got from X's meta-info if not given. Defaults to None.
+            blksz (int, optional): block-size in samples for applying the FFT. Defaults to None.
+            blksz_ms (float, optional): block-size in milliseconds for applying the FFT. Defaults to None.
+            window (str, optional): temporal window to apply to data blocks before FFT transform.  One of 'hamming','hanning','cos'. Defaults to None.
+            fftlen (int, optional): length of the analysis window in the fft-space.  Defaults to blksz/2. Defaults to None.
+            overlap (float, optional): fractional overlap of the FFT analysis windows. Defaults to .5.
+            squeeze_feature_dim (bool, optional): if true and only a single band is given then remove the resulting singleton feature dimension. Defaults to False.
+            prefix_feature_dim (bool, optional): put the feature dim before the time dimension?. Defaults to False.
+            ola_filter (bool, optional): if trun then use the overlap-add fitler, otherwise use the fft a whole-trial-at-a-time filter approach. Defaults to True.
+            verb (int, optional): verbosity level. Defaults to 1.
+        """
+        self.axis, self.filterband, self.isfilterbank, self.fs, self.blksz, self.blksz_ms, self.window, self.center, self.fftlen, self.overlap, self.squeeze_feature_dim, self.prefix_feature_dim, self.verb, self.ola_filter = (
+            axis, filterband, isfilterbank, fs, blksz, blksz_ms, window, center, fftlen, overlap, squeeze_feature_dim, prefix_feature_dim, verb, ola_filter)
+
+    def fit(self, X, y=None, fs: float = None, blksz: int = None, fftlen: int = None):
+        """[summary]
+
+        Args:
+            X ([type]): [description]
+        """
+        # setup the window
+        if fs is not None:
+            self.fs_ = fs
+        elif hasattr(X, 'info'):
+            self.fs_ = X.info['fs']
+        else:
+            self.fs_ = self.fs  # meta-data ndarray
+
+        if self.ola_filter:
+            self.blksz_ = blksz if blksz is not None else int(
+                self.blksz_ms * self.fs_ / 1000) if self.blksz_ms is not None else self.fs_/2 if self.fs_ is not None else 100  # default to 1/2 sec or 100 samples
+            self.blksz_ = int(self.blksz_)
+            self.window_, self.step_ = pp.get_window_step(self.blksz_, self.window, self.overlap)
+            # get to right shape
+            self.window_ = self.window_
+            self.fftlen_ = fftlen if fftlen is not None else self.blksz_*2
+        else:
+            self.fftlen_ = X.shape[self.axis]
+            self.blksz_ = self.fftlen_
+            self.window_, self.step_ = pp.get_window_step(self.blksz_, self.window)
+
+        #print("FFTfilter: fs={} filterbank={}".format(self.fs, filterbank))
+        filter_bf, bandtype, self.freqs_ = pp.fftfilter_masks(
+            self.fftlen_, self.filterband, fs=self.fs_, dtype=X.dtype)
+        if self.isfilterbank:
+            self.filter_bf_ = filter_bf
+            self.bandtype_  = bandtype
+        else:
+            # combine filter specs to make a single pass filter
+            self.filter_bf_ = np.any(filter_bf, axis=0, keepdims=True)
+            self.bandtype_ = bandtype if isinstance(bandtype,str) or len(bandtype)==1 else ['hilbert'] if any(b=='hilbert' for b in bandtype) else ['bandpass']
+
+        #print("freq={}\nmask={}\nbandtype={}\n".format(self.freqs_,self.filter_bf_, self.bandtype_))
+        return self
+
+    def transform(self, X, y=None):
+        """add per-sample timestamp information to the data matrix
+
+        Args:
+            X (float): the data to decorrelate
+            nsamp(int): number of samples to interpolate
+
+        Returns:
+            np.ndarray: the decorrelated data
+        """
+        if not hasattr(self, 'filter_bf_'):
+            raise ValueError("Must fit before transform!")
+
+        # ensure 3-d input
+        X_TSd = X
+        if X_TSd.ndim < 3:
+            X_TSd = X_TSd.reshape((-1,)*(3-X_TSd.ndim) + X_TSd.shape)
+
+        # TODO[]: make truely incremental... buffer and release when fully processed!
+        if self.ola_filter:
+            X_TSfd = pp.inner_ola_fftfilterbank(
+                X_TSd, self.filter_bf_, self.bandtype_, self.window_, self.step_, axis=self.axis, center=self.center,
+                prefix_band_dim=self.prefix_feature_dim)
+        else:
+            X_TSfd = pp.inner_fftfilterbank(
+                X_TSd, self.filter_bf_, self.bandtype_, window=self.window_, axis=self.axis, center=self.center,
+                prefix_band_dim=self.prefix_feature_dim)
+
+        if hasattr(X, 'info') and not hasattr(X_TSfd, 'info'):
+            # manually re-attach the meta-info
+            X_TSfd = InfoArray(X_TSfd, info=X.info)
+
+        if self.squeeze_feature_dim and X_TSfd.shape[self.axis+1] == 1:
+            X_TSfd = X_TSfd.squeeze(self.axis+1)
+
+        return X_TSfd
+
+    def testcase(self):
+        mod = FFTfilter(blksz_ms=500, filterband=(1, 5, 15, 20, 'bandpass'))
+        test_transform(mod)
+
+        mod = FFTfilter(blksz_ms=500, filterband=(1, 5, 15, 20, 'hilbert'))
+        test_transform(mod)
+
+        mod = FFTfilter(blksz_ms=500, filterband=((1, 5, 15, 20, 'bandpass'), (25,25,'bandpass')))
+        test_transform(mod)
+
+
+
+
+class FFTfilterbank(FFTfilter):
     def __init__(self, axis:int=1, filterbank: list = None, fs: float = None, blksz:int=None, blksz_ms:float=None, window=None,
                  fftlen: int = None, overlap: float = .5, squeeze_feature_dim: bool = False, prefix_feature_dim: bool = False,
-                 ola_filter: bool = True, verb=1):
+                 ola_filter: bool = False, verb=1):
         """apply a (set-of) spectral filters to the data using the FFT-filter technique
 
         Args:
@@ -1825,85 +2042,17 @@ class FFTfilter(BaseEstimator, TransformerMixin):
             prefix_feature_dim (bool, optional): put the feature dim before the time dimension?. Defaults to False.
             ola_filter (bool, optional): if trun then use the overlap-add fitler, otherwise use the fft a whole-trial-at-a-time filter approach. Defaults to True.
             verb (int, optional): verbosity level. Defaults to 1.
-        """        
-        self.axis, self.filterbank, self.fs, self.blksz, self.blksz_ms, self.window, self.fftlen, self.overlap, self.squeeze_feature_dim, self.prefix_feature_dim, self.verb, self.ola_filter = (
-            axis, filterbank, fs, blksz, blksz_ms, window, fftlen, overlap, squeeze_feature_dim, prefix_feature_dim, verb, ola_filter)
-
-    def fit(self, X, y=None, filterbank: list = None, fs: float = None, blksz: int = None, fftlen: int = None):
-        """[summary]
-
-        Args:
-            X ([type]): [description]
         """
-        # setup the window
-        if fs is not None:
-            self.fs_ = fs
-        elif hasattr(X, 'info'):
-            self.fs_ = X.info['fs']
-        else:
-            self.fs_ = self.fs  # meta-data ndarray
+        self.filterbank = filterbank
+        super().__init__(axis=axis,filterband=filterbank,isfilterbank=True,fs=fs,blksz=blksz,blksz_ms=blksz_ms,window=window,fftlen=fftlen,overlap=overlap,squeeze_feature_dim=squeeze_feature_dim,prefix_feature_dim=prefix_feature_dim,ola_filter=ola_filter,verb=verb)
 
-        if filterbank is None:
-            filterbank = self.filterbank
-        if self.ola_filter:
-            self.blksz_ = blksz if blksz is not None else int(
-                self.blksz_ms * self.fs_ / 1000) if self.blksz_ms is not None else self.fs_/2 if self.fs_ is not None else 100  # default to 1/2 sec or 100 samples
-            self.blksz_ = int(self.blksz_)
-            self.window_, self.step_ = pp.get_window_step(self.blksz_, self.window, self.overlap)
-            # get to right shape
-            self.window_ = self.window_
-            self.fftlen_ = fftlen if fftlen is not None else self.blksz_*2
-        else:
-            self.fftlen_ = X.shape[self.axis]
-            self.blksz_ = self.fftlen_
-            self.window_, self.step_ = pp.get_window_step(self.blksz_, self.window)
-
-        #print("FFTfilter: fs={} filterbank={}".format(self.fs, filterbank))
-        self.mask_bf_, self.bandtype_, self.freqs_ = pp.fftfilter_masks(
-            self.fftlen_, filterbank, fs=self.fs_, dtype=X.dtype)
-
-        #print("freq={}\nmask={}\nbandtype={}\n".format(self.freqs_,self.mask_bf_, self.bandtype_))
-        return self
-
-    def transform(self, X, y=None):
-        """add per-sample timestamp information to the data matrix
-
-        Args:
-            X (float): the data to decorrelate
-            nsamp(int): number of samples to interpolate
-
-        Returns:
-            np.ndarray: the decorrelated data
-        """
-        if not hasattr(self, 'mask_bf_'):
-            raise ValueError("Must fit before transform!")
-
-        # ensure 3-d input
-        X_TSd = X
-        if X_TSd.ndim < 3:
-            X_TSd = X_TSd.reshape((-1,)*(3-X_TSd.ndim) + X_TSd.shape)
-
-        # TODO[]: make truely incremental... buffer and release when fully processed!
-        if self.ola_filter:
-            X_TSfd = pp.inner_ola_fftfilterbank(
-                X_TSd, self.mask_bf_, self.bandtype_, self.window_, self.step_, axis=self.axis,
-                prefix_band_dim=self.prefix_feature_dim)
-        else:
-            X_TSfd = pp.inner_fftfilterbank(
-                X_TSd, self.mask_bf_, self.bandtype_, window=self.window_, axis=self.axis,
-                prefix_band_dim=self.prefix_feature_dim)
-
-        if hasattr(X, 'info') and not hasattr(X_TSfd, 'info'):
-            # manually re-attach the meta-info
-            X_TSfd = InfoArray(X_TSfd, info=X.info)
-
-        if self.squeeze_feature_dim and X_TSfd.shape[self.axis+1] == 1:
-            X_TSfd = X_TSfd.squeeze(self.axis+1)
-
-        return X_TSfd
+    def fit(self,X,y,**kwargs):
+        # ensure to override the band specification (in case updated in set-config)
+        self.filterband = self.filterbank
+        super().fit(X,y,**kwargs)
 
     def testcase(self):
-        mod = FFTfilter(blksz_ms=500, filterbank=((1, 5, 40, 50, 'bandpass'), (1, 5, 40, 50, 'hilbert'),))
+        mod = FFTfilterbank(blksz_ms=500, filterbank=((1, 5, 40, 50, 'bandpass'), (1, 5, 40, 50, 'hilbert'),))
         test_transform(mod)
 
 
@@ -2080,21 +2229,28 @@ class CommonSpatialPatterner(BaseEstimator):
     """
 
     def __init__(
-            self, nfilt_per_class: int = 3, mean: bool = True, compress_feature_dim=False, spoc: bool = False, reg:
-            float = 1e-6, rcond: float = 1e-6, verb=1):
+            self, nfilt_per_class: int = 3, mean: bool = True, compress_feature_dim=False, 
+            y0_is_true: bool=True, tau_ms: float = None, tau:int=None, fs:float=None,
+            spoc: bool = False, reg: float = 1e-6, rcond: float = 1e-6, verb=0):
         """use the common spatial pattern algorithm to map from sensors to virtual channels
+
+        WARNING: Note this function assumes *one-class-per-trial* structure. 
 
         Args:
             nfilt_per_class (int, optional): _description_. Defaults to 3.
             mean (bool, optional): _description_. Defaults to True.
             compress_feature_dim (bool, optional): _description_. Defaults to False.
+            y0_is_true (bool, optional): if True then the first output is assumed to contain the unique event labels.   Defaults to True.
+            tau (int, optional): the length in samples of the stimulus response. Defaults to None.
+            tau_ms (int, optional): the lenght in milliseconds of the stimulus response. Defaults to None
+            fs (float, optional): the sampling rate of the data, used for coverting milliseconds to samples.  Defaults to None.
             spoc (bool, optional): _description_. Defaults to False.
             reg (float, optional): _description_. Defaults to 1e-6.
             rcond (float, optional): _description_. Defaults to 1e-6.
             verb (int, optional): _description_. Defaults to 1.
         """
-        self.nfilt_per_class, self.mean, self.compress_feature_dim, self.spoc, self.reg, self.rcond, self.verb = \
-            (nfilt_per_class, mean, compress_feature_dim, spoc, reg, rcond, verb)
+        self.nfilt_per_class, self.mean, self.compress_feature_dim, self.y0_is_true, self.tau, self.tau_ms, self.fs, self.spoc, self.reg, self.rcond, self.verb = \
+            (nfilt_per_class, mean, compress_feature_dim, y0_is_true, tau, tau_ms, fs, spoc, reg, rcond, verb)
 
     def fit_csp(self, Cxx_ydd, Cxx_dd, reg, rcond):
         """fit common spatial patterns to the data summarized by it's covariance matrices
@@ -2110,7 +2266,7 @@ class CommonSpatialPatterner(BaseEstimator):
         """
         # solve by 2-step, global-whiten, and per-class eigen-decomposition approach
         # TODO: fast-path the binary case!
-        sqrtCxx, isqrtCxx = robust_whitener(Cxx_dd, reg, rcond)
+        isqrtCxx, sqrtCxx = robust_whitener(Cxx_dd, reg, rcond)
         # if self.reg:
         #     Cxx_dd = Cxx_dd * (1-self.reg) + np.eye(Cxx_dd.shape[0])*self.reg*np.mean(Cxx_dd.diagonal())
         W_ekd = np.zeros((Cxx_ydd.shape[0], self.nfilt_per_class, Cxx_ydd.shape[-1]), dtype=Cxx_ydd.dtype)
@@ -2121,16 +2277,17 @@ class CommonSpatialPatterner(BaseEstimator):
 
             # take the largest entries (signed)
             sidx = np.argsort(np.abs(l_k))[::-1]  # sorted order, biggest amplitude
-            print(" lambda={}".format(l_k[sidx]))
+            if self.verb>0:
+                print("cls={}) lambda={}".format(ei,l_k[sidx]))
             U_dk = U_dk[:, sidx[:self.nfilt_per_class]]  # * np.sign(l_k[sidx[:self.nfilt_per_class]])[np.newaxis,:]
             W = isqrtCxx.T @ U_dk  # include the whitener to make filter
-            A = sqrtCxx @ U_dk
+            A = sqrtCxx.T @ U_dk
             # TODO[]: compute and save the spatial pattern as well?
             W_ekd[ei, :W.shape[0], ...] = W.T
             A_ekd[ei, :A.shape[0], ...] = A.T
         return W_ekd, A_ekd
 
-    def get_class_covariances(self, X_TSd, Y_TSye, spoc: bool = False, y0_is_true: bool = True):
+    def get_class_covariances(self, X_TSd, Y_TSye, spoc: bool = False, y0_is_true: bool = True, tau:int = None):
         """compute the class specific and global spatial covariances from given inputs
 
         Args:
@@ -2143,7 +2300,8 @@ class CommonSpatialPatterner(BaseEstimator):
 
         Returns:
             [type]: [description]
-        """        # ensure inputs have the right shape
+        """        
+        # ensure inputs have the right shape
         if X_TSd.ndim < 3:
             X_TSd = X_TSd.reshape((1,)*(3-X_TSd.ndim) + X_TSd.shape)
         elif X_TSd.ndim > 3:  # compress extra feature dims
@@ -2155,6 +2313,7 @@ class CommonSpatialPatterner(BaseEstimator):
         if not y0_is_true:
             raise NotImplementedError('multi-Y isnt supported yet')
 
+        # extract the labelling for the first output.  This should be unique
         Y_TSe = Y_TSye[:, :, 0, :]
         # get per-event-type covariance matrices
         Cxx_ydd = np.zeros((Y_TSe.shape[-1], X_TSd.shape[-1], X_TSd.shape[-1]), dtype=X_TSd.dtype)
@@ -2167,14 +2326,26 @@ class CommonSpatialPatterner(BaseEstimator):
                 if spoc:  # SPOC -> Y is regression target for this event-type
                     samp_wght = Y_TSe[ti, :, ei]
                     tmp = X_TSd[ti, :, :] * samp_wght[:, np.newaxis]
-                else:  # CSP -> Y is class indicator
-                    tmp = X_TSd[ti, Y_TSe[ti, :, ei] > 0, :]
+                else:  # CSP -> Y is class indicator, or trial_start indicator
+                    if tau is not None: # trial-start indicator
+                        trl_idx = np.argmax(Y_TSe[ti, :, ei] > 0)
+                        trl_idx = slice(trl_idx,trl_idx+tau) 
+                    else:
+                        trl_idx = Y_TSe[ti, :, ei] > 0
+                    tmp = X_TSd[ti, trl_idx, :]
+                    #print("tmp={}".format(tmp.shape))
                 Cxxty = tmp.T @ tmp
                 Cxx_ydd[ei, ...] = Cxx_ydd[ei, ...] + Cxxty
         return Cxx_ydd, Cxx_dd
 
-    def fit(self, X_TSd, Y_TSye=None, y0_is_true: bool = True):
-        Cxx_ydd, Cxx_dd = self.get_class_covariances(X_TSd, Y_TSye, self.spoc, y0_is_true)
+    def fit(self, X_TSd, Y_TSye=None, fs=None):
+        if self.tau_ms is not None:
+            if fs is None: # get sample rate from meta-info
+                fs = X_TSd.info['fs'] if hasattr(X_TSd,'info') else self.fs
+            self.tau = int(self.tau_ms * fs / 1000)
+
+        # get the summary statistics
+        Cxx_ydd, Cxx_dd = self.get_class_covariances(X_TSd, Y_TSye, self.spoc, self.y0_is_true, self.tau)
         # compute the per-class CSP directions
         self.W_ekd_, self.A_ekd_ = self.fit_csp(Cxx_ydd, Cxx_dd, self.reg, self.rcond)
         return self
@@ -2188,10 +2359,13 @@ class CommonSpatialPatterner(BaseEstimator):
         if X_TSd.ndim < 3:
             X_TSd = X_TSd.reshape((1,)*(3-X_TSd.ndim) + X_TSd.shape)
 
-        X_TSek = np.zeros(X_TSd.shape[:2] + self.W_ekd_.shape[:2], dtype=X_TSd.dtype)
-        for ei in range(self.W_ekd_.shape[0]):
-            for ki in range(self.W_ekd_.shape[1]):
-                X_TSek[..., ei, ki] = X_TSd @ self.W_ekd_[ei, ki, :]
+        # apply the mapping
+        X_TSek = np.einsum("TSd,ekd->TSek",X_TSd, self.W_ekd_)
+
+        # X_TSek = np.zeros(X_TSd.shape[:2] + self.W_ekd_.shape[:2], dtype=X_TSd.dtype)
+        # for ei in range(self.W_ekd_.shape[0]):
+        #     for ki in range(self.W_ekd_.shape[1]):
+        #         X_TSek[..., ei, ki] = X_TSd @ self.W_ekd_[ei, ki, :]
 
         if self.compress_feature_dim:  # make into single big d
             X_TSek = X_TSek.reshape(X_TSek.shape[:2]+(-1,))
@@ -2199,8 +2373,13 @@ class CommonSpatialPatterner(BaseEstimator):
         # transfer the meta-info (if any)
         if hasattr(X_TSd, 'info'):
             if not hasattr(X_TSek, 'info'):
-                # TODO[]: update the ch_names info?
-                X_TSek = InfoArray(X_TSek, info=X_TSd.info)
+                # update the channel names
+                info = X_TSd.info.copy()
+                if self.compress_feature_dim:
+                    info['ch_names'] = [ "csp{:d}.{:d}".format(cls,comp) for cls in range(self.W_ekd_.shape[0]) for comp in range(self.W_ekd_.shape[1]) ]
+                else:
+                    info['ch_names'] = [ "csp{:d}".format(comp) for comp in range(self.W_ekd_.shape[1]) ]
+                X_TSek = InfoArray(X_TSek, info=info)
 
         return X_TSek
 
@@ -2221,25 +2400,29 @@ class CommonSpatialPatterner(BaseEstimator):
         import numpy as np
         import matplotlib.pyplot as plt
         from mindaffectBCI.decoder.utils import testSignal
+        from mindaffectBCI.decoder.stim2event import stim2event
         # make a continuously AM varying test problem
-        X_TSd, Y_TSy, st, A, B = testSignal(d=3, tau=1, nY=1, noise2signal=.0, nTrl=100,
-                                            nSamp=300, isi=0, classification=False, induced=-1)
+        X_TSd, Y_TSye, st, A, B = testSignal(d=3, tau=1, nY=1, nE=1, noise2signal=.2, nTrl=100,
+                                            nSamp=300, isi=0, classification=True, induced=-1)
         fs = 100
+
+        # convert to binary event coding
+        Y_TSye, _, evtlabs = stim2event(Y_TSye[...,0],'hotone')
 
         # X = np.cumsum(X,-2) # 1/f spectrum
         print("X={}".format(X_TSd.shape))
         plt.figure(1)
-        plot_trial(X_TSd[:1, ...], Y_TSy[:1, ...], fs)
+        plot_trial(X_TSd[:1, ...], Y_TSye[:1, ...], fs)
         plt.suptitle('Raw')
         plt.show(block=False)
 
         mod = CommonSpatialPatterner(nfilt_per_class=1)
-        mod.fit(X_TSd, Y_TSy)
+        mod.fit(X_TSd, Y_TSye)
         plt.figure()
         mod.plot_model()
 
         mod = CommonSpatialPatterner(nfilt_per_class=1, spoc=True)
-        mod.fit(X_TSd, Y_TSy)
+        mod.fit(X_TSd, Y_TSye)
         plt.figure()
         mod.plot_model()
 
@@ -2247,7 +2430,7 @@ class CommonSpatialPatterner(BaseEstimator):
 
         # compare raw vs summed filterbank
         plt.figure()
-        plot_trial(X_TSke[:1, ...], Y_TSy[:1, ...], fs)
+        plot_trial(X_TSke[:1, ...], Y_TSye[:1, ...], fs)
         plt.suptitle('CSP')
         plt.show()
 
@@ -2257,6 +2440,7 @@ class FilterBankCommonSpatialPatterner(CommonSpatialPatterner):
                  spoc: bool = False, reg: float = 1e-6, rcond: float = 1e-6, verb=1):
         super().__init__(nfilt_per_class, mean, compress_feature_dim, spoc, reg, rcond, verb)
         self.filterbank = filterbank
+        raise NotImplementedError("Sorry not made yet!")
 
     def get_filterbank_class_covariances(
             self, X_TSd, Y_TSye, filterbank=None, spoc: bool = False, y0_is_true: bool = True):
@@ -2544,7 +2728,7 @@ class Resampler(BaseEstimator, ModifierMixin):
 
             if hasattr(X, 'info') and not X.info is None:  # update the meta-info
                 X.info['fs'] = X.info['fs'] / self.resamprate_
-            if Y is not None and hasattr(Y, 'info') and not Y.info is None:  # update the meta-info
+            if Y is not None and hasattr(Y, 'info') and not Y.info is None and 'fs' in Y.info: 
                 Y.info['fs'] = Y.info['fs'] / self.resamprate_
 
         return (X, Y)
@@ -2826,7 +3010,7 @@ class MetaInfoAdder(BaseEstimator, TransformerMixin):
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-class PreprocessPipeline(BaseEstimator):
+class PreprocessPipeline(BaseEstimator,ModifierMixin):
     """meta-estimator to implement a pipeline which can contain ModifierMixin's 
 
     Args:
@@ -2863,11 +3047,11 @@ class PreprocessPipeline(BaseEstimator):
             # TODO[X]: allow to disable stage by setting stagname:None?
             keys = tuple(kwargs.keys())
             for k in keys:
-                if k == stagename.lower():  # dict of parameters
+                if k.lower() == stagename.lower():  # dict of parameters
                     val = kwargs.pop(k)
                     if val is None:  # don't change anything
                         pass
-                    elif val == 'passthrough' or val == 'skip':  # replace this stage with None
+                    elif val.lower() == 'passthrough' or val.lower() == 'skip':  # replace this stage with None
                         self.stages[i] = (val, None)
 
                     elif isinstance(val, BaseEstimator):  # replace this stage with val
@@ -2876,7 +3060,7 @@ class PreprocessPipeline(BaseEstimator):
                     else:
                         stage.set_params(**val)
 
-                elif k.startswith(stagename.lower()+"__"):  # specific parameter
+                elif k.lower().startswith(stagename.lower()+"__"):  # specific parameter
                     val = kwargs.pop(k)
                     paramname = k[len(stagename.lower()+"__"):]
                     stage.set_params(**{paramname: val})
@@ -2925,12 +3109,26 @@ class PreprocessPipeline(BaseEstimator):
                     X, Y = stage.modify(X, Y)
                 elif hasattr(stage, 'transform'):  # just change X
                     X = stage.transform(X, y=Y)
+                else:
+                    raise ValueError("Pipeline stage with no modify/predict/transform method?")
             if verb > 0:
                 print("{:d}) {}  X={} Y={}".format(i, name, X.shape, Y.shape))
         return (X, Y)
 
     # TODO[]: think of a better name than modify, e.g. dataset_transform
-    def modify(self, X, Y, until_stage: int = None, verb: int = 0):
+    def modify(self, X, Y, until_stage: int = None, verb: int = 0, isprediction:bool=False):
+        """_summary_
+
+        Args:
+            X (_type_): _description_
+            Y (_type_): _description_
+            until_stage (int, optional): Apply pipeline until this stage.  If None then all stages. Defaults to None.
+            isprediction (bool, optional): If True and stage has predict method then use this method in preference to modify or transform. Defaults to False.
+            verb (int, optional): Verbosity level, higher means more debug messages. Defaults to 0.
+
+        Returns:
+            _type_: _description_
+        """        
         for i, (name, stage) in enumerate(self.stages):
             # early termination if wanted
             if until_stage is not None and \
@@ -2940,7 +3138,7 @@ class PreprocessPipeline(BaseEstimator):
             if self.verb > 1:
                 print("{}) {}  X={} Y={} -> ".format(i, name, X.shape, Y.shape))
 
-            if hasattr(stage, 'predict'):  # generate final predicted Y
+            if isprediction and hasattr(stage, 'predict'):  # generate final predicted Y
                 X = stage.predict(X, Y)
             elif hasattr(stage, 'modify'):  # change X and Y
                 X, Y = stage.modify(X, Y)
@@ -2952,22 +3150,21 @@ class PreprocessPipeline(BaseEstimator):
         return (X, Y)
 
     def predict(self, X, Y):
-        X, Y = self.modify(X.copy(), Y.copy())
+        X, Y = self.modify(X.copy(), Y.copy(), isprediction=True)
         return X
 
-    def score(self, X, Y):
-        # call score method of final pipeline stage!
-        for pi, (name, stage) in enumerate(self.stages[:-1]):
-            if self.verb > 0:
-                print("{}) {}  X={} Y={} -> ".format(pi, name, X.shape, Y.shape))
-            if hasattr(stage, 'predict'):  # generate final predicted Y
-                X = stage.predict(X, Y)
-            elif hasattr(stage, 'modify'):  # change X and Y
-                X, Y = stage.modify(X, Y)
-            elif hasattr(stage, 'transform'):  # only change X
-                X = stage.transform(X, y=Y)
-            if self.verb > 0:
-                print("        X={} Y={} ".format(X.shape, Y.shape))
+    def score(self, X, Y, isprediction:bool=True):
+        """apply the pipeline up to the last stage and then use the final stages score method
+
+        Args:
+            X (_type_): _description_
+            Y (_type_): _description_
+            isprediction (bool, optional): If True and stage has predict method then use this method in preference to modify or transform. Defaults to False.
+
+        Returns:
+            _type_: _description_
+        """
+        X, Y = self.modify(X.copy(),Y.copy(),until_stage=-1)
         return self.stages[-1][1].score(X, Y)
 
 
@@ -3003,6 +3200,14 @@ def make_preprocess_pipeline(pipeline: list):
             stagename, stagelabel = stagename.split(":")
         except ValueError:
             stagelabel = stagename
+        # stagename is final class name if it's a string
+        if isinstance(args,dict) and '.' in stagelabel:
+            stagelabel = stagelabel.split('.')[-1]
+
+        # ensure stagelabel is unique
+        n_before = sum(lab.startswith(stagelabel.lower()) for lab,_ in stages)
+        if n_before>0 :
+            stagelabel = "{:s}_{:d}".format(stagelabel,n_before)
 
         if isinstance(args, dict):
             transformer = None
@@ -3061,7 +3266,7 @@ def testcase_pipeline():
     plt.suptitle('Raw')
     plt.show(block=False)
     # make a preprocessing pipeline
-    filterbank = ((0, 0, 40, 50, 'bandpass'))  # ,(1,5,40,50,'hilbert'),)
+    filterband = ((0, 0, 40, 50, 'bandpass'))  # ,(1,5,40,50,'hilbert'),)
     fs_out = 50
 
     pipeline = [('MetaInfoAdder', dict(info=dict(fs=fs))),
@@ -3069,7 +3274,7 @@ def testcase_pipeline():
                 # ('Resampler',dict(fs_out=50)),
                 # 'AdaptiveSpatialWhitener',
                 ["ScalarFunctionApplier", {"op": "square"}],
-                ('FFTfilter:filt1', dict(filterbank=filterbank, squeeze_feature_dim=True)),
+                ('FFTfilter:filt1', dict(filterband=filterband, squeeze_feature_dim=True)),
                 # "Log",
                 ['AdaptiveSpatialWhitener', {"halflife_s": 1}],
                 ["TrialPlotter", {"suptitle": "1: +AdaptiveWhiten"}],
@@ -3087,7 +3292,7 @@ def testcase_pipeline():
                 "EventRelatedPotentialPlotter",
                 # 'SpatialWhitener',
                 # ("TwoDTransformerWrapper",dict(transformer='sklearn.preprocessing.StandardScaler')),
-                # ('FFTfilter:filt2',dict(filterbank=(0,0,8,9,'bandpass'),squeeze_feature_dim=True)),
+                # ('FFTfilter:filt2',dict(filterband=(0,0,8,9,'bandpass'),squeeze_feature_dim=True)),
                 # ('Resampler',dict(fs_out=fs_out)),
                 # ('ButterFilterAndResampler:filt2',dict(filterband=(8,-1),fs_out=20)),
                 ["BlockCovarianceMatrixizer", {"blksz_ms": 25}],
@@ -3146,6 +3351,14 @@ def testcase_pipeline():
 
 if __name__ == '__main__':
 
+    FFTfilter().testcase()
+
+    FFTfilterband().testcase()
+
+    CommonSpatialPatterner().testcase()
+
+    TimeShifter().testcase()
+
     BadChannelInterpolator().testcase()
 
     Chunker().testcase()
@@ -3158,7 +3371,6 @@ if __name__ == '__main__':
 
     BadChannelRemover().testcase()
 
-    # CommonSpatialPatterner().testcase()
 
     quit()
 
@@ -3171,7 +3383,6 @@ if __name__ == '__main__':
     ChannelPowerStandardizer().testcase()
     SpatialWhitener().testcase()
 
-    TimeShifter().testcase()
 
     TargetEncoder().testcase()
 

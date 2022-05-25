@@ -1,32 +1,68 @@
+// This file configures the setup of the BCI and it's main different components.
+// Note: You can get more information about the possible arguments and their values
+//  by checking the documentation for that function, either in the files/python or at <https://mindaffect-bci.readthedocs.io/en/latest/modules.html>
+// Specifically:
+//   * Acquisition: <https://github.com/mindaffect/pymindaffectBCI/tree/open_source/mindaffectBCI/examples/acquisition>
+//   * Decoder: <https://mindaffect-bci.readthedocs.io/en/latest/mindaffectBCI.decoder.html#mindaffectBCI.decoder.decoder.run>
+//   * Presentation : <https://github.com/mindaffect/pymindaffectBCI/blob/open_source/mindaffectBCI/examples/presentation/selectionMatrix.py> 
 {
+    // Acquisition is responsible for getting the data from the bio-signals device, and then forwarding the 
+    // time-stamped data to the mindaffectBCI Hub.  
+    // This configuration is to use the brainflow generic device driver.
     "acquisation":"brainflow",
-
     "acq_args":{
-        "board_id":1,
-        "serial_port":"com3"
+        "board_id":0,
+        "serial_port":"COM5"
     },
 
+    // The decoder is responsible for analysising the EEG data and generating predicted brain states.
+    // This configuration is a default for Visual Evoked Potential (VEP) responses.
+    // Modify this for different experiments or types of brain response.
     "decoder":"mindaffectBCI.decoder.decoder",
     "decoder_args":{
+        // stopband: set the frequency filter as a list of bandstop (45-65Hz) or bandpass (5-25Hz) filters
         "stopband" : [[45,65],[3,25,"bandpass"]],
+        // out_fs : set the analysis sampling rate, input signal is re-sampled to this rate after the filters
         "out_fs" : 100,
+        // evtlabs : the types of stimulus event we model a response for.  
+        // Here: re=rising-edge, i.e. increase in stimulus brightness, fe=falling-edge, i.e. decrease in stimulus intensity
         "evtlabs" : ["re","fe"],
+        // tau_ms : the maximum length of the modelled response
         "tau_ms" : 450,
+        // calplots:bool - flag if we make plots of the fitted model and performance after calibration
         "calplots" : true,
+        // precplots:bool - flag if we make live decoding plots during prediction
         "predplots" : false
     },
 
+    // Presentation is responsible for giving the user-interface to the user and presenting stimuli
+    // to the user (with time-stamps to make analysis possible)
+    // This configuration is a default for Visual Evoked Potential (VEP) responses, with noise-tags for the stimulus sequences
+    // Modify this for different experiments or types of brain response.
     "presentation":"selectionMatrix",
     "presentation_args":{
+        // ncal:int - number of trials for a complete calibration
         "ncal":10,
+        // npred:int -- number of letters to predict in prediction phase
         "npred":10,
+        // selectionThreshold:float -- error-probability threshold for stopping a prediction trial
         "selectionThreshold":0.1,
+        // symbols:str -- file or list-of-lists-of-str for the layout of the predictiongrid
         "symbols":"symbols.txt",
-        "stimfile":"mgold_65_6532_psk_60hz.png",
+        // calibration_symbols -- file or list-of-lists-of-str for the layout of the matrix used during calibration
+        //                       here we use a smaller 3x3 grid for this
+        "calibration_symbols":[["0","1","2"],["3","4","5"],["6","7","8"]],
+        // stimfile:str -- file which contains the stimulus sequence used to display the stimuli
+        "stimfile":"mgold_65_6532_psk_60hz.txt",
+        // framesperbit:int -- number of video-frames for a single entry in the stim-file.  Higher means the stimuli are solower
         "framesperbit":1,
-        "fullscreen":false,
+        // fullscreen:bool -- flag if we run the presentation full-screen
+        "fullscreen":true,
+        // fullscreen_stimulus:bool -- flag if we run the BCI stimulus full-screen, i.e. calibration and prediction only
         "fullscreen_stimulus":true,
+        // simple_calibration:bool -- flag if we run "simple calibration" where only the cued target is flickered, or "full calibration" where all targets flicker
         "simple_calibration":true,
+        // host:str -- host name for the utopia-hub, auto-discovered if equal '-'
         "host":"-"
     }
 }

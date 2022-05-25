@@ -93,17 +93,24 @@ class WaitScreen(Screen):
                             scale_y=self.window.height*.1/logo.height)
 
         # make a cross character, with size given by self.fixation
-        if self.fixation:
-            font_size = self.fixation if self.fixation>1 else 40
-            self.fixation_obj = pyglet.text.Label("+", font_size=font_size, 
-                                                x=self.window.width//2, y=self.window.height//2,
-                                                color=(255, 0, 0, 255),
-                                                anchor_x='center', anchor_y='center',
-                                                batch=self.batch, group=self.group)
+        font_size = self.fixation if self.fixation>1 else 40
+        self.fixation_obj = pyglet.text.Label("+", font_size=font_size, 
+                                            x=self.window.width//2, y=self.window.height//2,
+                                            color=(255, 0, 0, 255),
+                                            anchor_x='center', anchor_y='center',
+                                            batch=self.batch, group=self.group)
+        self.set_fixation( self.fixation is not None and self.fixation>0 )
+
+    def set_fixation(self,visible:bool):
+        self.fixation_obj.color = (255,0,0,255) if visible else (255,0,0,0)
 
     def reset(self):
         self.isRunning = False
         self.isDone = False
+        if self.waitKey:
+            self.window.last_key_press= None
+        if self.waitMouse:
+            self.window.last_mouse_release = None
 
     def is_done(self):
         # check termination conditions
@@ -159,17 +166,37 @@ class WaitScreen(Screen):
 # TODO[]: use batch for efficient draws
 class InstructionScreen(WaitScreen):
     '''Screen which shows a textual instruction for duration or until key-pressed'''
-    def __init__(self, window, text, duration=5000, waitKey=True, waitMouse=True, logo="MindAffect_Logo.png", title:str=None, fixation:bool=False, **kwargs):
+    def __init__(self, window, text:str, x:float=.5, y:float=.5, anchor_x:str='center', anchor_y:str='center', width:int=.8, duration=5000, waitKey=True, waitMouse=True, font_size:int=25, logo="MindAffect_Logo.png", title:str=None, fixation:bool=False, **kwargs):
+        """Screen which shows a textual instruction for duration or until key-pressed
+
+        Args:
+            window (_type_): pyglet window to draw into
+            text (str): the instruction text to show
+            x,y (float, optional): x,y position for the text box. If <1 then fraction of screen size. Defaults to .5.
+            y (float, optional): _description_. Defaults to .5.
+            anchor_x (str, optional): anchor of the x,y position in the box. Defaults to 'center'.
+            anchor_y (str, optional): anchor of the x,y position in the box. Defaults to 'center'.
+            width (int, optional): text box width.  If <1 then in fraction of screen width. Defaults to .8.
+            duration (int, optional): Duration to show the instruction for. Defaults to 5000.
+            waitKey (bool, optional): If True the key-press finishes the screen. Defaults to True.
+            waitMouse (bool, optional): If True then mouse-click finishes the screen. Defaults to True.
+            logo (str, optional): logo image to show in top-right of the screen. Defaults to "MindAffect_Logo.png".
+            title (str, optional): title text to show at the top of the screen. Defaults to None.
+            fixation (bool, optional): If True then show fixation cross in center of the screen. Defaults to False.
+        """
         super().__init__(window, duration, waitKey, waitMouse, logo, fixation, **kwargs)
         # initialize the instructions screen --- and add to the parent screen's batch
-        self.instructLabel = pyglet.text.Label(x=self.window.width//2,
-                                               y=self.window.height//2,
-                                               anchor_x='center',
-                                               anchor_y='center',
-                                               font_size=24,
+        if 0 < x and x < 1: x = int(self.window.width * x)
+        if 0 < y and y < 1: y = int(self.window.height * y)
+        if 0 < width and width < 1: width=int(self.window.width*width) 
+        self.instructLabel = pyglet.text.Label(x=x,
+                                               y=y,
+                                               anchor_x=anchor_x,
+                                               anchor_y=anchor_y,
+                                               font_size=font_size,
                                                color=(255, 255, 255, 255),
                                                multiline=True,
-                                               width=int(self.window.width*.8),
+                                               width=width,
                                                batch=self.batch,
                                                group=self.group)
         self.titleLabel = pyglet.text.Label(x=self.window.width//2,
@@ -304,7 +331,8 @@ class ScreenGraph(Screen):
         super().reset()
         self.current_screen = self.start_screen
         self.screen = self.subscreens.get(self.current_screen,None)
-
+        if self.screen:
+            self.screen.reset()
 
     def init_subscreens(self, subscreens:dict, subscreen_args:dict=None):
         """setup the set of sub-screens, creating the screen classes as needd
@@ -321,7 +349,10 @@ class ScreenGraph(Screen):
                 screenclass = screen[0]
                 # add prefix to make fully qualified class name
                 if not '.' in screenclass: 
-                    screenclass = 'mindaffectBCI.presentation.screens.' + screenclass + '.' + screenclass
+                    if screenclass in locals():
+                        screenclass = 'mindaffectBCI.presentation.screens.basic_screens' + "." + screenclass
+                    else:
+                        screenclass = 'mindaffectBCI.presentation.screens.' + screenclass + '.' + screenclass
                 # create the screen
                 screen_args = screen[1] if len(screen)>1 else dict()
                 if subscreen_args is not None: # include extra args
@@ -337,7 +368,7 @@ class ScreenGraph(Screen):
 
         Returns:
             dict: a dict of from:to screen names
-        """        
+        """
         # init as a sequential scan through sub-screens in given order
         # get the list of screens
         scrns = tuple(subscreens.keys()) if isinstance(subscreens,dict) else subscreens
@@ -453,14 +484,15 @@ if __name__=='__main__':
     from mindaffectBCI.presentation.ScreenRunner import initPyglet, run_screen
     window = initPyglet(width=640, height=480)
     ins= InstructionScreen(window=window,text='hello there pre-made screen')
-    subscreens = {  
+    subscreens = {
         'ins1':('InstructionScreen',{'text':'This is a default start screen....\nPress <space> to continue', "waitKey":True, "duration":1000}),
         #'ins2':('InstructionScreen',{'text':'And this is a second default screen to show transitions', "waitKey":True, "duration":1000}),
+        "test":["ScreenGraph",{}],
         'ins2':ins,
         'exit':('InstructionScreen',{'text':'This is the exit screen', "waitKey":True, "duration":1000}),
         "looper":["InstructionScreen",{"text":"Loop Screen\n\n","waitKey":True,"duration":1000}],    
     }
     subscreen_transitions = {'ins1':'ins2', 'ins2':'exit'}
-    #screen = ScreenGraph(window, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
+    screen = ScreenGraph(window, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
     #screen = LoopedScreenGraph(window, n_loop=5, subscreens=subscreens, subscreen_transitions=subscreen_transitions, exit_screen='exit')
     run_screen(window, screen)

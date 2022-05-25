@@ -154,7 +154,7 @@ class SoundFlashScreen(SelectionGridScreen):
         if not self.pulsed_background_noise and self.background_noise:
             if not self.get_background_noise().status == 1:
                 # pick random background noise segment to play
-                idx = random.randint(0,len(self.background_noise))
+                idx = random.randrange(0,len(self.background_noise))
                 print("Using background: {}".format(idx))
                 self.play_background(idx,self.background_noise_vol,delay=self.play_delay, loops=1)
 

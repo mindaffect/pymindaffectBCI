@@ -351,6 +351,7 @@ def read_mindaffectBCI_messages( source, regress:bool=False ):
         source = max(glob.glob(os.path.expanduser(source)), key=os.path.getctime)
         if os.path.exists(source): # read from file
             source = os.path.expanduser(source)
+            # TODO[]: deal correctly with different ASCII encodings....
             stream = open(source,'r')
         else: # assume it's already a string with the messages in
             import io

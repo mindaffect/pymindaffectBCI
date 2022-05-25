@@ -28,6 +28,11 @@ from mindaffectBCI.decoder.decoder import UNAME
 signal.signal(signal.SIGINT, lambda signum, frame: shutdown())
 signal.signal(signal.SIGTERM, lambda signum, frame: shutdown())
 
+# global process holders
+hub_process = None
+acquisition_process = None
+decoder_process = None
+
 class NoneProc:
     """tempory class simulating a working null sub-process
     """

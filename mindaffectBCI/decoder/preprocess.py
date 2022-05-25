@@ -723,9 +723,9 @@ def get_window_step(blksz:int,window:str=None,overlap:float=.5,dtype=np.float32)
         window = np.ones((blksz,),dtype=dtype) # bartlet window = triangle
     elif window in ('bartlet','bartlett','triangle') or window is None:
         window = 1 - np.abs(np.linspace(-1,1,blksz,dtype=dtype)) # bartlet window = triangle
-    elif window == 'hanning':
-        window = .5*(1 - np.cos(2*np.pi*np.arange(1,blksz,dtype=dtype)/(blksz+1)))
-    elif window == 'hamming' or window is None:
+    elif window.startswith('hanning'):
+        window = .5*(1 - np.cos(2*np.pi*np.arange(1,blksz+1,dtype=dtype)/(blksz+1)))
+    elif window.startswith('hamming') or window is None:
         if blksz%2==0:
             window = .54 - .46*np.cos(2*np.pi*np.arange(0,blksz+1,dtype=dtype)/(blksz))
             window = window[:-1] # remove last entry
@@ -751,7 +751,7 @@ def test_get_widow_step(window=None,step=None,blksz=51):
     plt.show()
 
 
-def fftfilter(X_TSd:np.ndarray, filterband, fs:float=100, axis=-2, freq_sigma=1, center:bool=True, verb=1):
+def fftfilter(X_TSd:np.ndarray, filterband, fs:float=100, axis=-2, freq_sigma=1, center:bool=True, n:int=None, verb=1):
     """run X through a filterbank computed using the fft transform
 
     Args:
@@ -763,21 +763,21 @@ def fftfilter(X_TSd:np.ndarray, filterband, fs:float=100, axis=-2, freq_sigma=1,
 
     Returns:
         X_TSfd: band pass filtered blocks of X_TSd
-    """    
+    """
     if verb > 0:  print("fftfilter: {}".format(filterband))
     assert axis==-2 or axis == X_TSd.ndim-2
     # ensure 3-d input
     if X_TSd.ndim<3:
         X_TSd = X_TSd.reshape( (-1,)*(3-X_TSd.ndim) + X_TSd.shape )
 
-    masks_bf, bandtype, freqs = fftfilter_masks(X_TSd.shape[axis],filterband,fs,freq_sigma,dtype=X_TSd.dtype)
+    filters_bf, bandtype, freqs = fftfilter_masks(X_TSd.shape[axis],filterband,fs,freq_sigma,dtype=X_TSd.dtype)
     # actual mask we use is *and* over the individual masks (so same logic as for sosfilter)
-    mask_f = np.prod(masks_bf,0)
-    X_TSfd = inner_fftfilterbank(X_TSd, mask_f[np.newaxis,:], bandtype[0], axis=axis, center=center)
+    filter_bf = np.prod(filters_bf,0,keepdims=True)
+    X_TSfd = inner_fftfilterbank(X_TSd, filter_bf, bandtype[0], axis=axis, center=center, n=n)
     X_TSd = X_TSfd.squeeze(2)
     return X_TSd
 
-def fftfilterbank(X_TSd:np.ndarray, filterbank, fs:float=100, axis=1, freq_sigma=1, center:bool=True, window=None, verb=1):
+def fftfilterbank(X_TSd:np.ndarray, filterbank, fs:float=100, axis=1, freq_sigma=1, center:bool=True, window=None, n:int=None, verb=1):
     """run X through a filterbank computed using the fft transform
 
     Args:
@@ -798,32 +798,37 @@ def fftfilterbank(X_TSd:np.ndarray, filterbank, fs:float=100, axis=1, freq_sigma
         X_TSd = X_TSd.reshape( (-1,)*(3-X_TSd.ndim) + X_TSd.shape )
 
     # compute the band masks
-    mask_bf, feature_b, freqs = fftfilter_masks(X_TSd.shape[axis],filterbank,fs,freq_sigma,dtype=X_TSd.dtype)
+    filter_bf, feature_b, freqs = fftfilter_masks(X_TSd.shape[axis],filterbank,fs,freq_sigma,dtype=X_TSd.dtype)
 
-    X_TSfd = inner_fftfilterbank(X_TSd,mask_bf=mask_bf,feature_b=feature_b,axis=axis,window=window,center=center)
+    X_TSfd = inner_fftfilterbank(X_TSd,filter_bf=filter_bf,feature_b=feature_b,axis=axis,window=window,center=center,n=n)
     return X_TSfd
 
-def inner_fftfilterbank(X_TSd:np.ndarray, mask_bf, feature_b, axis=1, window=None, center:bool=True, verb=1):
+def inner_fftfilterbank(X_TSd:np.ndarray, filter_bf, feature_b, axis=1, window=None, center:bool=True, prefix_band_dim:bool=True, n:int=None, verb=1):
     axis = axis if axis>0 else X_TSd.ndim+axis
+    if isinstance(feature_b,str): feature_b=[feature_b]
     #import matplotlib.pyplot as plt; plt.plot(mask.T);plt.plot(np.sum(mask,0),'k-');plt.show(block=True)
-    mask_bf = np.reshape(mask_bf, mask_bf.shape+(1,)*(X_TSd.ndim-axis-1))
+    filter_bf = np.reshape(filter_bf, filter_bf.shape+(1,)*(X_TSd.ndim-axis-1))
     if window is not None:
         window = np.reshape(window, window.shape+(1,)*(X_TSd.ndim-axis-1))
         window = np.sqrt(window)
 
-    #print("X.shape={}  mask.shape={}".format(X_TSd.shape, mask_bf.shape))
+    #print("X.shape={}  mask.shape={}".format(X_TSd.shape, filter_bf.shape))
     if center:
         X_TSd = X_TSd - np.mean(X_TSd,axis=axis,keepdims=True)
 
     # apply filter bank to frequency ranges into virtual channels
-    X_TSfd=np.zeros(X_TSd.shape[:axis+1]+(mask_bf.shape[0],)+X_TSd.shape[axis+1:],dtype=X_TSd.dtype)
+    if prefix_band_dim:
+        shape = X_TSd.shape[:axis]+(filter_bf.shape[0],n if n is not None else X_TSd.shape[axis])+X_TSd.shape[axis+1:]
+    else:
+        shape = X_TSd.shape[:axis]+(n if n is not None else X_TSd.shape[axis],filter_bf.shape[0],)+X_TSd.shape[axis+1:]
+    X_TSfd=np.zeros(shape,dtype=X_TSd.dtype)
     for ti in range(X_TSd.shape[0]):
         X = X_TSd[ti:ti+1,...]
         if window is not None:
             X = X * window
         Fx = np.fft.fft(X,axis=axis)
-        for bi in range(mask_bf.shape[0]):
-            iFxbi = np.fft.ifft(Fx*mask_bf[bi,...], axis=axis)
+        for bi in range(filter_bf.shape[0]):
+            iFxbi = np.fft.ifft(Fx*filter_bf[bi,...], axis=axis, n=n)
             if window is not None:
                 iFxbi = iFxbi * window
             if feature_b[bi].lower() in ('abs','hilbert'):
@@ -831,7 +836,8 @@ def inner_fftfilterbank(X_TSd:np.ndarray, mask_bf, feature_b, axis=1, window=Non
             else:
                 iFxbi = np.real(iFxbi)
             # make index expr to insert in right place
-            bidx = [slice(None)]*X_TSfd.ndim; bidx[0]=ti; bidx[axis+1]=bi
+            bidx = [slice(None)]*X_TSfd.ndim; bidx[0]=ti; 
+            bidx[axis if prefix_band_dim else axis+1]=bi
             X_TSfd[tuple(bidx)] = iFxbi
     return X_TSfd
 
@@ -886,8 +892,8 @@ def ola_fftfilterbank(X_TSd:np.ndarray, filterbank, fs:float=100, axis=1,  blksz
     fftlen=int(fftlen)
     window, step = get_window_step(blksz, window, overlap)
 
-    mask_bf, bandtype, freqs = fftfilter_masks(fftlen, filterbank, freq_sigma=freq_sigma, fs=fs, dtype=X_TSd.dtype)
-    X_Sfd = inner_ola_fftfilterbank(X_TSd, mask_bf, bandtype, window, step, axis=axis, center=center)
+    filter_bf, bandtype, freqs = fftfilter_masks(fftlen, filterbank, freq_sigma=freq_sigma, fs=fs, dtype=X_TSd.dtype)
+    X_Sfd = inner_ola_fftfilterbank(X_TSd, filter_bf, bandtype, window, step, axis=axis, center=center)
     return X_Sfd
 
 

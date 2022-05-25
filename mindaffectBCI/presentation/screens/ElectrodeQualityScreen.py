@@ -34,13 +34,13 @@ class ElectrodeQualityScreen(Screen):
     '''Screen which shows the electrode signal quality information'''
 
     instruct = "Electrode Quality\n\nAdjust headset until all electrodes are green\n(or noise to signal ratio < 5)"
-    def __init__(self, window, noisetag, nch=4, duration=3600*1000, waitKey=True, label:str=None):
+    def __init__(self, window, noisetag, nch=4, duration=3600*1000, waitKey:bool=True, waitMouse:bool=True, label:str=None):
         super().__init__(window, label=label)
 
         self.noisetag = noisetag
         self.t0 = None  # timer for the duration
         self.duration = duration
-        self.waitKey = waitKey
+        self.waitKey, self.waitMouse = waitKey, waitMouse
         self.clearScreen = True
         self.isRunning = False
         self.update_nch(nch)
@@ -127,11 +127,15 @@ class ElectrodeQualityScreen(Screen):
         if not self.isRunning:
             return False
         if self.waitKey:
-            global last_key_press
             if self.window.last_key_press:
                 self.key_press = self.window.last_key_press
                 isDone = True
                 self.window.last_key_press = None
+        if self.waitMouse:
+            if self.window.last_mouse_release:
+                self.mouse_release = self.window.last_mouse_release
+                isDone = True
+                self.window.last_mouse_release = None
         if self.getTimeStamp() > self.t0+self.duration:
             isDone=True
         if isDone:

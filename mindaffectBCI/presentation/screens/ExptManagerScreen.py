@@ -590,7 +590,6 @@ class ExptManagerScreen(Screen):
         elif self.current_screen in (self.SubScreens.Calibration, self.SubScreens.Practice): # calibration
             print("calibration")
             screen = self.calibration_screen
-            screen.reset()
             screen.set_grid(symbols=self.calibration_symbols, bgFraction=self.bgFraction)
             screen.setliveFeedback(False)
             screen.setshowNewTarget(True)
@@ -602,6 +601,7 @@ class ExptManagerScreen(Screen):
             else:
                 screen.sendEvents=False
 
+            screen.reset()
             screen.noisetag.startCalibration(**self.calibration_args)
             self.screen = screen
             if self.current_screen == self.SubScreens.Calibration:
@@ -630,7 +630,6 @@ class ExptManagerScreen(Screen):
         elif self.current_screen==self.SubScreens.CuedPrediction: # pred
             print("cued prediction")
             screen = self.prediction_screen
-            screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
             screen.setliveSelections(True)
@@ -639,6 +638,7 @@ class ExptManagerScreen(Screen):
             screen.show_correct=True
             screen.set_sentence(self.cuedpredictionSentence)
 
+            screen.reset()
             screen.noisetag.startPrediction(cuedprediction=True, **self.prediction_args)
             self.screen = screen
             self.next_screen = self.SubScreens.MainMenu
@@ -655,7 +655,6 @@ class ExptManagerScreen(Screen):
         elif self.current_screen==self.SubScreens.Prediction: # pred
             print("prediction")
             screen = self.prediction_screen
-            screen.reset()
             screen.set_grid(symbols=self.symbols, bgFraction=self.bgFraction)
             screen.liveFeedback=True
             screen.target_only=False
@@ -664,6 +663,7 @@ class ExptManagerScreen(Screen):
             screen.setliveSelections(True)
             #screen.setshowNewTarget(False)
 
+            screen.reset()
             screen.noisetag.startPrediction(**self.prediction_args)
             self.screen = screen
             self.next_screen = self.SubScreens.MainMenu
