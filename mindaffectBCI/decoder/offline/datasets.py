@@ -33,6 +33,8 @@ from mindaffectBCI.decoder.utils import testSignal
 # List of root directories to search for the experiment sub-directory
 dataroots = ['~/data',
             os.path.join(os.path.dirname(__file__),'..','..','..','data'),
+            os.path.join(os.path.dirname(__file__),'..','..','data'),
+            os.path.join(os.path.dirname(__file__),'..','data'),
             'G://Shared drives/Data/experiments',
             'G://Shared drives/Data',
             '/content/drive/Shareddrives/Data',
