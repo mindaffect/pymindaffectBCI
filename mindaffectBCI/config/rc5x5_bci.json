@@ -1,5 +1,5 @@
 {
-    "acquisation":"brainflow",
+    "acquisition":"brainflow",
     "acq_args":{
         "board_id":1,
         "serial_port":"com3"
@@ -21,7 +21,7 @@
         "npred":10,
         "selectionThreshold":0.01,
         "symbols":"symbols.txt",
-        "stimfile":"rc5x5.png",
+        "stimfile":"rc5x5.txt",
         "prediction_args":{"permute":false},
         "framesperbit":3,
         "fullscreen":false,

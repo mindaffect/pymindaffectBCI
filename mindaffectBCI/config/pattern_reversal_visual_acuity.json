@@ -1,5 +1,5 @@
 {
-    "acquisation":"brainflow",
+    "acquisition":"brainflow",
     "acq_args":{
         "board_id":1,
         "serial_port":"com3"

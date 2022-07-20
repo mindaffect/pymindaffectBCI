@@ -1,6 +1,6 @@
 {
 
-    "acquisation":"brainflow",
+    "acquisition":"brainflow",
     "acq_args":{
         "board_id":1,
         "serial_port":"com3"
@@ -24,7 +24,7 @@
         "selectionThreshold":0.1,
         "calibration_symbols":"3x3.txt",
         "symbols":"3x3.txt",
-        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "stimfile":"mgold_65_6532_psk_60hz.txt",
         "framesperbit":1,
         "fullscreen":false,
         "fullscreen_stimulus":true,

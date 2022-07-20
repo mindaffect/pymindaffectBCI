@@ -1,5 +1,5 @@
 {
-    "acquisation":"brainflow",
+    "acquisition":"brainflow",
     "acq_args":{
         "board_id":1,
         "serial_port":"com3"
@@ -22,7 +22,7 @@
         "selectionThreshold":0.1,
         "calibration_symbols":["1","2","3","4","5"],
         "symbols":"symbols.txt",
-        "stimfile":"ssvep.png",
+        "stimfile":"ssvep.txt",
         "framesperbit":1,
         "calibration_trialduration":4.2,  
         "prediction_trialduration":10, 

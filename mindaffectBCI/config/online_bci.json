@@ -9,7 +9,7 @@
     // Acquisition is responsible for getting the data from the bio-signals device, and then forwarding the 
     // time-stamped data to the mindaffectBCI Hub.  
     // This configuration is to use the brainflow generic device driver.
-    "acquisation":"brainflow",
+    "acquisition":"brainflow",
     "acq_args":{
         "board_id":0,
         "serial_port":"COM5"

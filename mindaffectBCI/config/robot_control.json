@@ -27,7 +27,7 @@
         "selectionThreshold":0.1,
         "symbols":"robot_control.txt",
 	    "calibration_symbols":"3x3.txt",
-        "stimfile":"mgold_65_6532_psk_60hz.png",
+        "stimfile":"mgold_65_6532_psk_60hz.txt",
         "bgFraction":0.1,
         "framesperbit":1,
         "fullscreen":false,
