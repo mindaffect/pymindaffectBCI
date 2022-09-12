@@ -61,7 +61,7 @@ class SettingsScreen(InstructionScreen):
     threshold_text = "New Selection Threshold: %s\n"
 
     def __init__(self, window, settings_class, duration=150000):
-        super().__init__(window, self.prefix_text + self.threshold_text%(settings_class.selectionThreshold), duration, False)
+        super().__init__(window, self.prefix_text + self.threshold_text%(settings_class.selectionThreshold), duration=duration, waitMouse=False, waitKey=False)
         self.settings_class = settings_class
         self.usertext = ''
 
@@ -91,7 +91,7 @@ class SettingsScreen(InstructionScreen):
                     pass
             elif self.window.last_text and self.window.last_text in "0123456789.":
                 # add to the host string
-                self.usertext += window.last_text
+                self.usertext += self.window.last_text
             self.window.last_text = None
             self.set_text(self.prefix_text + self.threshold_text%(self.usertext))
         super().draw(t)
