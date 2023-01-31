@@ -131,7 +131,10 @@ def startacquisitionProcess(acquisition, acq_args, label='online_bci', logdir=No
         from mindaffectBCI.examples.acquisition import utopia_ft
         acquisition = Process(target=utopia_ft.run, kwargs=acq_args, daemon=True)
         acquisition.start()
-
+    elif acquisition.lower() == 'apex':  # tmsi apex
+        from mindaffectBCI.examples.acquisition import utopia_apex
+        acquisition = Process(target=utopia_apex.run, kwargs=acq_args, daemon=True)
+        acquisition.start()
     else:
         raise ValueError("Unrecognised acquisition driver! {}".format(acquisition))
     
