@@ -1216,7 +1216,7 @@ class ExptScreenManager(Screen):
             print("connecting screen")
             self.connecting.reset()
             self.screen = self.connecting
-            self.next_stage = self.ExptPhases.MainMenu
+            self.next_stage = self.ExptPhases.Calibration
 
         elif self.stage==self.ExptPhases.SignalQuality: # electrode quality
             print("signal quality")
@@ -1255,7 +1255,7 @@ class ExptScreenManager(Screen):
                 self.window.set_fullscreen(fullscreen=True)
             self.results.reset()
             self.screen=self.results
-            self.next_stage = self.ExptPhases.MainMenu
+            self.next_stage = self.ExptPhases.Closing
 
         elif self.stage==self.ExptPhases.CuedPredInstruct: # pred instruct
             print("cued pred instruct")
