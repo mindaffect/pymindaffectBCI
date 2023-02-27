@@ -37,7 +37,7 @@ def run(label='', logdir=None):
     print("Saving to {}".format(logdir))
 
     # command to run the java hub
-    cmd = ("java","-jar","UtopiaServer.jar")
+    cmd = ("java","-Djava.awt.headless=true", "-jar","UtopiaServer.jar")
     # args to pass to the java hub
     if label is not None:
         logfile = "mindaffectBCI_{}.txt".format(label)
